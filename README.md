@@ -1,88 +1,132 @@
-﻿﻿# 🎧 AudioGo - Ứng dụng Thuyết minh Du lịch Đa ngôn ngữ
-## Phố Ẩm Thực Vĩnh Khánh, TP.HCM
+# 🎧 AudioGo — Hệ thống Thuyết minh Du lịch Đa ngôn ngữ
 
-**Công nghệ:** .NET MAUI (C#) | **Target:** Android, iOS, Windows
+> **Proof of Concept (PoC)** — Phố Ẩm Thực Vĩnh Khánh, TP.HCM  
+> Tự động phát thuyết minh khi du khách di chuyển đến gần điểm tham quan (POI).
 
----
-
-## 📋 Mục lục
-- [Tổng quan](#1-tổng-quan-hệ-thống)
-- [Chức năng](#2-chức-năng-trọng-tâm-poc)
-- [Kiến trúc](#3-kiến-trúc-kỹ-thuật)
-- [Cấu trúc dự án](#4-cấu-trúc-dự-án-mvvm)
-- [Cài đặt](#5-hướng-dẫn-cài-đặt)
-- [Changelog](#6-changelog)
+[![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com)
+[![MAUI](https://img.shields.io/badge/Platform-.NET%20MAUI-blueviolet?logo=dotnet)](https://learn.microsoft.com/dotnet/maui)
+[![ASP.NET Core](https://img.shields.io/badge/API-ASP.NET%20Core-blue?logo=dotnet)](https://learn.microsoft.com/aspnet/core)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
 ---
 
-## 1. TỔNG QUAN HỆ THỐNG
+## 📁 Cấu trúc Repository
 
-### 1.1. Các tác nhân (Actors)
-| Actor | Platform | Mô tả |
-|-------|----------|-------|
-| **Du khách** | Mobile App | Sử dụng app nghe thuyết minh tự động |
-| **Quản lý quán** | Web | Quản lý thông tin quán (Phase 2) |
-| **Admin** | Web | Quản trị hệ thống (Phase 2) |
-
-### 1.2. Kiến trúc Server - Client
-| Mode | Database | Yêu cầu | Trạng thái |
-|------|----------|---------|------------|
-| **Offline (PoC)** | SQLite | Không cần Wifi | ✅ Đang phát triển |
-| **Online** | SQL Server | Cần Wifi đồng bộ | 🔜 Phase 2 |
-
----
-
-## 2. CHỨC NĂNG TRỌNG TÂM (PoC)
-
-### 2.1. 📍 Định vị & Geofence (Core Feature)
-- **GPS Tracking:** Realtime, hỗ trợ background service
-- **Geofencing Engine:**
-  - Xác định POI: Tọa độ (Lat/Lng), Bán kính, Mức ưu tiên
-  - Trigger: Khi đi vào vùng hoặc đến gần điểm
-  - **Anti-Spam:** Debounce/Cooldown 5 phút
-
-### 2.2. 🎙️ Thuyết minh tự động (Narration Engine)
-- **Định dạng:** Text-to-Speech (TTS) + Audio file
-- **Logic phát:**
-  - Queue management (xử lý xung đột)
-  - Priority-based playback
-  - Auto stop/skip khi di chuyển
-
-### 2.3. 💾 Quản lý dữ liệu (Offline)
-- SQLite local storage
-- 7 POI mẫu Phố Vĩnh Khánh (seed data)
-- Hỗ trợ đa ngôn ngữ: VI, EN, ZH, KO, JA
-
----
-
-## 3. KIẾN TRÚC KỸ THUẬT
-
-### 3.1. Tech Stack
-| Component | Technology |
-|-----------|------------|
-| Framework | .NET MAUI (.NET 10) |
-| Pattern | MVVM |
-| Database | SQLite (sqlite-net-pcl) |
-| Maps | Microsoft.Maui.Controls.Maps |
-| Audio | Plugin.Maui.Audio |
-| MVVM Toolkit | CommunityToolkit.Mvvm |
-
-### 3.2. NuGet Packages
-```xml
-<PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-<PackageReference Include="Microsoft.Maui.Controls.Maps" Version="10.0.30" />
-<PackageReference Include="Plugin.Maui.Audio" Version="4.0.0" />
-<PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
-<PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.11" />
 ```
-
-### 3.3. Quy trình xử lý (Flow)
-```
-[App Start] → [Load POI từ SQLite] → [Start GPS Tracking]
-                                            ↓
-[User di chuyển] → [Tính khoảng cách] → [Check Geofence]
-                                            ↓
-[Vào vùng POI] → [Thêm vào Queue] → [Phát Audio/TTS]
+AudioGo.sln          ← Solution chứa cả 3 projects
+│
+├── Client/          ← 📱 App di động (.NET MAUI — Android + iOS)
+│   ├── Models/          # PoiEntity (SQLite local entity)
+│   ├── ViewModels/      # BaseViewModel (MVVM / INotifyPropertyChanged)
+│   ├── Views/           # XAML Pages
+│   ├── Services/        # GeofenceService + Interfaces/IGeofenceService
+│   ├── Helpers/         # GeoHelper (Haversine distance)
+│   ├── Converters/      # XAML Value Converters
+│   ├── Data/            # AppDatabase (SQLite async CRUD)
+│   ├── Platforms/       # Android · iOS · MacCatalyst · Windows
+│   └── Resources/       # Fonts · Images · Styles · Splash
+│
+├── Server/          ← 🖥️ REST API Backend (ASP.NET Core)
+│   ├── Controllers/     # PoiController (GET/POST/PUT/DELETE)
+│   └── Program.cs
+│
+└── Shared/          ← 📦 Models & Contracts dùng chung
+    └── POI.cs           # POI model (Id, Name, Lat/Lon, Radius, Audio…)
 ```
 
 ---
+
+## 🏗️ Kiến trúc tổng quan
+
+```
+┌─────────────────────────────────────────────────┐
+│              Du khách (Mobile App)               │
+│           .NET MAUI — Client/                    │
+│  ┌─────────────┐  ┌──────────────┐  ┌─────────┐ │
+│  │ GPS / Maps  │→ │ GeofenceSvc  │→ │ Audio   │ │
+│  │             │  │ (cooldown    │  │ Engine  │ │
+│  └─────────────┘  │  5 min)      │  │ TTS/File│ │
+│                   └──────────────┘  └─────────┘ │
+│           [SQLite — Offline Mode]                │
+└─────────────────────┬───────────────────────────┘
+                      │ HTTP (Phase 2 — Online sync)
+┌─────────────────────▼───────────────────────────┐
+│          🖥️  Server — ASP.NET Core               │
+│     REST API /api/poi — SQL Server (Phase 2)     │
+└─────────────────────┬───────────────────────────┘
+                      │ Shared Models
+┌─────────────────────▼───────────────────────────┐
+│          📦 Shared — Class Library               │
+│          POI · DTOs dùng chung                   │
+└─────────────────────────────────────────────────┘
+```
+
+---
+
+## 🚀 Chức năng cốt lõi (PoC)
+
+| Tính năng | Mô tả | Trạng thái |
+|---|---|---|
+| 📍 Geofencing | Phát hiện khi du khách vào vùng POI (bán kính tuỳ chỉnh) | 🔨 In progress |
+| 🔇 Anti-spam | Debounce cooldown 5 phút per POI | ✅ Done |
+| 🔢 Priority queue | POI ưu tiên cao được trigger trước khi overlap | ✅ Done |
+| 🗣️ TTS narration | Phát thuyết minh qua Text-to-Speech | 🔜 Todo |
+| 🎵 Audio file | Phát file audio thu sẵn | 🔜 Todo |
+| 📴 Offline mode | Dữ liệu POI lưu SQLite local | 🔨 In progress |
+| 🌐 Online sync | Đồng bộ từ Server qua REST API | 🔜 Phase 2 |
+| 🗺️ Map view | Hiển thị vị trí + toàn bộ POI | 🔜 Todo |
+| 📷 QR Code | Fallback thủ công cho GPS yếu | 🔜 Todo |
+| 🌏 Đa ngôn ngữ | VI · EN · ZH · KO · JA | 🔜 Todo |
+
+---
+
+## ⚙️ Yêu cầu môi trường
+
+| Công cụ | Phiên bản |
+|---|---|
+| .NET SDK | 10.0+ |
+| Visual Studio / VS Code | VS 2022 17.x+ / VS Code với C# Dev Kit |
+| Android SDK | API 21+ |
+| iOS | 15.0+ (cần máy Mac để build) |
+
+---
+
+## 🛠️ Chạy dự án
+
+### Server
+```bash
+cd Server
+dotnet run
+# API chạy tại: https://localhost:5001/api/poi
+```
+
+### Client (MAUI — Android Emulator)
+```bash
+cd Client
+dotnet build -t:Run -f net10.0-android
+```
+
+---
+
+## 📌 Branching strategy
+
+```
+main          ← Production-ready releases
+develop       ← Integration branch (daily work)
+feature/*     ← Feature branches (từ develop)
+hotfix/*      ← Hotfix branches (từ main)
+```
+
+---
+
+## 👥 Actors
+
+- **Du khách** — tương tác qua **App Mobile**
+- **Quản lý quán** — thao tác qua **nền tảng Web CMS** *(Phase 2)*
+- **Admin** — quản trị hệ thống qua **nền tảng Web** *(Phase 2)*
+
+---
+
+## 📄 License
+
+MIT © AudioGo Project Team

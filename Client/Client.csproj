@@ -12,17 +12,17 @@
 		<!-- For example: <RuntimeIdentifiers>maccatalyst-x64;maccatalyst-arm64</RuntimeIdentifiers> -->
 
 		<OutputType>Exe</OutputType>
-		<RootNamespace>AudioGo_Mobile</RootNamespace>
+		<RootNamespace>AudioGo</RootNamespace>
 		<UseMaui>true</UseMaui>
 		<SingleProject>true</SingleProject>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 
 		<!-- Display name -->
-		<ApplicationTitle>AudioGo_Mobile</ApplicationTitle>
+		<ApplicationTitle>AudioGo</ApplicationTitle>
 
 		<!-- App Identifier -->
-		<ApplicationId>com.companyname.audiogo_mobile</ApplicationId>
+		<ApplicationId>com.audiogo.client</ApplicationId>
 
 		<!-- Versions -->
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
@@ -59,10 +59,17 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
+		<PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
+		<PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.10" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Models\" />
+		<ProjectReference Include="..\Shared\Shared.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include=".github\ISSUE_TEMPLATE\" />
+	  <Folder Include=".github\workflows\" />
 	  <Folder Include="Data\" />
 	  <Folder Include="Helpers\" />
 	  <Folder Include="Converters\" />
