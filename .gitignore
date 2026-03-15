@@ -239,6 +239,9 @@ appsettings.*.json
 *.keystore
 *.jks
 
+# Android secrets - API keys, DO NOT COMMIT
+mobile/Platforms/Android/Resources/values/secrets.xml
+
 # MAUI / Xamarin generated
 **/*.g.cs
 **/*.g.i.cs
@@ -258,3 +261,7 @@ docs/
 .agents/
 skills/
 skills-lock.json
+.mcp.json
+queue/
+temp/
+site/

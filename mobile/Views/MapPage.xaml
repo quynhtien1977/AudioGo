@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:maps="clr-namespace:Microsoft.Maui.Controls.Maps;assembly=Microsoft.Maui.Controls.Maps"
+             x:Class="AudioGo_Mobile.Views.MapPage"
+             Title="Bản đồ">
+
+    <Grid>
+        <!-- Bản đồ chiếm toàn màn hình -->
+        <maps:Map x:Name="MapControl"
+                  IsShowingUser="True"
+                  MapType="Street" />
+
+        <!-- Nút quét QR — góc dưới phải -->
+        <Button Text="Quét QR"
+                Clicked="OnQrScanClicked"
+                HorizontalOptions="End"
+                VerticalOptions="End"
+                Margin="16"
+                BackgroundColor="#1976D2"
+                TextColor="White"
+                CornerRadius="24"
+                Padding="16,10"
+                Shadow="{Shadow Brush=Black, Offset='2,2', Radius=4, Opacity=0.3}" />
+
+        <!-- Banner POI đang active — đáy màn hình -->
+        <Border x:Name="ActivePoiBanner"
+                IsVisible="False"
+                BackgroundColor="White"
+                VerticalOptions="End"
+                HorizontalOptions="Fill"
+                Margin="12,0,12,72"
+                StrokeShape="RoundRectangle 12"
+                Padding="16,12">
+            <Grid ColumnDefinitions="*,Auto">
+                <VerticalStackLayout Grid.Column="0" Spacing="2">
+                    <Label x:Name="ActivePoiTitle"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="#212121" />
+                    <Label x:Name="ActivePoiDesc"
+                           FontSize="13"
+                           TextColor="#757575"
+                           MaxLines="2"
+                           LineBreakMode="TailTruncation" />
+                </VerticalStackLayout>
+                <Button Grid.Column="1"
+                        Text="Chi tiết"
+                        Clicked="OnPoiBannerDetailClicked"
+                        BackgroundColor="#1976D2"
+                        TextColor="White"
+                        CornerRadius="8"
+                        Padding="12,6"
+                        VerticalOptions="Center" />
+            </Grid>
+        </Border>
+    </Grid>
+
+</ContentPage>

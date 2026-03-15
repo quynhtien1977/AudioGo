@@ -13,25 +13,45 @@
 ## 📁 Cấu trúc Repository
 
 ```
-AudioGo.sln          ← Solution chứa cả 3 projects
+AudioGo_Client.sln   ← Solution chứa cả 4 projects
 │
-├── Client/          ← 📱 App di động (.NET MAUI — Android + iOS)
+├── mobile/          ← 📱 App di động (.NET MAUI — Android + iOS)
 │   ├── Models/          # PoiEntity (SQLite local entity)
 │   ├── ViewModels/      # BaseViewModel (MVVM / INotifyPropertyChanged)
-│   ├── Views/           # XAML Pages
-│   ├── Services/        # GeofenceService + Interfaces/IGeofenceService
+│   ├── Views/           # XAML Pages (MapPage, PoiDetailPage, etc.)
+│   ├── Services/        # GeofenceService, AudioService, LocationService, ApiService
 │   ├── Helpers/         # GeoHelper (Haversine distance)
 │   ├── Converters/      # XAML Value Converters
 │   ├── Data/            # AppDatabase (SQLite async CRUD)
 │   ├── Platforms/       # Android · iOS · MacCatalyst · Windows
 │   └── Resources/       # Fonts · Images · Styles · Splash
 │
-├── Server/          ← 🖥️ REST API Backend (ASP.NET Core)
-│   ├── Controllers/     # PoiController (GET/POST/PUT/DELETE)
-│   └── Program.cs
+├── api/             ← 🖥️ REST API Backend (ASP.NET Core)
+│   ├── Controllers/     # AuthController, PoiController, CMS endpoints
+│   ├── Models/          # Domain entities (Poi, Category, Tour, Account)
+│   ├── Data/            # DbContext, migrations
+│   ├── Repositories/    # Repository pattern (POI, Location, History)
+│   ├── Services/        # Business logic
+│   └── Program.cs       # Dependency injection + middleware
 │
-└── Shared/          ← 📦 Models & Contracts dùng chung
-    └── POI.cs           # POI model (Id, Name, Lat/Lon, Radius, Audio…)
+├── shared/          ← 📦 DTOs & Contracts dùng chung
+│   ├── DTOs/            # AuthDto, PoiDetailDto, AnalyticsDto, etc.
+│   └── Models/
+│
+├── web/             ← 🌐 CMS React (Vite + TanStack Query)
+│   ├── src/
+│   │   ├── api/         # API client hooks
+│   │   ├── pages/       # LoginPage, DashboardPage, PoisPage, ToursPage
+│   │   ├── components/  # shadcn/ui + custom UI
+│   │   └── hooks/       # useAuth, useApi
+│   └── package.json
+│
+├── database/        ← 🗄️ Schema & seed data
+│   ├── schema/          # SQL Server tables definition
+│   └── seed/            # POI data, categories, tours
+│
+└── docs/            ← 📚 Tài liệu
+    └── architecture/    # architecture-review.md
 ```
 
 ---
@@ -39,26 +59,48 @@ AudioGo.sln          ← Solution chứa cả 3 projects
 ## 🏗️ Kiến trúc tổng quan
 
 ```
-┌─────────────────────────────────────────────────┐
-│              Du khách (Mobile App)               │
-│           .NET MAUI — Client/                    │
-│  ┌─────────────┐  ┌──────────────┐  ┌─────────┐ │
-│  │ GPS / Maps  │→ │ GeofenceSvc  │→ │ Audio   │ │
-│  │             │  │ (cooldown    │  │ Engine  │ │
-│  └─────────────┘  │  5 min)      │  │ TTS/File│ │
-│                   └──────────────┘  └─────────┘ │
-│           [SQLite — Offline Mode]                │
-└─────────────────────┬───────────────────────────┘
-                      │ HTTP (Phase 2 — Online sync)
-┌─────────────────────▼───────────────────────────┐
-│          🖥️  Server — ASP.NET Core               │
-│     REST API /api/poi — SQL Server (Phase 2)     │
-└─────────────────────┬───────────────────────────┘
-                      │ Shared Models
-┌─────────────────────▼───────────────────────────┐
-│          📦 Shared — Class Library               │
-│          POI · DTOs dùng chung                   │
-└─────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                  📱 MOBILE APP — .NET MAUI                        │
+│                   (mobile/)                                      │
+│  ┌──────────────┐  ┌─────────────────┐  ┌──────────────────────┐ │
+│  │ GPS + Google │  │ GeofenceService │  │  AudioService        │ │
+│  │ Maps         │→ │ (cooldown 5min) │→ │  • Azure TTS         │ │
+│  │ + QR Scanner │  │ Priority Queue  │  │  • File playback     │ │
+│  └──────────────┘  └─────────────────┘  └──────────────────────┘ │
+│           [SQLite Offline Cache — sqlite-net-pcl]                │
+└─────────────────────┬──────────────────────────────────────────┘
+                      │ HTTPS REST
+                      │ BaseAddress: http://10.0.2.2:5000 (dev)
+                      │             https://api.audiogo.vn (prod)
+┌─────────────────────▼──────────────────────────────────────────┐
+│                   🖥️  API SERVER                                 │
+│              ASP.NET Core 10 (api/)                             │
+│  ┌─────────────────────┐  ┌──────────────────────────────────┐  │
+│  │ AuthController      │  │ PoiController, Analytics         │  │
+│  │ CMS CRUD endpoints  │  │ + Haversine + Heatmap queries    │  │
+│  └─────────────────────┘  └──────────────────────────────────┘  │
+│        ↓ EF Core 9                                               │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  SQL Server (AudioGo_Dev, AudioGo_Prod)                 │   │
+│  │  • Poi, PoiContent, PoiGallery                           │   │
+│  │  • Category, Tour, Account                              │   │
+│  │  • ListenHistory, LocationLog (analytics)               │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│        ↓ Static Files / Azure Blob Storage                      │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  wwwroot/uploads/ →  Azure Blob (audiogo-audio, -images)│   │
+│  └──────────────────────────────────────────────────────────┘   │
+└────────────────────┬─────────────────────────────────────────┘
+                     │ JWT Bearer
+┌────────────────────▼─────────────────────────────────────────┐
+│              🌐 WEB CMS — React 19 (web/)                     │
+│         Vite + TanStack Query + Shadcn/ui + Tailwind         │
+│  ┌──────────────────────────────────────────────────────────┐ │
+│  │ Pages: Login → Dashboard → POIs → Tours → Analytics      │ │
+│  │ Maps: Leaflet heatmap (location & listen data)           │ │
+│  │ Charts: Recharts (visitor trends, popular POIs)          │ │
+│  └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -82,28 +124,39 @@ AudioGo.sln          ← Solution chứa cả 3 projects
 
 ## ⚙️ Yêu cầu môi trường
 
-| Công cụ | Phiên bản |
-|---|---|
-| .NET SDK | 10.0+ |
-| Visual Studio / VS Code | VS 2022 17.x+ / VS Code với C# Dev Kit |
-| Android SDK | API 21+ |
-| iOS | 15.0+ (cần máy Mac để build) |
+| Công cụ | Phiên bản | Mục đích |
+|---|---|---|
+| .NET SDK | 10.0+ | Backend (api/) + Mobile (mobile/) |
+| Visual Studio / VS Code | VS 2022 17.x+ | IDE |
+| SQL Server | 2019+ hoặc LocalDB | Database |
+| Node.js | 18+ | Web CMS (web/) |
+| Android SDK | API 21+ | Android build |
+| iOS | 15.0+ | iOS build (cần máy Mac) |
 
 ---
 
 ## 🛠️ Chạy dự án
 
-### Server
+### API Server
 ```bash
-cd Server
+cd api
 dotnet run
-# API chạy tại: https://localhost:5001/api/poi
+# API chạy tại: https://localhost:5000/api/...
+# OpenAPI docs: https://localhost:5000/openapi/v1.json
 ```
 
-### Client (MAUI — Android Emulator)
+### Mobile App (MAUI — Android Emulator)
 ```bash
-cd Client
+cd mobile
 dotnet build -t:Run -f net10.0-android
+```
+
+### Web CMS (React)
+```bash
+cd web
+npm install
+npm run dev
+# CMS chạy tại: http://localhost:5173
 ```
 
 ---

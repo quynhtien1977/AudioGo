@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="AudioGo_Mobile.Views.PoiDetailPage"
+             Title="{Binding Poi.Title, FallbackValue='Chi tiết điểm'}">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="0">
+
+            <!-- Logo / ảnh đại diện -->
+            <Image Source="{Binding Poi.LogoUrl}"
+                   HeightRequest="220"
+                   Aspect="AspectFill"
+                   IsVisible="{Binding Poi, Converter={StaticResource IsNotNullConverter}}" />
+
+            <!-- Nội dung chính -->
+            <VerticalStackLayout Padding="20" Spacing="12">
+
+                <!-- Loading indicator -->
+                <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                   IsVisible="{Binding IsLoading}"
+                                   Color="#1976D2"
+                                   HorizontalOptions="Center" />
+
+                <!-- Thông báo lỗi -->
+                <Label Text="{Binding ErrorMessage}"
+                       IsVisible="{Binding ErrorMessage, Converter={StaticResource IsNotEmptyConverter}}"
+                       TextColor="Red"
+                       HorizontalOptions="Center" />
+
+                <!-- Tiêu đề -->
+                <Label Text="{Binding Poi.Title}"
+                       FontSize="22"
+                       FontAttributes="Bold"
+                       TextColor="#212121" />
+
+                <!-- Mô tả -->
+                <Label Text="{Binding Poi.Description}"
+                       FontSize="15"
+                       TextColor="#757575"
+                       LineBreakMode="WordWrap" />
+
+                <!-- Điều khiển audio -->
+                <HorizontalStackLayout Spacing="12" HorizontalOptions="Center" Margin="0,8,0,0">
+                    <Button Text="▶  Phát thuyết minh"
+                            Clicked="OnPlayClicked"
+                            IsEnabled="{Binding IsPlaying, Converter={StaticResource InverseBoolConverter}}"
+                            BackgroundColor="#1976D2"
+                            TextColor="White"
+                            CornerRadius="24"
+                            Padding="20,10" />
+
+                    <Button Text="■  Dừng"
+                            Clicked="OnStopClicked"
+                            IsEnabled="{Binding IsPlaying}"
+                            BackgroundColor="#E53935"
+                            TextColor="White"
+                            CornerRadius="24"
+                            Padding="20,10" />
+                </HorizontalStackLayout>
+
+                <!-- Trạng thái đang phát -->
+                <Label Text="Đang phát..."
+                       IsVisible="{Binding IsPlaying}"
+                       TextColor="#1976D2"
+                       HorizontalOptions="Center"
+                       FontSize="13" />
+
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
