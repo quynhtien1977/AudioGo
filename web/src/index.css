@@ -13,12 +13,13 @@
     --ring: 59 130 246;
   }
 
-  * {
-    @apply border-border;
-  }
+ body {
+  @apply bg-background text-foreground;
+  font-family: 'Geist Variable', sans-serif;
+}
 
-  body {
-    @apply bg-background text-foreground;
-    font-family: 'Geist Variable', sans-serif;
-  }
+/* Nếu muốn border mặc định cho input, button thôi */
+input, button, select, textarea {
+  @apply border-border;
+}
 }
