@@ -26,9 +26,9 @@ export default function Sidebar() {
           POIs
         </MenuItem>
 
-        <MenuItem to="/approvals" icon={<CheckCircle size={18} />}>
+        {/* <MenuItem to="/approvals" icon={<CheckCircle size={18} />}>
           Approvals
-        </MenuItem>
+        </MenuItem> */}
 
         <MenuItem to="/tours" icon={<Route size={18} />}>
           Tours

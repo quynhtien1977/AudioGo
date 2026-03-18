@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import MainLayout from "./layouts/MainLayout";
 import DashboardPage from "./pages/DashboardPage";
 import POIPage from "./pages/POIPage";
-import MainLayout from "./layouts/MainLayout";
+import AccountsPage from "./pages/AccountsPage"
 
 export default function App() {
   return (
@@ -23,6 +24,16 @@ export default function App() {
           element={
             <MainLayout>
               <POIPage />
+            </MainLayout>
+          }
+        />
+
+        {/* Accounts */}
+        <Route
+          path="/accounts"
+          element={
+            <MainLayout>
+              <AccountsPage />
             </MainLayout>
           }
         />

@@ -53,11 +53,11 @@ export default function POIPage() {
         </div>
 
         <div className="flex gap-3">
-          <button className="px-4 py-2 border border-pink-300 text-pink-500 rounded-lg hover:bg-pink-50">
+          {/* <button className="px-4 py-2 border border-pink-300 text-pink-500 rounded-lg hover:bg-pink-50">
             Filter
-          </button>
-          <button className="px-4 py-2 bg-pink-500 text-white rounded-lg shadow">
-            + Add POI
+          </button> */}
+          <button className="px-4 py-2 bg-pink-500 text-white rounded-lg shadow hover:bg-pink-600 ">
+            + Create new POI
           </button>
         </div>
       </div>
@@ -131,7 +131,7 @@ export default function POIPage() {
             {/* ACTION */}
             <div className="flex justify-end items-center gap-3 text-gray-400">
               {poi.status === "Pending" ? (
-                <button className="px-3 py-1 bg-pink-500 text-white text-xs rounded-lg">
+                <button className="px-3 py-1 bg-pink-500 text-white text-xs rounded-lg hover:bg-pink-600">
                   Approve Request
                 </button>
               ) : (
