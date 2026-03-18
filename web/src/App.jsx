@@ -2,15 +2,19 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import MainLayout from "./layouts/MainLayout";
 import DashboardPage from "./pages/DashboardPage";
 import POIPage from "./pages/POIPage";
-import AccountsPage from "./pages/AccountsPage"
+import AccountsPage from "./pages/AccountsPage";
+import LoginPage from "./pages/LoginPage";
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* 2. Route dành riêng cho Login (Không có Layout bao quanh) */}
+        <Route path="/" element={<LoginPage />} />
+
         {/* Dashboard */}
         <Route
-          path="/"
+          path="/dashboard  "
           element={
             <MainLayout>
               <DashboardPage />
