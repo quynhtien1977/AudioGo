@@ -9,12 +9,12 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* 2. Route dành riêng cho Login (Không có Layout bao quanh) */}
+        {/* Login */}
         <Route path="/" element={<LoginPage />} />
 
         {/* Dashboard */}
         <Route
-          path="/dashboard  "
+          path="/dashboard"
           element={
             <MainLayout>
               <DashboardPage />
@@ -43,7 +43,7 @@ export default function App() {
         />
 
         {/* fallback */}
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="*" element={<Navigate to="/dashboard" />} />
       </Routes>
     </BrowserRouter>
   );
