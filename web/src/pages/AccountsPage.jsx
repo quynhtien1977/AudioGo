@@ -1,138 +1,176 @@
-import { Pencil, Trash2 } from "lucide-react"
-
-const users = [
-  {
-    name: "Jane Cooper",
-    email: "jane.cooper@culinary.com",
-    role: "ADMIN",
-    lastLogin: "2023-10-24 09:15",
-    id: "USR-9021",
-    avatar: "https://i.pravatar.cc/40?img=1",
-  },
-  {
-    name: "Cody Fisher",
-    email: "cody.fisher@thebistro.com",
-    role: "MANAGER",
-    lastLogin: "2023-10-23 18:42",
-    id: "USR-8821",
-    avatar: "https://i.pravatar.cc/40?img=2",
-  },
-  {
-    name: "Esther Howard",
-    email: "esther.h@cafearua.com",
-    role: "MANAGER",
-    lastLogin: "2023-10-24 10:05",
-    id: "USR-7712",
-    avatar: "https://i.pravatar.cc/40?img=3",
-  },
-  {
-    name: "Jenny Wilson",
-    email: "jenny@admin-portal.com",
-    role: "ADMIN",
-    lastLogin: "2023-10-22 14:30",
-    id: "USR-6540",
-    avatar: "https://i.pravatar.cc/40?img=4",
-  },
-]
+import { useEffect, useState } from "react"
+import { Lock, Unlock } from "lucide-react"
+import {
+  getUsersApi,
+  toggleLockApi,
+  updateRoleApi,
+} from "../api/accountApi"
+import CreateAccountModal from "../components/CreateAccountModal"
 
 const roleStyle = (role) => {
   if (role === "ADMIN") return "bg-pink-100 text-pink-500"
   return "bg-blue-100 text-blue-500"
 }
 
+// Helper function để format ngày cho gọn
+const formatDate = (dateString) => {
+  if (!dateString) return "-";
+  return new Date(dateString).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
+
 export default function AccountsPage() {
+  const [users, setUsers] = useState([])
+  const [showModal, setShowModal] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const pageSize = 5 // Tăng nhẹ size vì bảng dài hơn
+
+  useEffect(() => {
+    getUsersApi().then(setUsers)
+  }, [])
+
+  const handleAddUser = (user) => {
+    setUsers((prev) => [user, ...prev])
+  }
+
+  const handleToggleLock = async (id) => {
+    await toggleLockApi(id)
+    const now = new Date().toISOString();
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === id ? { ...u, locked: !u.locked, updatedAt: now } : u
+      )
+    )
+  }
+
+  const handleChangeRole = async (id, role) => {
+    await updateRoleApi(id, role)
+    const now = new Date().toISOString();
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === id ? { ...u, role, updatedAt: now } : u
+      )
+    )
+  }
+
+  const totalPages = Math.ceil(users.length / pageSize)
+  const paginatedUsers = users.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  )
+
+  // Cấu hình Grid mới: 7 cột
+  const gridLayout = "grid grid-cols-[1.5fr_2fr_1.5fr_1fr_1.2fr_1.2fr_0.5fr]";
+
   return (
     <div>
-      {/* HEADER */}
+      {/* HEADER GIỮ NGUYÊN */}
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">Account Manager</h1>
-          <p className="text-gray-500 text-sm">
-            Manage user list and system permissions
-          </p>
+          <p className="text-gray-500 text-sm">Manage user list and system permissions</p>
         </div>
-
-        <button className="flex items-center gap-2 px-4 py-2 bg-pink-500 text-white rounded-lg shadow hover:bg-pink-600">
+        <button
+          onClick={() => setShowModal(true)}
+          className="px-4 py-2 bg-pink-500 text-white rounded-lg shadow hover:bg-pink-600 transition-colors"
+        >
           + Create new account
         </button>
       </div>
 
-      {/* TABLE */}
       <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
-        {/* HEADER */}
-        <div className="grid grid-cols-[2fr_3fr_1fr_2fr_1fr] text-xs text-pink-400 px-6 py-3 border-b font-medium">
-          {/* <span>AVATAR</span> */}
-          <span>FULL NAME</span>
-          <span>EMAIL</span>
-          <span>ROLE</span>
-          <span>LAST LOGIN</span>
-          <span className="text-right">ACTIONS</span>
+        {/* TABLE HEADER */}
+        <div className={`${gridLayout} text-[10px] text-pink-400 px-6 py-3 border-b font-bold tracking-wider uppercase`}>
+          <span>Full Name</span>
+          <span>Email</span>
+          <span>Password</span>
+          <span>Role</span>
+          <span>Created At</span>
+          <span>Updated At</span>
+          <span className="text-right">Lock</span>
         </div>
 
-        {/* ROWS */}
-        {users.map((user, i) => (
-        <div
-            key={i}
-            className="grid grid-cols-[2fr_3fr_1fr_2fr_1fr] items-center px-6 py-4 border-b hover:bg-gray-50"
-        >
-            {/* AVATAR */}
-            {/* <img
-              src={user.avatar}
-              className="w-10 h-10 rounded-full"
-            /> */}
-
-            {/* NAME */}
+        {/* TABLE BODY */}
+        {paginatedUsers.map((user) => (
+          <div
+            key={user.id}
+            className={`${gridLayout} items-center px-6 py-4 border-b hover:bg-gray-50 transition-colors ${
+              user.locked ? "opacity-50" : ""
+            }`}
+          >
             <div>
-              <p className="font-semibold">{user.name}</p>
-              <p className="text-xs text-gray-400">ID: {user.id}</p>
+              <p className="font-semibold text-sm text-gray-800">{user.name}</p>
+              <p className="text-[10px] text-gray-400 font-mono">ID: {user.id}</p>
             </div>
 
-            {/* EMAIL */}
-            <div className="text-gray-500 text-sm">
-              {user.email}
+            <div className="text-gray-500 text-sm truncate pr-2">{user.email}</div>
+
+            <div className="text-sm text-gray-400 font-mono italic">
+              {user.locked ? "****" : user.password}
             </div>
 
-            {/* ROLE */}
             <div>
-              <span
-                className={`px-3 py-1 text-xs rounded-full font-medium ${roleStyle(
-                  user.role
-                )}`}
+              <select
+                value={user.role}
+                onChange={(e) => handleChangeRole(user.id, e.target.value)}
+                className={`px-2 py-1 text-[10px] rounded-full font-bold outline-none border-none cursor-pointer ${roleStyle(user.role)}`}
+                disabled={user.locked}
               >
-                {user.role}
-              </span>
+                <option value="ADMIN">ADMIN</option>
+                <option value="MANAGER">MANAGER</option>
+              </select>
             </div>
 
-            {/* LAST LOGIN */}
-            <div className="text-sm text-gray-500">
-              {user.lastLogin}
+            {/* CỘT CREATED AT */}
+            <div className="text-xs text-gray-500">
+              {formatDate(user.createdAt)}
             </div>
 
-            {/* ACTION */}
-            <div className="flex justify-end gap-3 text-gray-400">
-              <Pencil size={16} className="cursor-pointer" />
-              <Trash2 size={16} className="cursor-pointer" />
+            {/* CỘT UPDATED AT */}
+            <div className="text-xs text-gray-500">
+              {formatDate(user.updatedAt)}
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={() => handleToggleLock(user.id)}
+                className={`p-2 rounded-lg transition-colors ${user.locked ? "text-red-400 hover:bg-red-50" : "text-gray-400 hover:bg-gray-100"}`}
+                title={user.locked ? "Unlock account" : "Lock account"}
+              >
+                {user.locked ? <Lock size={16} /> : <Unlock size={16} />}
+              </button>
             </div>
           </div>
         ))}
 
-        {/* FOOTER */}
-        <div className="flex justify-between items-center px-6 py-4 text-sm text-gray-400">
-          <span>Showing 4 / 42 Users</span>
-
-          <div className="flex items-center gap-2">
-            <button>{"<"}</button>
-            <button className="w-8 h-8 bg-pink-500 text-white rounded-full">
-              1
-            </button>
-            <button>2</button>
-            <button>3</button>
-            <span>...</span>
-            <button>10</button>
-            <button>{">"}</button>
+        {/* PAGINATION GIỮ NGUYÊN */}
+        <div className="flex justify-between items-center px-6 py-4 text-sm text-gray-500">
+          <p>Showing {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, users.length)} of {users.length}</p>
+          <div className="flex items-center gap-1">
+             <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className="p-2 border rounded-md hover:bg-pink-50">{"<"}</button>
+             {[...Array(totalPages)].map((_, i) => (
+               <button 
+                 key={i} 
+                 onClick={() => setCurrentPage(i + 1)}
+                 className={`px-3 py-1 rounded-md ${currentPage === i + 1 ? "bg-pink-500 text-white" : "border hover:bg-pink-50"}`}
+               >
+                 {i + 1}
+               </button>
+             ))}
+             <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} className="p-2 border rounded-md hover:bg-pink-50">{">"}</button>
           </div>
         </div>
       </div>
+
+      {showModal && (
+        <CreateAccountModal
+          onClose={() => setShowModal(false)}
+          onCreated={handleAddUser}
+        />
+      )}
     </div>
   )
 }

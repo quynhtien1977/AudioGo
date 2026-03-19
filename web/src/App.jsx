@@ -4,6 +4,7 @@ import DashboardPage from "./pages/DashboardPage";
 import POIPage from "./pages/POIPage";
 import AccountsPage from "./pages/AccountsPage";
 import LoginPage from "./pages/LoginPage";
+import CategoryPage from "./pages/CategoryPage";
 
 export default function App() {
   return (
@@ -32,6 +33,16 @@ export default function App() {
           }
         />
 
+        {/* Categories */}
+        <Route
+          path="/categories"
+          element={
+            <MainLayout>
+              <CategoryPage />
+            </MainLayout>
+          }
+        />
+
         {/* Accounts */}
         <Route
           path="/accounts"
@@ -42,8 +53,9 @@ export default function App() {
           }
         />
 
+
         {/* fallback */}
-        <Route path="*" element={<Navigate to="/dashboard" />} />
+        <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
   );

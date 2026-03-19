@@ -47,8 +47,8 @@ export const forgotPasswordApi = (email) => {
       if (!user) {
         reject("Email does not exist")
       } else {
-        resolve("Password reset link has been sent to your email")
+        resolve("feature in development")
       }
     }, 1000)
   })
-}
+}   
