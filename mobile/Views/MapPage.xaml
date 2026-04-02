@@ -31,12 +31,12 @@
                             StrokeThickness="0"
                             Padding="14,10">
                         <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
-                            <Label Grid.Column="0" Text="🔍" FontSize="16"
+                            <Label Grid.Column="0" Text="&#xe8b6;" FontFamily="MaterialIcons" FontSize="18"
                                    VerticalOptions="Center"/>
                             <Label Grid.Column="1" Text="Tìm kiếm địa điểm..."
                                    Style="{StaticResource BodyLabel}"
                                    VerticalOptions="Center"/>
-                            <Label Grid.Column="2" Text="🎤" FontSize="16"
+                            <Label Grid.Column="2" Text="&#xe029;" FontFamily="MaterialIcons" FontSize="18"
                                    TextColor="{StaticResource Primary}"
                                    VerticalOptions="Center"/>
                         </Grid>
@@ -50,7 +50,7 @@
                             StrokeShape="RoundRectangle 20"
                             StrokeThickness="0"
                             WidthRequest="44" HeightRequest="44">
-                        <Label Text="⚙" FontSize="18" TextColor="White"
+                        <Label Text="&#xef4f;" FontFamily="MaterialIcons" FontSize="20" TextColor="White"
                                HorizontalOptions="Center" VerticalOptions="Center"/>
                         <Border.GestureRecognizers>
                             <TapGestureRecognizer Tapped="OnFilterTapped"/>
@@ -70,7 +70,7 @@
                 <Border.Shadow>
                     <Shadow Brush="Black" Offset="0,2" Radius="8" Opacity="0.2"/>
                 </Border.Shadow>
-                <Label Text="📍" FontSize="22"
+                <Label Text="&#xe55c;" FontFamily="MaterialIcons" FontSize="24" TextColor="{StaticResource Primary}"
                        HorizontalOptions="Center" VerticalOptions="Center"/>
                 <Border.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnLocateMeTapped"/>

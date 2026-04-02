@@ -37,17 +37,32 @@ namespace AudioGo.ViewModels
             Pins.Clear();
             foreach (var poi in pois)
             {
-                var pin = new Pin
+                // Bỏ qua POI có tọa độ không hợp lệ (0,0 hoặc ngoài phạm vi)
+                if (poi.Latitude is 0 && poi.Longitude is 0) continue;
+                if (poi.Latitude < -90 || poi.Latitude > 90) continue;
+                if (poi.Longitude < -180 || poi.Longitude > 180) continue;
+
+                try
                 {
-                    Label = poi.Title,
-                    Address = poi.Description,
-                    Location = new Location(poi.Latitude, poi.Longitude),
-                    Type = PinType.Place,
-                };
-                // Gắn PoiId vào BindingContext để dùng khi navigate
-                pin.BindingContext = poi.PoiId;
-                Pins.Add(pin);
+                    var pin = new Pin
+                    {
+                        Label = poi.Title ?? "Không tên",
+                        Address = poi.Description ?? string.Empty,
+                        Location = new Location(poi.Latitude, poi.Longitude),
+                        Type = PinType.Place,
+                    };
+                    // Gắn PoiId vào BindingContext để dùng khi navigate
+                    pin.BindingContext = poi.PoiId;
+                    Pins.Add(pin);
+                }
+                catch
+                {
+                    // Pin creation failed — skip this POI, don't crash entire map
+                    System.Diagnostics.Debug.WriteLine(
+                        $"[MapVM] Failed to create pin for POI {poi.PoiId}");
+                }
             }
+            OnPropertyChanged(nameof(MapStatusLabel));
         }
 
         public async Task InitAsync()

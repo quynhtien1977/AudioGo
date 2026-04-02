@@ -2,7 +2,9 @@ using AudioGo.Helpers;
 using AudioGo.Services;
 using AudioGo.Services.Interfaces;
 using AudioGo.ViewModels;
+using AudioGo_Mobile.Views;
 using Shared;
+using System.Windows.Input;
 
 namespace AudioGo.ViewModels
 {
@@ -13,6 +15,14 @@ namespace AudioGo.ViewModels
         private readonly IGeofenceService _geofence;
         private readonly IAudioService _audio;
         private readonly ILocationService _location;
+
+        private bool _isInitialized;
+
+        // ── Commands (bound from XAML) ───────────────────────────────
+        public ICommand PlayPoiCommand { get; }
+        public ICommand OpenPoiDetailCommand { get; }
+        public ICommand OpenTourCommand { get; }
+        public ICommand SelectCategoryCommand { get; }
 
         // ── State ──────────────────────────────────────────────────
         private List<POI> _pois = new();
@@ -57,10 +67,46 @@ namespace AudioGo.ViewModels
         public bool IsAudioPlaying => _audio.IsPlaying;
 
         // ── Missing properties from XAML bindings ──
-        public bool HasNearbyPois => _pois.Count > 0;
-        public List<POI> NearbyPois => _pois;
-        public bool NearbyEmpty => _pois.Count == 0;
+        public bool HasNearbyPois => FilteredPois.Count > 0;
+        public bool NearbyEmpty   => FilteredPois.Count == 0;
+        public List<POI> NearbyPois => FilteredPois;
         public bool HasActivePoi => _activePoi is not null;
+
+        // ── Category filter (dynamic from DB) ─────────────────────────
+        private List<string> _distinctCategories = ["Tất cả"];
+        public List<string> DistinctCategories
+        {
+            get => _distinctCategories;
+            private set { SetProperty(ref _distinctCategories, value); }
+        }
+
+        private string _selectedCategory = "Tất cả";
+        public string SelectedCategory
+        {
+            get => _selectedCategory;
+            set
+            {
+                if (SetProperty(ref _selectedCategory, value))
+                {
+                    OnPropertyChanged(nameof(FilteredPois));
+                    OnPropertyChanged(nameof(NearbyPois));
+                    OnPropertyChanged(nameof(HasNearbyPois));
+                    OnPropertyChanged(nameof(NearbyEmpty));
+                }
+            }
+        }
+
+        public List<POI> FilteredPois
+        {
+            get
+            {
+                if (_selectedCategory == "Tất cả" || string.IsNullOrEmpty(_selectedCategory))
+                    return _pois;
+                return _pois
+                    .Where(p => p.Categories.Contains(_selectedCategory, StringComparer.OrdinalIgnoreCase))
+                    .ToList();
+            }
+        }
 
         private List<object> _recentTours = new();
         public List<object> RecentTours
@@ -80,21 +126,76 @@ namespace AudioGo.ViewModels
 
             _geofence.PoiTriggered += OnPoiTriggered;
             _location.LocationUpdated += OnLocationUpdated;
+
+            // ── Initialize Commands ──────────────────────────────────
+            PlayPoiCommand = new Command<POI>(async poi =>
+            {
+                if (poi is null) return;
+                await TriggerAudioAsync(poi);
+            });
+
+            OpenPoiDetailCommand = new Command<POI>(async poi =>
+            {
+                if (poi is null) return;
+                await Shell.Current.GoToAsync(
+                    $"{nameof(PoiDetailPage)}?poiId={poi.PoiId}");
+            });
+
+            OpenTourCommand = new Command<object>(async tour =>
+            {
+                if (tour is null) return;
+                // Tour object may have a TourId property; use reflection-safe access
+                var tourId = tour.GetType().GetProperty("TourId")?.GetValue(tour)?.ToString();
+                if (!string.IsNullOrEmpty(tourId))
+                    await Shell.Current.GoToAsync(
+                        $"{nameof(TourDetailPage)}?tourId={tourId}");
+            });
+
+            SelectCategoryCommand = new Command<string>(cat =>
+            {
+                SelectedCategory = cat ?? "Tất cả";
+            });
         }
 
         public async Task InitAsync()
         {
+            // Guard: chỉ init 1 lần, tránh re-fetch mỗi khi quay lại trang
+            if (_isInitialized) return;
+
             IsLoading = true;
             StatusMessage = "Đang tải dữ liệu...";
             try
             {
-                Pois = await _sync.GetPoisAsync(CurrentLanguage);
-                RecentTours = (await _api.GetToursAsync(CurrentLanguage)).Cast<object>().ToList();
+                // Chạy song song các tác vụ độc lập để giảm thời gian load
+                var poisTask = _sync.GetPoisAsync(CurrentLanguage);
+                var toursTask = SafeGetToursAsync();
+
+                await Task.WhenAll(poisTask, toursTask);
+
+                Pois = poisTask.Result;
+                RecentTours = toursTask.Result;
+
+                // Rebuild distinct category list from DB data
+                var cats = _pois
+                    .SelectMany(p => p.Categories)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(c => c)
+                    .ToList();
+                DistinctCategories = ["Tất cả", .. cats];
+
                 OnPropertyChanged(nameof(HasNearbyPois));
+                OnPropertyChanged(nameof(NearbyPois));
                 OnPropertyChanged(nameof(NearbyEmpty));
-                await _geofence.StartMonitoringAsync(Pois);
-                await _location.StartAsync();
+
+                // Geofence và Location chạy nền sau khi UI đã render
+                _ = Task.Run(async () =>
+                {
+                    await _geofence.StartMonitoringAsync(Pois);
+                    await _location.StartAsync();
+                });
+
                 StatusMessage = $"Đang theo dõi {Pois.Count} điểm";
+                _isInitialized = true;
             }
             catch (Exception ex)
             {
@@ -113,10 +214,19 @@ namespace AudioGo.ViewModels
             try
             {
                 await _audio.StopAsync();
-                Pois = await _sync.GetPoisAsync(CurrentLanguage);
-                RecentTours = (await _api.GetToursAsync(CurrentLanguage)).Cast<object>().ToList();
+
+                var poisTask = _sync.GetPoisAsync(CurrentLanguage);
+                var toursTask = SafeGetToursAsync();
+
+                await Task.WhenAll(poisTask, toursTask);
+
+                Pois = poisTask.Result;
+                RecentTours = toursTask.Result;
+
                 OnPropertyChanged(nameof(HasNearbyPois));
+                OnPropertyChanged(nameof(NearbyPois));
                 OnPropertyChanged(nameof(NearbyEmpty));
+
                 await _geofence.StartMonitoringAsync(Pois);
                 StatusMessage = $"Đang theo dõi {Pois.Count} điểm ({CurrentLanguage})";
             }
@@ -167,12 +277,28 @@ namespace AudioGo.ViewModels
             OnPropertyChanged(nameof(IsAudioPlaying));
         }
 
+        // ── Private Helpers ──────────────────────────────────────────
+
+        /// <summary>Wrap tour API call with fallback to prevent crash when API unavailable.</summary>
+        private async Task<List<object>> SafeGetToursAsync()
+        {
+            try
+            {
+                return (await _api.GetToursAsync(CurrentLanguage)).Cast<object>().ToList();
+            }
+            catch
+            {
+                return new List<object>();
+            }
+        }
+
         private void OnLocationUpdated(object? sender, (double Lat, double Lon) loc)
             => _geofence.OnLocationUpdated(loc.Lat, loc.Lon);
 
         private async void OnPoiTriggered(object? sender, POI poi)
         {
             ActivePoi = poi;
+            OnPropertyChanged(nameof(HasActivePoi));
             StatusMessage = $"Đang phát: {poi.Title}";
             OnPropertyChanged(nameof(IsAudioPlaying));
 

@@ -43,7 +43,7 @@
                                      Spacing="16"
                                      HorizontalOptions="Center"
                                      Margin="0,60,0,0">
-                    <Label Text="🗺️" FontSize="60" HorizontalOptions="Center"/>
+                    <Label Text="&#xe55b;" FontFamily="MaterialIcons" TextColor="{StaticResource Gray400}" FontSize="60" HorizontalOptions="Center"/>
                     <Label Text="Chưa có tour nào"
                            Style="{StaticResource HeadlineLabel}"
                            HorizontalOptions="Center"/>
@@ -74,7 +74,7 @@
                                             StrokeThickness="0"
                                             HeightRequest="130">
                                         <Grid>
-                                            <Label Text="🗺️" FontSize="48"
+                                            <Label Text="&#xe55b;" FontFamily="MaterialIcons" TextColor="{StaticResource Gray400}" FontSize="48"
                                                    HorizontalOptions="Center" VerticalOptions="Center"/>
                                             <!-- status badge -->
                                             <Border BackgroundColor="{StaticResource Primary}"
@@ -84,9 +84,12 @@
                                                     VerticalOptions="End"
                                                     Margin="12"
                                                     Padding="8,4">
-                                                <Label Text="🎧 Đang theo dõi"
-                                                       TextColor="White" FontSize="11"
-                                                       FontAttributes="Bold"/>
+                                                <HorizontalStackLayout Spacing="4" VerticalOptions="Center">
+                                                    <Label Text="&#xe310;" FontFamily="MaterialIcons" TextColor="White" FontSize="12" VerticalOptions="Center"/>
+                                                    <Label Text="Đang theo dõi"
+                                                           TextColor="White" FontSize="11"
+                                                           FontAttributes="Bold" VerticalOptions="Center"/>
+                                                </HorizontalStackLayout>
                                             </Border>
                                         </Grid>
                                     </Border>
@@ -141,7 +144,7 @@
                                                     StrokeShape="RoundRectangle 24"
                                                     StrokeThickness="0"
                                                     WidthRequest="48" HeightRequest="48">
-                                                <Label Text="⋯" FontSize="20"
+                                                <Label Text="&#xe5d3;" FontFamily="MaterialIcons" FontSize="20"
                                                        HorizontalOptions="Center" VerticalOptions="Center"/>
                                                 <Border.GestureRecognizers>
                                                     <TapGestureRecognizer Tapped="OnTourMenuTapped" CommandParameter="{Binding .}"/>

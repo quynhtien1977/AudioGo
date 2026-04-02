@@ -24,7 +24,7 @@
                         StrokeThickness="0"
                         WidthRequest="40" HeightRequest="40"
                         VerticalOptions="Center">
-                    <Label Text="🗺️" FontSize="20"
+                    <Label Text="&#xe55b;" FontFamily="MaterialIcons" FontSize="20"
                            HorizontalOptions="Center" VerticalOptions="Center"/>
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Tapped="OnMapViewTapped"/>
@@ -38,7 +38,7 @@
                     StrokeThickness="0"
                     Padding="14,10">
                 <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
-                    <Label Grid.Column="0" Text="🔍" FontSize="16" VerticalOptions="Center"/>
+                    <Label Grid.Column="0" Text="&#xe8b6;" FontFamily="MaterialIcons" FontSize="18" VerticalOptions="Center"/>
                     <Entry Grid.Column="1"
                            Placeholder="Tìm kiếm địa điểm..."
                            PlaceholderColor="{StaticResource Gray400}"
@@ -48,7 +48,7 @@
                            ReturnType="Search"
                            Text="{Binding SearchQuery}"
                            TextChanged="OnSearchTextChanged"/>
-                    <Label Grid.Column="2" Text="🎤" FontSize="16"
+                    <Label Grid.Column="2" Text="&#xe029;" FontFamily="MaterialIcons" FontSize="18"
                            TextColor="{StaticResource Primary}"
                            VerticalOptions="Center"/>
                 </Grid>
@@ -70,7 +70,7 @@
                                      Spacing="12"
                                      HorizontalOptions="Center"
                                      Margin="0,40,0,0">
-                    <Label Text="🔍" FontSize="48" HorizontalOptions="Center"/>
+                    <Label Text="&#xe8b6;" FontFamily="MaterialIcons" FontSize="48" TextColor="{StaticResource Gray400}" HorizontalOptions="Center"/>
                     <Label Text="Không tìm thấy kết quả"
                            Style="{StaticResource SectionTitle}"
                            HorizontalOptions="Center"/>
@@ -105,7 +105,7 @@
                                             StrokeThickness="0"
                                             HeightRequest="110">
                                         <Grid>
-                                            <Label Text="📍" FontSize="36"
+                                            <Label Text="&#xe0c8;" FontFamily="MaterialIcons" FontSize="36" TextColor="{StaticResource Gray400}"
                                                    HorizontalOptions="Center" VerticalOptions="Center"/>
                                             <!-- Heart icon -->
                                             <Border BackgroundColor="{StaticResource SemiTransparentLight}"
@@ -115,7 +115,7 @@
                                                     VerticalOptions="Start"
                                                     Margin="8"
                                                     Padding="6">
-                                                <Label Text="♡" FontSize="14" TextColor="{StaticResource Primary}"/>
+                                                <Label Text="&#xe87e;" FontFamily="MaterialIcons" FontSize="16" TextColor="{StaticResource Primary}"/>
                                             </Border>
                                         </Grid>
                                     </Border>
@@ -127,7 +127,7 @@
                                                MaxLines="2"
                                                LineBreakMode="TailTruncation"/>
                                         <Grid ColumnDefinitions="Auto,*" ColumnSpacing="4">
-                                            <Label Grid.Column="0" Text="⭐" FontSize="11"/>
+                                            <Label Grid.Column="0" Text="&#xe838;" FontFamily="MaterialIcons" FontSize="12" TextColor="{StaticResource Warning}"/>
                                             <Label Grid.Column="1" Text="4.8 · Cách 200m"
                                                    Style="{StaticResource CaptionLabel}"/>
                                         </Grid>

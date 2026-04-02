@@ -4,33 +4,65 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:views="clr-namespace:AudioGo_Mobile.Views"
-    Title="AudioGo">
+    Title="AudioGo"
+    Shell.TabBarBackgroundColor="{StaticResource Surface}"
+    Shell.TabBarForegroundColor="{StaticResource Primary}"
+    Shell.TabBarTitleColor="{StaticResource Primary}"
+    Shell.TabBarUnselectedColor="{StaticResource SecondaryText}">
 
     <!-- ── Bottom Tab Bar ── -->
     <TabBar>
         <ShellContent
             Title="Trang chủ"
-            Icon="home.png"
             ContentTemplate="{DataTemplate views:MainPage}"
-            Route="Home" />
+            Route="Home">
+            <ShellContent.Icon>
+                <FontImageSource
+                    FontFamily="MaterialIcons"
+                    Glyph="&#xe88a;"
+                    Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource Primary}}"
+                    Size="26" />
+            </ShellContent.Icon>
+        </ShellContent>
 
         <ShellContent
             Title="Bản đồ"
-            Icon="map.png"
             ContentTemplate="{DataTemplate views:MapPage}"
-            Route="Map" />
+            Route="Map">
+            <ShellContent.Icon>
+                <FontImageSource
+                    FontFamily="MaterialIcons"
+                    Glyph="&#xe55b;"
+                    Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource Primary}}"
+                    Size="26" />
+            </ShellContent.Icon>
+        </ShellContent>
 
         <ShellContent
             Title="Tour"
-            Icon="tour.png"
             ContentTemplate="{DataTemplate views:TourListPage}"
-            Route="TourList" />
+            Route="TourList">
+            <ShellContent.Icon>
+                <FontImageSource
+                    FontFamily="MaterialIcons"
+                    Glyph="&#xef76;"
+                    Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource Primary}}"
+                    Size="26" />
+            </ShellContent.Icon>
+        </ShellContent>
 
         <ShellContent
             Title="Khám phá"
-            Icon="search.png"
             ContentTemplate="{DataTemplate views:SearchPage}"
-            Route="Search" />
+            Route="Search">
+            <ShellContent.Icon>
+                <FontImageSource
+                    FontFamily="MaterialIcons"
+                    Glyph="&#xe8b6;"
+                    Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource Primary}}"
+                    Size="26" />
+            </ShellContent.Icon>
+        </ShellContent>
     </TabBar>
 
     <!-- ── Modal / Push Routes (không phải tab) ── -->

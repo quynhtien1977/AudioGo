@@ -10,6 +10,7 @@ public partial class MapPage : ContentPage
     private readonly MapViewModel _vm;
     private readonly MainViewModel _main;
     private string? _activePinPoiId;
+    private bool _isSubscribed;
 
     // Property wrapper để map MainMap → MapControl
     private Microsoft.Maui.Controls.Maps.Map MapControl => MainMap;
@@ -30,9 +31,13 @@ public partial class MapPage : ContentPage
         _vm.LoadPois(_main.Pois);
         RefreshPins();
 
-        // Theo dõi POI active để hiển thị banner
-        _main.PropertyChanged += OnMainPropertyChanged;
-        _vm.PropertyChanged += OnVmPropertyChanged;
+        // Guard: chỉ subscribe 1 lần, tránh event handler chồng chất
+        if (!_isSubscribed)
+        {
+            _main.PropertyChanged += OnMainPropertyChanged;
+            _vm.PropertyChanged += OnVmPropertyChanged;
+            _isSubscribed = true;
+        }
 
         // Yêu cầu vị trí hiện tại để căn giữa bản đồ
         await RequestInitialLocationAsync();
@@ -43,6 +48,7 @@ public partial class MapPage : ContentPage
         base.OnDisappearing();
         _main.PropertyChanged -= OnMainPropertyChanged;
         _vm.PropertyChanged -= OnVmPropertyChanged;
+        _isSubscribed = false;
     }
 
     private void RefreshPins()
@@ -64,6 +70,27 @@ public partial class MapPage : ContentPage
         }
         await Task.CompletedTask;
     }
+
+    // ── XAML Event Handlers (previously missing → caused crash) ──────
+
+    private async void OnSearchTapped(object? sender, TappedEventArgs e)
+        => await Shell.Current.GoToAsync("//Search");
+
+    private async void OnFilterTapped(object? sender, TappedEventArgs e)
+    {
+        // Stub: hiển thị action sheet chọn category filter
+        var selected = await DisplayActionSheet(
+            "Lọc danh mục",
+            "Huỷ",
+            null,
+            "🗺 Tất cả", "🦐 Hải sản", "🍜 Bún phở", "🍢 Ốc", "☕ Cà phê");
+        // TODO: Áp dụng filter vào MapViewModel khi có logic lọc
+    }
+
+    private void OnLocateMeTapped(object? sender, TappedEventArgs e)
+        => _vm.CenterOnUser();
+
+    // ── Property Change Handlers ─────────────────────────────────────
 
     private void OnMainPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
@@ -88,7 +115,13 @@ public partial class MapPage : ContentPage
     {
         if (e.PropertyName != nameof(MapViewModel.VisibleRegion)) return;
         if (_vm.VisibleRegion is { } region)
-            MapControl.MoveToRegion(region);
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                try { MapControl.MoveToRegion(region); }
+                catch { /* Map chưa sẵn sàng — bỏ qua */ }
+            });
+        }
     }
 
     private async void OnPoiBannerDetailClicked(object? sender, EventArgs e)
@@ -105,7 +138,7 @@ public partial class MapPage : ContentPage
 
     private async void OnLanguageClicked(object? sender, EventArgs e)
     {
-        var selected = await DisplayActionSheetAsync(
+        var selected = await DisplayActionSheet(
             "Chọn ngôn ngữ thuyết minh",
             "Huỷ",
             null,
@@ -161,9 +194,16 @@ public partial class MapPage : ContentPage
             if (loc is not null)
             {
                 _vm.MoveTo(loc.Latitude, loc.Longitude);
-                MapControl.MoveToRegion(MapSpan.FromCenterAndRadius(
-                    new Location(loc.Latitude, loc.Longitude),
-                    Distance.FromKilometers(1)));
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    try
+                    {
+                        MapControl.MoveToRegion(MapSpan.FromCenterAndRadius(
+                            new Location(loc.Latitude, loc.Longitude),
+                            Distance.FromKilometers(1)));
+                    }
+                    catch { /* Map chưa sẵn sàng */ }
+                });
             }
         }
         catch { /* GPS không khả dụng — bản đồ ở vị trí mặc định */ }

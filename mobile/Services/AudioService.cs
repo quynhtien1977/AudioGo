@@ -56,8 +56,10 @@ namespace AudioGo.Services
             });
         }
 
-        public Task PlayFileAsync(string urlOrPath)
+        public Task PlayFileAsync(string? urlOrPath)
         {
+            if (string.IsNullOrEmpty(urlOrPath)) return Task.CompletedTask;
+
             Enqueue(async ct =>
             {
                 IsPlaying = true;
@@ -74,6 +76,7 @@ namespace AudioGo.Services
                     }
                     else
                     {
+                        if (!File.Exists(urlOrPath)) return;
                         stream = File.OpenRead(urlOrPath);
                     }
 
@@ -83,12 +86,17 @@ namespace AudioGo.Services
                     _player.PlaybackEnded += (s, e) => tcs.TrySetResult();
                     ct.Register(() =>
                     {
-                        _player.Stop();
+                        try { _player?.Stop(); } catch { /* already stopped */ }
                         tcs.TrySetCanceled();
                     });
 
                     _player.Play();
                     await tcs.Task;
+                }
+                catch (FileNotFoundException)
+                {
+                    System.Diagnostics.Debug.WriteLine(
+                        $"[AudioService] File not found: {urlOrPath}");
                 }
                 finally
                 {
@@ -111,8 +119,8 @@ namespace AudioGo.Services
         {
             if (_player is not null)
             {
-                _player.Stop();
-                _player.Dispose();
+                try { _player.Stop(); } catch { /* already stopped */ }
+                try { _player.Dispose(); } catch { /* already disposed */ }
                 _player = null;
             }
         }

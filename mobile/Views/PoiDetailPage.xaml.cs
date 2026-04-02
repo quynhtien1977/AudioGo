@@ -26,18 +26,13 @@ public partial class PoiDetailPage : ContentPage
         => await _vm.TogglePlayPauseAsync();
 
     private void OnPreviousTapped(object? sender, TappedEventArgs e)
-    {
-        // Previous stop handled by TourDetailVM; here it stops audio
-        _ = _vm.StopAudioAsync();
-    }
+        => _ = _vm.StopAudioAsync();
 
     private void OnNextTapped(object? sender, TappedEventArgs e)
         => _ = _vm.PlayAudioAsync();
 
     private void OnSpeedTapped(object? sender, TappedEventArgs e)
-    {
-        // Speed cycling: UI-only for now
-    }
+        => _vm.CycleSpeed();
 
     private void OnSliderDragCompleted(object? sender, EventArgs e)
     {
@@ -45,10 +40,23 @@ public partial class PoiDetailPage : ContentPage
     }
 
     private void OnExpandDescTapped(object? sender, TappedEventArgs e)
-    {
-        // Toggle description expanded state via VM property if available
-    }
+        => _vm.ToggleDescExpanded();
 
     private async void OnNextPoiClicked(object? sender, EventArgs e)
         => await Shell.Current.GoToAsync("..");
+
+    private async void OnGalleryFullScreenTapped(object? sender, TappedEventArgs e)
+    {
+        var images = _vm.GalleryImages;
+        if (images is null || images.Count == 0) return;
+
+        // CommandParameter chứa URL ảnh được tap — tìm index tương ứng
+        int startIndex = 0;
+        if (e.Parameter is string tappedUrl)
+            startIndex = images.IndexOf(tappedUrl);
+        if (startIndex < 0) startIndex = 0;
+
+        var page = new GalleryFullScreenPage(images, startIndex);
+        await Navigation.PushModalAsync(page, animated: true);
+    }
 }

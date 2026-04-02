@@ -21,7 +21,7 @@ namespace AudioGo.Models
         [MaxLength(50)]
         public string Status { get; set; } = string.Empty;
 
-        public string LogoUrl { get; set; } = string.Empty;
+        public string? LogoUrl { get; set; }
 
         // ── PoiContent table (cached per language) ─────────────────
         [MaxLength(10), NotNull]
@@ -31,12 +31,15 @@ namespace AudioGo.Models
         public string Title { get; set; } = string.Empty;
 
         public string Description { get; set; } = string.Empty;
-        public string AudioUrl { get; set; } = string.Empty;
-        public string LocalAudioPath { get; set; } = string.Empty;
+        public string? AudioUrl { get; set; }
+        public string? LocalAudioPath { get; set; }
 
         // ── Sync metadata ──────────────────────────────────────────
         /// <summary>JSON-serialised list of category names, e.g. "[\"Ẩm thực\",\"Hải sản\"]".</summary>
         public string CategoriesJson { get; set; } = string.Empty;
+
+        /// <summary>JSON-serialised list of gallery image URLs.</summary>
+        public string GalleryUrlsJson { get; set; } = string.Empty;
 
         public DateTime? LastSyncedAt { get; set; }
     }

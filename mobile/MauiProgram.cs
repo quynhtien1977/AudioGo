@@ -22,6 +22,13 @@ public static class MauiProgram
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+                // Inter — Google Fonts (UI chính)
+                fonts.AddFont("Inter-Regular.ttf",  "InterRegular");
+                fonts.AddFont("Inter-Medium.ttf",   "InterMedium");
+                fonts.AddFont("Inter-SemiBold.ttf", "InterSemiBold");
+                fonts.AddFont("Inter-Bold.ttf",     "InterBold");
+                // Material Icons — Google icon font
+                fonts.AddFont("MaterialIcons.ttf",  "MaterialIcons");
             });
 
         // ── Database ──────────────────────────────────────────────
@@ -52,7 +59,6 @@ public static class MauiProgram
         builder.Services.AddTransient<PoiDetailViewModel>();
         builder.Services.AddTransient<TourListViewModel>();
         builder.Services.AddTransient<SearchViewModel>();
-        builder.Services.AddTransient<CreateTourViewModel>();
         builder.Services.AddTransient<TourDetailViewModel>();
 
         // ── Views ─────────────────────────────────────────────────
@@ -61,7 +67,6 @@ public static class MauiProgram
         builder.Services.AddTransient<TourListPage>();
         builder.Services.AddTransient<PoiDetailPage>();
         builder.Services.AddTransient<SearchPage>();
-        builder.Services.AddTransient<CreateTourPage>();
         builder.Services.AddTransient<TourDetailPage>();
 
 #if DEBUG
