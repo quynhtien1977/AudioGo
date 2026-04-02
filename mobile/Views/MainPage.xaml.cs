@@ -1,23 +1,40 @@
-﻿namespace AudioGo_Mobile.Views;
+using AudioGo.ViewModels;
+using Shared;
+
+namespace AudioGo_Mobile.Views;
 
 public partial class MainPage : ContentPage
 {
-	int count = 0;
+    private readonly MainViewModel _vm;
 
-	public MainPage()
-	{
-		InitializeComponent();
-	}
+    public MainPage(MainViewModel vm)
+    {
+        InitializeComponent();
+        _vm = vm;
+        BindingContext = vm;
+    }
 
-	private void OnCounterClicked(object? sender, EventArgs e)
-	{
-		count++;
+    protected override async void OnAppearing()
+    {
+        base.OnAppearing();
+        await _vm.InitAsync();
+    }
 
-		if (count == 1)
-			CounterBtn.Text = $"Clicked {count} time";
-		else
-			CounterBtn.Text = $"Clicked {count} times";
+    private async void OnViewAllPoisTapped(object? sender, TappedEventArgs e)
+        => await Shell.Current.GoToAsync("//Search");
 
-		SemanticScreenReader.Announce(CounterBtn.Text);
-	}
+    private async void OnViewAllToursTapped(object? sender, TappedEventArgs e)
+        => await Shell.Current.GoToAsync("//TourList");
+
+    private async void OnStartTourClicked(object? sender, EventArgs e)
+        => await Shell.Current.GoToAsync("//TourList");
+
+    private async void OnCreateTourClicked(object? sender, EventArgs e)
+        => await Shell.Current.GoToAsync(nameof(CreateTourPage));
+
+    private void OnMiniPlayerPauseTapped(object? sender, TappedEventArgs e)
+        => _vm.ToggleAudio();
+
+    private void OnMiniPlayerCloseTapped(object? sender, TappedEventArgs e)
+        => _vm.StopAudio();
 }

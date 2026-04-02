@@ -17,5 +17,6 @@ namespace Server.Models
         public Account? Account { get; set; }
         public ICollection<PoiContent> Contents { get; set; } = new List<PoiContent>();
         public ICollection<PoiGallery> Gallery { get; set; } = new List<PoiGallery>();
+        public ICollection<CategoryPoi> CategoryPois { get; set; } = new List<CategoryPoi>();
     }
 }

@@ -6,8 +6,17 @@ using Server.Data;
 using Server.Repositories;
 using Server.Repositories.Interfaces;
 using Server.Services;
+using Server.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ── Load .env (secrets không commit lên git) ──────────────────────────
+var envPath = Path.Combine(builder.Environment.ContentRootPath, ".env");
+if (File.Exists(envPath))
+{
+    DotNetEnv.Env.Load(envPath);
+    builder.Configuration.AddEnvironmentVariables();
+}
 
 // ── CORS ──────────────────────────────────────────────────────────────
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
@@ -48,6 +57,11 @@ builder.Services.AddScoped<ITourRepository, TourRepository>();
 builder.Services.AddScoped<IListenHistoryRepository, ListenHistoryRepository>();
 builder.Services.AddScoped<ILocationLogRepository, LocationLogRepository>();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>();
+builder.Services.AddSingleton<ITranslationService, TranslationService>();
+builder.Services.AddSingleton<ITtsService, TtsService>();
+builder.Services.AddScoped<IContentPipelineService, ContentPipelineService>();
+builder.Services.AddHttpContextAccessor();
 
 // ── Controllers & OpenAPI ─────────────────────────────────────────────
 builder.Services.AddControllers();

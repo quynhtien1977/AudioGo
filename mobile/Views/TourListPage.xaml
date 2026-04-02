@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="AudioGo_Mobile.Views.TourListPage"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{StaticResource Background}"
+             Title="Tour">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- ── Header ── -->
+        <VerticalStackLayout Grid.Row="0"
+                             BackgroundColor="{StaticResource Surface}"
+                             Padding="20,52,20,16"
+                             Spacing="14">
+            <Grid ColumnDefinitions="*,Auto">
+                <VerticalStackLayout Grid.Column="0" Spacing="2">
+                    <Label Text="Tour của tôi" Style="{StaticResource HeadlineLabel}"/>
+                    <Label Text="Phố Vĩnh Khánh · Quận 4" Style="{StaticResource BodyLabel}"/>
+                </VerticalStackLayout>
+                <Button Grid.Column="1"
+                        Text="Tạo mới +"
+                        Style="{StaticResource PrimaryButton}"
+                        Padding="14,8" FontSize="13" CornerRadius="16"
+                        VerticalOptions="Center"
+                        Clicked="OnCreateTourClicked"/>
+            </Grid>
+        </VerticalStackLayout>
+
+        <!-- ── Tour List ── -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="16" Spacing="0">
+
+                <!-- Loading -->
+                <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                   IsVisible="{Binding IsLoading}"
+                                   Color="{StaticResource Primary}"
+                                   HorizontalOptions="Center"
+                                   Margin="0,30,0,0"/>
+
+                <!-- Empty state -->
+                <VerticalStackLayout IsVisible="{Binding IsEmpty}"
+                                     Spacing="16"
+                                     HorizontalOptions="Center"
+                                     Margin="0,60,0,0">
+                    <Label Text="🗺️" FontSize="60" HorizontalOptions="Center"/>
+                    <Label Text="Chưa có tour nào"
+                           Style="{StaticResource HeadlineLabel}"
+                           HorizontalOptions="Center"/>
+                    <Label Text="Tạo tour đầu tiên của bạn để bắt đầu khám phá Phố Ẩm Thực Vĩnh Khánh"
+                           Style="{StaticResource BodyLabel}"
+                           HorizontalOptions="Center"
+                           HorizontalTextAlignment="Center"
+                           MaxLines="3"/>
+                    <Button Text="＋  Tạo Tour Mới"
+                            Style="{StaticResource PrimaryButton}"
+                            HorizontalOptions="Center"
+                            Clicked="OnCreateTourClicked"/>
+                </VerticalStackLayout>
+
+                <!-- Tour cards -->
+                <CollectionView ItemsSource="{Binding Tours}"
+                                IsVisible="{Binding HasTours}"
+                                SelectionMode="None">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource CardBorder}"
+                                    Margin="0,0,0,12" Padding="0">
+                                <Grid RowDefinitions="Auto,*">
+                                    <!-- Map thumbnail header -->
+                                    <Border Grid.Row="0"
+                                            BackgroundColor="{StaticResource DarkSurface}"
+                                            StrokeShape="RoundRectangle 0"
+                                            StrokeThickness="0"
+                                            HeightRequest="130">
+                                        <Grid>
+                                            <Label Text="🗺️" FontSize="48"
+                                                   HorizontalOptions="Center" VerticalOptions="Center"/>
+                                            <!-- status badge -->
+                                            <Border BackgroundColor="{StaticResource Primary}"
+                                                    StrokeShape="RoundRectangle 12"
+                                                    StrokeThickness="0"
+                                                    HorizontalOptions="Start"
+                                                    VerticalOptions="End"
+                                                    Margin="12"
+                                                    Padding="8,4">
+                                                <Label Text="🎧 Đang theo dõi"
+                                                       TextColor="White" FontSize="11"
+                                                       FontAttributes="Bold"/>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+                                    <!-- Info section -->
+                                    <VerticalStackLayout Grid.Row="1" Padding="14" Spacing="10">
+                                        <Label Text="{Binding Name}"
+                                               Style="{StaticResource TitleLabel}"/>
+                                        <!-- Progress bar -->
+                                        <VerticalStackLayout Spacing="4">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <Label Grid.Column="0"
+                                                       Text="Tiến độ"
+                                                       Style="{StaticResource CaptionLabel}"/>
+                                                <Label Grid.Column="1"
+                                                       Text="{Binding ProgressText}"
+                                                       Style="{StaticResource PrimaryLabel}"/>
+                                            </Grid>
+                                            <ProgressBar Progress="{Binding ProgressRatio}"
+                                                         HeightRequest="6"/>
+                                        </VerticalStackLayout>
+                                        <!-- Stats row -->
+                                        <Grid ColumnDefinitions="*,*,*">
+                                            <VerticalStackLayout Grid.Column="0" Spacing="2" HorizontalOptions="Center">
+                                                <Label Text="{Binding PoiCount}" Style="{StaticResource SectionTitle}" HorizontalOptions="Center"/>
+                                                <Label Text="điểm" Style="{StaticResource CaptionLabel}" HorizontalOptions="Center"/>
+                                            </VerticalStackLayout>
+                                            <BoxView Grid.Column="0" WidthRequest="1" HeightRequest="30"
+                                                     Color="{StaticResource Gray200}"
+                                                     HorizontalOptions="End" VerticalOptions="Center"/>
+                                            <VerticalStackLayout Grid.Column="1" Spacing="2" HorizontalOptions="Center">
+                                                <Label Text="{Binding DurationText}" Style="{StaticResource SectionTitle}" HorizontalOptions="Center"/>
+                                                <Label Text="phút" Style="{StaticResource CaptionLabel}" HorizontalOptions="Center"/>
+                                            </VerticalStackLayout>
+                                            <BoxView Grid.Column="1" WidthRequest="1" HeightRequest="30"
+                                                     Color="{StaticResource Gray200}"
+                                                     HorizontalOptions="End" VerticalOptions="Center"/>
+                                            <VerticalStackLayout Grid.Column="2" Spacing="2" HorizontalOptions="Center">
+                                                <Label Text="{Binding Language}" Style="{StaticResource SectionTitle}" HorizontalOptions="Center"/>
+                                                <Label Text="ngôn ngữ" Style="{StaticResource CaptionLabel}" HorizontalOptions="Center"/>
+                                            </VerticalStackLayout>
+                                        </Grid>
+                                        <!-- Action buttons -->
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                            <Button Grid.Column="0"
+                                                    Text="▶  Tiếp tục Tour"
+                                                    Style="{StaticResource PrimaryButton}"
+                                                    Padding="16,12" FontSize="14"
+                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ContinueTourCommand}"
+                                                    CommandParameter="{Binding .}"/>
+                                            <Border Grid.Column="1"
+                                                    BackgroundColor="{StaticResource Gray100}"
+                                                    StrokeShape="RoundRectangle 24"
+                                                    StrokeThickness="0"
+                                                    WidthRequest="48" HeightRequest="48">
+                                                <Label Text="⋯" FontSize="20"
+                                                       HorizontalOptions="Center" VerticalOptions="Center"/>
+                                                <Border.GestureRecognizers>
+                                                    <TapGestureRecognizer Tapped="OnTourMenuTapped" CommandParameter="{Binding .}"/>
+                                                </Border.GestureRecognizers>
+                                            </Border>
+                                        </Grid>
+                                    </VerticalStackLayout>
+                                </Grid>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.OpenTourCommand}"
+                                                          CommandParameter="{Binding .}"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <BoxView HeightRequest="80" Color="Transparent"/>
+            </VerticalStackLayout>
+        </ScrollView>
+
+    </Grid>
+</ContentPage>

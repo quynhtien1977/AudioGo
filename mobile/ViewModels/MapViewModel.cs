@@ -50,6 +50,28 @@ namespace AudioGo.ViewModels
             }
         }
 
+        public async Task InitAsync()
+        {
+            try
+            {
+                await _location.StartAsync();
+            }
+            catch
+            {
+                // Location may not be available
+            }
+        }
+
+        public void CenterOnUser()
+        {
+            if (UserLocation != null)
+                MoveTo(UserLocation.Latitude, UserLocation.Longitude);
+        }
+
+        public string MapStatusLabel => Pins.Count > 0
+            ? $"{Pins.Count} địa điểm quanh bạn"
+            : "Đang tải địa điểm...";
+
         public void MoveTo(double lat, double lon, double radiusKm = 1.0)
         {
             VisibleRegion = MapSpan.FromCenterAndRadius(

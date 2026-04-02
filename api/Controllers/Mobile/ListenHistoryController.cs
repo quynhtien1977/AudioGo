@@ -28,12 +28,14 @@ namespace Server.Controllers.Mobile
 
             await _repo.CreateAsync(entry);
 
-            return Ok(new ListenHistoryResponse(
-                entry.HistoryId,
-                entry.DeviceId,
-                entry.PoiId,
-                entry.Timestamp,
-                entry.ListenDuration));
+            return Ok(new ListenHistoryResponse
+            {
+                HistoryId      = entry.HistoryId,
+                DeviceId       = entry.DeviceId,
+                PoiId          = entry.PoiId,
+                Timestamp      = entry.Timestamp,
+                ListenDuration = entry.ListenDuration
+            });
         }
     }
 }

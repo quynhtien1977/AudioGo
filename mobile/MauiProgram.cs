@@ -4,6 +4,7 @@ using AudioGo.Services.Interfaces;
 using AudioGo.ViewModels;
 using AudioGo_Mobile.Views;
 using Microsoft.Extensions.Logging;
+using Plugin.Maui.Audio;
 using ZXing.Net.Maui.Controls;
 
 namespace AudioGo_Mobile;
@@ -28,14 +29,18 @@ public static class MauiProgram
         builder.Services.AddSingleton(new AppDatabase(dbPath));
 
         // ── HTTP Client ───────────────────────────────────────────
-        builder.Services.AddHttpClient<IApiService, ApiService>(client =>
-        {
-            // Thay bằng URL thật khi deploy; dùng IP máy dev khi test trên Android
-            client.BaseAddress = new Uri("http://10.0.2.2:5000/"); // Android emulator → localhost
-            client.Timeout = TimeSpan.FromSeconds(10);
-        });
+            builder.Services.AddHttpClient<IApiService, ApiService>(client =>
+            {
+                // 10.0.2.2 = IP đặc biệt dành cho Android Emulator kết nối về localhost của PC
+                // Đổi về 192.168.x.x nếu dùng thiết bị thật trên cùng mạng WiFi
+                client.BaseAddress = new Uri(DeviceInfo.DeviceType == DeviceType.Virtual 
+                    ? "http://10.0.2.2:5086/" 
+                    : "http://192.168.43.73:5086/");
+                client.Timeout = TimeSpan.FromSeconds(15);
+            });
 
         // ── Services ──────────────────────────────────────────────
+        builder.Services.AddSingleton(AudioManager.Current);
         builder.Services.AddSingleton<SyncService>();
         builder.Services.AddSingleton<IGeofenceService, GeofenceService>();
         builder.Services.AddSingleton<IAudioService, AudioService>();
@@ -45,12 +50,19 @@ public static class MauiProgram
         builder.Services.AddSingleton<MainViewModel>();
         builder.Services.AddSingleton<MapViewModel>();
         builder.Services.AddTransient<PoiDetailViewModel>();
+        builder.Services.AddTransient<TourListViewModel>();
+        builder.Services.AddTransient<SearchViewModel>();
+        builder.Services.AddTransient<CreateTourViewModel>();
+        builder.Services.AddTransient<TourDetailViewModel>();
 
         // ── Views ─────────────────────────────────────────────────
         builder.Services.AddSingleton<MainPage>();
         builder.Services.AddSingleton<MapPage>();
+        builder.Services.AddTransient<TourListPage>();
         builder.Services.AddTransient<PoiDetailPage>();
-        builder.Services.AddTransient<QrScanPage>();
+        builder.Services.AddTransient<SearchPage>();
+        builder.Services.AddTransient<CreateTourPage>();
+        builder.Services.AddTransient<TourDetailPage>();
 
 #if DEBUG
         builder.Logging.AddDebug();
@@ -58,10 +70,10 @@ public static class MauiProgram
 
         var mauiApp = builder.Build();
 
-        // Init SQLite tables trên thread pool — tránh deadlock SynchronizationContext
-        // Task.Run() đảm bảo chạy trên thread không có SynchronizationContext
-        Task.Run(() => mauiApp.Services.GetRequiredService<AppDatabase>().InitAsync())
-            .GetAwaiter().GetResult();
+        // Init SQLite tables trên background thread — không block main thread khi startup
+        // Dùng Task.Run để tránh deadlock SynchronizationContext; fire-and-forget vì
+        // DB chưa cần thiết trước khi page đầu tiên OnAppearing
+        _ = Task.Run(() => mauiApp.Services.GetRequiredService<AppDatabase>().InitAsync());
 
         return mauiApp;
     }

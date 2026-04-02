@@ -12,34 +12,81 @@ namespace Server.Repositories
 
         public Task<List<Poi>> GetAllAsync() =>
             _db.Pois.AsNoTracking()
+                .Where(p => p.Status == "active" || p.Status == "published")
                 .Include(p => p.Contents)
+                .Include(p => p.Gallery)
+                .Include(p => p.CategoryPois)
+                    .ThenInclude(cp => cp.Category)
+                .OrderBy(p => p.Priority)
                 .ToListAsync();
+
+        /// <summary>
+        /// Tìm kiếm POI theo từ khóa (title/description) và/hoặc tên category.
+        /// Case-insensitive, chỉ trả về POI active/published.
+        /// </summary>
+        public async Task<List<Poi>> SearchAsync(string? query, string? category)
+        {
+            var q = _db.Pois.AsNoTracking()
+                .Where(p => p.Status == "active" || p.Status == "published")
+                .Include(p => p.Contents)
+                .Include(p => p.Gallery)
+                .Include(p => p.CategoryPois)
+                    .ThenInclude(cp => cp.Category)
+                .AsQueryable();
+
+            // Filter theo category name
+            if (!string.IsNullOrWhiteSpace(category))
+                q = q.Where(p => p.CategoryPois
+                    .Any(cp => cp.Category != null &&
+                               cp.Category.Name.ToLower().Contains(category.ToLower())));
+
+            var pois = await q.OrderBy(p => p.Priority).ToListAsync();
+
+            // Filter theo title/description trong contents (sau khi load — EF không support full-text trên nvarchar(max) tốt)
+            if (!string.IsNullOrWhiteSpace(query))
+            {
+                var lower = query.ToLower();
+                pois = pois.Where(p => p.Contents.Any(c =>
+                    c.Title.ToLower().Contains(lower) ||
+                    c.Description.ToLower().Contains(lower)
+                )).ToList();
+            }
+
+            return pois;
+        }
 
         public Task<Poi?> GetByIdAsync(string poiId) =>
             _db.Pois.AsNoTracking()
                 .Include(p => p.Contents)
+                .Include(p => p.Gallery)
+                .Include(p => p.CategoryPois)
+                    .ThenInclude(cp => cp.Category)
                 .FirstOrDefaultAsync(p => p.PoiId == poiId);
 
         /// <summary>
         /// Haversine filter: lấy POI trong bán kính (metres) từ toạ độ cho trước.
+        /// Chỉ trả về POI có status = "published".
         /// </summary>
         public async Task<List<Poi>> GetNearbyAsync(double lat, double lon, double radiusMeters)
         {
             const double EarthR = 6_371_000;
             double latRad = lat * Math.PI / 180;
-            double lonRad = lon * Math.PI / 180;
 
-            // Lấy candidate với bounding-box trước, filter chính xác ở client
+            // Bounding-box candidate filter
             double latDelta = radiusMeters / 111_000;
             double lonDelta = radiusMeters / (111_000 * Math.Cos(latRad));
 
             var candidates = await _db.Pois.AsNoTracking()
+                .Where(p => (p.Status == "active" || p.Status == "published")
+                         && p.Latitude  >= lat - latDelta && p.Latitude  <= lat + latDelta
+                         && p.Longitude >= lon - lonDelta && p.Longitude <= lon + lonDelta)
                 .Include(p => p.Contents)
-                .Where(p => p.Latitude  >= lat - latDelta && p.Latitude  <= lat + latDelta
-                         && p.Longitude >= lon - lonDelta && p.Longitude <= lon + lonDelta
-                         && p.Status == "active")
+                .Include(p => p.Gallery)
+                .Include(p => p.CategoryPois)
+                    .ThenInclude(cp => cp.Category)
                 .ToListAsync();
 
+            // Haversine precise filter
             return candidates.Where(p =>
             {
                 double dLat = (p.Latitude  - lat) * Math.PI / 180;
@@ -49,6 +96,21 @@ namespace Server.Repositories
                          * Math.Sin(dLon/2) * Math.Sin(dLon/2);
                 return EarthR * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1-a)) <= radiusMeters;
             }).ToList();
+        }
+
+        public async Task<List<Poi>> GetAllForCmsAsync(string? status = null)
+        {
+            var query = _db.Pois.AsNoTracking()
+                .Include(p => p.Contents)
+                .Include(p => p.Gallery)
+                .Include(p => p.CategoryPois)
+                    .ThenInclude(cp => cp.Category)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(status))
+                query = query.Where(p => p.Status == status);
+
+            return await query.OrderByDescending(p => p.CreatedAt).ToListAsync();
         }
 
         public async Task<Poi> CreateAsync(Poi poi)

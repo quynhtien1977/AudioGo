@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
@@ -12,6 +13,7 @@ namespace Server.Controllers.Cms
     [ApiController]
     [Route("api/cms/pois")]
     [Authorize]
+    [EnableCors("WebCmsPolicy")]
     public class CmsPoiController : ControllerBase
     {
         private readonly IPoiRepository _pois;
@@ -23,14 +25,12 @@ namespace Server.Controllers.Cms
             _db   = db;
         }
 
-        /// <summary>Danh sách tất cả POI (kèm filter status).</summary>
+        /// <summary>Danh sách tất cả POI (CMS - không filter status published, có thể filter theo status param).</summary>
         [HttpGet]
         public async Task<ActionResult<List<Poi>>> GetAll([FromQuery] string? status = null)
         {
-            var query = _db.Pois.AsNoTracking().AsQueryable();
-            if (!string.IsNullOrEmpty(status))
-                query = query.Where(p => p.Status == status);
-            return Ok(await query.OrderByDescending(p => p.CreatedAt).ToListAsync());
+            var pois = await _pois.GetAllForCmsAsync(status);
+            return Ok(pois);
         }
 
         /// <summary>Chi tiết POI kèm tất cả content và gallery.</summary>

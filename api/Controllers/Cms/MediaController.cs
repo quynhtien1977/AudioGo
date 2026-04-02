@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Server.Services.Interfaces;
 
 namespace Server.Controllers.Cms
 {
@@ -8,16 +9,22 @@ namespace Server.Controllers.Cms
     [Authorize]
     public class MediaController : ControllerBase
     {
-        private readonly IWebHostEnvironment _env;
+        private readonly IBlobStorageService _blob;
+        private readonly IConfiguration _config;
 
-        public MediaController(IWebHostEnvironment env) => _env = env;
+        public MediaController(IBlobStorageService blob, IConfiguration config)
+        {
+            _blob = blob;
+            _config = config;
+        }
 
         /// <summary>Upload file audio (mp3/wav/ogg). Trả về URL public.</summary>
         [HttpPost("audio")]
         [RequestSizeLimit(50 * 1024 * 1024)] // 50 MB
         public async Task<ActionResult<object>> UploadAudio(IFormFile file)
         {
-            return await SaveFile(file, "audio",
+            var container = _config["Azure:BlobStorage:AudioContainer"] ?? "audio";
+            return await SaveFile(file, container,
                 [".mp3", ".wav", ".ogg", ".m4a", ".aac"]);
         }
 
@@ -26,12 +33,13 @@ namespace Server.Controllers.Cms
         [RequestSizeLimit(10 * 1024 * 1024)] // 10 MB
         public async Task<ActionResult<object>> UploadImage(IFormFile file)
         {
-            return await SaveFile(file, "images",
+            var container = _config["Azure:BlobStorage:ImageContainer"] ?? "images";
+            return await SaveFile(file, container,
                 [".jpg", ".jpeg", ".png", ".webp", ".gif"]);
         }
 
         private async Task<ActionResult<object>> SaveFile(
-            IFormFile file, string folder, string[] allowedExtensions)
+            IFormFile file, string container, string[] allowedExtensions)
         {
             if (file is null || file.Length == 0)
                 return BadRequest("File rỗng.");
@@ -40,17 +48,12 @@ namespace Server.Controllers.Cms
             if (!allowedExtensions.Contains(ext))
                 return BadRequest($"Định dạng không hỗ trợ. Hỗ trợ: {string.Join(", ", allowedExtensions)}");
 
-            var uploadDir = Path.Combine(_env.WebRootPath, "uploads", folder);
-            Directory.CreateDirectory(uploadDir);
+            var blobPath = $"{Guid.NewGuid()}{ext}";
 
-            var fileName  = $"{Guid.NewGuid()}{ext}";
-            var filePath  = Path.Combine(uploadDir, fileName);
+            await using var stream = file.OpenReadStream();
+            var url = await _blob.UploadAsync(container, blobPath, stream, file.ContentType);
 
-            await using var stream = System.IO.File.Create(filePath);
-            await file.CopyToAsync(stream);
-
-            var url = $"{Request.Scheme}://{Request.Host}/uploads/{folder}/{fileName}";
-            return Ok(new { url, fileName, size = file.Length });
+            return Ok(new { url, fileName = blobPath, size = file.Length });
         }
     }
 }

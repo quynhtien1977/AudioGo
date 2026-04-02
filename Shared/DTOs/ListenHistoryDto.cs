@@ -1,16 +1,18 @@
 namespace Shared.DTOs
 {
-    public record ListenHistoryRequest(
-        string DeviceId,
-        string PoiId,
-        int ListenDuration
-    );
+    public class ListenHistoryRequest
+    {
+        public string DeviceId { get; set; } = string.Empty;
+        public string PoiId { get; set; } = string.Empty;
+        public int ListenDuration { get; set; }
+    }
 
-    public record ListenHistoryResponse(
-        string HistoryId,
-        string DeviceId,
-        string PoiId,
-        DateTime Timestamp,
-        int ListenDuration
-    );
+    public class ListenHistoryResponse
+    {
+        public string HistoryId { get; set; } = string.Empty;
+        public string DeviceId { get; set; } = string.Empty;
+        public string PoiId { get; set; } = string.Empty;
+        public DateTime Timestamp { get; set; }
+        public int ListenDuration { get; set; }
+    }
 }

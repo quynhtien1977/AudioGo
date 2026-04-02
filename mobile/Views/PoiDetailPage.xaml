@@ -2,72 +2,205 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="AudioGo_Mobile.Views.PoiDetailPage"
-             Title="{Binding Poi.Title, FallbackValue='Chi tiết điểm'}">
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{StaticResource Background}"
+             Title="Chi tiết điểm">
 
-    <ScrollView>
-        <VerticalStackLayout Spacing="0">
+    <Grid RowDefinitions="*,Auto">
 
-            <!-- Logo / ảnh đại diện -->
-            <Image Source="{Binding Poi.LogoUrl}"
-                   HeightRequest="220"
-                   Aspect="AspectFill"
-                   IsVisible="{Binding Poi, Converter={StaticResource IsNotNullConverter}}" />
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Spacing="0">
 
-            <!-- Nội dung chính -->
-            <VerticalStackLayout Padding="20" Spacing="12">
+                <!-- ── Hero Image Section ── -->
+                <Grid HeightRequest="280">
+                    <Image Source="{Binding Poi.LogoUrl, TargetNullValue='hero_bg.jpg', FallbackValue='hero_bg.jpg'}"
+                           Aspect="AspectFill" />
+                    <!-- gradient overlay -->
+                    <BoxView Color="{StaticResource HeroOverlay}"
+                             VerticalOptions="End" HeightRequest="100"/>
 
-                <!-- Loading indicator -->
-                <ActivityIndicator IsRunning="{Binding IsLoading}"
-                                   IsVisible="{Binding IsLoading}"
-                                   Color="#1976D2"
-                                   HorizontalOptions="Center" />
+                    <!-- nav icons overlay -->
+                    <Grid Padding="16,52,16,16" VerticalOptions="Start"
+                          ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
+                        <Border Grid.Column="0"
+                                BackgroundColor="{StaticResource SemiTransparentDark}"
+                                StrokeShape="RoundRectangle 20" StrokeThickness="0"
+                                WidthRequest="40" HeightRequest="40">
+                            <Label Text="←" FontSize="20" TextColor="White"
+                                   HorizontalOptions="Center" VerticalOptions="Center"/>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnBackTapped"/>
+                            </Border.GestureRecognizers>
+                        </Border>
+                        <Border Grid.Column="2"
+                                BackgroundColor="{StaticResource SemiTransparentDark}"
+                                StrokeShape="RoundRectangle 20" StrokeThickness="0"
+                                WidthRequest="40" HeightRequest="40">
+                            <Label Text="♡" FontSize="20" TextColor="White"
+                                   HorizontalOptions="Center" VerticalOptions="Center"/>
+                        </Border>
+                        <Border Grid.Column="3"
+                                BackgroundColor="{StaticResource SemiTransparentDark}"
+                                StrokeShape="RoundRectangle 20" StrokeThickness="0"
+                                WidthRequest="40" HeightRequest="40">
+                            <Label Text="⬆" FontSize="18" TextColor="White"
+                                   HorizontalOptions="Center" VerticalOptions="Center"/>
+                        </Border>
+                    </Grid>
 
-                <!-- Thông báo lỗi -->
-                <Label Text="{Binding ErrorMessage}"
-                       IsVisible="{Binding ErrorMessage, Converter={StaticResource IsNotEmptyConverter}}"
-                       TextColor="Red"
-                       HorizontalOptions="Center" />
+                    <!-- Category tag bottom-left -->
+                    <Border BackgroundColor="{StaticResource Primary}"
+                            StrokeShape="RoundRectangle 10" StrokeThickness="0"
+                            Padding="8,4"
+                            HorizontalOptions="Start" VerticalOptions="End"
+                            Margin="16,0,0,16">
+                        <Label Text="{Binding CategoryTag}" TextColor="White" FontSize="11" FontAttributes="Bold"/>
+                    </Border>
+                </Grid>
 
-                <!-- Tiêu đề -->
-                <Label Text="{Binding Poi.Title}"
-                       FontSize="22"
-                       FontAttributes="Bold"
-                       TextColor="#212121" />
+                <!-- ── Info Section ── -->
+                <VerticalStackLayout Padding="20" Spacing="16"
+                                     BackgroundColor="{StaticResource Surface}">
+                    <Label Text="{Binding Title}" Style="{StaticResource HeadlineLabel}"/>
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+                        <Label Grid.Column="0" Text="⭐ 4.8" Style="{StaticResource PrimaryLabel}"/>
+                        <Label Grid.Column="1" Text="· Phố Vĩnh Khánh, Quận 4"
+                               Style="{StaticResource BodyLabel}" VerticalOptions="Center"/>
+                    </Grid>
+                </VerticalStackLayout>
 
-                <!-- Mô tả -->
-                <Label Text="{Binding Poi.Description}"
-                       FontSize="15"
-                       TextColor="#757575"
-                       LineBreakMode="WordWrap" />
+                <!-- ── Audio Player Card ── -->
+                <Border Style="{StaticResource CardBorder}"
+                        Margin="16" Padding="20">
+                    <VerticalStackLayout Spacing="16">
+                        <!-- Language / Voice selector pills -->
+                        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
+                            <Border Grid.Column="0" Style="{StaticResource PillBorderActive}">
+                                <Label Text="Giọng Bắc" TextColor="White" FontSize="12"
+                                       FontAttributes="Bold" HorizontalOptions="Center"/>
+                            </Border>
+                            <Border Grid.Column="1" Style="{StaticResource PillBorder}">
+                                <Label Text="Giọng Trung" TextColor="{StaticResource TextSecondary}"
+                                       FontSize="12" HorizontalOptions="Center"/>
+                            </Border>
+                            <Border Grid.Column="2" Style="{StaticResource PillBorder}">
+                                <Label Text="Giọng Nam" TextColor="{StaticResource TextSecondary}"
+                                       FontSize="12" HorizontalOptions="Center"/>
+                            </Border>
+                        </Grid>
 
-                <!-- Điều khiển audio -->
-                <HorizontalStackLayout Spacing="12" HorizontalOptions="Center" Margin="0,8,0,0">
-                    <Button Text="▶  Phát thuyết minh"
-                            Clicked="OnPlayClicked"
-                            IsEnabled="{Binding IsPlaying, Converter={StaticResource InverseBoolConverter}}"
-                            BackgroundColor="#1976D2"
-                            TextColor="White"
-                            CornerRadius="24"
-                            Padding="20,10" />
+                        <!-- Progress Seeker -->
+                        <VerticalStackLayout Spacing="6">
+                            <Slider Value="{Binding AudioProgress}"
+                                    Minimum="0" Maximum="1"
+                                    ThumbColor="{StaticResource Primary}"
+                                    MinimumTrackColor="{StaticResource Primary}"
+                                    MaximumTrackColor="{StaticResource Gray200}"
+                                    DragCompleted="OnSliderDragCompleted"/>
+                            <Grid ColumnDefinitions="*,*">
+                                <Label Grid.Column="0" Text="{Binding CurrentTime}"
+                                       Style="{StaticResource CaptionLabel}"/>
+                                <Label Grid.Column="1" Text="{Binding TotalTime}"
+                                       Style="{StaticResource CaptionLabel}"
+                                       HorizontalOptions="End"/>
+                            </Grid>
+                        </VerticalStackLayout>
 
-                    <Button Text="■  Dừng"
-                            Clicked="OnStopClicked"
-                            IsEnabled="{Binding IsPlaying}"
-                            BackgroundColor="#E53935"
-                            TextColor="White"
-                            CornerRadius="24"
-                            Padding="20,10" />
-                </HorizontalStackLayout>
+                        <!-- Play controls row -->
+                        <Grid ColumnDefinitions="Auto,*,Auto,*,Auto"
+                              HorizontalOptions="Center">
+                            <!-- Speed -->
+                            <Border Grid.Column="0"
+                                    Style="{StaticResource PillBorder}"
+                                    Padding="10,6">
+                                <Label Text="{Binding SpeedText}" FontSize="12"
+                                       TextColor="{StaticResource TextSecondary}"
+                                       FontAttributes="Bold"/>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnSpeedTapped"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+                            <!-- Prev -->
+                            <Border Grid.Column="1"
+                                    StrokeShape="RoundRectangle 24" StrokeThickness="0"
+                                    BackgroundColor="{StaticResource Gray100}"
+                                    WidthRequest="44" HeightRequest="44"
+                                    HorizontalOptions="Center">
+                                <Label Text="⏮" FontSize="20"
+                                       HorizontalOptions="Center" VerticalOptions="Center"/>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnPreviousTapped"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+                            <!-- Play/Pause big -->
+                            <Border Grid.Column="2"
+                                    BackgroundColor="{StaticResource Primary}"
+                                    StrokeShape="RoundRectangle 34" StrokeThickness="0"
+                                    WidthRequest="64" HeightRequest="64"
+                                    HorizontalOptions="Center">
+                                <Border.Shadow>
+                                    <Shadow Brush="{StaticResource Primary}" Offset="0,4" Radius="12" Opacity="0.4"/>
+                                </Border.Shadow>
+                                <Label Text="{Binding PlayPauseIcon}" FontSize="28" TextColor="White"
+                                       HorizontalOptions="Center" VerticalOptions="Center"/>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnPlayPauseTapped"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+                            <!-- Next -->
+                            <Border Grid.Column="3"
+                                    StrokeShape="RoundRectangle 24" StrokeThickness="0"
+                                    BackgroundColor="{StaticResource Gray100}"
+                                    WidthRequest="44" HeightRequest="44"
+                                    HorizontalOptions="Center">
+                                <Label Text="⏭" FontSize="20"
+                                       HorizontalOptions="Center" VerticalOptions="Center"/>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnNextTapped"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+                            <!-- Repeat -->
+                            <Border Grid.Column="4"
+                                    Style="{StaticResource PillBorder}"
+                                    Padding="10,6">
+                                <Label Text="🔁" FontSize="14"/>
+                            </Border>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Border>
 
-                <!-- Trạng thái đang phát -->
-                <Label Text="Đang phát..."
-                       IsVisible="{Binding IsPlaying}"
-                       TextColor="#1976D2"
-                       HorizontalOptions="Center"
-                       FontSize="13" />
+                <!-- ── Description ── -->
+                <VerticalStackLayout Padding="20,0,20,16" Spacing="10">
+                    <Label Text="Giới thiệu" Style="{StaticResource SectionTitle}"/>
+                    <Label Text="{Binding Description}"
+                           Style="{StaticResource BodyLabel}"
+                           MaxLines="{Binding DescExpanded, Converter={StaticResource BoolToMaxLinesConverter}}"
+                           LineBreakMode="WordWrap"/>
+                    <Label Style="{StaticResource PrimaryLabel}"
+                           Text="{Binding ExpandLabel}">
+                        <Label.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnExpandDescTapped"/>
+                        </Label.GestureRecognizers>
+                    </Label>
+                </VerticalStackLayout>
 
+                <BoxView HeightRequest="16" Color="Transparent"/>
             </VerticalStackLayout>
-        </VerticalStackLayout>
-    </ScrollView>
+        </ScrollView>
 
+        <!-- ── Footer: Điểm tiếp theo ── -->
+        <Border Grid.Row="1"
+                BackgroundColor="{StaticResource Surface}"
+                StrokeShape="RoundRectangle 0" StrokeThickness="0"
+                Padding="16,12">
+            <Border.Shadow>
+                <Shadow Brush="Black" Offset="0,-2" Radius="10" Opacity="0.08"/>
+            </Border.Shadow>
+            <Button Text="Điểm tiếp theo →"
+                    Style="{StaticResource PrimaryButton}"
+                    HorizontalOptions="FillAndExpand"
+                    Clicked="OnNextPoiClicked"/>
+        </Border>
+
+    </Grid>
 </ContentPage>

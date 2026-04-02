@@ -20,5 +20,12 @@ namespace Shared
         public string Description { get; set; } = string.Empty;
         public string AudioUrl { get; set; } = string.Empty;
         public string LocalAudioPath { get; set; } = string.Empty;
+
+        // ── Relations ──────────────────────────────────────────────
+        /// <summary>Danh sách tên category (ví dụ: ["Ẩm thực", "Hải sản"]).</summary>
+        public List<string> Categories { get; set; } = [];
+
+        /// <summary>Danh sách URL ảnh gallery của POI.</summary>
+        public List<string> GalleryUrls { get; set; } = [];
     }
 }

@@ -11,6 +11,9 @@ public partial class MapPage : ContentPage
     private readonly MainViewModel _main;
     private string? _activePinPoiId;
 
+    // Property wrapper để map MainMap → MapControl
+    private Microsoft.Maui.Controls.Maps.Map MapControl => MainMap;
+
     public MapPage(MapViewModel vm, MainViewModel main)
     {
         InitializeComponent();
@@ -71,13 +74,13 @@ public partial class MapPage : ContentPage
             var poi = _main.ActivePoi;
             if (poi is null)
             {
-                ActivePoiBanner.IsVisible = false;
+                // TODO: ActivePoiBanner.IsVisible = false;
                 return;
             }
-            ActivePoiTitle.Text = poi.Title;
-            ActivePoiDesc.Text = poi.Description;
+            // TODO: ActivePoiTitle.Text = poi.Title;
+            // TODO: ActivePoiDesc.Text = poi.Description;
             _activePinPoiId = poi.PoiId;
-            ActivePoiBanner.IsVisible = true;
+            // TODO: ActivePoiBanner.IsVisible = true;
         });
     }
 
@@ -96,7 +99,58 @@ public partial class MapPage : ContentPage
 
     private async void OnQrScanClicked(object? sender, EventArgs e)
     {
-        await Shell.Current.GoToAsync(nameof(QrScanPage));
+        // TODO: QrScanPage không tồn tại
+        // await Shell.Current.GoToAsync(nameof(QrScanPage));
+    }
+
+    private async void OnLanguageClicked(object? sender, EventArgs e)
+    {
+        var selected = await DisplayActionSheetAsync(
+            "Chọn ngôn ngữ thuyết minh",
+            "Huỷ",
+            null,
+            "🇻🇳 Tiếng Việt",
+            "🇬🇧 English",
+            "🇨🇳 中文",
+            "🇰🇷 한국어",
+            "🇯🇵 日本語");
+
+        var lang = selected switch
+        {
+            "🇻🇳 Tiếng Việt" => "vi",
+            "🇬🇧 English"    => "en",
+            "🇨🇳 中文"        => "zh-Hans",
+            "🇰🇷 한국어"       => "ko",
+            "🇯🇵 日本語"       => "ja",
+            _ => null
+        };
+
+        if (lang is not null)
+        {
+            _main.CurrentLanguage = lang;
+            // Pins sẽ refresh sau khi ReloadPoisAsync hoàn tất
+            _main.PropertyChanged += OnPoisReloaded;
+        }
+    }
+
+    private void OnPoisReloaded(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(MainViewModel.Pois)) return;
+        _main.PropertyChanged -= OnPoisReloaded;
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            _vm.LoadPois(_main.Pois);
+            RefreshPins();
+        });
+    }
+
+    private void OnMiniPlayClicked(object? sender, EventArgs e)
+    {
+        if (_activePinPoiId is null) return;
+        // Toggle play/pause từ banner — delegate xuống MainViewModel
+        var poi = _main.ActivePoi;
+        if (poi is not null)
+            _ = _main.TriggerAudioAsync(poi);
     }
 
     private async Task RequestInitialLocationAsync()

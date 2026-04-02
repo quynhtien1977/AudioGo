@@ -7,76 +7,173 @@ namespace AudioGo.Services
 {
     /// <summary>
     /// Đồng bộ POI từ server về SQLite local.
-    /// Nếu offline, đọc từ cache. Nếu online, fetch và cập nhật cache.
+    /// Nếu offline, đọc từ cache. Nếu online, fetch → cache metadata → download audio.
+    /// 
+    /// Flow ngôn ngữ:
+    ///   1. Lấy system language device (caller truyền vào)
+    ///   2. Gửi request API với lang đó
+    ///   3. Backend lazy-generate (translate + TTS) nếu chưa có → trả AudioUrl
+    ///   4. SyncService download file .mp3 về LocalAudioPath
     /// </summary>
     public class SyncService
     {
         private readonly IApiService _api;
         private readonly AppDatabase _db;
+        private readonly HttpClient _http;
 
-        public SyncService(IApiService api, AppDatabase db)
+        public SyncService(IApiService api, AppDatabase db, HttpClient http)
         {
             _api = api;
             _db = db;
+            _http = http;
         }
 
-        /// <summary>Trả về POI list: ưu tiên dữ liệu server, fallback về cache.</summary>
-        public async Task<List<POI>> GetPoisAsync(string languageCode = "vi")
+        /// <summary>
+        /// Trả về POI list: ưu tiên dữ liệu server, fallback về cache.
+        /// Sau khi lấy server data, tự động download audio nền.
+        /// </summary>
+        public async Task<List<POI>> GetPoisAsync(string languageCode = "vi", CancellationToken ct = default)
         {
-            if (Connectivity.NetworkAccess == NetworkAccess.Internet)
+            // Không dùng Connectivity.NetworkAccess vì Android WiFi thật
+            // đôi khi trả về Local/ConstrainedInternet thay vì Internet.
+            // Thay vào đó: thử gọi API thẳng — nếu thành công thì dùng,
+            // nếu timeout/lỗi thì fallback về SQLite cache.
+            try
             {
-                try
+                var serverPois = await _api.GetPoisAsync(languageCode: languageCode, ct: ct);
+
+                if (serverPois.Count > 0)
                 {
-                    var serverPois = await _api.GetPoisAsync(languageCode);
-                    await CacheAsync(serverPois);
-                    return serverPois;
-                }
-                catch
-                {
-                    // Network lỗi → dùng cache
+                    // Cache metadata trước để app dùng được ngay
+                    await CacheMetadataAsync(serverPois);
+
+                    // Download audio files nền (không block UI)
+                    _ = Task.Run(() => DownloadAudioFilesAsync(serverPois, ct), ct);
+
+                    // Đọc lại từ DB (giữ LocalAudioPath cũ nếu có)
+                    return (await _db.GetAllPoisAsync()).Select(MapToDto).ToList();
                 }
             }
+            catch
+            {
+                // API không kết nối được → fallback về cache
+            }
 
+            // Fallback: đọc từ SQLite cache (offline)
             return (await _db.GetAllPoisAsync()).Select(MapToDto).ToList();
         }
 
-        private async Task CacheAsync(List<POI> pois)
+        // ── Private Helpers ───────────────────────────────────────────────
+
+        /// <summary>Lưu metadata POI xuống SQLite (không download audio).</summary>
+        private async Task CacheMetadataAsync(List<POI> pois)
         {
             foreach (var poi in pois)
-                await _db.SavePoiAsync(MapToEntity(poi));
+            {
+                // Giữ lại LocalAudioPath cũ nếu file vẫn còn
+                var existing = await _db.GetPoiAsync(poi.PoiId);
+                var entity = MapToEntity(poi);
+
+                if (existing is not null &&
+                    !string.IsNullOrEmpty(existing.LocalAudioPath) &&
+                    File.Exists(existing.LocalAudioPath))
+                {
+                    entity.LocalAudioPath = existing.LocalAudioPath;
+                }
+
+                await _db.SavePoiAsync(entity);
+            }
+        }
+
+        /// <summary>
+        /// Download audio files từ AudioUrl về local storage.
+        /// Bỏ qua nếu file đã tồn tại (content-aware: so sánh URL để tái tải khi server thay đổi).
+        /// </summary>
+        private async Task DownloadAudioFilesAsync(List<POI> pois, CancellationToken ct)
+        {
+            var audioDir = Path.Combine(FileSystem.AppDataDirectory, "audio");
+            Directory.CreateDirectory(audioDir);
+
+            foreach (var poi in pois)
+            {
+                if (ct.IsCancellationRequested) break;
+                if (string.IsNullOrEmpty(poi.AudioUrl)) continue;
+
+                try
+                {
+                    var existing = await _db.GetPoiAsync(poi.PoiId);
+
+                    // Tạo tên file duy nhất từ PoiId + LanguageCode
+                    var fileName = $"{poi.PoiId}_{poi.LanguageCode}.mp3";
+                    var localPath = Path.Combine(audioDir, fileName);
+
+                    // Bỏ qua nếu file đã tồn tại và chưa thay đổi URL
+                    if (File.Exists(localPath) &&
+                        existing?.AudioUrl == poi.AudioUrl)
+                    {
+                        continue;
+                    }
+
+                    // Download file
+                    var bytes = await _http.GetByteArrayAsync(poi.AudioUrl, ct);
+                    await File.WriteAllBytesAsync(localPath, bytes, ct);
+
+                    // Cập nhật LocalAudioPath trong SQLite
+                    if (existing is not null)
+                    {
+                        existing.LocalAudioPath = localPath;
+                        existing.AudioUrl = poi.AudioUrl;
+                        await _db.SavePoiAsync(existing);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log và tiếp tục — không để 1 POI lỗi chặn cả batch
+                    System.Diagnostics.Debug.WriteLine(
+                        $"[SyncService] Download audio failed for POI {poi.PoiId}: {ex.Message}");
+                }
+            }
         }
 
         private static PoiEntity MapToEntity(POI dto) => new()
         {
-            PoiId = dto.PoiId,
-            Latitude = dto.Latitude,
-            Longitude = dto.Longitude,
+            PoiId            = dto.PoiId,
+            Latitude         = dto.Latitude,
+            Longitude        = dto.Longitude,
             ActivationRadius = dto.ActivationRadius,
-            Priority = dto.Priority,
-            Status = dto.Status,
-            LogoUrl = dto.LogoUrl,
-            LanguageCode = dto.LanguageCode,
-            Title = dto.Title,
-            Description = dto.Description,
-            AudioUrl = dto.AudioUrl,
-            LocalAudioPath = dto.LocalAudioPath,
-            LastSyncedAt = DateTime.UtcNow
+            Priority         = dto.Priority,
+            Status           = dto.Status,
+            LogoUrl          = dto.LogoUrl,
+            LanguageCode     = dto.LanguageCode,
+            Title            = dto.Title,
+            Description      = dto.Description,
+            AudioUrl         = dto.AudioUrl,
+            LocalAudioPath   = dto.LocalAudioPath,
+            // Serialise list to JSON for SQLite storage
+            CategoriesJson   = dto.Categories.Count > 0
+                ? System.Text.Json.JsonSerializer.Serialize(dto.Categories)
+                : string.Empty,
+            LastSyncedAt     = DateTime.UtcNow
         };
 
         private static POI MapToDto(PoiEntity e) => new()
         {
-            PoiId = e.PoiId,
-            Latitude = e.Latitude,
-            Longitude = e.Longitude,
-            ActivationRadius = e.ActivationRadius,
-            Priority = e.Priority,
-            Status = e.Status,
-            LogoUrl = e.LogoUrl,
-            LanguageCode = e.LanguageCode,
-            Title = e.Title,
-            Description = e.Description,
-            AudioUrl = e.AudioUrl,
-            LocalAudioPath = e.LocalAudioPath
+            PoiId           = e.PoiId,
+            Latitude        = e.Latitude,
+            Longitude       = e.Longitude,
+            ActivationRadius= e.ActivationRadius,
+            Priority        = e.Priority,
+            Status          = e.Status,
+            LogoUrl         = e.LogoUrl,
+            LanguageCode    = e.LanguageCode,
+            Title           = e.Title,
+            Description     = e.Description,
+            AudioUrl        = e.AudioUrl,
+            LocalAudioPath  = e.LocalAudioPath,
+            // Deserialise comma-separated categories stored in SQLite
+            Categories      = string.IsNullOrEmpty(e.CategoriesJson)
+                ? new()
+                : System.Text.Json.JsonSerializer.Deserialize<List<string>>(e.CategoriesJson) ?? new(),
         };
     }
 }

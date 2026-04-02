@@ -1,4 +1,4 @@
-﻿using AudioGo_Mobile.Views;
+using AudioGo_Mobile.Views;
 
 namespace AudioGo_Mobile;
 
@@ -9,7 +9,8 @@ public partial class AppShell : Shell
         InitializeComponent();
 
         // Routes cho navigation (không có tab — navigate bằng GoToAsync)
-        Routing.RegisterRoute(nameof(PoiDetailPage), typeof(PoiDetailPage));
-        Routing.RegisterRoute(nameof(QrScanPage), typeof(QrScanPage));
+        Routing.RegisterRoute(nameof(PoiDetailPage),    typeof(PoiDetailPage));
+        Routing.RegisterRoute(nameof(TourDetailPage),   typeof(TourDetailPage));
+        Routing.RegisterRoute(nameof(CreateTourPage),   typeof(CreateTourPage));
     }
 }

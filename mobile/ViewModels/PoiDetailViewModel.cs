@@ -18,7 +18,7 @@ namespace AudioGo.ViewModels
             set
             {
                 SetProperty(ref _poiId, value);
-                _ = LoadAsync(value);
+                Task.Run(() => LoadAsync(value));
             }
         }
 
@@ -30,12 +30,7 @@ namespace AudioGo.ViewModels
             private set { SetProperty(ref _poi, value); }
         }
 
-        private bool _isLoading;
-        public bool IsLoading
-        {
-            get => _isLoading;
-            private set { SetProperty(ref _isLoading, value); }
-        }
+
 
         private string _errorMessage = string.Empty;
         public string ErrorMessage
@@ -46,6 +41,21 @@ namespace AudioGo.ViewModels
 
         // ── Audio state ────────────────────────────────────────────
         public bool IsPlaying => _audio.IsPlaying;
+
+        private double _audioProgress = 0;
+        public double AudioProgress
+        {
+            get => _audioProgress;
+            set { SetProperty(ref _audioProgress, value); }
+        }
+
+        public async Task TogglePlayPauseAsync()
+        {
+            if (IsPlaying)
+                await StopAudioAsync();
+            else
+                await PlayAudioAsync();
+        }
 
         public PoiDetailViewModel(AppDatabase db, IAudioService audio)
         {

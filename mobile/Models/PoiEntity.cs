@@ -35,6 +35,9 @@ namespace AudioGo.Models
         public string LocalAudioPath { get; set; } = string.Empty;
 
         // ── Sync metadata ──────────────────────────────────────────
+        /// <summary>JSON-serialised list of category names, e.g. "[\"Ẩm thực\",\"Hải sản\"]".</summary>
+        public string CategoriesJson { get; set; } = string.Empty;
+
         public DateTime? LastSyncedAt { get; set; }
     }
 }
