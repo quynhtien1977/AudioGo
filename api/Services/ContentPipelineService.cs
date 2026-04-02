@@ -116,4 +116,55 @@ public class ContentPipelineService : IContentPipelineService
             semaphore.Release();
         }
     }
+
+    /// <summary>
+    /// Generate audio cho content đã tồn tại nhưng AudioUrl đang rỗng.
+    /// Chỉ chạy TTS + upload, không translate.
+    /// </summary>
+    public async Task<PoiContent> GenerateAudioAsync(PoiContent content)
+    {
+        if (!string.IsNullOrEmpty(content.AudioUrl))
+        {
+            _logger.LogInformation("Content {ContentId} đã có audio, bỏ qua.", content.ContentId);
+            return content;
+        }
+
+        var lockKey = $"audio:{content.ContentId}";
+        var semaphore = _locks.GetOrAdd(lockKey, _ => new SemaphoreSlim(1, 1));
+        await semaphore.WaitAsync();
+
+        try
+        {
+            // TTS từ Description hiện có
+            using var audioStream = await _tts.SynthesizeAsync(content.Description, content.LanguageCode);
+
+            // Upload lên Blob Storage
+            var container = _config["Azure:BlobStorage:AudioContainer"] ?? "audio-files";
+            var blobPath = $"{content.PoiId}/{content.LanguageCode}.mp3";
+            var audioUrl = await _blob.UploadAsync(container, blobPath, audioStream, "audio/mpeg");
+
+            // Cập nhật DB
+            using var scope = _scopeFactory.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            var dbContent = await db.PoiContents.FindAsync(content.ContentId);
+            if (dbContent is not null)
+            {
+                dbContent.AudioUrl = audioUrl;
+                dbContent.UpdatedAt = DateTime.UtcNow;
+                await db.SaveChangesAsync();
+            }
+
+            content.AudioUrl = audioUrl;
+            _logger.LogInformation(
+                "Audio generated cho ContentId={ContentId} POI={PoiId} lang={Lang} → {Url}",
+                content.ContentId, content.PoiId, content.LanguageCode, audioUrl);
+
+            return content;
+        }
+        finally
+        {
+            semaphore.Release();
+        }
+    }
 }
