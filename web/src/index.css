@@ -1,0 +1,27 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap");
+@import "@fontsource-variable/geist";   
+
+@tailwind base;   /* gỡ bỏ giao diện mặc định của trình duyệt */ 
+@tailwind components;  /* thêm các class tự định nghĩa ở đây; shadcn/ui cũng hoạt động dựa trên các class này */
+@tailwind utilities;    /* thêm các class tiện ích nhỏ lẻ; class này có độ ưu tiên cao nhất */
+
+@layer base {
+  :root {
+    --background: 255 255 255;
+    --foreground: 15 23 42;
+    --border: 226 232 240;
+    --input: 226 232 240;
+    --ring: 59 130 246;
+  }
+
+  body {
+    /* @apply cho phép đem CSS của Tailwind vào trong CSS thuần */
+    @apply bg-background text-foreground;
+    font-family: 'Roboto', sans-serif;
+  }
+
+  /* Nếu muốn border mặc định cho input, button thôi */
+  input, button, select, textarea {
+    @apply border-border;
+  }
+}
