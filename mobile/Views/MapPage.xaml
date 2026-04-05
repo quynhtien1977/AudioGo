@@ -2,7 +2,9 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:maps="clr-namespace:Microsoft.Maui.Controls.Maps;assembly=Microsoft.Maui.Controls.Maps"
+             xmlns:vm="clr-namespace:AudioGo.ViewModels"
              x:Class="AudioGo_Mobile.Views.MapPage"
+             x:Name="ThisPage"
              Shell.NavBarIsVisible="False"
              BackgroundColor="{StaticResource Background}"
              Title="Bản đồ">
@@ -83,9 +85,62 @@
                                Color="{StaticResource Primary}"
                                HorizontalOptions="Center"
                                VerticalOptions="Center"/>
+
+            <!-- ── Custom Filter Overlay (thay thế ActionSheet thiếu icon) ── -->
+            <Grid x:Name="FilterOverlay"
+                  IsVisible="False"
+                  BackgroundColor="#80000000">
+                <Grid.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnFilterOverlayDismiss"/>
+                </Grid.GestureRecognizers>
+                <Border BackgroundColor="{StaticResource Surface}"
+                        StrokeShape="RoundRectangle 24,24,0,0"
+                        StrokeThickness="0"
+                        VerticalOptions="End">
+                    <VerticalStackLayout Spacing="0" Padding="0,0,0,32">
+                        <!-- Handle -->
+                        <BoxView HeightRequest="4" WidthRequest="40" Color="{StaticResource Gray300}"
+                                 HorizontalOptions="Center" CornerRadius="2" Margin="0,12,0,12"/>
+                        <!-- Title -->
+                        <Label Text="Lọc danh mục" Style="{StaticResource SectionTitle}"
+                               Margin="20,0,20,8"/>
+                        <!-- Category list with Material Icons -->
+                        <CollectionView x:Name="FilterChipList"
+                                        SelectionMode="None">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="vm:CategoryChipVm">
+                                    <Grid Padding="20,12" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+                                        <Border Grid.Column="0"
+                                                BackgroundColor="{StaticResource PrimaryLight}"
+                                                StrokeShape="RoundRectangle 10"
+                                                StrokeThickness="0"
+                                                WidthRequest="36" HeightRequest="36">
+                                            <Label Text="{Binding Icon}" FontFamily="MaterialIcons" FontSize="18"
+                                                   TextColor="{StaticResource Primary}"
+                                                   HorizontalOptions="Center" VerticalOptions="Center"/>
+                                        </Border>
+                                        <Label Grid.Column="1" Text="{Binding Label}"
+                                               Style="{StaticResource SectionTitle}" FontSize="15"
+                                               VerticalOptions="Center"/>
+                                        <!-- Checkmark khi active -->
+                                        <Label Grid.Column="2" Text="&#xe5ca;" FontFamily="MaterialIcons"
+                                               FontSize="22" TextColor="{StaticResource Primary}"
+                                               VerticalOptions="Center"
+                                               IsVisible="{Binding IsActive}"/>
+                                        <Grid.GestureRecognizers>
+                                            <TapGestureRecognizer Tapped="OnFilterChipTapped"
+                                                                   CommandParameter="{Binding .}"/>
+                                        </Grid.GestureRecognizers>
+                                    </Grid>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </Border>
+            </Grid>
         </Grid>
 
-        <!-- ── Bottom Sheet: Lọc / danh sách POI ── -->
+        <!-- ── Bottom Sheet: Category chips ── -->
         <Border Grid.Row="1"
                 Style="{StaticResource MiniPlayerBar}"
                 Padding="0">
@@ -97,22 +152,53 @@
                 <!-- Category pills -->
                 <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never"
                             Padding="16,12">
-                    <HorizontalStackLayout Spacing="8">
-                        <Border Style="{StaticResource PillBorderActive}">
-                            <Label Text="🗺 Tất cả" TextColor="White" FontSize="13" FontAttributes="Bold"/>
-                        </Border>
-                        <Border Style="{StaticResource PillBorder}">
-                            <Label Text="🦐 Hải sản" TextColor="{StaticResource TextSecondary}" FontSize="13"/>
-                        </Border>
-                        <Border Style="{StaticResource PillBorder}">
-                            <Label Text="🍜 Bún phở" TextColor="{StaticResource TextSecondary}" FontSize="13"/>
-                        </Border>
-                        <Border Style="{StaticResource PillBorder}">
-                            <Label Text="🍢 Ốc" TextColor="{StaticResource TextSecondary}" FontSize="13"/>
-                        </Border>
-                        <Border Style="{StaticResource PillBorder}">
-                            <Label Text="☕ Cà phê" TextColor="{StaticResource TextSecondary}" FontSize="13"/>
-                        </Border>
+                    <HorizontalStackLayout Spacing="8"
+                                           BindableLayout.ItemsSource="{Binding CategoryChips}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:CategoryChipVm">
+                                <Border Padding="12,7"
+                                        StrokeShape="RoundRectangle 20"
+                                        StrokeThickness="1.5">
+                                    <Border.Triggers>
+                                        <DataTrigger TargetType="Border" Binding="{Binding IsActive}" Value="True">
+                                            <Setter Property="BackgroundColor" Value="{StaticResource Primary}"/>
+                                            <Setter Property="Stroke" Value="{StaticResource Primary}"/>
+                                        </DataTrigger>
+                                        <DataTrigger TargetType="Border" Binding="{Binding IsActive}" Value="False">
+                                            <Setter Property="BackgroundColor" Value="{StaticResource Surface}"/>
+                                            <Setter Property="Stroke" Value="{StaticResource Gray200}"/>
+                                        </DataTrigger>
+                                    </Border.Triggers>
+                                    <HorizontalStackLayout Spacing="5" VerticalOptions="Center">
+                                        <Label Text="{Binding Icon}" FontFamily="MaterialIcons" FontSize="14"
+                                               VerticalOptions="Center">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsActive}" Value="True">
+                                                    <Setter Property="TextColor" Value="White"/>
+                                                </DataTrigger>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsActive}" Value="False">
+                                                    <Setter Property="TextColor" Value="{StaticResource TextSecondary}"/>
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
+                                        <Label Text="{Binding Label}" FontSize="12" VerticalOptions="Center">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsActive}" Value="True">
+                                                    <Setter Property="TextColor" Value="White"/>
+                                                </DataTrigger>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsActive}" Value="False">
+                                                    <Setter Property="TextColor" Value="{StaticResource TextSecondary}"/>
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
+                                    </HorizontalStackLayout>
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding BindingContext.FilterCommand, Source={x:Reference ThisPage}}"
+                                                              CommandParameter="{Binding .}"/>
+                                    </Border.GestureRecognizers>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
                     </HorizontalStackLayout>
                 </ScrollView>
 

@@ -73,18 +73,26 @@ public partial class MapPage : ContentPage
 
     // ── XAML Event Handlers (previously missing → caused crash) ──────
 
-    private async void OnSearchTapped(object? sender, TappedEventArgs e)
-        => await Shell.Current.GoToAsync("//Search");
+    private void OnSearchTapped(object? sender, TappedEventArgs e)
+        => _ = Shell.Current.GoToAsync("//Search");
 
-    private async void OnFilterTapped(object? sender, TappedEventArgs e)
+    private void OnFilterTapped(object? sender, TappedEventArgs e)
     {
-        // Stub: hiển thị action sheet chọn category filter
-        var selected = await DisplayActionSheet(
-            "Lọc danh mục",
-            "Huỷ",
-            null,
-            "🗺 Tất cả", "🦐 Hải sản", "🍜 Bún phở", "🍢 Ốc", "☕ Cà phê");
-        // TODO: Áp dụng filter vào MapViewModel khi có logic lọc
+        // Populate list và show overlay
+        FilterChipList.ItemsSource = _vm.CategoryChips;
+        FilterOverlay.IsVisible = true;
+    }
+
+    private void OnFilterOverlayDismiss(object? sender, TappedEventArgs e)
+        => FilterOverlay.IsVisible = false;
+
+    private void OnFilterChipTapped(object? sender, TappedEventArgs e)
+    {
+        if (e.Parameter is CategoryChipVm chip)
+        {
+            _vm.FilterCommand.Execute(chip);
+        }
+        FilterOverlay.IsVisible = false;
     }
 
     private void OnLocateMeTapped(object? sender, TappedEventArgs e)

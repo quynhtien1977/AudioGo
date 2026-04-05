@@ -4,8 +4,8 @@ using Plugin.Maui.Audio;
 namespace AudioGo.Services
 {
     /// <summary>
-    /// Phát audio: TTS (Text-to-Speech) hoặc file audio từ URL/local path.
-    /// Xếp hàng (queue) để tránh overlap khi nhiều POI trigger cùng lúc.
+    /// Phát audio: TTS hoặc file audio từ URL/local path.
+    /// Raise <see cref="PlaybackStateChanged"/> mỗi khi trạng thái thay đổi để ViewModels sync UI.
     /// </summary>
     public class AudioService : IAudioService
     {
@@ -20,11 +20,27 @@ namespace AudioGo.Services
             _audioManager = audioManager;
         }
 
+        // ── State ──────────────────────────────────────────────────
         public bool IsPlaying { get; private set; }
+        public double DurationSeconds { get; private set; }
 
-        /// <summary>
-        /// 3-tier fallback: local file → HTTP stream → device TTS
-        /// </summary>
+        // ── Event ──────────────────────────────────────────────────
+        public event EventHandler<AudioStateChangedEventArgs>? PlaybackStateChanged;
+
+        private void RaiseStateChanged(bool isPlaying, bool ended = false)
+        {
+            IsPlaying = isPlaying;
+            // Marshal to main thread so MAUI UI can update safely
+            MainThread.BeginInvokeOnMainThread(() =>
+                PlaybackStateChanged?.Invoke(this, new AudioStateChangedEventArgs
+                {
+                    IsPlaying = isPlaying,
+                    DurationSeconds = DurationSeconds,
+                    PlaybackEnded = ended
+                }));
+        }
+
+        // ── 3-tier fallback helper ─────────────────────────────────
         public Task PlayPoiAudioAsync(
             string? localAudioPath,
             string? audioUrl,
@@ -33,36 +49,42 @@ namespace AudioGo.Services
         {
             if (!string.IsNullOrEmpty(localAudioPath) && File.Exists(localAudioPath))
                 return PlayFileAsync(localAudioPath);
-
             if (!string.IsNullOrEmpty(audioUrl))
                 return PlayFileAsync(audioUrl);
-
             if (!string.IsNullOrEmpty(fallbackText))
                 return SpeakAsync(fallbackText, languageCode);
-
             return Task.CompletedTask;
         }
 
+        // ── TTS ────────────────────────────────────────────────────
         public async Task SpeakAsync(string text, string languageCode = "vi")
         {
             Enqueue(async ct =>
             {
-                IsPlaying = true;
-                var locale = (await TextToSpeech.Default.GetLocalesAsync())
-                    .FirstOrDefault(l => l.Language.StartsWith(languageCode));
-                await TextToSpeech.Default.SpeakAsync(text,
-                    new SpeechOptions { Locale = locale }, ct);
-                IsPlaying = false;
+                RaiseStateChanged(isPlaying: true);
+                try
+                {
+                    DurationSeconds = 0; // TTS duration unknown
+                    var locale = (await TextToSpeech.Default.GetLocalesAsync())
+                        .FirstOrDefault(l => l.Language.StartsWith(languageCode));
+                    await TextToSpeech.Default.SpeakAsync(text,
+                        new SpeechOptions { Locale = locale }, ct);
+                }
+                finally
+                {
+                    RaiseStateChanged(isPlaying: false, ended: true);
+                }
             });
         }
 
+        // ── File/URL player ────────────────────────────────────────
         public Task PlayFileAsync(string? urlOrPath)
         {
             if (string.IsNullOrEmpty(urlOrPath)) return Task.CompletedTask;
 
             Enqueue(async ct =>
             {
-                IsPlaying = true;
+                RaiseStateChanged(isPlaying: true);
                 try
                 {
                     DisposePlayer();
@@ -81,12 +103,15 @@ namespace AudioGo.Services
                     }
 
                     _player = _audioManager.CreatePlayer(stream);
-                    var tcs = new TaskCompletionSource();
+                    DurationSeconds = _player.Duration > 0 ? _player.Duration : 0;
+                    // Raise again after Duration is known
+                    RaiseStateChanged(isPlaying: true);
 
+                    var tcs = new TaskCompletionSource();
                     _player.PlaybackEnded += (s, e) => tcs.TrySetResult();
                     ct.Register(() =>
                     {
-                        try { _player?.Stop(); } catch { /* already stopped */ }
+                        try { _player?.Stop(); } catch { }
                         tcs.TrySetCanceled();
                     });
 
@@ -95,32 +120,38 @@ namespace AudioGo.Services
                 }
                 catch (FileNotFoundException)
                 {
-                    System.Diagnostics.Debug.WriteLine(
-                        $"[AudioService] File not found: {urlOrPath}");
+                    System.Diagnostics.Debug.WriteLine($"[AudioService] File not found: {urlOrPath}");
                 }
                 finally
                 {
-                    IsPlaying = false;
+                    RaiseStateChanged(isPlaying: false, ended: true);
                 }
             });
             return Task.CompletedTask;
         }
 
+        // ── Stop ───────────────────────────────────────────────────
         public async Task StopAsync()
         {
             await _cts.CancelAsync();
             _queue.Clear();
             DisposePlayer();
             _cts = new CancellationTokenSource();
-            IsPlaying = false;
+            DurationSeconds = 0;
+            RaiseStateChanged(isPlaying: false);
         }
 
+        // ── Position (best-effort) ─────────────────────────────────
+        /// <summary>Returns current playback position in seconds, or 0 if unavailable.</summary>
+        public double CurrentPositionSeconds => _player?.CurrentPosition ?? 0;
+
+        // ── Helpers ────────────────────────────────────────────────
         private void DisposePlayer()
         {
             if (_player is not null)
             {
-                try { _player.Stop(); } catch { /* already stopped */ }
-                try { _player.Dispose(); } catch { /* already disposed */ }
+                try { _player.Stop(); } catch { }
+                try { _player.Dispose(); } catch { }
                 _player = null;
             }
         }

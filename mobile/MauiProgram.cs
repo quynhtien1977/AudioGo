@@ -36,15 +36,15 @@ public static class MauiProgram
         builder.Services.AddSingleton(new AppDatabase(dbPath));
 
         // ── HTTP Client ───────────────────────────────────────────
-            builder.Services.AddHttpClient<IApiService, ApiService>(client =>
-            {
-                // 10.0.2.2 = IP đặc biệt dành cho Android Emulator kết nối về localhost của PC
-                // Đổi về 192.168.x.x nếu dùng thiết bị thật trên cùng mạng WiFi
-                client.BaseAddress = new Uri(DeviceInfo.DeviceType == DeviceType.Virtual 
-                    ? "http://10.0.2.2:5086/" 
-                    : "http://192.168.43.73:5086/");
-                client.Timeout = TimeSpan.FromSeconds(15);
-            });
+        builder.Services.AddHttpClient<IApiService, ApiService>(client =>
+        {
+            // 10.0.2.2 = IP đặc biệt dành cho Android Emulator kết nối về localhost của PC
+            // Đổi về 192.168.x.x nếu dùng thiết bị thật trên cùng mạng WiFi
+            client.BaseAddress = new Uri(DeviceInfo.DeviceType == DeviceType.Virtual 
+                ? "http://10.0.2.2:5086/" 
+                : "http://192.168.43.73:5086/");
+            client.Timeout = TimeSpan.FromSeconds(15);
+        });
 
         // ── Services ──────────────────────────────────────────────
         builder.Services.AddSingleton(AudioManager.Current);
@@ -76,8 +76,6 @@ public static class MauiProgram
         var mauiApp = builder.Build();
 
         // Init SQLite tables trên background thread — không block main thread khi startup
-        // Dùng Task.Run để tránh deadlock SynchronizationContext; fire-and-forget vì
-        // DB chưa cần thiết trước khi page đầu tiên OnAppearing
         _ = Task.Run(() => mauiApp.Services.GetRequiredService<AppDatabase>().InitAsync());
 
         return mauiApp;

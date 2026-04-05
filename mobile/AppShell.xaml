@@ -39,19 +39,6 @@
         </ShellContent>
 
         <ShellContent
-            Title="Tour"
-            ContentTemplate="{DataTemplate views:TourListPage}"
-            Route="TourList">
-            <ShellContent.Icon>
-                <FontImageSource
-                    FontFamily="MaterialIcons"
-                    Glyph="&#xef76;"
-                    Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource Primary}}"
-                    Size="26" />
-            </ShellContent.Icon>
-        </ShellContent>
-
-        <ShellContent
             Title="Khám phá"
             ContentTemplate="{DataTemplate views:SearchPage}"
             Route="Search">

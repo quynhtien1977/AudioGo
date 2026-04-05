@@ -3,14 +3,21 @@ using Microsoft.Maui.Controls.Maps;
 using Microsoft.Maui.Maps;
 using Shared;
 using System.Collections.ObjectModel;
+using System.Windows.Input;
 
 namespace AudioGo.ViewModels
 {
     public class MapViewModel : BaseViewModel
     {
         private readonly ILocationService _location;
+        private readonly IApiService _api;
 
         public ObservableCollection<Pin> Pins { get; } = new();
+        public ObservableCollection<CategoryChipVm> CategoryChips { get; }
+        public ICommand FilterCommand { get; }
+
+        private string _activeCategory = string.Empty;
+        private List<POI> _sourcePois = new();
 
         private MapSpan? _visibleRegion;
         public MapSpan? VisibleRegion
@@ -26,18 +33,74 @@ namespace AudioGo.ViewModels
             private set { SetProperty(ref _userLocation, value); }
         }
 
-        public MapViewModel(ILocationService location)
+        public MapViewModel(ILocationService location, IApiService api)
         {
             _location = location;
+            _api = api;
             _location.LocationUpdated += OnLocationUpdated;
+
+            // Start with defaults while API loads
+            CategoryChips = new ObservableCollection<CategoryChipVm>(
+                CategoryChipVm.GetDefaultChips().Select(c => new CategoryChipVm(c.label, c.icon, c.value)));
+
+            if (CategoryChips.Count > 0)
+                CategoryChips[0].IsActive = true;
+
+            FilterCommand = new Command<CategoryChipVm>(chip =>
+            {
+                if (chip is null) return;
+                foreach (var c in CategoryChips) c.IsActive = false;
+                chip.IsActive = true;
+                _activeCategory = chip.Value;
+                RefilterPins();
+            });
+
+            _ = LoadCategoriesAsync();
+        }
+
+        private async Task LoadCategoriesAsync()
+        {
+            try
+            {
+                var apiCategories = await _api.GetCategoriesAsync();
+                if (apiCategories.Count == 0) return;
+
+                var lang = AudioGo.Helpers.LanguageHelper.GetDeviceLanguageCode();
+                var newChips = CategoryChipVm.BuildFromApiCategories(apiCategories, lang);
+                var currentActive = CategoryChips.FirstOrDefault(c => c.IsActive)?.Value ?? "";
+
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    CategoryChips.Clear();
+                    foreach (var chip in newChips)
+                    {
+                        if (chip.Value == currentActive) chip.IsActive = true;
+                        CategoryChips.Add(chip);
+                    }
+                    if (!CategoryChips.Any(c => c.IsActive) && CategoryChips.Count > 0)
+                        CategoryChips[0].IsActive = true;
+                });
+            }
+            catch { /* keep defaults */ }
         }
 
         public void LoadPois(IEnumerable<POI> pois)
         {
+            _sourcePois = pois.ToList();
+            RefilterPins();
+        }
+
+        private void RefilterPins()
+        {
             Pins.Clear();
-            foreach (var poi in pois)
+            foreach (var poi in _sourcePois)
             {
-                // Bỏ qua POI có tọa độ không hợp lệ (0,0 hoặc ngoài phạm vi)
+                if (!string.IsNullOrEmpty(_activeCategory))
+                {
+                    if (poi.Categories == null || !poi.Categories.Contains(_activeCategory))
+                        continue;
+                }
+
                 if (poi.Latitude is 0 && poi.Longitude is 0) continue;
                 if (poi.Latitude < -90 || poi.Latitude > 90) continue;
                 if (poi.Longitude < -180 || poi.Longitude > 180) continue;
@@ -51,15 +114,12 @@ namespace AudioGo.ViewModels
                         Location = new Location(poi.Latitude, poi.Longitude),
                         Type = PinType.Place,
                     };
-                    // Gắn PoiId vào BindingContext để dùng khi navigate
                     pin.BindingContext = poi.PoiId;
                     Pins.Add(pin);
                 }
                 catch
                 {
-                    // Pin creation failed — skip this POI, don't crash entire map
-                    System.Diagnostics.Debug.WriteLine(
-                        $"[MapVM] Failed to create pin for POI {poi.PoiId}");
+                    System.Diagnostics.Debug.WriteLine($"[MapVM] Failed to create pin for POI {poi.PoiId}");
                 }
             }
             OnPropertyChanged(nameof(MapStatusLabel));
