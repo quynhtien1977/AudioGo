@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Lock, Unlock } from "lucide-react"
+import { Lock, Unlock, ChevronLeft, ChevronRight } from "lucide-react"
 import {
   getUsersApi,
   toggleLockApi,
@@ -70,27 +70,27 @@ export default function AccountsPage() {
       {/* HEADER GIỮ NGUYÊN */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Account Manager</h1>
-          <p className="text-gray-500 text-sm">Manage user list and system permissions</p>
+          <h1 className="text-2xl font-bold">QUẢN LÝ TÀI KHOẢN</h1>
+          <p className="text-gray-500 text-sm">Quản lý danh sách người dùng và quyền hệ thống</p>
         </div>
         <button
           onClick={() => setShowModal(true)}
           className="px-4 py-2 bg-pink-500 text-white rounded-lg shadow hover:bg-pink-600 transition-colors"
         >
-          + Create new account
+          + Tạo tài khoản mới
         </button>
       </div>
 
       <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
         {/* TABLE HEADER */}
-        <div className={`${gridLayout} text-[10px] text-pink-400 px-6 py-3 border-b font-bold tracking-wider uppercase`}>
-          <span>Full Name</span>
+        <div className={`${gridLayout} text-[13px] text-pink-400 px-6 py-3 border-b font-bold tracking-wider uppercase`}>
+          <span>Họ và tên</span>
           <span>Email</span>
-          <span>Password</span>
+          <span>Mật khẩu</span>
           <span>Role</span>
-          <span>Created At</span>
-          <span>Updated At</span>
-          <span className="text-right">Lock</span>
+          <span>Ngày tạo</span>
+          <span>Cập nhật</span>
+          <span className="text-right">Khóa</span>
         </div>
 
         {/* TABLE BODY */}
@@ -148,9 +148,9 @@ export default function AccountsPage() {
 
         {/* PAGINATION GIỮ NGUYÊN */}
         <div className="flex justify-between items-center px-6 py-4 text-sm text-gray-500">
-          <p>Showing {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, users.length)} of {users.length}</p>
+          <p>Hiển thị {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, users.length)} của {users.length}</p>
           <div className="flex items-center gap-1">
-             <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className="p-2 border rounded-md hover:bg-pink-50">{"<"}</button>
+             <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className="p-2 border rounded-md hover:bg-pink-50"><ChevronLeft size={14} /></button>
              {[...Array(totalPages)].map((_, i) => (
                <button 
                  key={i} 
@@ -160,7 +160,7 @@ export default function AccountsPage() {
                  {i + 1}
                </button>
              ))}
-             <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} className="p-2 border rounded-md hover:bg-pink-50">{">"}</button>
+             <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} className="p-2 border rounded-md hover:bg-pink-50"><ChevronRight size={14} /></button>
           </div>
         </div>
       </div>

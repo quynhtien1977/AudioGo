@@ -12,16 +12,6 @@ export const getDashboardData = () => {
             percent: "+12.5%",
           },
         },
-        chart: [
-          { day: "Mon", value: 500 },
-          { day: "Tue", value: 750 },
-          { day: "Wed", value: 1400 },
-          { day: "Thu", value: 1100 },
-          { day: "Fri", value: 1650 },
-          { day: "Sat", value: 2200 },
-          { day: "Sun", value: 2500 },
-          { day: "Today", value: 1900 },
-        ],
         pois: [
           {
             name: "The Pastel Bistro",

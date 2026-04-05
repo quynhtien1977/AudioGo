@@ -55,7 +55,7 @@ export const createUserApi = (newUser) =>
       const now = new Date().toISOString();
       const user = {
         ...newUser,
-        password: "123456",
+        password: newUser.password,
         id: "USR-" + Math.floor(Math.random() * 10000),
         locked: false,
         createdAt: now,

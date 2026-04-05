@@ -34,20 +34,23 @@ const TrendingChart = () => {
 
   return (
     <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+      
       <div className="flex items-center justify-between mb-8">
-        <h2 className="text-xl font-bold text-gray-900">Trending Audio Listens</h2>
+        <h2 className="text-xl font-bold text-gray-900">Xu hướng phát audio</h2>
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 bg-[#EE4B8E] rounded-full inline-block"></span>
-          <span className="text-sm text-gray-600">Daily Listens</span>
+          <span className="text-sm text-gray-600">Lượt phát mỗi ngày</span>
         </div>
       </div>
 
       <div className="h-[350px]">
+        {/* giúp biểu đồ tự động co dãn theo chiều rộng màn hình */}
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={data}
             margin={{ top: 10, right: 30, left: -20, bottom: 0 }}
           >
+            {/* hiện grid mờ phía sau */}
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
 
             <XAxis 
@@ -67,6 +70,7 @@ const TrendingChart = () => {
               tickFormatter={(value) => (value >= 1000 ? `${value / 1000}k` : value)}
             />
 
+            {/* khung nhỏ khi di chuột qua các điểm trên biểu đồ */}
             <Tooltip
               contentStyle={{ borderRadius: '8px', border: '1px solid #E5E7EB' }}
               labelStyle={{ fontWeight: 'bold' }}
@@ -93,6 +97,7 @@ const TrendingChart = () => {
           </AreaChart>
         </ResponsiveContainer>
       </div>
+
     </div>
   );
 };

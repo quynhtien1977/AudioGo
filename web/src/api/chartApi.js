@@ -2,14 +2,14 @@ export const getTrendingData = () => {
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve([
-        { name: 'Mon', listens: 550 },
-        { name: 'Tue', listens: 750 },
-        { name: 'Wed', listens: 1400 },
-        { name: 'Thu', listens: 1100 },
-        { name: 'Fri', listens: 1650 },
-        { name: 'Sat', listens: 2200 },
-        { name: 'Sun', listens: 2500 },
-        { name: 'Today', listens: 1900 },
+        { name: 'Thứ 2', listens: 550 },
+        { name: 'Thứ 3', listens: 750 },
+        { name: 'Thứ 4', listens: 1400 },
+        { name: 'Thứ 5', listens: 1100 },
+        { name: 'Thứ 6', listens: 1650 },
+        { name: 'Thứ 7', listens: 2200 },
+        { name: 'Chủ nhật', listens: 2500 },
+        { name: 'Hôm nay', listens: 1900 },
       ])
     }, 800)
   })

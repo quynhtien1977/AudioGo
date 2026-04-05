@@ -3,7 +3,7 @@
   "style": "radix-nova",
   "rsc": false,
   "tsx": false,
-  "tailwind": {
+  "tailwind": {         
     "config": "tailwind.config.js",
     "css": "src/index.css",
     "baseColor": "neutral",

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+
 import { getTopPOIs } from "../api/poiApi"
 
 export default function TopPOIModal({ onClose }) {
@@ -32,9 +33,9 @@ export default function TopPOIModal({ onClose }) {
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h2 className="text-xl font-bold">Top Popular POIs</h2>
+            <h2 className="text-xl font-bold">CÁC POIs PHỔ BIẾN</h2>
             <p className="text-sm text-pink-500">
-              Real-time performance ranking
+              Xếp hạng hiệu suất thời gian thực
             </p>
           </div>
 
@@ -48,11 +49,11 @@ export default function TopPOIModal({ onClose }) {
           <table className="w-full text-sm">
             <thead className="text-gray-400 text-left">
               <tr>
-                <th>RANK</th>
-                <th>POI NAME</th>
-                <th>LOCATION</th>
-                <th>CATEGORY</th>
-                <th>LISTEN RATE</th>
+                <th>XẾP HẠNG</th>
+                <th>TÊN POI</th>
+                <th>VỊ TRÍ</th>
+                <th>THỂ LOẠI</th>
+                <th>LƯỢT NGHE</th>
               </tr>
             </thead>
 
@@ -60,6 +61,7 @@ export default function TopPOIModal({ onClose }) {
               {data.map((item) => (
                 <tr key={item.rank} className="border-t">
                   <td className="py-4 font-semibold">
+                    {/* thêm số 0 vào trước nếu chưa đủ 2 ký tự */}
                     {String(item.rank).padStart(2, "0")}
                   </td>
 

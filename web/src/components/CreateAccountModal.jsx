@@ -48,7 +48,7 @@ export default function CreateAccountModal({ onClose, onCreated }) {
         <div className="space-y-6">
           {/* FULL NAME */}
           <div>
-            <label className={labelStyle}>Full Name</label>
+            <label className={labelStyle}>HỌ VÀ TÊN </label>
             <input
               placeholder="e.g. Elena Rodriguez"
               value={form.name}
@@ -59,7 +59,7 @@ export default function CreateAccountModal({ onClose, onCreated }) {
 
           {/* EMAIL ADDRESS */}
           <div>
-            <label className={labelStyle}>Email Address</label>
+            <label className={labelStyle}>Địa chỉ Email</label>
             <input
               type="email"
               placeholder="elena.curator@example.com"
@@ -71,7 +71,7 @@ export default function CreateAccountModal({ onClose, onCreated }) {
 
           {/* PASSWORD */}
           <div>
-            <label className={labelStyle}>Password</label>
+            <label className={labelStyle}>Mật khẩu</label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -101,16 +101,16 @@ export default function CreateAccountModal({ onClose, onCreated }) {
 
           {/* ROLE SELECTOR */}
           <div>
-            <label className={labelStyle}>Role Selector Dropdown</label>
+            <label className={labelStyle}>Phân quyền</label>
             <div className="relative">
               <select
                 value={form.role}
                 onChange={(e) => handleChange("role", e.target.value)}
                 className={`${inputStyle} appearance-none cursor-pointer pr-12`}
               >
-                <option value="" disabled>Select user role...</option>
+                <option value="" disabled>Chọn vai trò cho người dùng....</option>
                 <option value="ADMIN">ADMIN</option>
-                <option value="MANAGER">MANAGER</option>
+                <option value="MANAGER">QUẢN LÝ NHÀ HÀNG</option>
               </select>
               <div className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-[#8E707E]">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4 text-[#D1B9C5]">
@@ -128,14 +128,14 @@ export default function CreateAccountModal({ onClose, onCreated }) {
             disabled={loading}
             className="flex-1 max-w-[280px] py-4 bg-gradient-to-r from-[#A3437B] via-[#D15993] to-[#F172AC] text-white font-bold rounded-2xl shadow-[0_8px_25px_-5px_rgba(241,114,172,0.6)] hover:scale-[1.02] transition-all active:scale-[0.98] disabled:opacity-70 disabled:hover:scale-100"
           >
-            {loading ? "Creating..." : "Create Account"}
+            {loading ? "Đang tạo..." : "Tạo Tài Khoản"}
           </button>
           
           <button
             onClick={onClose}
             className="px-6 py-2 text-[#8E707E] font-bold text-sm hover:underline decoration-2 underline-offset-4"
           >
-            Cancel
+            Hủy
           </button>
         </div>
       </div>
