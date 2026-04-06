@@ -37,7 +37,20 @@ public static class CustomMapPinHandler
 
         try
         {
-            var imageBytes = await _httpClient.GetByteArrayAsync(imageUrl);
+            byte[] imageBytes;
+            if (imageUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+            {
+                imageBytes = await _httpClient.GetByteArrayAsync(imageUrl);
+            }
+            else if (File.Exists(imageUrl))
+            {
+                imageBytes = await File.ReadAllBytesAsync(imageUrl);
+            }
+            else
+            {
+                return;
+            }
+
             using var sourceBitmap = BitmapFactory.DecodeByteArray(imageBytes, 0, imageBytes.Length);
             
             if (sourceBitmap != null)

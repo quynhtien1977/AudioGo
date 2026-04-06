@@ -13,6 +13,7 @@ namespace Shared
         public int Priority { get; set; } = 1;
         public string Status { get; set; } = string.Empty;
         public string? LogoUrl { get; set; }
+        public string? LocalLogoPath { get; set; }
 
         // ── PoiContent table (ngôn ngữ yêu cầu / master) ──────────
         public string LanguageCode { get; set; } = "vi";

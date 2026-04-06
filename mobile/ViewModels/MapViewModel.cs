@@ -153,7 +153,7 @@ namespace AudioGo.ViewModels
                         Address = poi.Description ?? string.Empty,
                         Location = new Location(poi.Latitude, poi.Longitude),
                         Type = PinType.Place,
-                        ImageUrl = poi.LogoUrl ?? string.Empty
+                        ImageUrl = (!string.IsNullOrEmpty(poi.LocalLogoPath) && File.Exists(poi.LocalLogoPath)) ? poi.LocalLogoPath : (poi.LogoUrl ?? string.Empty)
                     };
                     
                     pin.BindingContext = poi.PoiId;
