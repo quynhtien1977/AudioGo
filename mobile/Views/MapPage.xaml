@@ -9,57 +9,17 @@
              BackgroundColor="{StaticResource Background}"
              Title="Bản đồ">
 
-    <Grid RowDefinitions="*,Auto">
+    <Grid>
 
         <!-- ── Map Full Screen ── -->
-        <Grid Grid.Row="0">
+        <Grid>
             <maps:Map x:Name="MainMap"
                       IsShowingUser="True"
                       MapType="Street"
                       IsScrollEnabled="True"
                       IsZoomEnabled="True"/>
 
-            <!-- ── Header overlay ── -->
-            <Border BackgroundColor="{StaticResource Surface}"
-                    StrokeShape="RoundRectangle 0"
-                    StrokeThickness="0"
-                    VerticalOptions="Start"
-                    Padding="20,52,20,14">
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                    <!-- Search bar pill -->
-                    <Border Grid.Column="0"
-                            BackgroundColor="{StaticResource Gray100}"
-                            StrokeShape="RoundRectangle 24"
-                            StrokeThickness="0"
-                            Padding="14,10">
-                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
-                            <Label Grid.Column="0" Text="&#xe8b6;" FontFamily="MaterialIcons" FontSize="18"
-                                   VerticalOptions="Center"/>
-                            <Label Grid.Column="1" Text="Tìm kiếm địa điểm..."
-                                   Style="{StaticResource BodyLabel}"
-                                   VerticalOptions="Center"/>
-                            <Label Grid.Column="2" Text="&#xe029;" FontFamily="MaterialIcons" FontSize="18"
-                                   TextColor="{StaticResource Primary}"
-                                   VerticalOptions="Center"/>
-                        </Grid>
-                        <Border.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnSearchTapped"/>
-                        </Border.GestureRecognizers>
-                    </Border>
-                    <!-- Filter button -->
-                    <Border Grid.Column="1"
-                            BackgroundColor="{StaticResource Primary}"
-                            StrokeShape="RoundRectangle 20"
-                            StrokeThickness="0"
-                            WidthRequest="44" HeightRequest="44">
-                        <Label Text="&#xef4f;" FontFamily="MaterialIcons" FontSize="20" TextColor="White"
-                               HorizontalOptions="Center" VerticalOptions="Center"/>
-                        <Border.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnFilterTapped"/>
-                        </Border.GestureRecognizers>
-                    </Border>
-                </Grid>
-            </Border>
+
 
             <!-- ── FAB: Vị trí của tôi ── -->
             <Border BackgroundColor="{StaticResource Surface}"
@@ -67,7 +27,7 @@
                     StrokeThickness="0"
                     HorizontalOptions="End"
                     VerticalOptions="Start"
-                    Margin="16,110,16,16"
+                    Margin="16,40,16,16"
                     WidthRequest="48" HeightRequest="48">
                 <Border.Shadow>
                     <Shadow Brush="Black" Offset="0,2" Radius="8" Opacity="0.2"/>
@@ -86,223 +46,57 @@
                                HorizontalOptions="Center"
                                VerticalOptions="Center"/>
 
-            <!-- ── POI Banner (slides up when pin tapped) ── -->
+            <!-- ── POI Banner (Anchored to center above pin) ── -->
             <Border x:Name="PoiBanner"
                     BackgroundColor="{StaticResource Surface}"
-                    StrokeShape="RoundRectangle 20,20,0,0"
+                    StrokeShape="RoundRectangle 16"
                     StrokeThickness="0"
-                    VerticalOptions="End"
-                    TranslationY="300"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center"
+                    Margin="0,0,0,160"
+                    WidthRequest="220"
+                    Opacity="0"
                     IsVisible="False">
                 <Border.Shadow>
-                    <Shadow Brush="Black" Offset="0,-4" Radius="20" Opacity="0.12"/>
+                    <Shadow Brush="Black" Offset="0,4" Radius="12" Opacity="0.15"/>
                 </Border.Shadow>
-                <Grid RowDefinitions="Auto,Auto" Padding="16,12,16,24" RowSpacing="12">
+                <VerticalStackLayout Padding="14" Spacing="10">
+                    <!-- Title -->
+                    <Label x:Name="BannerTitle" FontAttributes="Bold" FontSize="14"
+                           HorizontalTextAlignment="Center" MaxLines="2" LineBreakMode="TailTruncation" />
 
-                    <!-- Handle -->
-                    <BoxView Grid.Row="0" HeightRequest="4" WidthRequest="36"
-                             Color="{StaticResource Gray300}" CornerRadius="2"
-                             HorizontalOptions="Center">
-                        <BoxView.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnPoiBannerDismiss"/>
-                        </BoxView.GestureRecognizers>
-                    </BoxView>
-
-                    <!-- Banner content -->
-                    <Grid Grid.Row="1" ColumnDefinitions="90,*" ColumnSpacing="14" RowDefinitions="Auto,Auto">
-
-                        <!-- Thumbnail -->
-                        <Border Grid.Column="0" Grid.RowSpan="2"
-                                StrokeShape="RoundRectangle 14" StrokeThickness="0"
-                                HeightRequest="90" WidthRequest="90"
-                                ClipsToBounds="True" VerticalOptions="Center">
-                            <Image x:Name="BannerImage"
-                                   Source="{Binding SelectedPoi.LogoUrl, Source={RelativeSource AncestorType={x:Type vm:MapViewModel}}}"
-                                   Aspect="AspectFill"/>
+                    <!-- 3 Buttons Row -->
+                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                        <!-- Play -->
+                        <Border Grid.Column="0" BackgroundColor="{StaticResource PrimaryLight}"
+                                StrokeShape="RoundRectangle 8" StrokeThickness="0" Padding="0,10">
+                            <Label Text="&#xe039;" FontFamily="MaterialIcons" FontSize="20" TextColor="{StaticResource Primary}" HorizontalOptions="Center"/>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnPoiBannerPlayClicked"/>
+                            </Border.GestureRecognizers>
                         </Border>
-
-                        <!-- Name + distance -->
-                        <VerticalStackLayout Grid.Column="1" Grid.Row="0" Spacing="4">
-                            <Label x:Name="BannerTitle"
-                                   Style="{StaticResource SectionTitle}"
-                                   MaxLines="2" LineBreakMode="TailTruncation"/>
-                            <HorizontalStackLayout Spacing="6">
-                                <Border BackgroundColor="{StaticResource PrimaryLight}"
-                                        StrokeShape="RoundRectangle 8" StrokeThickness="0"
-                                        Padding="8,3">
-                                    <Label x:Name="BannerDistance"
-                                           FontSize="11" TextColor="{StaticResource Primary}"
-                                           FontAttributes="Bold"/>
-                                </Border>
-                                <Label x:Name="BannerCategory"
-                                       Style="{StaticResource CaptionLabel}"
-                                       VerticalOptions="Center"/>
-                            </HorizontalStackLayout>
-                            <Label x:Name="BannerDesc"
-                                   Style="{StaticResource BodyLabel}" FontSize="13"
-                                   MaxLines="2" LineBreakMode="WordWrap"/>
-                        </VerticalStackLayout>
-
-                        <!-- Action buttons -->
-                        <Grid Grid.Column="1" Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="8" Margin="0,8,0,0">
-                            <!-- Chi tiết (Primary) -->
-                            <Border Grid.Column="0"
-                                    BackgroundColor="{StaticResource Primary}"
-                                    StrokeShape="RoundRectangle 12" StrokeThickness="0"
-                                    Padding="0,10">
-                                <HorizontalStackLayout Spacing="6" HorizontalOptions="Center">
-                                    <Label Text="&#xe8f4;" FontFamily="MaterialIcons" FontSize="16"
-                                           TextColor="White" VerticalOptions="Center"/>
-                                    <Label Text="Chi tiết" FontSize="13" FontAttributes="Bold"
-                                           TextColor="White" VerticalOptions="Center"/>
-                                </HorizontalStackLayout>
-                                <Border.GestureRecognizers>
-                                    <TapGestureRecognizer Tapped="OnPoiBannerDetailClicked"/>
-                                </Border.GestureRecognizers>
-                            </Border>
-                            <!-- Chỉ dẫn đường (Secondary) -->
-                            <Border Grid.Column="1"
-                                    BackgroundColor="{StaticResource Gray100}"
-                                    StrokeShape="RoundRectangle 12" StrokeThickness="0"
-                                    Padding="0,10">
-                                <HorizontalStackLayout Spacing="6" HorizontalOptions="Center">
-                                    <Label Text="&#xe52f;" FontFamily="MaterialIcons" FontSize="16"
-                                           TextColor="{StaticResource Primary}" VerticalOptions="Center"/>
-                                    <Label Text="Đường đi" FontSize="13" FontAttributes="Bold"
-                                           TextColor="{StaticResource TextPrimary}" VerticalOptions="Center"/>
-                                </HorizontalStackLayout>
-                                <Border.GestureRecognizers>
-                                    <TapGestureRecognizer Tapped="OnBannerDirectionsTapped"/>
-                                </Border.GestureRecognizers>
-                            </Border>
-                        </Grid>
+                        <!-- Detail -->
+                        <Border Grid.Column="1" BackgroundColor="{StaticResource PrimaryLight}"
+                                StrokeShape="RoundRectangle 8" StrokeThickness="0" Padding="0,10">
+                            <Label Text="&#xe8f4;" FontFamily="MaterialIcons" FontSize="20" TextColor="{StaticResource Primary}" HorizontalOptions="Center"/>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnPoiBannerDetailClicked"/>
+                            </Border.GestureRecognizers>
+                        </Border>
+                        <!-- Navigate -->
+                        <Border Grid.Column="2" BackgroundColor="{StaticResource PrimaryLight}"
+                                StrokeShape="RoundRectangle 8" StrokeThickness="0" Padding="0,10">
+                            <Label Text="&#xe52f;" FontFamily="MaterialIcons" FontSize="20" TextColor="{StaticResource Primary}" HorizontalOptions="Center"/>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnBannerDirectionsTapped"/>
+                            </Border.GestureRecognizers>
+                        </Border>
                     </Grid>
-
-                </Grid>
+                </VerticalStackLayout>
             </Border>
 
-            <!-- ── Custom Filter Overlay (thay thế ActionSheet thiếu icon) ── -->
-            <Grid x:Name="FilterOverlay"
-                  IsVisible="False"
-                  BackgroundColor="#80000000">
-                <Grid.GestureRecognizers>
-                    <TapGestureRecognizer Tapped="OnFilterOverlayDismiss"/>
-                </Grid.GestureRecognizers>
-                <Border BackgroundColor="{StaticResource Surface}"
-                        StrokeShape="RoundRectangle 24,24,0,0"
-                        StrokeThickness="0"
-                        VerticalOptions="End">
-                    <VerticalStackLayout Spacing="0" Padding="0,0,0,32">
-                        <!-- Handle -->
-                        <BoxView HeightRequest="4" WidthRequest="40" Color="{StaticResource Gray300}"
-                                 HorizontalOptions="Center" CornerRadius="2" Margin="0,12,0,12"/>
-                        <!-- Title -->
-                        <Label Text="Lọc danh mục" Style="{StaticResource SectionTitle}"
-                               Margin="20,0,20,8"/>
-                        <!-- Category list with Material Icons -->
-                        <CollectionView x:Name="FilterChipList"
-                                        SelectionMode="None">
-                            <CollectionView.ItemTemplate>
-                                <DataTemplate x:DataType="vm:CategoryChipVm">
-                                    <Grid Padding="20,12" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
-                                        <Border Grid.Column="0"
-                                                BackgroundColor="{StaticResource PrimaryLight}"
-                                                StrokeShape="RoundRectangle 10"
-                                                StrokeThickness="0"
-                                                WidthRequest="36" HeightRequest="36">
-                                            <Label Text="{Binding Icon}" FontFamily="MaterialIcons" FontSize="18"
-                                                   TextColor="{StaticResource Primary}"
-                                                   HorizontalOptions="Center" VerticalOptions="Center"/>
-                                        </Border>
-                                        <Label Grid.Column="1" Text="{Binding Label}"
-                                               Style="{StaticResource SectionTitle}" FontSize="15"
-                                               VerticalOptions="Center"/>
-                                        <!-- Checkmark khi active -->
-                                        <Label Grid.Column="2" Text="&#xe5ca;" FontFamily="MaterialIcons"
-                                               FontSize="22" TextColor="{StaticResource Primary}"
-                                               VerticalOptions="Center"
-                                               IsVisible="{Binding IsActive}"/>
-                                        <Grid.GestureRecognizers>
-                                            <TapGestureRecognizer Tapped="OnFilterChipTapped"
-                                                                   CommandParameter="{Binding .}"/>
-                                        </Grid.GestureRecognizers>
-                                    </Grid>
-                                </DataTemplate>
-                            </CollectionView.ItemTemplate>
-                        </CollectionView>
-                    </VerticalStackLayout>
-                </Border>
-            </Grid>
+
+
         </Grid>
-
-        <!-- ── Bottom Sheet: Category chips ── -->
-        <Border Grid.Row="1"
-                Style="{StaticResource MiniPlayerBar}"
-                Padding="0">
-            <VerticalStackLayout Spacing="0">
-                <!-- Drag handle -->
-                <BoxView HeightRequest="4" WidthRequest="40" Color="{StaticResource Gray300}"
-                         HorizontalOptions="Center" CornerRadius="2" Margin="0,10,0,0"/>
-
-                <!-- Category pills -->
-                <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never"
-                            Padding="16,12">
-                    <HorizontalStackLayout Spacing="8"
-                                           BindableLayout.ItemsSource="{Binding CategoryChips}">
-                        <BindableLayout.ItemTemplate>
-                            <DataTemplate x:DataType="vm:CategoryChipVm">
-                                <Border Padding="12,7"
-                                        StrokeShape="RoundRectangle 20"
-                                        StrokeThickness="1.5">
-                                    <Border.Triggers>
-                                        <DataTrigger TargetType="Border" Binding="{Binding IsActive}" Value="True">
-                                            <Setter Property="BackgroundColor" Value="{StaticResource Primary}"/>
-                                            <Setter Property="Stroke" Value="{StaticResource Primary}"/>
-                                        </DataTrigger>
-                                        <DataTrigger TargetType="Border" Binding="{Binding IsActive}" Value="False">
-                                            <Setter Property="BackgroundColor" Value="{StaticResource Surface}"/>
-                                            <Setter Property="Stroke" Value="{StaticResource Gray200}"/>
-                                        </DataTrigger>
-                                    </Border.Triggers>
-                                    <HorizontalStackLayout Spacing="5" VerticalOptions="Center">
-                                        <Label Text="{Binding Icon}" FontFamily="MaterialIcons" FontSize="14"
-                                               VerticalOptions="Center">
-                                            <Label.Triggers>
-                                                <DataTrigger TargetType="Label" Binding="{Binding IsActive}" Value="True">
-                                                    <Setter Property="TextColor" Value="White"/>
-                                                </DataTrigger>
-                                                <DataTrigger TargetType="Label" Binding="{Binding IsActive}" Value="False">
-                                                    <Setter Property="TextColor" Value="{StaticResource TextSecondary}"/>
-                                                </DataTrigger>
-                                            </Label.Triggers>
-                                        </Label>
-                                        <Label Text="{Binding Label}" FontSize="12" VerticalOptions="Center">
-                                            <Label.Triggers>
-                                                <DataTrigger TargetType="Label" Binding="{Binding IsActive}" Value="True">
-                                                    <Setter Property="TextColor" Value="White"/>
-                                                </DataTrigger>
-                                                <DataTrigger TargetType="Label" Binding="{Binding IsActive}" Value="False">
-                                                    <Setter Property="TextColor" Value="{StaticResource TextSecondary}"/>
-                                                </DataTrigger>
-                                            </Label.Triggers>
-                                        </Label>
-                                    </HorizontalStackLayout>
-                                    <Border.GestureRecognizers>
-                                        <TapGestureRecognizer Command="{Binding BindingContext.FilterCommand, Source={x:Reference ThisPage}}"
-                                                              CommandParameter="{Binding .}"/>
-                                    </Border.GestureRecognizers>
-                                </Border>
-                            </DataTemplate>
-                        </BindableLayout.ItemTemplate>
-                    </HorizontalStackLayout>
-                </ScrollView>
-
-                <!-- POI count -->
-                <Label Margin="16,0,16,12"
-                       Text="{Binding MapStatusLabel}"
-                       Style="{StaticResource CaptionLabel}"/>
-            </VerticalStackLayout>
-        </Border>
-
     </Grid>
 </ContentPage>

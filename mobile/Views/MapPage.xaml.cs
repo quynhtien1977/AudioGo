@@ -31,9 +31,10 @@ public partial class MapPage : ContentPage
         _vm.LoadPois(_main.Pois);
         RefreshPins();
 
-        // Guard: chỉ subscribe 1 lần, tránh event handler chồng chất
+        // Subscribe to map clicks to dismiss banner
         if (!_isSubscribed)
         {
+            MapControl.MapClicked += OnMapClicked;
             _main.PropertyChanged += OnMainPropertyChanged;
             _vm.PropertyChanged += OnVmPropertyChanged;
             _isSubscribed = true;
@@ -46,10 +47,14 @@ public partial class MapPage : ContentPage
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
+        MapControl.MapClicked -= OnMapClicked;
         _main.PropertyChanged -= OnMainPropertyChanged;
         _vm.PropertyChanged -= OnVmPropertyChanged;
         _isSubscribed = false;
     }
+
+    private void OnMapClicked(object? sender, MapClickedEventArgs e)
+        => _ = HidePoiBannerAsync();
 
     private void RefreshPins()
     {
@@ -83,6 +88,9 @@ public partial class MapPage : ContentPage
         if (sender is not Pin pin || pin.BindingContext is not string poiId) return;
         _activePinPoiId = poiId;
 
+        // Căn giữa map vào POI được chọn
+        MapControl.MoveToRegion(MapSpan.FromCenterAndRadius(pin.Location, Distance.FromMeters(200)));
+
         var poi = _main.Pois.FirstOrDefault(p => p.PoiId == poiId);
         if (poi is null) return;
 
@@ -91,63 +99,35 @@ public partial class MapPage : ContentPage
 
         // Populate banner labels
         BannerTitle.Text    = poi.Title ?? string.Empty;
-        BannerDesc.Text     = poi.Description ?? string.Empty;
-        BannerDistance.Text = _vm.SelectedPoiDistanceLabel;
-        BannerCategory.Text = (poi.Categories?.FirstOrDefault()) ?? string.Empty;
-        BannerImage.Source  = poi.LogoUrl;
+        // BannerDesc.Text     = poi.Description ?? string.Empty; // Removed from XAML
+        // BannerDistance.Text = _vm.SelectedPoiDistanceLabel; // Removed from XAML
+        // BannerCategory.Text = (poi.Categories?.FirstOrDefault()) ?? string.Empty; // Removed from XAML
+        // BannerImage.Source  = poi.LogoUrl; // Removed from XAML
 
-        // Slide banner in
+        // Fade in
         await ShowPoiBannerAsync();
     }
 
     private async Task ShowPoiBannerAsync()
     {
         PoiBanner.IsVisible = true;
-        await PoiBanner.TranslateTo(0, 0, 280, Easing.CubicOut);
+        await PoiBanner.FadeTo(1, 200, Easing.CubicOut);
     }
 
     private async Task HidePoiBannerAsync()
     {
-        await PoiBanner.TranslateTo(0, 300, 220, Easing.CubicIn);
+        await PoiBanner.FadeTo(0, 150, Easing.CubicIn);
         PoiBanner.IsVisible = false;
-        PoiBanner.TranslationY = 300;
         _vm.SelectedPoi = null;
         _activePinPoiId = null;
     }
 
-    private void OnPoiBannerDismiss(object? sender, TappedEventArgs e)
-        => _ = HidePoiBannerAsync();
-
-    private void OnBannerPlayTapped(object? sender, TappedEventArgs e)
+    private void OnPoiBannerPlayClicked(object? sender, TappedEventArgs e)
     {
         if (_activePinPoiId is null) return;
         var poi = _main.Pois.FirstOrDefault(p => p.PoiId == _activePinPoiId);
         if (poi is null) return;
         _ = _main.TriggerAudioAsync(poi); // TriggerAudioAsync sets ActivePoi internally
-    }
-
-    // ── XAML Event Handlers (previously missing → caused crash) ──────
-
-    private void OnSearchTapped(object? sender, TappedEventArgs e)
-        => _ = Shell.Current.GoToAsync("//Search");
-
-    private void OnFilterTapped(object? sender, TappedEventArgs e)
-    {
-        // Populate list và show overlay
-        FilterChipList.ItemsSource = _vm.CategoryChips;
-        FilterOverlay.IsVisible = true;
-    }
-
-    private void OnFilterOverlayDismiss(object? sender, TappedEventArgs e)
-        => FilterOverlay.IsVisible = false;
-
-    private void OnFilterChipTapped(object? sender, TappedEventArgs e)
-    {
-        if (e.Parameter is CategoryChipVm chip)
-        {
-            _vm.FilterCommand.Execute(chip);
-        }
-        FilterOverlay.IsVisible = false;
     }
 
     private void OnLocateMeTapped(object? sender, TappedEventArgs e)
