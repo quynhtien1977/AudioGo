@@ -28,6 +28,26 @@ namespace AudioGo.Services
                 url += "?" + string.Join("&", queryParams);
 
             var result = await _http.GetFromJsonAsync<List<POI>>(url, ct);
+            if (result != null)
+            {
+                var baseUrl = _http.BaseAddress?.ToString().TrimEnd('/');
+                if (!string.IsNullOrEmpty(baseUrl))
+                {
+                    foreach (var r in result)
+                    {
+                        if (!string.IsNullOrEmpty(r.LogoUrl) && !r.LogoUrl.StartsWith("http"))
+                            r.LogoUrl = $"{baseUrl}/{r.LogoUrl.TrimStart('/')}";
+                        if (!string.IsNullOrEmpty(r.AudioUrl) && !r.AudioUrl.StartsWith("http"))
+                            r.AudioUrl = $"{baseUrl}/{r.AudioUrl.TrimStart('/')}";
+                        if (r.GalleryUrls != null)
+                        {
+                            for (int i = 0; i < r.GalleryUrls.Count; i++)
+                                if (!r.GalleryUrls[i].StartsWith("http"))
+                                    r.GalleryUrls[i] = $"{baseUrl}/{r.GalleryUrls[i].TrimStart('/')}";
+                        }
+                    }
+                }
+            }
             return result ?? new List<POI>();
         }
 
@@ -43,6 +63,21 @@ namespace AudioGo.Services
                 url += "?" + string.Join("&", queryParams);
 
             var result = await _http.GetFromJsonAsync<List<Shared.DTOs.TourSummaryDto>>(url, ct);
+            if (result != null)
+            {
+                var baseUrl = _http.BaseAddress?.ToString().TrimEnd('/');
+                if (!string.IsNullOrEmpty(baseUrl))
+                {
+                    for (int i = 0; i < result.Count; i++)
+                    {
+                        var r = result[i];
+                        if (!string.IsNullOrEmpty(r.ThumbnailUrl) && !r.ThumbnailUrl.StartsWith("http"))
+                        {
+                            result[i] = r with { ThumbnailUrl = $"{baseUrl}/{r.ThumbnailUrl.TrimStart('/')}" };
+                        }
+                    }
+                }
+            }
             return result ?? new List<Shared.DTOs.TourSummaryDto>();
         }
 
@@ -67,6 +102,19 @@ namespace AudioGo.Services
                         new LocationPoint { Latitude = latitude, Longitude = longitude, Timestamp = DateTime.UtcNow }
                     }
                 }, ct);
+        }
+
+        public async Task<List<Shared.DTOs.CategoryDto>> GetCategoriesAsync(CancellationToken ct = default)
+        {
+            try
+            {
+                var result = await _http.GetFromJsonAsync<List<Shared.DTOs.CategoryDto>>("api/mobile/categories", ct);
+                return result ?? new List<Shared.DTOs.CategoryDto>();
+            }
+            catch
+            {
+                return new List<Shared.DTOs.CategoryDto>();
+            }
         }
 
         public async Task<bool> CreateTourAsync(Shared.DTOs.TourCreateRequest request, CancellationToken ct = default)

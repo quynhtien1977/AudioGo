@@ -1,205 +1,456 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:converters="clr-namespace:AudioGo.Converters"
              x:Class="AudioGo_Mobile.Views.PoiDetailPage"
+             x:Name="ThisPage"
              Shell.NavBarIsVisible="False"
              BackgroundColor="{StaticResource Background}"
              Title="Chi tiết điểm">
+
+    <ContentPage.Resources>
+        <converters:BoolToMaxLinesConverter x:Key="BoolToMaxLinesConverter"/>
+    </ContentPage.Resources>
 
     <Grid RowDefinitions="*,Auto">
 
         <ScrollView Grid.Row="0">
             <VerticalStackLayout Spacing="0">
 
-                <!-- ── Hero Image Section ── -->
+                <!-- ══════════════════════════════════════════════════
+                     Hero Image — full-bleed với gradient overlay
+                ══════════════════════════════════════════════════ -->
                 <Grid HeightRequest="280">
-                    <Image Source="{Binding Poi.LogoUrl, TargetNullValue='hero_bg.jpg', FallbackValue='hero_bg.jpg'}"
-                           Aspect="AspectFill" />
-                    <!-- gradient overlay -->
-                    <BoxView Color="{StaticResource HeroOverlay}"
-                             VerticalOptions="End" HeightRequest="100"/>
 
-                    <!-- nav icons overlay -->
-                    <Grid Padding="16,52,16,16" VerticalOptions="Start"
-                          ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
+                    <!-- 1. Background fallback color -->
+                    <BoxView Color="{StaticResource DarkSurface}"/>
+
+                    <!-- 2. Hero image (AspectFill) -->
+                    <Image Source="{Binding HeroImageUrl}"
+                           Aspect="AspectFill"
+                           HorizontalOptions="Fill"
+                           VerticalOptions="Fill"/>
+
+                    <!-- 3. Gradient overlay trên ảnh -->
+                    <Grid>
+                        <Grid.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                <GradientStop Color="#88000000" Offset="0"/>
+                                <GradientStop Color="#00000000" Offset="0.3"/>
+                                <GradientStop Color="#00000000" Offset="0.55"/>
+                                <GradientStop Color="#CC000000" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Grid.Background>
+                    </Grid>
+
+                    <!-- 4. Nav icons (top) -->
+                    <Grid Padding="16,52,16,0"
+                          ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8"
+                          VerticalOptions="Start">
+                        <!-- Back -->
                         <Border Grid.Column="0"
                                 BackgroundColor="{StaticResource SemiTransparentDark}"
                                 StrokeShape="RoundRectangle 20" StrokeThickness="0"
                                 WidthRequest="40" HeightRequest="40">
-                            <Label Text="←" FontSize="20" TextColor="White"
+                            <Label Text="&#xe5c4;" FontFamily="MaterialIcons" FontSize="20" TextColor="White"
                                    HorizontalOptions="Center" VerticalOptions="Center"/>
                             <Border.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnBackTapped"/>
                             </Border.GestureRecognizers>
                         </Border>
+                        <!-- Gallery chip -->
                         <Border Grid.Column="2"
                                 BackgroundColor="{StaticResource SemiTransparentDark}"
-                                StrokeShape="RoundRectangle 20" StrokeThickness="0"
-                                WidthRequest="40" HeightRequest="40">
-                            <Label Text="♡" FontSize="20" TextColor="White"
-                                   HorizontalOptions="Center" VerticalOptions="Center"/>
+                                StrokeShape="RoundRectangle 12" StrokeThickness="0"
+                                Padding="8,4"
+                                IsVisible="{Binding HasGallery}">
+                            <Grid ColumnDefinitions="Auto,Auto" ColumnSpacing="4">
+                                <Label Grid.Column="0" Text="&#xe3b6;" FontFamily="MaterialIcons"
+                                       FontSize="14" TextColor="White" VerticalOptions="Center"/>
+                                <Label Grid.Column="1" Text="{Binding GalleryCount}"
+                                       FontSize="11" TextColor="White" VerticalOptions="Center"/>
+                            </Grid>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnGalleryFullScreenTapped"/>
+                            </Border.GestureRecognizers>
                         </Border>
+                        <!-- Share -->
                         <Border Grid.Column="3"
                                 BackgroundColor="{StaticResource SemiTransparentDark}"
                                 StrokeShape="RoundRectangle 20" StrokeThickness="0"
                                 WidthRequest="40" HeightRequest="40">
-                            <Label Text="⬆" FontSize="18" TextColor="White"
+                            <Label Text="&#xe80d;" FontFamily="MaterialIcons" FontSize="18" TextColor="White"
                                    HorizontalOptions="Center" VerticalOptions="Center"/>
                         </Border>
                     </Grid>
 
-                    <!-- Category tag bottom-left -->
-                    <Border BackgroundColor="{StaticResource Primary}"
-                            StrokeShape="RoundRectangle 10" StrokeThickness="0"
-                            Padding="8,4"
-                            HorizontalOptions="Start" VerticalOptions="End"
-                            Margin="16,0,0,16">
-                        <Label Text="{Binding CategoryTag}" TextColor="White" FontSize="11" FontAttributes="Bold"/>
-                    </Border>
+                    <!-- 5. Title + category tags (bottom of hero) -->
+                    <Grid Padding="16,0,16,16"
+                          RowDefinitions="Auto,Auto" RowSpacing="6"
+                          VerticalOptions="End">
+                        <Label Grid.Row="0"
+                               Text="{Binding Title}"
+                               TextColor="White"
+                               FontSize="22" FontAttributes="Bold"
+                               LineBreakMode="WordWrap"/>
+                        <HorizontalStackLayout Grid.Row="1" Spacing="6"
+                                               BindableLayout.ItemsSource="{Binding CategoryTags}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <Border BackgroundColor="{StaticResource Primary}"
+                                            StrokeShape="RoundRectangle 10" StrokeThickness="0"
+                                            Padding="8,3">
+                                        <Label Text="{Binding .}" TextColor="White"
+                                               FontSize="11" FontAttributes="Bold"/>
+                                    </Border>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </HorizontalStackLayout>
+                    </Grid>
+
                 </Grid>
 
-                <!-- ── Info Section ── -->
-                <VerticalStackLayout Padding="20" Spacing="16"
-                                     BackgroundColor="{StaticResource Surface}">
-                    <Label Text="{Binding Title}" Style="{StaticResource HeadlineLabel}"/>
-                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
-                        <Label Grid.Column="0" Text="⭐ 4.8" Style="{StaticResource PrimaryLabel}"/>
-                        <Label Grid.Column="1" Text="· Phố Vĩnh Khánh, Quận 4"
-                               Style="{StaticResource BodyLabel}" VerticalOptions="Center"/>
+                <!-- ══════════════════════════════════════════════════
+                     Gallery Strip
+                ══════════════════════════════════════════════════ -->
+                <VerticalStackLayout IsVisible="{Binding HasGallery}"
+                                     BackgroundColor="{StaticResource Surface}"
+                                     Spacing="0">
+                    <Grid ColumnDefinitions="*,Auto" Padding="16,12,16,8">
+                        <Label Grid.Column="0" Text="Ảnh" Style="{StaticResource SectionTitle}"/>
+                        <Label Grid.Column="1" Text="Xem tất cả →"
+                               Style="{StaticResource PrimaryLabel}" VerticalOptions="Center">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnGalleryFullScreenTapped"/>
+                            </Label.GestureRecognizers>
+                        </Label>
                     </Grid>
+                    <ScrollView Orientation="Horizontal"
+                                HorizontalScrollBarVisibility="Never"
+                                Padding="12,0,12,14">
+                        <HorizontalStackLayout Spacing="8"
+                                               BindableLayout.ItemsSource="{Binding GalleryImages}">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <Border StrokeShape="RoundRectangle 12" StrokeThickness="0"
+                                            WidthRequest="130" HeightRequest="90"
+                                            ClipsToBounds="True">
+                                        <Image Source="{Binding .}" Aspect="AspectFill"/>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Tapped="OnGalleryFullScreenTapped"
+                                                                  CommandParameter="{Binding .}"/>
+                                        </Border.GestureRecognizers>
+                                    </Border>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </HorizontalStackLayout>
+                    </ScrollView>
+                    <BoxView HeightRequest="1" Color="{StaticResource Gray100}"/>
                 </VerticalStackLayout>
 
-                <!-- ── Audio Player Card ── -->
+                <!-- ══════════════════════════════════════════════════
+                     Audio Player Card
+                ══════════════════════════════════════════════════ -->
                 <Border Style="{StaticResource CardBorder}"
-                        Margin="16" Padding="20">
+                        Margin="16,16,16,0" Padding="20">
                     <VerticalStackLayout Spacing="16">
-                        <!-- Language / Voice selector pills -->
-                        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
-                            <Border Grid.Column="0" Style="{StaticResource PillBorderActive}">
-                                <Label Text="Giọng Bắc" TextColor="White" FontSize="12"
-                                       FontAttributes="Bold" HorizontalOptions="Center"/>
-                            </Border>
-                            <Border Grid.Column="1" Style="{StaticResource PillBorder}">
-                                <Label Text="Giọng Trung" TextColor="{StaticResource TextSecondary}"
-                                       FontSize="12" HorizontalOptions="Center"/>
-                            </Border>
-                            <Border Grid.Column="2" Style="{StaticResource PillBorder}">
-                                <Label Text="Giọng Nam" TextColor="{StaticResource TextSecondary}"
-                                       FontSize="12" HorizontalOptions="Center"/>
-                            </Border>
-                        </Grid>
 
-                        <!-- Progress Seeker -->
-                        <VerticalStackLayout Spacing="6">
-                            <Slider Value="{Binding AudioProgress}"
-                                    Minimum="0" Maximum="1"
-                                    ThumbColor="{StaticResource Primary}"
-                                    MinimumTrackColor="{StaticResource Primary}"
-                                    MaximumTrackColor="{StaticResource Gray200}"
-                                    DragCompleted="OnSliderDragCompleted"/>
-                            <Grid ColumnDefinitions="*,*">
-                                <Label Grid.Column="0" Text="{Binding CurrentTime}"
+                        <!-- Header row -->
+                        <HorizontalStackLayout Spacing="8">
+                            <Label Text="&#xe310;" FontFamily="MaterialIcons" FontSize="20"
+                                   TextColor="{StaticResource Primary}" VerticalOptions="Center"/>
+                            <Label Text="Thuyết minh âm thanh"
+                                   Style="{StaticResource SectionTitle}"
+                                   VerticalOptions="Center"/>
+                        </HorizontalStackLayout>
+
+                        <!-- ── Custom Seekbar — YouTube-style smooth track ── -->
+                        <VerticalStackLayout Spacing="4">
+                            <!--
+                                Design:
+                                  • 3-layer Grid: gray track | red fill (HorizontalOptions=Start, WidthRequest via converter) | thumb circle
+                                  • Invisible Slider overlay captures drag/tap without visual pollution
+                                  • Thumb TranslationX = ThumbOffsetX from VM (pixel-accurate)
+                            -->
+                            <Grid HeightRequest="28" x:Name="SeekContainer">
+
+                                <!-- 1. Grey track (full width) -->
+                                <BoxView Color="{StaticResource Gray200}"
+                                         HeightRequest="3"
+                                         CornerRadius="2"
+                                         VerticalOptions="Center"
+                                         HorizontalOptions="Fill"/>
+
+                                <!-- 2. Red filled portion — driven by ThumbOffsetX so it matches thumb exactly -->
+                                <BoxView x:Name="SeekFill"
+                                         Color="{StaticResource Primary}"
+                                         HeightRequest="3"
+                                         CornerRadius="2"
+                                         VerticalOptions="Center"
+                                         HorizontalOptions="Start"
+                                         WidthRequest="0"/>
+
+                                <!-- 3. Thumb Ellipse — follows ThumbOffsetX -->
+                                <Ellipse x:Name="SeekThumb"
+                                         Fill="{StaticResource Primary}"
+                                         WidthRequest="14" HeightRequest="14"
+                                         VerticalOptions="Center"
+                                         HorizontalOptions="Start"
+                                         TranslationX="{Binding ThumbOffsetX}">
+                                    <Ellipse.Shadow>
+                                        <Shadow Brush="{StaticResource Primary}"
+                                                Offset="0,2" Radius="5" Opacity="0.5"/>
+                                    </Ellipse.Shadow>
+                                </Ellipse>
+
+                                <!-- 4. Invisible Slider captures touch/drag -->
+                                <Slider Minimum="0" Maximum="1"
+                                        Value="{Binding AudioProgress}"
+                                        Opacity="0"
+                                        HeightRequest="28"
+                                        SizeChanged="OnSeekbarSizeChanged"
+                                        DragStarted="OnSliderDragStarted"
+                                        DragCompleted="OnSliderDragCompleted"/>
+                            </Grid>
+
+                            <!-- Timestamps -->
+                            <Grid ColumnDefinitions="*,*" Margin="0,2,0,0">
+                                <Label Grid.Column="0"
+                                       Text="{Binding CurrentTime}"
                                        Style="{StaticResource CaptionLabel}"/>
-                                <Label Grid.Column="1" Text="{Binding TotalTime}"
+                                <Label Grid.Column="1"
+                                       Text="{Binding TotalTime}"
                                        Style="{StaticResource CaptionLabel}"
                                        HorizontalOptions="End"/>
                             </Grid>
                         </VerticalStackLayout>
 
-                        <!-- Play controls row -->
-                        <Grid ColumnDefinitions="Auto,*,Auto,*,Auto"
-                              HorizontalOptions="Center">
-                            <!-- Speed -->
-                            <Border Grid.Column="0"
-                                    Style="{StaticResource PillBorder}"
-                                    Padding="10,6">
-                                <Label Text="{Binding SpeedText}" FontSize="12"
-                                       TextColor="{StaticResource TextSecondary}"
-                                       FontAttributes="Bold"/>
+                        <!-- ── Speed pills row: 0.75× | 1× | 1.25× | 1.5× ── -->
+                        <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8" Margin="0,4,0,0">
+
+                            <!-- 0.75× -->
+                            <Border Grid.Column="0" x:Name="SpeedPill075"
+                                    StrokeShape="RoundRectangle 20" StrokeThickness="0"
+                                    Padding="0,8" HorizontalOptions="Fill">
+                                <Border.Triggers>
+                                    <DataTrigger TargetType="Border" Binding="{Binding IsSpeed075}" Value="True">
+                                        <Setter Property="BackgroundColor" Value="{StaticResource Primary}"/>
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="Border" Binding="{Binding IsSpeed075}" Value="False">
+                                        <Setter Property="BackgroundColor" Value="{StaticResource Gray100}"/>
+                                    </DataTrigger>
+                                </Border.Triggers>
+                                <Label Text="0.75×" FontSize="13" FontAttributes="Bold"
+                                       HorizontalOptions="Center" VerticalOptions="Center">
+                                    <Label.Triggers>
+                                        <DataTrigger TargetType="Label" Binding="{Binding IsSpeed075}" Value="True">
+                                            <Setter Property="TextColor" Value="White"/>
+                                        </DataTrigger>
+                                        <DataTrigger TargetType="Label" Binding="{Binding IsSpeed075}" Value="False">
+                                            <Setter Property="TextColor" Value="{StaticResource TextSecondary}"/>
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
                                 <Border.GestureRecognizers>
-                                    <TapGestureRecognizer Tapped="OnSpeedTapped"/>
+                                    <TapGestureRecognizer Tapped="OnSpeed075Tapped"/>
                                 </Border.GestureRecognizers>
                             </Border>
-                            <!-- Prev -->
+
+                            <!-- 1× (default active) -->
+                            <Border Grid.Column="1" x:Name="SpeedPill1x"
+                                    StrokeShape="RoundRectangle 20" StrokeThickness="0"
+                                    Padding="0,8" HorizontalOptions="Fill">
+                                <Border.Triggers>
+                                    <DataTrigger TargetType="Border" Binding="{Binding IsSpeed1x}" Value="True">
+                                        <Setter Property="BackgroundColor" Value="{StaticResource Primary}"/>
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="Border" Binding="{Binding IsSpeed1x}" Value="False">
+                                        <Setter Property="BackgroundColor" Value="{StaticResource Gray100}"/>
+                                    </DataTrigger>
+                                </Border.Triggers>
+                                <Label Text="1×" FontSize="13" FontAttributes="Bold"
+                                       HorizontalOptions="Center" VerticalOptions="Center">
+                                    <Label.Triggers>
+                                        <DataTrigger TargetType="Label" Binding="{Binding IsSpeed1x}" Value="True">
+                                            <Setter Property="TextColor" Value="White"/>
+                                        </DataTrigger>
+                                        <DataTrigger TargetType="Label" Binding="{Binding IsSpeed1x}" Value="False">
+                                            <Setter Property="TextColor" Value="{StaticResource TextSecondary}"/>
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnSpeed1xTapped"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+
+                            <!-- 1.25× -->
+                            <Border Grid.Column="2" x:Name="SpeedPill125"
+                                    StrokeShape="RoundRectangle 20" StrokeThickness="0"
+                                    Padding="0,8" HorizontalOptions="Fill">
+                                <Border.Triggers>
+                                    <DataTrigger TargetType="Border" Binding="{Binding IsSpeed125}" Value="True">
+                                        <Setter Property="BackgroundColor" Value="{StaticResource Primary}"/>
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="Border" Binding="{Binding IsSpeed125}" Value="False">
+                                        <Setter Property="BackgroundColor" Value="{StaticResource Gray100}"/>
+                                    </DataTrigger>
+                                </Border.Triggers>
+                                <Label Text="1.25×" FontSize="13" FontAttributes="Bold"
+                                       HorizontalOptions="Center" VerticalOptions="Center">
+                                    <Label.Triggers>
+                                        <DataTrigger TargetType="Label" Binding="{Binding IsSpeed125}" Value="True">
+                                            <Setter Property="TextColor" Value="White"/>
+                                        </DataTrigger>
+                                        <DataTrigger TargetType="Label" Binding="{Binding IsSpeed125}" Value="False">
+                                            <Setter Property="TextColor" Value="{StaticResource TextSecondary}"/>
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnSpeed125Tapped"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+
+                            <!-- 1.5× -->
+                            <Border Grid.Column="3" x:Name="SpeedPill15"
+                                    StrokeShape="RoundRectangle 20" StrokeThickness="0"
+                                    Padding="0,8" HorizontalOptions="Fill">
+                                <Border.Triggers>
+                                    <DataTrigger TargetType="Border" Binding="{Binding IsSpeed15}" Value="True">
+                                        <Setter Property="BackgroundColor" Value="{StaticResource Primary}"/>
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="Border" Binding="{Binding IsSpeed15}" Value="False">
+                                        <Setter Property="BackgroundColor" Value="{StaticResource Gray100}"/>
+                                    </DataTrigger>
+                                </Border.Triggers>
+                                <Label Text="1.5×" FontSize="13" FontAttributes="Bold"
+                                       HorizontalOptions="Center" VerticalOptions="Center">
+                                    <Label.Triggers>
+                                        <DataTrigger TargetType="Label" Binding="{Binding IsSpeed15}" Value="True">
+                                            <Setter Property="TextColor" Value="White"/>
+                                        </DataTrigger>
+                                        <DataTrigger TargetType="Label" Binding="{Binding IsSpeed15}" Value="False">
+                                            <Setter Property="TextColor" Value="{StaticResource TextSecondary}"/>
+                                        </DataTrigger>
+                                    </Label.Triggers>
+                                </Label>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnSpeed15Tapped"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+
+                        </Grid>
+
+                        <!-- ── Primary playback controls ── -->
+                        <Grid ColumnDefinitions="*,Auto,*,Auto,*"
+                              HorizontalOptions="Fill"
+                              Margin="0,4,0,0">
+
+                            <!-- Skip back (restart) -->
                             <Border Grid.Column="1"
-                                    StrokeShape="RoundRectangle 24" StrokeThickness="0"
                                     BackgroundColor="{StaticResource Gray100}"
+                                    StrokeShape="RoundRectangle 22" StrokeThickness="0"
                                     WidthRequest="44" HeightRequest="44"
                                     HorizontalOptions="Center">
-                                <Label Text="⏮" FontSize="20"
+                                <Label Text="&#xe045;" FontFamily="MaterialIcons" FontSize="22"
+                                       TextColor="{StaticResource TextPrimary}"
                                        HorizontalOptions="Center" VerticalOptions="Center"/>
                                 <Border.GestureRecognizers>
                                     <TapGestureRecognizer Tapped="OnPreviousTapped"/>
                                 </Border.GestureRecognizers>
                             </Border>
-                            <!-- Play/Pause big -->
+
+                            <!-- Play/Pause FAB -->
                             <Border Grid.Column="2"
                                     BackgroundColor="{StaticResource Primary}"
-                                    StrokeShape="RoundRectangle 34" StrokeThickness="0"
+                                    StrokeShape="RoundRectangle 32" StrokeThickness="0"
                                     WidthRequest="64" HeightRequest="64"
                                     HorizontalOptions="Center">
                                 <Border.Shadow>
-                                    <Shadow Brush="{StaticResource Primary}" Offset="0,4" Radius="12" Opacity="0.4"/>
+                                    <Shadow Brush="{StaticResource Primary}"
+                                            Offset="0,4" Radius="14" Opacity="0.4"/>
                                 </Border.Shadow>
-                                <Label Text="{Binding PlayPauseIcon}" FontSize="28" TextColor="White"
+                                <Label Text="{Binding PlayPauseIcon}"
+                                       FontFamily="MaterialIcons"
+                                       FontSize="34" TextColor="White"
                                        HorizontalOptions="Center" VerticalOptions="Center"/>
                                 <Border.GestureRecognizers>
                                     <TapGestureRecognizer Tapped="OnPlayPauseTapped"/>
                                 </Border.GestureRecognizers>
                             </Border>
-                            <!-- Next -->
+
+                            <!-- Skip forward (replay) -->
                             <Border Grid.Column="3"
-                                    StrokeShape="RoundRectangle 24" StrokeThickness="0"
                                     BackgroundColor="{StaticResource Gray100}"
+                                    StrokeShape="RoundRectangle 22" StrokeThickness="0"
                                     WidthRequest="44" HeightRequest="44"
                                     HorizontalOptions="Center">
-                                <Label Text="⏭" FontSize="20"
+                                <Label Text="&#xe044;" FontFamily="MaterialIcons" FontSize="22"
+                                       TextColor="{StaticResource TextPrimary}"
                                        HorizontalOptions="Center" VerticalOptions="Center"/>
                                 <Border.GestureRecognizers>
                                     <TapGestureRecognizer Tapped="OnNextTapped"/>
                                 </Border.GestureRecognizers>
                             </Border>
-                            <!-- Repeat -->
-                            <Border Grid.Column="4"
-                                    Style="{StaticResource PillBorder}"
-                                    Padding="10,6">
-                                <Label Text="🔁" FontSize="14"/>
-                            </Border>
                         </Grid>
+
                     </VerticalStackLayout>
                 </Border>
 
-                <!-- ── Description ── -->
-                <VerticalStackLayout Padding="20,0,20,16" Spacing="10">
-                    <Label Text="Giới thiệu" Style="{StaticResource SectionTitle}"/>
-                    <Label Text="{Binding Description}"
-                           Style="{StaticResource BodyLabel}"
-                           MaxLines="{Binding DescExpanded, Converter={StaticResource BoolToMaxLinesConverter}}"
-                           LineBreakMode="WordWrap"/>
-                    <Label Style="{StaticResource PrimaryLabel}"
-                           Text="{Binding ExpandLabel}">
-                        <Label.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnExpandDescTapped"/>
-                        </Label.GestureRecognizers>
-                    </Label>
-                </VerticalStackLayout>
+                <!-- ══════════════════════════════════════════════════
+                     Description
+                ══════════════════════════════════════════════════ -->
+                <Border Style="{StaticResource CardBorder}"
+                        Margin="16,12,16,0" Padding="20">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Giới thiệu" Style="{StaticResource SectionTitle}"/>
+                        <Label Text="{Binding Description}"
+                               Style="{StaticResource BodyLabel}"
+                               MaxLines="{Binding DescExpanded, Converter={StaticResource BoolToMaxLinesConverter}}"
+                               LineBreakMode="WordWrap"/>
+                        <Label Style="{StaticResource PrimaryLabel}"
+                               Text="{Binding ExpandLabel}">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnExpandDescTapped"/>
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </VerticalStackLayout>
+                </Border>
 
-                <BoxView HeightRequest="16" Color="Transparent"/>
+                <!-- Bottom spacer -->
+                <BoxView HeightRequest="24" Color="Transparent"/>
+
             </VerticalStackLayout>
         </ScrollView>
 
-        <!-- ── Footer: Điểm tiếp theo ── -->
+        <!-- ══════════════════════════════════════════════════
+             Footer: Next POI button
+        ══════════════════════════════════════════════════ -->
         <Border Grid.Row="1"
                 BackgroundColor="{StaticResource Surface}"
                 StrokeShape="RoundRectangle 0" StrokeThickness="0"
-                Padding="16,12">
+                Padding="16,12,16,20"
+                IsVisible="{Binding HasNextPoi}">
             <Border.Shadow>
                 <Shadow Brush="Black" Offset="0,-2" Radius="10" Opacity="0.08"/>
             </Border.Shadow>
-            <Button Text="Điểm tiếp theo →"
-                    Style="{StaticResource PrimaryButton}"
-                    HorizontalOptions="FillAndExpand"
-                    Clicked="OnNextPoiClicked"/>
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                <Button Grid.Column="0"
+                        Text="{Binding NextPoiButtonText}"
+                        Style="{StaticResource PrimaryButton}"
+                        HorizontalOptions="FillAndExpand"
+                        Command="{Binding GoToNextPoiCommand}"/>
+                <VerticalStackLayout Grid.Column="1"
+                                     VerticalOptions="Center"
+                                     MaximumWidthRequest="90">
+                    <Label Text="Tiếp theo" Style="{StaticResource CaptionLabel}"/>
+                    <Label Text="{Binding NextPoiTitle}"
+                           Style="{StaticResource BodyLabel}"
+                           FontSize="12"
+                           MaxLines="2" LineBreakMode="TailTruncation"/>
+                </VerticalStackLayout>
+            </Grid>
         </Border>
 
     </Grid>

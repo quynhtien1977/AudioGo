@@ -21,13 +21,15 @@ namespace Server.Data
         protected override void OnModelCreating(ModelBuilder m)
         {
             // ── 1. Map sang tên bảng singular trong DB ─────────────────
-            m.Entity<Account>      ().ToTable("Account");
-            m.Entity<Poi>          ().ToTable("Poi");
-            m.Entity<PoiContent>   ().ToTable("PoiContent");
-            m.Entity<PoiGallery>   ().ToTable("PoiGallery");
-            m.Entity<Category>     ().ToTable("Category");
+            //    Các bảng có AFTER UPDATE trigger phải khai báo HasTrigger()
+            //    để EF Core 7+ không dùng OUTPUT clause (gây lỗi).
+            m.Entity<Account>      ().ToTable("Account",       t => t.HasTrigger("TR_Account_UpdateTimestamp"));
+            m.Entity<Poi>          ().ToTable("Poi",            t => t.HasTrigger("TR_Poi_UpdateTimestamp"));
+            m.Entity<PoiContent>   ().ToTable("PoiContent",     t => t.HasTrigger("TR_PoiContent_UpdateTimestamp"));
+            m.Entity<PoiGallery>   ().ToTable("PoiGallery",     t => t.HasTrigger("TR_PoiGallery_UpdateTimestamp"));
+            m.Entity<Category>     ().ToTable("Category",       t => t.HasTrigger("TR_Category_UpdateTimestamp"));
             m.Entity<CategoryPoi>  ().ToTable("CategoryPoi");
-            m.Entity<Tour>         ().ToTable("Tour");
+            m.Entity<Tour>         ().ToTable("Tour",           t => t.HasTrigger("TR_Tour_UpdateTimestamp"));
             m.Entity<TourPoi>      ().ToTable("TourPoi");
             m.Entity<ListenHistory>().ToTable("ListenHistory");
             m.Entity<LocationLog>  ().ToTable("LocationLog");

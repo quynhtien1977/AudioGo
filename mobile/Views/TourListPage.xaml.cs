@@ -25,10 +25,10 @@ public partial class TourListPage : ContentPage
 
     private async void OnTourMenuTapped(object? sender, TappedEventArgs e)
     {
-        if (e.Parameter is not Shared.DTOs.TourSummaryDto tour) return;
+        if (e.Parameter is not AudioGo.ViewModels.TourRowVm tour) return;
         var action = await DisplayActionSheet(
             tour.Name, "Hủy", null,
-            "Xem chi tiết", "Chỉnh sửa", "Xóa");
+            "Xem chi tiết", "Xóa");
         if (action == "Xem chi tiết")
             await Shell.Current.GoToAsync($"{nameof(TourDetailPage)}?tourId={tour.TourId}");
         else if (action == "Xóa")

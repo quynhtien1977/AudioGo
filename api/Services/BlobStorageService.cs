@@ -21,7 +21,10 @@ public class BlobStorageService : IBlobStorageService
         await container.CreateIfNotExistsAsync(PublicAccessType.Blob);
 
         var blob = container.GetBlobClient(blobPath);
-        await blob.UploadAsync(content, new BlobHttpHeaders { ContentType = contentType });
+        await blob.UploadAsync(content, new BlobUploadOptions
+        {
+            HttpHeaders = new BlobHttpHeaders { ContentType = contentType }
+        });
 
         return blob.Uri.AbsoluteUri;
     }

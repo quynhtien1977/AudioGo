@@ -10,6 +10,7 @@ public partial class MapPage : ContentPage
     private readonly MapViewModel _vm;
     private readonly MainViewModel _main;
     private string? _activePinPoiId;
+    private bool _isSubscribed;
 
     // Property wrapper để map MainMap → MapControl
     private Microsoft.Maui.Controls.Maps.Map MapControl => MainMap;
@@ -30,9 +31,14 @@ public partial class MapPage : ContentPage
         _vm.LoadPois(_main.Pois);
         RefreshPins();
 
-        // Theo dõi POI active để hiển thị banner
-        _main.PropertyChanged += OnMainPropertyChanged;
-        _vm.PropertyChanged += OnVmPropertyChanged;
+        // Subscribe to map clicks to dismiss banner
+        if (!_isSubscribed)
+        {
+            MapControl.MapClicked += OnMapClicked;
+            _main.PropertyChanged += OnMainPropertyChanged;
+            _vm.PropertyChanged += OnVmPropertyChanged;
+            _isSubscribed = true;
+        }
 
         // Yêu cầu vị trí hiện tại để căn giữa bản đồ
         await RequestInitialLocationAsync();
@@ -41,9 +47,14 @@ public partial class MapPage : ContentPage
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
+        MapControl.MapClicked -= OnMapClicked;
         _main.PropertyChanged -= OnMainPropertyChanged;
         _vm.PropertyChanged -= OnVmPropertyChanged;
+        _isSubscribed = false;
     }
+
+    private void OnMapClicked(object? sender, MapClickedEventArgs e)
+        => _ = HidePoiBannerAsync();
 
     private void RefreshPins()
     {
@@ -53,17 +64,76 @@ public partial class MapPage : ContentPage
             pin.MarkerClicked += OnPinMarkerClicked;
             MapControl.Pins.Add(pin);
         }
+        RefreshGeofenceOverlays();
+    }
+
+    /// <summary>Xóa polygons cũ, thêm lại từ GeofencePolygons của VM.</summary>
+    private void RefreshGeofenceOverlays()
+    {
+        // Remove old geofence polygons (keep other map elements)
+        var toRemove = MapControl.MapElements
+            .OfType<Polygon>()
+            .ToList();
+        foreach (var poly in toRemove)
+            MapControl.MapElements.Remove(poly);
+
+        foreach (var poly in _vm.GeofencePolygons)
+            MapControl.MapElements.Add(poly);
     }
 
     private async void OnPinMarkerClicked(object? sender, PinClickedEventArgs e)
     {
-        if (sender is Pin pin && pin.BindingContext is string poiId)
-        {
-            e.HideInfoWindow = false;
-            _activePinPoiId = poiId;
-        }
-        await Task.CompletedTask;
+        e.HideInfoWindow = true; // suppress default callout — we show our banner
+
+        if (sender is not Pin pin || pin.BindingContext is not string poiId) return;
+        _activePinPoiId = poiId;
+
+        // Căn giữa map vào POI được chọn
+        MapControl.MoveToRegion(MapSpan.FromCenterAndRadius(pin.Location, Distance.FromMeters(200)));
+
+        var poi = _main.Pois.FirstOrDefault(p => p.PoiId == poiId);
+        if (poi is null) return;
+
+        // Update VM selected POI (for distance label etc.)
+        _vm.SelectedPoi = poi;
+
+        // Populate banner labels
+        BannerTitle.Text    = poi.Title ?? string.Empty;
+        // BannerDesc.Text     = poi.Description ?? string.Empty; // Removed from XAML
+        // BannerDistance.Text = _vm.SelectedPoiDistanceLabel; // Removed from XAML
+        // BannerCategory.Text = (poi.Categories?.FirstOrDefault()) ?? string.Empty; // Removed from XAML
+        // BannerImage.Source  = poi.LogoUrl; // Removed from XAML
+
+        // Fade in
+        await ShowPoiBannerAsync();
     }
+
+    private async Task ShowPoiBannerAsync()
+    {
+        PoiBanner.IsVisible = true;
+        await PoiBanner.FadeTo(1, 200, Easing.CubicOut);
+    }
+
+    private async Task HidePoiBannerAsync()
+    {
+        await PoiBanner.FadeTo(0, 150, Easing.CubicIn);
+        PoiBanner.IsVisible = false;
+        _vm.SelectedPoi = null;
+        _activePinPoiId = null;
+    }
+
+    private void OnPoiBannerPlayClicked(object? sender, TappedEventArgs e)
+    {
+        if (_activePinPoiId is null) return;
+        var poi = _main.Pois.FirstOrDefault(p => p.PoiId == _activePinPoiId);
+        if (poi is null) return;
+        _ = _main.TriggerAudioAsync(poi); // TriggerAudioAsync sets ActivePoi internally
+    }
+
+    private void OnLocateMeTapped(object? sender, TappedEventArgs e)
+        => _vm.CenterOnUser();
+
+    // ── Property Change Handlers ─────────────────────────────────────
 
     private void OnMainPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
@@ -74,27 +144,51 @@ public partial class MapPage : ContentPage
             var poi = _main.ActivePoi;
             if (poi is null)
             {
-                // TODO: ActivePoiBanner.IsVisible = false;
+                _ = HidePoiBannerAsync();
                 return;
             }
-            // TODO: ActivePoiTitle.Text = poi.Title;
-            // TODO: ActivePoiDesc.Text = poi.Description;
             _activePinPoiId = poi.PoiId;
-            // TODO: ActivePoiBanner.IsVisible = true;
         });
     }
 
     private void OnVmPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName != nameof(MapViewModel.VisibleRegion)) return;
-        if (_vm.VisibleRegion is { } region)
-            MapControl.MoveToRegion(region);
+        if (e.PropertyName == nameof(MapViewModel.VisibleRegion))
+        {
+            if (_vm.VisibleRegion is { } region)
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    try { MapControl.MoveToRegion(region); }
+                    catch { /* Map chưa sẵn sàng — bỏ qua */ }
+                });
+        }
+        else if (e.PropertyName == nameof(MapViewModel.GeofencePolygons))
+        {
+            MainThread.BeginInvokeOnMainThread(RefreshGeofenceOverlays);
+        }
     }
 
     private async void OnPoiBannerDetailClicked(object? sender, EventArgs e)
     {
         if (_activePinPoiId is null) return;
         await Shell.Current.GoToAsync($"{nameof(PoiDetailPage)}?poiId={_activePinPoiId}");
+    }
+
+    private async void OnBannerDirectionsTapped(object? sender, EventArgs e)
+    {
+        var poi = _vm.SelectedPoi;
+        if (poi is null) return;
+
+        try
+        {
+            var mapLocation = new Location(poi.Latitude, poi.Longitude);
+            var options = new MapLaunchOptions { Name = poi.Title };
+            await Microsoft.Maui.ApplicationModel.Map.Default.OpenAsync(mapLocation, options);
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Lỗi", $"Không thể mở bản đồ: {ex.Message}", "OK");
+        }
     }
 
     private async void OnQrScanClicked(object? sender, EventArgs e)
@@ -105,7 +199,7 @@ public partial class MapPage : ContentPage
 
     private async void OnLanguageClicked(object? sender, EventArgs e)
     {
-        var selected = await DisplayActionSheetAsync(
+        var selected = await DisplayActionSheet(
             "Chọn ngôn ngữ thuyết minh",
             "Huỷ",
             null,
@@ -161,9 +255,16 @@ public partial class MapPage : ContentPage
             if (loc is not null)
             {
                 _vm.MoveTo(loc.Latitude, loc.Longitude);
-                MapControl.MoveToRegion(MapSpan.FromCenterAndRadius(
-                    new Location(loc.Latitude, loc.Longitude),
-                    Distance.FromKilometers(1)));
+                MainThread.BeginInvokeOnMainThread(() =>
+                {
+                    try
+                    {
+                        MapControl.MoveToRegion(MapSpan.FromCenterAndRadius(
+                            new Location(loc.Latitude, loc.Longitude),
+                            Distance.FromKilometers(1)));
+                    }
+                    catch { /* Map chưa sẵn sàng */ }
+                });
             }
         }
         catch { /* GPS không khả dụng — bản đồ ở vị trí mặc định */ }

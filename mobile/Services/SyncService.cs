@@ -19,13 +19,13 @@ namespace AudioGo.Services
     {
         private readonly IApiService _api;
         private readonly AppDatabase _db;
-        private readonly HttpClient _http;
+        private readonly IHttpClientFactory _httpFactory;
 
-        public SyncService(IApiService api, AppDatabase db, HttpClient http)
+        public SyncService(IApiService api, AppDatabase db, IHttpClientFactory httpFactory)
         {
             _api = api;
             _db = db;
-            _http = http;
+            _httpFactory = httpFactory;
         }
 
         /// <summary>
@@ -115,7 +115,8 @@ namespace AudioGo.Services
                     }
 
                     // Download file
-                    var bytes = await _http.GetByteArrayAsync(poi.AudioUrl, ct);
+                    using var http = _httpFactory.CreateClient();
+                    var bytes = await http.GetByteArrayAsync(poi.AudioUrl, ct);
                     await File.WriteAllBytesAsync(localPath, bytes, ct);
 
                     // Cập nhật LocalAudioPath trong SQLite
@@ -142,16 +143,19 @@ namespace AudioGo.Services
             Longitude        = dto.Longitude,
             ActivationRadius = dto.ActivationRadius,
             Priority         = dto.Priority,
-            Status           = dto.Status,
-            LogoUrl          = dto.LogoUrl,
-            LanguageCode     = dto.LanguageCode,
-            Title            = dto.Title,
-            Description      = dto.Description,
-            AudioUrl         = dto.AudioUrl,
-            LocalAudioPath   = dto.LocalAudioPath,
+            Status           = dto.Status ?? string.Empty,
+            LogoUrl          = dto.LogoUrl,         // nullable OK
+            LanguageCode     = dto.LanguageCode ?? "vi",
+            Title            = dto.Title ?? string.Empty,
+            Description      = dto.Description ?? string.Empty,
+            AudioUrl         = dto.AudioUrl,         // nullable OK
+            LocalAudioPath   = dto.LocalAudioPath,   // nullable OK
             // Serialise list to JSON for SQLite storage
-            CategoriesJson   = dto.Categories.Count > 0
+            CategoriesJson   = dto.Categories?.Count > 0
                 ? System.Text.Json.JsonSerializer.Serialize(dto.Categories)
+                : string.Empty,
+            GalleryUrlsJson  = dto.GalleryUrls?.Count > 0
+                ? System.Text.Json.JsonSerializer.Serialize(dto.GalleryUrls)
                 : string.Empty,
             LastSyncedAt     = DateTime.UtcNow
         };
@@ -163,17 +167,20 @@ namespace AudioGo.Services
             Longitude       = e.Longitude,
             ActivationRadius= e.ActivationRadius,
             Priority        = e.Priority,
-            Status          = e.Status,
-            LogoUrl         = e.LogoUrl,
-            LanguageCode    = e.LanguageCode,
-            Title           = e.Title,
-            Description     = e.Description,
-            AudioUrl        = e.AudioUrl,
-            LocalAudioPath  = e.LocalAudioPath,
+            Status          = e.Status ?? string.Empty,
+            LogoUrl         = e.LogoUrl,           // nullable OK
+            LanguageCode    = e.LanguageCode ?? "vi",
+            Title           = e.Title ?? string.Empty,
+            Description     = e.Description ?? string.Empty,
+            AudioUrl        = e.AudioUrl,           // nullable OK
+            LocalAudioPath  = e.LocalAudioPath,     // nullable OK
             // Deserialise comma-separated categories stored in SQLite
             Categories      = string.IsNullOrEmpty(e.CategoriesJson)
                 ? new()
                 : System.Text.Json.JsonSerializer.Deserialize<List<string>>(e.CategoriesJson) ?? new(),
+            GalleryUrls     = string.IsNullOrEmpty(e.GalleryUrlsJson)
+                ? new()
+                : System.Text.Json.JsonSerializer.Deserialize<List<string>>(e.GalleryUrlsJson) ?? new(),
         };
     }
 }

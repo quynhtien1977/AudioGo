@@ -1,17 +1,19 @@
 using AudioGo.Services.Interfaces;
-using AudioGo.ViewModels;
+using AudioGo_Mobile.Views;
 using Shared;
+using Shared.DTOs;
 using System.Collections.ObjectModel;
-using System.Net.Http.Json;
+using System.ComponentModel;
 using System.Windows.Input;
 
 namespace AudioGo.ViewModels
 {
+    // ── SearchPage Main ViewModel ──────────────────────────────────────
     public class SearchViewModel : BaseViewModel
     {
         private readonly IApiService _api;
 
-        // Override setter to also call UpdateStates when loading changes
+        // Shadow base.IsLoading to also call UpdateStates
         public new bool IsLoading
         {
             get => base.IsLoading;
@@ -25,6 +27,13 @@ namespace AudioGo.ViewModels
             set { SetProperty(ref _query, value); Task.Run(() => SearchAsync(value)); }
         }
 
+        // Alias used by some XAML bindings
+        public string SearchQuery
+        {
+            get => _query;
+            set => Query = value;
+        }
+
         private string _activeCategory = string.Empty;
         public string ActiveCategory
         {
@@ -32,16 +41,13 @@ namespace AudioGo.ViewModels
             set { SetProperty(ref _activeCategory, value); Task.Run(() => SearchAsync(Query)); }
         }
 
-        public ObservableCollection<PoiSearchVm> Pois { get; } = new();
-        public ObservableCollection<TourSearchVm> Tours { get; } = new();
+        public ObservableCollection<PoiSearchVm>      Pois        { get; } = new();
+        public ObservableCollection<TourSearchVm>     Tours       { get; } = new();
+        public ObservableCollection<PoiSearchVm>      FilteredPois => Pois;
+        public ObservableCollection<CategoryChipVm>   CategoryChips { get; }
 
-        // XAML binding aliases
-        public ObservableCollection<PoiSearchVm> FilteredPois => Pois;
-        public string SearchQuery
-        {
-            get => _query;
-            set => Query = value; // delegate to Query which triggers search
-        }
+        // Legacy string list kept for any leftover bindings
+        public List<string> Categories { get; } = CategoryChipVm.GetDefaultChips().Select(c => c.label).ToList();
 
         private bool _hasResults;
         public bool HasResults { get => _hasResults; set => SetProperty(ref _hasResults, value); }
@@ -49,24 +55,88 @@ namespace AudioGo.ViewModels
         private bool _hasTours;
         public bool HasTours { get => _hasTours; set => SetProperty(ref _hasTours, value); }
 
-        private bool _isEmpty = true;
+        private bool _isEmpty;
         public bool IsEmpty { get => _isEmpty; set => SetProperty(ref _isEmpty, value); }
 
-        public ICommand FilterCommand { get; }
+        private bool _showWelcome = true;
+        public bool ShowWelcome { get => _showWelcome; set => SetProperty(ref _showWelcome, value); }
+
+        public ICommand FilterCommand  { get; }
+        public ICommand OpenPoiCommand { get; }
+        public ICommand OpenTourCommand { get; }
 
         public SearchViewModel(IApiService api)
         {
             _api = api;
-            FilterCommand = new Command<string>(cat =>
+
+            // Start with "All" chip while API loads
+            CategoryChips = new ObservableCollection<CategoryChipVm>(
+                CategoryChipVm.GetDefaultChips().Select(c => new CategoryChipVm(c.label, c.icon, c.value)));
+            CategoryChips[0].IsActive = true;
+
+            FilterCommand = new Command<CategoryChipVm>(chip =>
             {
-                ActiveCategory = cat ?? string.Empty;
+                if (chip is null) return;
+                foreach (var c in CategoryChips) c.IsActive = false;
+                chip.IsActive    = true;
+                ActiveCategory   = chip.Value;
             });
+
+            OpenPoiCommand = new Command<PoiSearchVm>(async vm =>
+            {
+                if (vm is null) return;
+                await Shell.Current.GoToAsync($"{nameof(PoiDetailPage)}?poiId={vm.PoiId}");
+            });
+
+            OpenTourCommand = new Command<TourSearchVm>(async vm =>
+            {
+                if (vm is null) return;
+                await Shell.Current.GoToAsync($"{nameof(TourDetailPage)}?tourId={vm.TourId}");
+            });
+
+            // Load real categories from API asynchronously
+            _ = LoadCategoriesAsync();
+        }
+
+        private async Task LoadCategoriesAsync()
+        {
+            try
+            {
+                var apiCategories = await _api.GetCategoriesAsync();
+                if (apiCategories.Count == 0) return;
+
+                var lang = AudioGo.Helpers.LanguageHelper.GetDeviceLanguageCode();
+                var newChips = CategoryChipVm.BuildFromApiCategories(apiCategories, lang);
+
+                // Preserve active category if any
+                var currentActive = CategoryChips.FirstOrDefault(c => c.IsActive)?.Value ?? "";
+
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    CategoryChips.Clear();
+                    foreach (var chip in newChips)
+                    {
+                        if (chip.Value == currentActive)
+                            chip.IsActive = true;
+                        CategoryChips.Add(chip);
+                    }
+                    // Default activate first chip if nothing is active
+                    if (!CategoryChips.Any(c => c.IsActive) && CategoryChips.Count > 0)
+                        CategoryChips[0].IsActive = true;
+                });
+            }
+            catch
+            {
+                // Keep hardcoded defaults if API fails
+            }
         }
 
         private async Task SearchAsync(string query)
         {
-            // Debounce: skip short queries
-            if (query.Length == 1) return;
+            ShowWelcome = false;
+
+            // Debounce if the query is just 1 character
+            if (!string.IsNullOrEmpty(query) && query.Length == 1) return;
 
             IsLoading = true;
             Pois.Clear();
@@ -74,20 +144,16 @@ namespace AudioGo.ViewModels
 
             try
             {
-                // Gọi POI endpoint
-                var pois = await _api.GetPoisAsync(languageCode: "vi", query: query, category: ActiveCategory);
+                string lang = AudioGo.Helpers.LanguageHelper.GetDeviceLanguageCode();
+                var pois = await _api.GetPoisAsync(languageCode: lang, query: query, category: ActiveCategory);
                 if (pois is not null)
                     foreach (var p in pois) Pois.Add(new PoiSearchVm(p));
 
-                // Gọi Tours endpoint
-                var tours = await _api.GetToursAsync(languageCode: "vi", query: query);
+                var tours = await _api.GetToursAsync(languageCode: lang, query: query);
                 if (tours is not null)
                     foreach (var t in tours) Tours.Add(new TourSearchVm(t));
             }
-            catch
-            {
-                // API chưa sẵn — không hiện lỗi, chỉ để empty state
-            }
+            catch { /* API unavailable — show empty state */ }
             finally
             {
                 IsLoading = false;
@@ -97,37 +163,34 @@ namespace AudioGo.ViewModels
 
         private void UpdateStates()
         {
-            HasResults = Pois.Count > 0;
-            HasTours = Tours.Count > 0;
-            IsEmpty = !IsLoading && Pois.Count == 0 && Tours.Count == 0 && Query.Length > 1;
+            HasResults  = Pois.Count > 0;
+            HasTours    = Tours.Count > 0;
+            IsEmpty     = !IsLoading && Pois.Count == 0 && Tours.Count == 0
+                          && ((Query?.Length ?? 0) > 1 || !string.IsNullOrEmpty(ActiveCategory));
+            ShowWelcome = !IsLoading && (Query?.Length ?? 0) <= 1 && string.IsNullOrEmpty(ActiveCategory) && Pois.Count == 0 && Tours.Count == 0;
         }
     }
 
+    // ── DTOs for search result list items ─────────────────────────────
     public class PoiSearchVm
     {
         private readonly POI _poi;
         public PoiSearchVm(POI poi) => _poi = poi;
 
-        public string Title       => _poi.Title;
-        public string? LogoUrl    => _poi.LogoUrl;
-        public string CategoryLabel
-        {
-            get
-            {
-                if (_poi.Categories?.Count > 0) return _poi.Categories[0];
-                return "🏛️ Địa điểm";
-            }
-        }
+        public string  PoiId         => _poi.PoiId;
+        public string  Title         => _poi.Title;
+        public string? LogoUrl       => _poi.LogoUrl;
+        public string  CategoryLabel => _poi.Categories?.Count > 0 ? _poi.Categories[0] : "Địa điểm";
     }
 
     public class TourSearchVm
     {
-        private readonly Shared.DTOs.TourSummaryDto _dto;
-        public TourSearchVm(Shared.DTOs.TourSummaryDto dto) => _dto = dto;
+        private readonly TourSummaryDto _dto;
+        public TourSearchVm(TourSummaryDto dto) => _dto = dto;
 
-        public string TourId         => _dto.TourId;
-        public string Name           => _dto.Name;
+        public string  TourId        => _dto.TourId;
+        public string  Name          => _dto.Name;
         public string? ThumbnailUrl  => _dto.ThumbnailUrl;
-        public string PoiCountLabel  => $"📍 {_dto.PoiCount} điểm";
+        public string  PoiCountLabel => $"📍 {_dto.PoiCount} điểm";
     }
 }

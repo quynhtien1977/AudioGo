@@ -129,11 +129,20 @@ namespace AudioGo.ViewModels
 
         public TourRowVm(TourSummaryDto dto) => _dto = dto;
 
-        public string TourId       => _dto.TourId;
-        public string Name         => _dto.Name;
-        public string Description  => _dto.Description;
-        public string? ThumbnailUrl => _dto.ThumbnailUrl;
+        public string  TourId        => _dto.TourId;
+        public string  Name          => _dto.Name;
+        public string  Description   => _dto.Description;
+        public string? ThumbnailUrl  => _dto.ThumbnailUrl;
+        public string  CreatedAtLabel => _dto.CreatedAt.ToString("dd/MM/yyyy");
+
+        // Properties used by TourListPage XAML
+        public int    PoiCount      => _dto.PoiCount;
         public string PoiCountLabel => $"📍 {_dto.PoiCount} điểm";
-        public string CreatedAtLabel => _dto.CreatedAt.ToString("dd/MM/yyyy");
+        // Duration & language — not in DTO yet, show placeholder
+        public string DurationText  => "--";
+        public string Language      => "VI";
+        // Progress — no real data yet, keep at 0
+        public string ProgressText  => $"0/{_dto.PoiCount}";
+        public double ProgressRatio => 0d;
     }
 }

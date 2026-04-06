@@ -18,7 +18,7 @@
                     BackgroundColor="{StaticResource Gray100}"
                     StrokeShape="RoundRectangle 20" StrokeThickness="0"
                     WidthRequest="40" HeightRequest="40">
-                <Label Text="✕" FontSize="18"
+                <Label Text="&#xe5cd;" FontFamily="MaterialIcons" FontSize="20"
                        HorizontalOptions="Center" VerticalOptions="Center"/>
                 <Border.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnCancelTapped"/>
@@ -118,8 +118,8 @@
                                         Padding="12" Margin="0,0,0,8">
                                     <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="10">
                                         <!-- Drag handle -->
-                                        <Label Grid.Column="0" Text="⠿"
-                                               FontSize="18" TextColor="{StaticResource Gray400}"
+                                        <Label Grid.Column="0" Text="&#xe25d;" FontFamily="MaterialIcons"
+                                               FontSize="20" TextColor="{StaticResource Gray400}"
                                                VerticalOptions="Center"/>
                                         <!-- Info -->
                                         <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
@@ -148,7 +148,7 @@
                                                 StrokeThickness="0"
                                                 WidthRequest="28" HeightRequest="28"
                                                 VerticalOptions="Center">
-                                            <Label Text="✕" FontSize="12"
+                                            <Label Text="&#xe5cd;" FontFamily="MaterialIcons" FontSize="14"
                                                    TextColor="{StaticResource TextSecondary}"
                                                    HorizontalOptions="Center"
                                                    VerticalOptions="Center"/>
@@ -197,7 +197,7 @@
                     <Border BackgroundColor="{StaticResource DarkSurface}"
                             StrokeShape="RoundRectangle 16" StrokeThickness="0"
                             HeightRequest="150">
-                        <Label Text="🗺️" FontSize="60"
+                        <Label Text="&#xe55b;" FontFamily="MaterialIcons" TextColor="{StaticResource Gray400}" FontSize="60"
                                HorizontalOptions="Center" VerticalOptions="Center"/>
                     </Border>
                 </VerticalStackLayout>
@@ -214,7 +214,8 @@
             <Border.Shadow>
                 <Shadow Brush="Black" Offset="0,-2" Radius="10" Opacity="0.08"/>
             </Border.Shadow>
-            <Button Text="💾  Lưu Tour"
+            <Button Text="Lưu Tour"
+                    ImageSource="{FontImage FontFamily=MaterialIcons, Glyph=&#xe161;, Color=White, Size=18}"
                     Style="{StaticResource PrimaryButton}"
                     HorizontalOptions="FillAndExpand"
                     IsEnabled="{Binding CanSave}"

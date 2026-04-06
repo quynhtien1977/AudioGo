@@ -9,4 +9,10 @@ public interface IContentPipelineService
     /// Nếu chưa có → translate + TTS + upload blob + save DB.
     /// </summary>
     Task<PoiContent> EnsureContentAsync(Poi poi, string targetLang);
+
+    /// <summary>
+    /// Generate audio (TTS) cho content đã tồn tại nhưng chưa có AudioUrl.
+    /// Dùng khi seed data đã có text nhưng thiếu file âm thanh.
+    /// </summary>
+    Task<PoiContent> GenerateAudioAsync(PoiContent content);
 }

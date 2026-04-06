@@ -9,7 +9,7 @@ namespace Server.Models
         public int ActivationRadius { get; set; } = 20;
         public int Priority { get; set; } = 1;
         public string Status { get; set; } = string.Empty;
-        public string LogoUrl { get; set; } = string.Empty;
+        public string? LogoUrl { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
 

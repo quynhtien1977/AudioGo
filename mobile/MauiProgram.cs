@@ -22,6 +22,13 @@ public static class MauiProgram
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+                // Inter — Google Fonts (UI chính)
+                fonts.AddFont("Inter-Regular.ttf",  "InterRegular");
+                fonts.AddFont("Inter-Medium.ttf",   "InterMedium");
+                fonts.AddFont("Inter-SemiBold.ttf", "InterSemiBold");
+                fonts.AddFont("Inter-Bold.ttf",     "InterBold");
+                // Material Icons — Google icon font
+                fonts.AddFont("MaterialIcons.ttf",  "MaterialIcons");
             });
 
         // ── Database ──────────────────────────────────────────────
@@ -29,15 +36,15 @@ public static class MauiProgram
         builder.Services.AddSingleton(new AppDatabase(dbPath));
 
         // ── HTTP Client ───────────────────────────────────────────
-            builder.Services.AddHttpClient<IApiService, ApiService>(client =>
-            {
-                // 10.0.2.2 = IP đặc biệt dành cho Android Emulator kết nối về localhost của PC
-                // Đổi về 192.168.x.x nếu dùng thiết bị thật trên cùng mạng WiFi
-                client.BaseAddress = new Uri(DeviceInfo.DeviceType == DeviceType.Virtual 
-                    ? "http://10.0.2.2:5086/" 
-                    : "http://192.168.43.73:5086/");
-                client.Timeout = TimeSpan.FromSeconds(15);
-            });
+        builder.Services.AddHttpClient<IApiService, ApiService>(client =>
+        {
+            // 10.0.2.2 = IP đặc biệt dành cho Android Emulator kết nối về localhost của PC
+            // Đổi về 192.168.x.x nếu dùng thiết bị thật trên cùng mạng WiFi
+            client.BaseAddress = new Uri(DeviceInfo.DeviceType == DeviceType.Virtual 
+                ? "http://10.0.2.2:5086/" 
+                : "http://192.168.43.73:5086/");
+            client.Timeout = TimeSpan.FromSeconds(15);
+        });
 
         // ── Services ──────────────────────────────────────────────
         builder.Services.AddSingleton(AudioManager.Current);
@@ -52,7 +59,6 @@ public static class MauiProgram
         builder.Services.AddTransient<PoiDetailViewModel>();
         builder.Services.AddTransient<TourListViewModel>();
         builder.Services.AddTransient<SearchViewModel>();
-        builder.Services.AddTransient<CreateTourViewModel>();
         builder.Services.AddTransient<TourDetailViewModel>();
 
         // ── Views ─────────────────────────────────────────────────
@@ -61,7 +67,6 @@ public static class MauiProgram
         builder.Services.AddTransient<TourListPage>();
         builder.Services.AddTransient<PoiDetailPage>();
         builder.Services.AddTransient<SearchPage>();
-        builder.Services.AddTransient<CreateTourPage>();
         builder.Services.AddTransient<TourDetailPage>();
 
 #if DEBUG
@@ -71,8 +76,6 @@ public static class MauiProgram
         var mauiApp = builder.Build();
 
         // Init SQLite tables trên background thread — không block main thread khi startup
-        // Dùng Task.Run để tránh deadlock SynchronizationContext; fire-and-forget vì
-        // DB chưa cần thiết trước khi page đầu tiên OnAppearing
         _ = Task.Run(() => mauiApp.Services.GetRequiredService<AppDatabase>().InitAsync());
 
         return mauiApp;
