@@ -31,6 +31,9 @@ public static class MauiProgram
                 fonts.AddFont("MaterialIcons.ttf",  "MaterialIcons");
             });
 
+#if ANDROID
+        AudioGo.Platforms.Android.CustomMapPinHandler.Register();
+#endif
         // ── Database ──────────────────────────────────────────────
         var dbPath = Path.Combine(FileSystem.AppDataDirectory, "audiogo.db3");
         builder.Services.AddSingleton(new AppDatabase(dbPath));

@@ -12,7 +12,7 @@ namespace AudioGo.ViewModels
         private readonly ILocationService _location;
         private readonly IApiService _api;
 
-        public ObservableCollection<Pin> Pins { get; } = new();
+        public ObservableCollection<AudioGo.Controls.CustomPin> Pins { get; } = new();
         public ObservableCollection<CategoryChipVm> CategoryChips { get; }
         public ICommand FilterCommand { get; }
 
@@ -41,6 +41,7 @@ namespace AudioGo.ViewModels
             {
                 SetProperty(ref _selectedPoi, value);
                 OnPropertyChanged(nameof(SelectedPoiDistanceLabel));
+                OnPropertyChanged(nameof(TravelTimeLabel));
             }
         }
 
@@ -56,6 +57,19 @@ namespace AudioGo.ViewModels
                 return dist < 1000
                     ? $"cách {(int)dist}m"
                     : $"cách {dist / 1000.0:F1}km";
+            }
+        }
+
+        public string TravelTimeLabel
+        {
+            get
+            {
+                if (_selectedPoi is null || _userLocation is null) return string.Empty;
+                var dist = AudioGo.Helpers.GeoHelper.HaversineMeters(
+                    _userLocation.Latitude, _userLocation.Longitude,
+                    _selectedPoi.Latitude, _selectedPoi.Longitude);
+                int minutes = (int)Math.Max(1, Math.Round(dist / 83.33)); // ~5km/h walking
+                return $"~{minutes} phút đi bộ";
             }
         }
 
@@ -133,16 +147,15 @@ namespace AudioGo.ViewModels
 
                 try
                 {
-                    var pin = new Pin
+                    var pin = new AudioGo.Controls.CustomPin
                     {
                         Label = poi.Title ?? "Không tên",
                         Address = poi.Description ?? string.Empty,
                         Location = new Location(poi.Latitude, poi.Longitude),
-                        Type = PinType.Place
+                        Type = PinType.Place,
+                        ImageUrl = poi.LogoUrl ?? string.Empty
                     };
                     
-                    // Natively not supported consistently across all MAUI versions unless using a Custom Handler.
-                    // We'll leave it as default Pin for now, avoiding custom handler boilerplate complexity per platform.
                     pin.BindingContext = poi.PoiId;
                     Pins.Add(pin);
                 }

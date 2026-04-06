@@ -12,6 +12,9 @@ public partial class MapPage : ContentPage
     private string? _activePinPoiId;
     private bool _isSubscribed;
 
+    // Expose Main for XAML bindings (MiniPlayer)
+    public MainViewModel Main => _main;
+
     // Property wrapper để map MainMap → MapControl
     private Microsoft.Maui.Controls.Maps.Map MapControl => MainMap;
 
@@ -21,6 +24,7 @@ public partial class MapPage : ContentPage
         _vm = vm;
         _main = main;
         BindingContext = vm;
+        MiniPlayerGrid.BindingContext = _main;
     }
 
     protected override async void OnAppearing()
@@ -99,10 +103,8 @@ public partial class MapPage : ContentPage
 
         // Populate banner labels
         BannerTitle.Text    = poi.Title ?? string.Empty;
-        // BannerDesc.Text     = poi.Description ?? string.Empty; // Removed from XAML
-        // BannerDistance.Text = _vm.SelectedPoiDistanceLabel; // Removed from XAML
-        // BannerCategory.Text = (poi.Categories?.FirstOrDefault()) ?? string.Empty; // Removed from XAML
-        // BannerImage.Source  = poi.LogoUrl; // Removed from XAML
+        BannerLang.Text     = poi.LanguageCode.ToUpper();
+        BannerTime.Text     = _vm.TravelTimeLabel;
 
         // Fade in
         await ShowPoiBannerAsync();
@@ -111,12 +113,12 @@ public partial class MapPage : ContentPage
     private async Task ShowPoiBannerAsync()
     {
         PoiBanner.IsVisible = true;
-        await PoiBanner.FadeTo(1, 200, Easing.CubicOut);
+        await PoiBanner.FadeToAsync(1, 200, Easing.CubicOut);
     }
 
     private async Task HidePoiBannerAsync()
     {
-        await PoiBanner.FadeTo(0, 150, Easing.CubicIn);
+        await PoiBanner.FadeToAsync(0, 150, Easing.CubicIn);
         PoiBanner.IsVisible = false;
         _vm.SelectedPoi = null;
         _activePinPoiId = null;
@@ -187,7 +189,7 @@ public partial class MapPage : ContentPage
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Lỗi", $"Không thể mở bản đồ: {ex.Message}", "OK");
+            await DisplayAlertAsync("Lỗi", $"Không thể mở bản đồ: {ex.Message}", "OK");
         }
     }
 
@@ -199,15 +201,15 @@ public partial class MapPage : ContentPage
 
     private async void OnLanguageClicked(object? sender, EventArgs e)
     {
-        var selected = await DisplayActionSheet(
+        var selected = await DisplayActionSheetAsync(
             "Chọn ngôn ngữ thuyết minh",
             "Huỷ",
             null,
             "🇻🇳 Tiếng Việt",
             "🇬🇧 English",
             "🇨🇳 中文",
-            "🇰🇷 한국어",
-            "🇯🇵 日本語");
+            "🇯🇵 日本語",
+            "🇰🇷 한국어");
 
         var lang = selected switch
         {
@@ -240,11 +242,12 @@ public partial class MapPage : ContentPage
 
     private void OnMiniPlayClicked(object? sender, EventArgs e)
     {
-        if (_activePinPoiId is null) return;
-        // Toggle play/pause từ banner — delegate xuống MainViewModel
-        var poi = _main.ActivePoi;
-        if (poi is not null)
-            _ = _main.TriggerAudioAsync(poi);
+        _main.ToggleAudio();
+    }
+
+    private void OnMiniPlayerCloseTapped(object? sender, TappedEventArgs e)
+    {
+        _main.StopAudio();
     }
 
     private async Task RequestInitialLocationAsync()
