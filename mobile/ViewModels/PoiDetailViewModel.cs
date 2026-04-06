@@ -12,9 +12,9 @@ namespace AudioGo.ViewModels
     {
         private readonly AppDatabase _db;
         private readonly IAudioService _audio;
-        private readonly AudioService? _audioConcrete; // for CurrentPositionSeconds
 
         private IDispatcherTimer? _progressTimer;
+        private bool _isSeeking; // true while user is dragging the seekbar
 
         // ── Query parameter ────────────────────────────────────────
         private string _poiId = string.Empty;
@@ -24,7 +24,12 @@ namespace AudioGo.ViewModels
             set
             {
                 SetProperty(ref _poiId, value);
-                Task.Run(() => LoadAsync(value));
+                // Stop any playing audio before loading new POI — prevents cross-POI audio bug
+                Task.Run(async () =>
+                {
+                    await _audio.StopAsync();
+                    await LoadAsync(value);
+                });
             }
         }
 
@@ -99,10 +104,15 @@ namespace AudioGo.ViewModels
         }
         public string ExpandLabel => _descExpanded ? "Thu gọn ▲" : "Xem thêm ▼";
 
-        // ── Audio state ────────────────────────────────────────────
-        public bool   IsPlaying     => _audio.IsPlaying;
-        public string PlayPauseIcon => _audio.IsPlaying ? "\ue034" : "\ue037";
+        // ── Audio state — play/pause (not stop) ───────────────────
+        /// <summary>True while audio is actively playing (not paused).</summary>
+        public bool IsPlaying  => _audio.IsPlaying;
+        public bool IsPaused   => _audio.IsPaused;
 
+        /// <summary>pause icon when playing, play icon when paused/stopped.</summary>
+        public string PlayPauseIcon => _audio.IsPlaying ? "\ue034" : "\ue037"; // pause / play_arrow
+
+        // ── Progress ───────────────────────────────────────────────
         private double _audioProgress;
         public double AudioProgress
         {
@@ -114,7 +124,6 @@ namespace AudioGo.ViewModels
             }
         }
 
-        /// <summary>Rendered pixel width of the seekbar track — set from code-behind SizeChanged.</summary>
         private double _seekbarWidth;
         public double SeekbarWidth
         {
@@ -127,10 +136,7 @@ namespace AudioGo.ViewModels
             }
         }
 
-        /// <summary>
-        /// X offset (dp) for the thumb Ellipse, so it sits on top of the current progress position.
-        /// ThumbRadius = 7 (half of 14dp ellipse). Clamped to [0, trackWidth - thumbDiameter].
-        /// </summary>
+        /// <summary>Pixel X offset for thumb Ellipse (HorizontalOptions=Start).</summary>
         public double ThumbOffsetX
         {
             get
@@ -156,16 +162,28 @@ namespace AudioGo.ViewModels
             private set { SetProperty(ref _totalTime, value); }
         }
 
-        private string _speedText = "1×";
-        public string SpeedText
+        // ── Speed pills ────────────────────────────────────────────
+        private static readonly float[] SpeedValues = [0.75f, 1f, 1.25f, 1.5f];
+        private int _selectedSpeedIndex = 1; // default 1×
+
+        // Bool props for XAML DataTrigger pill highlight
+        public bool IsSpeed075 => _selectedSpeedIndex == 0;
+        public bool IsSpeed1x  => _selectedSpeedIndex == 1;
+        public bool IsSpeed125 => _selectedSpeedIndex == 2;
+        public bool IsSpeed15  => _selectedSpeedIndex == 3;
+
+        public void SelectSpeed(int index)
         {
-            get => _speedText;
-            private set { SetProperty(ref _speedText, value); }
+            if (index < 0 || index >= SpeedValues.Length) return;
+            _selectedSpeedIndex = index;
+            _audio.SetSpeed(SpeedValues[index]);
+            OnPropertyChanged(nameof(IsSpeed075));
+            OnPropertyChanged(nameof(IsSpeed1x));
+            OnPropertyChanged(nameof(IsSpeed125));
+            OnPropertyChanged(nameof(IsSpeed15));
         }
 
-        private readonly float[] _speeds = [0.75f, 1f, 1.25f, 1.5f, 2f];
-        private int _speedIndex = 1;
-
+        // ── Other ──────────────────────────────────────────────────
         private int _selectedGalleryIndex;
         public int SelectedGalleryIndex
         {
@@ -185,7 +203,6 @@ namespace AudioGo.ViewModels
         {
             _db    = db;
             _audio = audio;
-            _audioConcrete = audio as AudioService;
 
             // Subscribe to global audio state changes
             _audio.PlaybackStateChanged += OnAudioStateChanged;
@@ -200,35 +217,34 @@ namespace AudioGo.ViewModels
         }
 
         // ── Global audio state handler ─────────────────────────────
-        /// <summary>
-        /// Called on main thread whenever AudioService changes state —
-        /// including when MainPage mini-player stops/pauses audio.
-        /// </summary>
         private void OnAudioStateChanged(object? sender, AudioStateChangedEventArgs e)
         {
-            // Update play/pause icon
             OnPropertyChanged(nameof(IsPlaying));
+            OnPropertyChanged(nameof(IsPaused));
             OnPropertyChanged(nameof(PlayPauseIcon));
 
             if (e.IsPlaying)
             {
-                // Update TotalTime once we know duration
                 if (e.DurationSeconds > 0)
                     TotalTime = FormatTime(e.DurationSeconds);
                 StartProgressTimer();
+            }
+            else if (e.IsPaused)
+            {
+                // Paused — stop timer, hold current position display
+                StopProgressTimer();
             }
             else
             {
                 StopProgressTimer();
                 if (e.PlaybackEnded)
                 {
-                    // Playback finished naturally — show full bar briefly then reset
                     AudioProgress = 1.0;
                     CurrentTime   = TotalTime;
                 }
                 else
                 {
-                    // Stopped by user — reset bar
+                    // Full stop — reset
                     AudioProgress = 0;
                     CurrentTime   = "0:00";
                     TotalTime     = "--:--";
@@ -236,7 +252,7 @@ namespace AudioGo.ViewModels
             }
         }
 
-        // ── Load data ──────────────────────────────────────────────
+        // ── Data loading ───────────────────────────────────────────
         private async Task LoadAsync(string poiId)
         {
             if (string.IsNullOrWhiteSpace(poiId)) return;
@@ -269,13 +285,13 @@ namespace AudioGo.ViewModels
             }
         }
 
-        // ── Progress timer ─────────────────────────────────────────
+        // ── Progress timer (≈60 fps smooth) ───────────────────────
         private void StartProgressTimer()
         {
             StopProgressTimer();
             _progressTimer = Application.Current?.Dispatcher.CreateTimer();
             if (_progressTimer is null) return;
-            _progressTimer.Interval = TimeSpan.FromMilliseconds(300);
+            _progressTimer.Interval = TimeSpan.FromMilliseconds(16); // ~60 fps
             _progressTimer.Tick += (_, _) => TickProgress();
             _progressTimer.Start();
         }
@@ -288,6 +304,8 @@ namespace AudioGo.ViewModels
 
         private void TickProgress()
         {
+            if (_isSeeking) return; // user is dragging — don't overwrite progress
+
             if (!_audio.IsPlaying)
             {
                 StopProgressTimer();
@@ -297,7 +315,7 @@ namespace AudioGo.ViewModels
             }
 
             double duration = _audio.DurationSeconds;
-            double position = _audioConcrete?.CurrentPositionSeconds ?? 0;
+            double position = _audio.CurrentPositionSeconds;
 
             if (duration > 0 && position >= 0)
             {
@@ -307,8 +325,8 @@ namespace AudioGo.ViewModels
             }
             else if (duration <= 0 && AudioProgress < 1.0)
             {
-                // Fallback: simulate ~3 min if duration unknown (TTS)
-                AudioProgress = Math.Min(1.0, AudioProgress + 0.3 / 180.0);
+                // TTS fallback — simulate 3 min
+                AudioProgress = Math.Min(1.0, AudioProgress + 16.0 / 180_000.0);
                 var elapsed = TimeSpan.FromSeconds(AudioProgress * 180);
                 CurrentTime = $"{(int)elapsed.TotalMinutes}:{elapsed.Seconds:D2}";
             }
@@ -323,18 +341,30 @@ namespace AudioGo.ViewModels
         }
 
         // ── Audio controls ─────────────────────────────────────────
+        /// <summary>
+        /// Toggle: if playing → pause (keep position), if paused → resume, if stopped → play from start.
+        /// </summary>
         public async Task TogglePlayPauseAsync()
         {
-            if (IsPlaying) await StopAudioAsync();
-            else           await PlayAudioAsync();
+            if (_audio.IsPlaying)
+            {
+                await _audio.PauseAsync();
+            }
+            else if (_audio.IsPaused)
+            {
+                await _audio.ResumeAsync();
+            }
+            else
+            {
+                await PlayAudioAsync();
+            }
         }
 
         public async Task PlayAudioAsync()
         {
             if (Poi is null) return;
 
-            // Stop existing first (prevents overlap)
-            if (_audio.IsPlaying) await _audio.StopAsync();
+            if (_audio.IsPlaying) await _audio.PauseAsync();
 
             AudioProgress = 0;
             CurrentTime   = "0:00";
@@ -346,31 +376,55 @@ namespace AudioGo.ViewModels
                 await _audio.PlayFileAsync(Poi.AudioUrl);
             else if (!string.IsNullOrEmpty(Poi.Description))
                 await _audio.SpeakAsync(Poi.Description, Poi.LanguageCode);
-            // PlaybackStateChanged event will fire from AudioService to update UI
         }
 
         public async Task StopAudioAsync()
         {
             await _audio.StopAsync();
-            // PlaybackStateChanged event will fire and reset bar
+            // PlaybackStateChanged fires and resets bar to 0
         }
 
-        public void CycleSpeed()
+        /// <summary>Call when the seekbar drag starts — freezes progress display.</summary>
+        public void BeginSeek() => _isSeeking = true;
+
+        /// <summary>Call when drag ends with the slider‧s current value (0–1).</summary>
+        public async Task SeekToAsync(double normalizedPosition)
         {
-            _speedIndex = (_speedIndex + 1) % _speeds.Length;
-            SpeedText = _speeds[_speedIndex] == 1f ? "1×" : $"{_speeds[_speedIndex]}×";
+            _isSeeking = false;
+            double dur = _audio.DurationSeconds;
+            if (dur <= 0) return;
+
+            double targetSeconds = Math.Clamp(normalizedPosition, 0, 1) * dur;
+            AudioProgress = Math.Clamp(normalizedPosition, 0, 1);
+            CurrentTime   = FormatTime(targetSeconds);
+            await _audio.SeekAsync(targetSeconds);
         }
 
-        /// <summary>Called from PoiDetailPage.OnAppearing — sync icon if audio already running.</summary>
+
+
+        // ── Sync on page appear ────────────────────────────────────
         public void RefreshAudioState()
         {
             OnPropertyChanged(nameof(IsPlaying));
+            OnPropertyChanged(nameof(IsPaused));
             OnPropertyChanged(nameof(PlayPauseIcon));
             if (_audio.IsPlaying)
             {
                 if (_audio.DurationSeconds > 0)
                     TotalTime = FormatTime(_audio.DurationSeconds);
                 StartProgressTimer();
+            }
+            else if (_audio.IsPaused)
+            {
+                // Show existing position without starting timer
+                double pos = _audio.CurrentPositionSeconds;
+                double dur = _audio.DurationSeconds;
+                if (dur > 0)
+                {
+                    AudioProgress = Math.Min(1.0, pos / dur);
+                    CurrentTime   = FormatTime(pos);
+                    TotalTime     = FormatTime(dur);
+                }
             }
         }
 

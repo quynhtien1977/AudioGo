@@ -66,8 +66,8 @@
                     StrokeShape="RoundRectangle 24"
                     StrokeThickness="0"
                     HorizontalOptions="End"
-                    VerticalOptions="End"
-                    Margin="16,0,16,16"
+                    VerticalOptions="Start"
+                    Margin="16,110,16,16"
                     WidthRequest="48" HeightRequest="48">
                 <Border.Shadow>
                     <Shadow Brush="Black" Offset="0,2" Radius="8" Opacity="0.2"/>
@@ -85,6 +85,101 @@
                                Color="{StaticResource Primary}"
                                HorizontalOptions="Center"
                                VerticalOptions="Center"/>
+
+            <!-- ── POI Banner (slides up when pin tapped) ── -->
+            <Border x:Name="PoiBanner"
+                    BackgroundColor="{StaticResource Surface}"
+                    StrokeShape="RoundRectangle 20,20,0,0"
+                    StrokeThickness="0"
+                    VerticalOptions="End"
+                    TranslationY="300"
+                    IsVisible="False">
+                <Border.Shadow>
+                    <Shadow Brush="Black" Offset="0,-4" Radius="20" Opacity="0.12"/>
+                </Border.Shadow>
+                <Grid RowDefinitions="Auto,Auto" Padding="16,12,16,24" RowSpacing="12">
+
+                    <!-- Handle -->
+                    <BoxView Grid.Row="0" HeightRequest="4" WidthRequest="36"
+                             Color="{StaticResource Gray300}" CornerRadius="2"
+                             HorizontalOptions="Center">
+                        <BoxView.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnPoiBannerDismiss"/>
+                        </BoxView.GestureRecognizers>
+                    </BoxView>
+
+                    <!-- Banner content -->
+                    <Grid Grid.Row="1" ColumnDefinitions="90,*" ColumnSpacing="14" RowDefinitions="Auto,Auto">
+
+                        <!-- Thumbnail -->
+                        <Border Grid.Column="0" Grid.RowSpan="2"
+                                StrokeShape="RoundRectangle 14" StrokeThickness="0"
+                                HeightRequest="90" WidthRequest="90"
+                                ClipsToBounds="True" VerticalOptions="Center">
+                            <Image x:Name="BannerImage"
+                                   Source="{Binding SelectedPoi.LogoUrl, Source={RelativeSource AncestorType={x:Type vm:MapViewModel}}}"
+                                   Aspect="AspectFill"/>
+                        </Border>
+
+                        <!-- Name + distance -->
+                        <VerticalStackLayout Grid.Column="1" Grid.Row="0" Spacing="4">
+                            <Label x:Name="BannerTitle"
+                                   Style="{StaticResource SectionTitle}"
+                                   MaxLines="2" LineBreakMode="TailTruncation"/>
+                            <HorizontalStackLayout Spacing="6">
+                                <Border BackgroundColor="{StaticResource PrimaryLight}"
+                                        StrokeShape="RoundRectangle 8" StrokeThickness="0"
+                                        Padding="8,3">
+                                    <Label x:Name="BannerDistance"
+                                           FontSize="11" TextColor="{StaticResource Primary}"
+                                           FontAttributes="Bold"/>
+                                </Border>
+                                <Label x:Name="BannerCategory"
+                                       Style="{StaticResource CaptionLabel}"
+                                       VerticalOptions="Center"/>
+                            </HorizontalStackLayout>
+                            <Label x:Name="BannerDesc"
+                                   Style="{StaticResource BodyLabel}" FontSize="13"
+                                   MaxLines="2" LineBreakMode="WordWrap"/>
+                        </VerticalStackLayout>
+
+                        <!-- Action buttons -->
+                        <Grid Grid.Column="1" Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="8" Margin="0,8,0,0">
+                            <!-- Chi tiết (Primary) -->
+                            <Border Grid.Column="0"
+                                    BackgroundColor="{StaticResource Primary}"
+                                    StrokeShape="RoundRectangle 12" StrokeThickness="0"
+                                    Padding="0,10">
+                                <HorizontalStackLayout Spacing="6" HorizontalOptions="Center">
+                                    <Label Text="&#xe8f4;" FontFamily="MaterialIcons" FontSize="16"
+                                           TextColor="White" VerticalOptions="Center"/>
+                                    <Label Text="Chi tiết" FontSize="13" FontAttributes="Bold"
+                                           TextColor="White" VerticalOptions="Center"/>
+                                </HorizontalStackLayout>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnPoiBannerDetailClicked"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+                            <!-- Chỉ dẫn đường (Secondary) -->
+                            <Border Grid.Column="1"
+                                    BackgroundColor="{StaticResource Gray100}"
+                                    StrokeShape="RoundRectangle 12" StrokeThickness="0"
+                                    Padding="0,10">
+                                <HorizontalStackLayout Spacing="6" HorizontalOptions="Center">
+                                    <Label Text="&#xe52f;" FontFamily="MaterialIcons" FontSize="16"
+                                           TextColor="{StaticResource Primary}" VerticalOptions="Center"/>
+                                    <Label Text="Đường đi" FontSize="13" FontAttributes="Bold"
+                                           TextColor="{StaticResource TextPrimary}" VerticalOptions="Center"/>
+                                </HorizontalStackLayout>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnBannerDirectionsTapped"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+                        </Grid>
+                    </Grid>
+
+                </Grid>
+            </Border>
 
             <!-- ── Custom Filter Overlay (thay thế ActionSheet thiếu icon) ── -->
             <Grid x:Name="FilterOverlay"

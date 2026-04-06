@@ -11,6 +11,18 @@ public partial class PoiDetailPage : ContentPage
         InitializeComponent();
         _vm = vm;
         BindingContext = vm;
+
+        // Keep the red fill BoxView width in sync with the thumb position
+        // We hook PropertyChanged here instead of a converter to avoid a
+        // full IValueConverter dependency on SeekbarWidth.
+        vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(vm.ThumbOffsetX) or nameof(vm.SeekbarWidth))
+            {
+                // The fill ends at the centre of the thumb
+                SeekFill.WidthRequest = Math.Max(0, vm.ThumbOffsetX + 7);
+            }
+        };
     }
 
     protected override void OnAppearing()
@@ -26,24 +38,31 @@ public partial class PoiDetailPage : ContentPage
     private async void OnPlayPauseTapped(object? sender, TappedEventArgs e)
         => await _vm.TogglePlayPauseAsync();
 
-    // ── Skip buttons: prev/next just stop/restart (seek not supported by plugin) ──
+    // Skip back = restart from beginning (seek not supported by plugin)
     private async void OnPreviousTapped(object? sender, TappedEventArgs e)
         => await _vm.StopAudioAsync();
 
+    // Skip forward = play next / replay
     private async void OnNextTapped(object? sender, TappedEventArgs e)
         => await _vm.PlayAudioAsync();
 
-    private void OnSpeedTapped(object? sender, TappedEventArgs e)
-        => _vm.CycleSpeed();
+    private void OnSpeed075Tapped(object? sender, TappedEventArgs e) => _vm.SelectSpeed(0);
+    private void OnSpeed1xTapped(object? sender, TappedEventArgs e)  => _vm.SelectSpeed(1);
+    private void OnSpeed125Tapped(object? sender, TappedEventArgs e) => _vm.SelectSpeed(2);
+    private void OnSpeed15Tapped(object? sender, TappedEventArgs e)  => _vm.SelectSpeed(3);
 
-    private void OnSliderDragCompleted(object? sender, EventArgs e)
+    private void OnSliderDragStarted(object? sender, EventArgs e)
+        => _vm.BeginSeek();
+
+    private async void OnSliderDragCompleted(object? sender, EventArgs e)
     {
-        // Seek not supported by plugin — no-op
+        if (sender is Slider s)
+            await _vm.SeekToAsync(s.Value);
     }
 
     /// <summary>
-    /// Fires when the SeekContainer Grid is measured so we can tell the VM
-    /// the rendered width to position the thumb ellipse correctly.
+    /// Fires when the invisible Slider is measured so we can tell the VM
+    /// the rendered width for pixel-accurate thumb positioning.
     /// </summary>
     private void OnSeekbarSizeChanged(object? sender, EventArgs e)
     {
