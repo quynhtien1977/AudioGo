@@ -105,6 +105,7 @@ public partial class MapPage : ContentPage
         BannerTitle.Text    = poi.Title ?? string.Empty;
         BannerLang.Text     = poi.LanguageCode.ToUpper();
         BannerTime.Text     = _vm.TravelTimeLabel;
+        BannerLogo.Source   = poi.LogoUrl;
 
         // Fade in
         await ShowPoiBannerAsync();
