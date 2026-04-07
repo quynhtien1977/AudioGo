@@ -58,10 +58,35 @@ namespace Server.Controllers.Cms
                 .FirstOrDefaultAsync(c => c.ContentId == contentId && c.PoiId == poiId);
             if (content is null) return NotFound();
 
-            if (req.Title is not null)       content.Title       = req.Title;
-            if (req.Description is not null) content.Description = req.Description;
+            bool isMasterDataChanged = false;
+
+            if (req.Title is not null && req.Title != content.Title) 
+            {
+                content.Title = req.Title;
+                isMasterDataChanged = true;
+            }
+
+            if (req.Description is not null && req.Description != content.Description) 
+            {
+                content.Description = req.Description;
+                isMasterDataChanged = true;
+            }
+
             if (req.AudioUrl is not null)    content.AudioUrl    = req.AudioUrl;
             if (req.IsMaster.HasValue)       content.IsMaster    = req.IsMaster.Value;
+            
+            // LOGIC QUAN TRỌNG: Nếu update bản Master và đổi nội dung, ta phải xóa sạch các bản dịch (Slave) đã gen trước đó!
+            if (content.IsMaster && isMasterDataChanged)
+            {
+                var slaves = await _db.PoiContents
+                    .Where(c => c.PoiId == poiId && c.ContentId != content.ContentId && !c.IsMaster)
+                    .ToListAsync();
+                
+                if (slaves.Any())
+                {
+                    _db.PoiContents.RemoveRange(slaves);
+                }
+            }
             content.UpdatedAt = DateTime.UtcNow;
 
             await _db.SaveChangesAsync();
