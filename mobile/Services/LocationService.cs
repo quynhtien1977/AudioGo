@@ -23,6 +23,13 @@ namespace AudioGo.Services
 
             IsRunning = true;
             _cts = new CancellationTokenSource();
+            
+#if ANDROID
+            var intent = new Android.Content.Intent(Android.App.Application.Context, typeof(AudioGo.Platforms.Android.AndroidLocationService));
+            intent.SetAction("START_SERVICE");
+            Android.App.Application.Context.StartForegroundService(intent);
+#endif
+
             _ = LoopAsync(_cts.Token);
         }
 
@@ -30,6 +37,13 @@ namespace AudioGo.Services
         {
             _cts?.Cancel();
             IsRunning = false;
+
+#if ANDROID
+            var intent = new Android.Content.Intent(Android.App.Application.Context, typeof(AudioGo.Platforms.Android.AndroidLocationService));
+            intent.SetAction("STOP_SERVICE");
+            Android.App.Application.Context.StartService(intent);
+#endif
+
             return Task.CompletedTask;
         }
 

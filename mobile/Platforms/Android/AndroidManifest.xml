@@ -11,6 +11,10 @@
 	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 	<!-- Geofencing chạy nền — yêu cầu Android 10+ (API 29+) -->
 	<uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+	<!-- Cần thiết để khởi động service foreground và theo dõi vị trí -->
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+	<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 	<!-- QR Code Scanner -->
 	<uses-permission android:name="android.permission.CAMERA" />
 	<uses-feature android:name="android.hardware.camera" android:required="false" />
