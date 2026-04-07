@@ -2,10 +2,11 @@ using AudioGo.Data;
 using AudioGo.Services;
 using AudioGo.Services.Interfaces;
 using AudioGo.ViewModels;
+using AudioGo_Mobile.ViewModels;
 using AudioGo_Mobile.Views;
 using Microsoft.Extensions.Logging;
 using Plugin.Maui.Audio;
-using ZXing.Net.Maui.Controls;
+using BarcodeScanner.Mobile;
 
 namespace AudioGo_Mobile;
 
@@ -17,7 +18,9 @@ public static class MauiProgram
         builder
             .UseMauiApp<App>()
             .UseMauiMaps()
-            .UseBarcodeReader()
+            .ConfigureMauiHandlers(handlers => {
+                handlers.AddBarcodeScannerHandler();
+            })
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -63,6 +66,7 @@ public static class MauiProgram
         builder.Services.AddTransient<TourListViewModel>();
         builder.Services.AddTransient<SearchViewModel>();
         builder.Services.AddTransient<TourDetailViewModel>();
+        builder.Services.AddTransient<WelcomeQrScanViewModel>();
 
         // ── Views ─────────────────────────────────────────────────
         builder.Services.AddSingleton<MainPage>();
@@ -71,6 +75,8 @@ public static class MauiProgram
         builder.Services.AddTransient<PoiDetailPage>();
         builder.Services.AddTransient<SearchPage>();
         builder.Services.AddTransient<TourDetailPage>();
+        builder.Services.AddTransient<WelcomePage>();
+        builder.Services.AddTransient<WelcomeQrScanPage>();
 
 #if DEBUG
         builder.Logging.AddDebug();

@@ -8,7 +8,7 @@
     Shell.TabBarBackgroundColor="{StaticResource Surface}"
     Shell.TabBarForegroundColor="{StaticResource Primary}"
     Shell.TabBarTitleColor="{StaticResource Primary}"
-    Shell.TabBarUnselectedColor="{StaticResource SecondaryText}">
+    Shell.TabBarUnselectedColor="{StaticResource TextSecondary}">
 
     <!-- ── Bottom Tab Bar ── -->
     <TabBar>
