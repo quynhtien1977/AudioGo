@@ -274,16 +274,8 @@ namespace AudioGo.ViewModels
 
         private async void OnPoiTriggered(object? sender, POI poi)
         {
-            ActivePoi = poi;
-            StatusMessage = $"Đang phát: {poi.Title}";
-            OnPropertyChanged(nameof(IsAudioPlaying));
-
-            if (!string.IsNullOrEmpty(poi.AudioUrl))
-                await _audio.PlayFileAsync(poi.AudioUrl);
-            else if (!string.IsNullOrEmpty(poi.Description))
-                await _audio.SpeakAsync(poi.Description, poi.LanguageCode);
-
-            OnPropertyChanged(nameof(IsAudioPlaying));
+            StatusMessage = $"Đang tự động phát: {poi.Title}";
+            await TriggerAudioAsync(poi);
         }
     }
 }
