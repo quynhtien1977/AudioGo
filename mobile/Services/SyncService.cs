@@ -2,6 +2,7 @@ using AudioGo.Data;
 using AudioGo.Models;
 using AudioGo.Services.Interfaces;
 using Shared;
+using Shared.DTOs;
 
 namespace AudioGo.Services
 {
@@ -47,8 +48,9 @@ namespace AudioGo.Services
                     // Cache metadata trước để app dùng được ngay
                     await CacheMetadataAsync(serverPois);
 
-                    // Download audio files nền (không block UI)
+                    // Download audio and image files nền (không block UI)
                     _ = Task.Run(() => DownloadAudioFilesAsync(serverPois, ct), ct);
+                    _ = Task.Run(() => DownloadImageFilesAsync(serverPois, ct), ct);
 
                     // Đọc lại từ DB (giữ LocalAudioPath cũ nếu có)
                     return (await _db.GetAllPoisAsync()).Select(MapToDto).ToList();
@@ -61,6 +63,33 @@ namespace AudioGo.Services
 
             // Fallback: đọc từ SQLite cache (offline)
             return (await _db.GetAllPoisAsync()).Select(MapToDto).ToList();
+        }
+
+        /// <summary>
+        /// Lấy danh sách Categories: ưu tiên API, nếu offline thì extract từ các POI đã cache trong SQLite.
+        /// </summary>
+        public async Task<List<CategoryDto>> GetCategoriesAsync(CancellationToken ct = default)
+        {
+            try
+            {
+                var apiCategories = await _api.GetCategoriesAsync(ct);
+                if (apiCategories.Count > 0) return apiCategories;
+            }
+            catch
+            {
+                // API không kết nối được
+            }
+
+            // Fallback: extract từ SQLite cache
+            var cachedPois = await _db.GetAllPoisAsync();
+            var offlineCategories = cachedPois
+                .Where(p => !string.IsNullOrEmpty(p.CategoriesJson))
+                .SelectMany(p => System.Text.Json.JsonSerializer.Deserialize<List<string>>(p.CategoriesJson) ?? new())
+                .Distinct()
+                .Select(cName => new CategoryDto("", cName, 0, DateTime.MinValue))
+                .ToList();
+
+            return offlineCategories;
         }
 
         // ── Private Helpers ───────────────────────────────────────────────
@@ -79,6 +108,13 @@ namespace AudioGo.Services
                     File.Exists(existing.LocalAudioPath))
                 {
                     entity.LocalAudioPath = existing.LocalAudioPath;
+                }
+
+                if (existing is not null &&
+                    !string.IsNullOrEmpty(existing.LocalLogoPath) &&
+                    File.Exists(existing.LocalLogoPath))
+                {
+                    entity.LocalLogoPath = existing.LocalLogoPath;
                 }
 
                 await _db.SavePoiAsync(entity);
@@ -136,6 +172,61 @@ namespace AudioGo.Services
             }
         }
 
+        /// <summary>
+        /// Download image logo files từ LogoUrl về local storage để cache map pin offline.
+        /// </summary>
+        private async Task DownloadImageFilesAsync(List<POI> pois, CancellationToken ct)
+        {
+            var imagesDir = Path.Combine(FileSystem.AppDataDirectory, "images");
+            Directory.CreateDirectory(imagesDir);
+
+            foreach (var poi in pois)
+            {
+                if (ct.IsCancellationRequested) break;
+                if (string.IsNullOrEmpty(poi.LogoUrl)) continue;
+
+                try
+                {
+                    var existing = await _db.GetPoiAsync(poi.PoiId);
+
+                    // Parse the extension from URL if possible, otherwise default to .png
+                    string extension = ".png";
+                    try 
+                    {
+                        var uri = new Uri(poi.LogoUrl);
+                        var ext = Path.GetExtension(uri.LocalPath);
+                        if (!string.IsNullOrEmpty(ext)) extension = ext;
+                    } 
+                    catch { }
+
+                    var fileName = $"{poi.PoiId}_logo{extension}";
+                    var localPath = Path.Combine(imagesDir, fileName);
+
+                    if (File.Exists(localPath) &&
+                        existing?.LogoUrl == poi.LogoUrl)
+                    {
+                        continue;
+                    }
+
+                    using var http = _httpFactory.CreateClient();
+                    var bytes = await http.GetByteArrayAsync(poi.LogoUrl, ct);
+                    await File.WriteAllBytesAsync(localPath, bytes, ct);
+
+                    if (existing is not null)
+                    {
+                        existing.LocalLogoPath = localPath;
+                        existing.LogoUrl = poi.LogoUrl;
+                        await _db.SavePoiAsync(existing);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine(
+                        $"[SyncService] Download logo failed for POI {poi.PoiId}: {ex.Message}");
+                }
+            }
+        }
+
         private static PoiEntity MapToEntity(POI dto) => new()
         {
             PoiId            = dto.PoiId,
@@ -145,6 +236,7 @@ namespace AudioGo.Services
             Priority         = dto.Priority,
             Status           = dto.Status ?? string.Empty,
             LogoUrl          = dto.LogoUrl,         // nullable OK
+            LocalLogoPath    = dto.LocalLogoPath,
             LanguageCode     = dto.LanguageCode ?? "vi",
             Title            = dto.Title ?? string.Empty,
             Description      = dto.Description ?? string.Empty,
@@ -169,6 +261,7 @@ namespace AudioGo.Services
             Priority        = e.Priority,
             Status          = e.Status ?? string.Empty,
             LogoUrl         = e.LogoUrl,           // nullable OK
+            LocalLogoPath   = e.LocalLogoPath,
             LanguageCode    = e.LanguageCode ?? "vi",
             Title           = e.Title ?? string.Empty,
             Description     = e.Description ?? string.Empty,

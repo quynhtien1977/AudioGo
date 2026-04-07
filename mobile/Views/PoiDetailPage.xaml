@@ -93,18 +93,28 @@
                                TextColor="White"
                                FontSize="22" FontAttributes="Bold"
                                LineBreakMode="WordWrap"/>
-                        <HorizontalStackLayout Grid.Row="1" Spacing="6"
-                                               BindableLayout.ItemsSource="{Binding CategoryTags}">
-                            <BindableLayout.ItemTemplate>
-                                <DataTemplate x:DataType="x:String">
-                                    <Border BackgroundColor="{StaticResource Primary}"
-                                            StrokeShape="RoundRectangle 10" StrokeThickness="0"
-                                            Padding="8,3">
-                                        <Label Text="{Binding .}" TextColor="White"
-                                               FontSize="11" FontAttributes="Bold"/>
-                                    </Border>
-                                </DataTemplate>
-                            </BindableLayout.ItemTemplate>
+                        <HorizontalStackLayout Grid.Row="1" Spacing="6">
+                            <!-- Ngôn ngữ -->
+                            <Border BackgroundColor="#FFC107"
+                                    StrokeShape="RoundRectangle 10" StrokeThickness="0"
+                                    Padding="8,3">
+                                <Label Text="{Binding LanguageName}" TextColor="Black"
+                                       FontSize="11" FontAttributes="Bold"/>
+                            </Border>
+
+                            <!-- Thể loại -->
+                            <HorizontalStackLayout Spacing="6" BindableLayout.ItemsSource="{Binding CategoryTags}">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="x:String">
+                                        <Border BackgroundColor="{StaticResource Primary}"
+                                                StrokeShape="RoundRectangle 10" StrokeThickness="0"
+                                                Padding="8,3">
+                                            <Label Text="{Binding .}" TextColor="White"
+                                                   FontSize="11" FontAttributes="Bold"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </HorizontalStackLayout>
                         </HorizontalStackLayout>
                     </Grid>
 

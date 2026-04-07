@@ -1,3 +1,4 @@
+
 using SQLite;
 
 namespace AudioGo.Models
@@ -22,6 +23,7 @@ namespace AudioGo.Models
         public string Status { get; set; } = string.Empty;
 
         public string? LogoUrl { get; set; }
+        public string? LocalLogoPath { get; set; }
 
         // ── PoiContent table (cached per language) ─────────────────
         [MaxLength(10), NotNull]

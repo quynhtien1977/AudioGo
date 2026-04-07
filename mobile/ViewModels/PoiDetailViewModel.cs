@@ -12,6 +12,7 @@ namespace AudioGo.ViewModels
     {
         private readonly AppDatabase _db;
         private readonly IAudioService _audio;
+        private readonly MainViewModel _mainViewModel;
 
         private IDispatcherTimer? _progressTimer;
         private bool _isSeeking; // true while user is dragging the seekbar
@@ -24,10 +25,13 @@ namespace AudioGo.ViewModels
             set
             {
                 SetProperty(ref _poiId, value);
-                // Stop any playing audio before loading new POI — prevents cross-POI audio bug
+                // Only stop audio if we're picking a different POI
                 Task.Run(async () =>
                 {
-                    await _audio.StopAsync();
+                    if (_mainViewModel.ActivePoi?.PoiId != value)
+                    {
+                        await _audio.StopAsync();
+                    }
                     await LoadAsync(value);
                 });
             }
@@ -45,6 +49,7 @@ namespace AudioGo.ViewModels
                 OnPropertyChanged(nameof(Description));
                 OnPropertyChanged(nameof(CategoryTags));
                 OnPropertyChanged(nameof(HeroImageUrl));
+                OnPropertyChanged(nameof(LanguageName));
                 OnPropertyChanged(nameof(GalleryImages));
                 OnPropertyChanged(nameof(HasGallery));
                 OnPropertyChanged(nameof(GalleryCount));
@@ -55,6 +60,24 @@ namespace AudioGo.ViewModels
         public string Title        => _poi?.Title       ?? string.Empty;
         public string Description  => _poi?.Description ?? string.Empty;
         public string HeroImageUrl => _poi?.LogoUrl     ?? string.Empty;
+
+        public string LanguageName
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_poi?.LanguageCode)) return "Tiếng Việt";
+                return _poi.LanguageCode.ToUpper() switch
+                {
+                    "VI" => "Tiếng Việt",
+                    "EN" => "English",
+                    "FR" => "Français",
+                    "KO" => "한국어",
+                    "JA" => "日本語",
+                    "ZH" => "中文",
+                    _ => _poi.LanguageCode.ToUpper()
+                };
+            }
+        }
 
         public List<string> CategoryTags
         {
@@ -199,10 +222,11 @@ namespace AudioGo.ViewModels
         }
 
         // ── Constructor ────────────────────────────────────────────
-        public PoiDetailViewModel(AppDatabase db, IAudioService audio)
+        public PoiDetailViewModel(AppDatabase db, IAudioService audio, MainViewModel mainViewModel)
         {
             _db    = db;
             _audio = audio;
+            _mainViewModel = mainViewModel;
 
             // Subscribe to global audio state changes
             _audio.PlaybackStateChanged += OnAudioStateChanged;
@@ -346,13 +370,9 @@ namespace AudioGo.ViewModels
         /// </summary>
         public async Task TogglePlayPauseAsync()
         {
-            if (_audio.IsPlaying)
+            if (_mainViewModel.ActivePoi?.PoiId == Poi?.PoiId && (_audio.IsPlaying || _audio.IsPaused))
             {
-                await _audio.PauseAsync();
-            }
-            else if (_audio.IsPaused)
-            {
-                await _audio.ResumeAsync();
+                _mainViewModel.ToggleAudio();
             }
             else
             {
@@ -364,23 +384,21 @@ namespace AudioGo.ViewModels
         {
             if (Poi is null) return;
 
-            if (_audio.IsPlaying) await _audio.PauseAsync();
-
-            AudioProgress = 0;
-            CurrentTime   = "0:00";
-            TotalTime     = "--:--";
-
-            if (!string.IsNullOrEmpty(Poi.LocalAudioPath) && File.Exists(Poi.LocalAudioPath))
-                await _audio.PlayFileAsync(Poi.LocalAudioPath);
-            else if (!string.IsNullOrEmpty(Poi.AudioUrl))
-                await _audio.PlayFileAsync(Poi.AudioUrl);
-            else if (!string.IsNullOrEmpty(Poi.Description))
-                await _audio.SpeakAsync(Poi.Description, Poi.LanguageCode);
+            // Trigger through MainViewModel to keep global mini-player context in sync
+            var mainPoi = _mainViewModel.Pois.FirstOrDefault(p => p.PoiId == Poi.PoiId);
+            if (mainPoi != null)
+            {
+                AudioProgress = 0;
+                CurrentTime   = "0:00";
+                TotalTime     = "--:--";
+                await _mainViewModel.TriggerAudioAsync(mainPoi);
+            }
         }
 
         public async Task StopAudioAsync()
         {
-            await _audio.StopAsync();
+            _mainViewModel.StopAudio();
+            await Task.CompletedTask;
             // PlaybackStateChanged fires and resets bar to 0
         }
 

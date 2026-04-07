@@ -1,3 +1,4 @@
+using AudioGo.Services;
 using AudioGo.Services.Interfaces;
 using Microsoft.Maui.Controls.Maps;
 using Microsoft.Maui.Maps;
@@ -10,9 +11,10 @@ namespace AudioGo.ViewModels
     public class MapViewModel : BaseViewModel
     {
         private readonly ILocationService _location;
+        private readonly SyncService _sync;
         private readonly IApiService _api;
 
-        public ObservableCollection<Pin> Pins { get; } = new();
+        public ObservableCollection<AudioGo.Controls.CustomPin> Pins { get; } = new();
         public ObservableCollection<CategoryChipVm> CategoryChips { get; }
         public ICommand FilterCommand { get; }
 
@@ -41,6 +43,7 @@ namespace AudioGo.ViewModels
             {
                 SetProperty(ref _selectedPoi, value);
                 OnPropertyChanged(nameof(SelectedPoiDistanceLabel));
+                OnPropertyChanged(nameof(TravelTimeLabel));
             }
         }
 
@@ -59,10 +62,24 @@ namespace AudioGo.ViewModels
             }
         }
 
-        public MapViewModel(ILocationService location, IApiService api)
+        public string TravelTimeLabel
+        {
+            get
+            {
+                if (_selectedPoi is null || _userLocation is null) return string.Empty;
+                var dist = AudioGo.Helpers.GeoHelper.HaversineMeters(
+                    _userLocation.Latitude, _userLocation.Longitude,
+                    _selectedPoi.Latitude, _selectedPoi.Longitude);
+                int minutes = (int)Math.Max(1, Math.Round(dist / 83.33)); // ~5km/h walking
+                return $"~{minutes} phút đi bộ";
+            }
+        }
+
+        public MapViewModel(ILocationService location, IApiService api, SyncService sync)
         {
             _location = location;
             _api = api;
+            _sync = sync;
             _location.LocationUpdated += OnLocationUpdated;
 
             // Start with defaults while API loads
@@ -88,7 +105,7 @@ namespace AudioGo.ViewModels
         {
             try
             {
-                var apiCategories = await _api.GetCategoriesAsync();
+                var apiCategories = await _sync.GetCategoriesAsync();
                 if (apiCategories.Count == 0) return;
 
                 var lang = AudioGo.Helpers.LanguageHelper.GetDeviceLanguageCode();
@@ -133,16 +150,15 @@ namespace AudioGo.ViewModels
 
                 try
                 {
-                    var pin = new Pin
+                    var pin = new AudioGo.Controls.CustomPin
                     {
                         Label = poi.Title ?? "Không tên",
                         Address = poi.Description ?? string.Empty,
                         Location = new Location(poi.Latitude, poi.Longitude),
-                        Type = PinType.Place
+                        Type = PinType.Place,
+                        ImageUrl = (!string.IsNullOrEmpty(poi.LocalLogoPath) && File.Exists(poi.LocalLogoPath)) ? poi.LocalLogoPath : (poi.LogoUrl ?? string.Empty)
                     };
                     
-                    // Natively not supported consistently across all MAUI versions unless using a Custom Handler.
-                    // We'll leave it as default Pin for now, avoiding custom handler boilerplate complexity per platform.
                     pin.BindingContext = poi.PoiId;
                     Pins.Add(pin);
                 }

@@ -250,7 +250,9 @@ namespace AudioGo.ViewModels
             _pausedPoiId = null;
             ActivePoi = poi;
 
-            if (!string.IsNullOrEmpty(poi.AudioUrl))
+            if (!string.IsNullOrEmpty(poi.LocalAudioPath) && System.IO.File.Exists(poi.LocalAudioPath))
+                await _audio.PlayFileAsync(poi.LocalAudioPath);
+            else if (!string.IsNullOrEmpty(poi.AudioUrl))
                 await _audio.PlayFileAsync(poi.AudioUrl);
             else if (!string.IsNullOrEmpty(poi.Description))
                 await _audio.SpeakAsync(poi.Description, poi.LanguageCode);

@@ -26,7 +26,7 @@ public partial class TourListPage : ContentPage
     private async void OnTourMenuTapped(object? sender, TappedEventArgs e)
     {
         if (e.Parameter is not AudioGo.ViewModels.TourRowVm tour) return;
-        var action = await DisplayActionSheet(
+        var action = await DisplayActionSheetAsync(
             tour.Name, "Hủy", null,
             "Xem chi tiết", "Xóa");
         if (action == "Xem chi tiết")
