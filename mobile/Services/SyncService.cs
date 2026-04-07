@@ -2,6 +2,7 @@ using AudioGo.Data;
 using AudioGo.Models;
 using AudioGo.Services.Interfaces;
 using Shared;
+using Shared.DTOs;
 
 namespace AudioGo.Services
 {
@@ -62,6 +63,33 @@ namespace AudioGo.Services
 
             // Fallback: đọc từ SQLite cache (offline)
             return (await _db.GetAllPoisAsync()).Select(MapToDto).ToList();
+        }
+
+        /// <summary>
+        /// Lấy danh sách Categories: ưu tiên API, nếu offline thì extract từ các POI đã cache trong SQLite.
+        /// </summary>
+        public async Task<List<CategoryDto>> GetCategoriesAsync(CancellationToken ct = default)
+        {
+            try
+            {
+                var apiCategories = await _api.GetCategoriesAsync(ct);
+                if (apiCategories.Count > 0) return apiCategories;
+            }
+            catch
+            {
+                // API không kết nối được
+            }
+
+            // Fallback: extract từ SQLite cache
+            var cachedPois = await _db.GetAllPoisAsync();
+            var offlineCategories = cachedPois
+                .Where(p => !string.IsNullOrEmpty(p.CategoriesJson))
+                .SelectMany(p => System.Text.Json.JsonSerializer.Deserialize<List<string>>(p.CategoriesJson) ?? new())
+                .Distinct()
+                .Select(cName => new CategoryDto("", cName, 0, DateTime.MinValue))
+                .ToList();
+
+            return offlineCategories;
         }
 
         // ── Private Helpers ───────────────────────────────────────────────

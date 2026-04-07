@@ -1,3 +1,4 @@
+using AudioGo.Services;
 using AudioGo.Services.Interfaces;
 using Microsoft.Maui.Controls.Maps;
 using Microsoft.Maui.Maps;
@@ -10,6 +11,7 @@ namespace AudioGo.ViewModels
     public class MapViewModel : BaseViewModel
     {
         private readonly ILocationService _location;
+        private readonly SyncService _sync;
         private readonly IApiService _api;
 
         public ObservableCollection<AudioGo.Controls.CustomPin> Pins { get; } = new();
@@ -73,10 +75,11 @@ namespace AudioGo.ViewModels
             }
         }
 
-        public MapViewModel(ILocationService location, IApiService api)
+        public MapViewModel(ILocationService location, IApiService api, SyncService sync)
         {
             _location = location;
             _api = api;
+            _sync = sync;
             _location.LocationUpdated += OnLocationUpdated;
 
             // Start with defaults while API loads
@@ -102,7 +105,7 @@ namespace AudioGo.ViewModels
         {
             try
             {
-                var apiCategories = await _api.GetCategoriesAsync();
+                var apiCategories = await _sync.GetCategoriesAsync();
                 if (apiCategories.Count == 0) return;
 
                 var lang = AudioGo.Helpers.LanguageHelper.GetDeviceLanguageCode();

@@ -95,11 +95,11 @@
                             </Border.GestureRecognizers>
                         </Border>
                         <!-- Detail -->
-                        <Border Grid.Column="1" BackgroundColor="{StaticResource Gray100}"
+                        <Border Grid.Column="1" BackgroundColor="#FFC107"
                                 StrokeShape="RoundRectangle 8" StrokeThickness="0" Padding="0,8">
                             <VerticalStackLayout Spacing="2" HorizontalOptions="Center" VerticalOptions="Center">
-                                <Label Text="&#xe8f4;" FontFamily="MaterialIcons" FontSize="20" TextColor="{StaticResource Gray600}" HorizontalOptions="Center"/>
-                                <Label Text="Chi tiết" FontSize="11" FontAttributes="Bold" TextColor="{StaticResource Gray600}" HorizontalOptions="Center"/>
+                                <Label Text="&#xe8f4;" FontFamily="MaterialIcons" FontSize="20" TextColor="#333333" HorizontalOptions="Center"/>
+                                <Label Text="Chi tiết" FontSize="11" FontAttributes="Bold" TextColor="#333333" HorizontalOptions="Center"/>
                             </VerticalStackLayout>
                             <Border.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnPoiBannerDetailClicked"/>

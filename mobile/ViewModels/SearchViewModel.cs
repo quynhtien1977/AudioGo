@@ -1,5 +1,6 @@
 using AudioGo.Services.Interfaces;
 using AudioGo_Mobile.Views;
+using AudioGo.Services;
 using Shared;
 using Shared.DTOs;
 using System.Collections.ObjectModel;
@@ -12,6 +13,7 @@ namespace AudioGo.ViewModels
     public class SearchViewModel : BaseViewModel
     {
         private readonly IApiService _api;
+        private readonly SyncService _sync;
 
         // Shadow base.IsLoading to also call UpdateStates
         public new bool IsLoading
@@ -65,9 +67,10 @@ namespace AudioGo.ViewModels
         public ICommand OpenPoiCommand { get; }
         public ICommand OpenTourCommand { get; }
 
-        public SearchViewModel(IApiService api)
+        public SearchViewModel(IApiService api, SyncService sync)
         {
             _api = api;
+            _sync = sync;
 
             // Start with "All" chip while API loads
             CategoryChips = new ObservableCollection<CategoryChipVm>(
@@ -102,7 +105,7 @@ namespace AudioGo.ViewModels
         {
             try
             {
-                var apiCategories = await _api.GetCategoriesAsync();
+                var apiCategories = await _sync.GetCategoriesAsync();
                 if (apiCategories.Count == 0) return;
 
                 var lang = AudioGo.Helpers.LanguageHelper.GetDeviceLanguageCode();
@@ -153,7 +156,17 @@ namespace AudioGo.ViewModels
                 if (tours is not null)
                     foreach (var t in tours) Tours.Add(new TourSearchVm(t));
             }
-            catch { /* API unavailable — show empty state */ }
+            catch 
+            { 
+                // API unavailable — fallback to offline SQLite search
+                var allPois = await _sync.GetPoisAsync();
+                var filtered = allPois.Where(p => 
+                    (string.IsNullOrEmpty(query) || p.Title?.Contains(query, StringComparison.OrdinalIgnoreCase) == true || p.Description?.Contains(query, StringComparison.OrdinalIgnoreCase) == true) &&
+                    (string.IsNullOrEmpty(ActiveCategory) || p.Categories?.Contains(ActiveCategory) == true)
+                );
+                
+                foreach (var p in filtered) Pois.Add(new PoiSearchVm(p));
+            }
             finally
             {
                 IsLoading = false;

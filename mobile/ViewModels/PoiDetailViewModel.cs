@@ -49,6 +49,7 @@ namespace AudioGo.ViewModels
                 OnPropertyChanged(nameof(Description));
                 OnPropertyChanged(nameof(CategoryTags));
                 OnPropertyChanged(nameof(HeroImageUrl));
+                OnPropertyChanged(nameof(LanguageName));
                 OnPropertyChanged(nameof(GalleryImages));
                 OnPropertyChanged(nameof(HasGallery));
                 OnPropertyChanged(nameof(GalleryCount));
@@ -59,6 +60,24 @@ namespace AudioGo.ViewModels
         public string Title        => _poi?.Title       ?? string.Empty;
         public string Description  => _poi?.Description ?? string.Empty;
         public string HeroImageUrl => _poi?.LogoUrl     ?? string.Empty;
+
+        public string LanguageName
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_poi?.LanguageCode)) return "Tiếng Việt";
+                return _poi.LanguageCode.ToUpper() switch
+                {
+                    "VI" => "Tiếng Việt",
+                    "EN" => "English",
+                    "FR" => "Français",
+                    "KO" => "한국어",
+                    "JA" => "日本語",
+                    "ZH" => "中文",
+                    _ => _poi.LanguageCode.ToUpper()
+                };
+            }
+        }
 
         public List<string> CategoryTags
         {
