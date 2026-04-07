@@ -139,6 +139,77 @@ namespace Server.Controllers.Cms
         }
 
         /// <summary>
+        /// Generate full content (Translate + TTS) cho TẤT CẢ ngôn ngữ (vi, en, ja, ko, zh-Hans, fr, th)
+        /// cho tất cả Active POI.
+        /// POST /api/cms/pipeline/generate-all-languages
+        /// </summary>
+        [HttpPost("generate-all-languages")]
+        public async Task<IActionResult> GenerateAllLanguages()
+        {
+            var targetLangs = new[] { "vi", "en", "ja", "ko", "zh-Hans", "fr", "th" };
+
+            var pois = await _db.Pois
+                .Include(p => p.Contents)
+                .Where(p => p.Status == "active")
+                .ToListAsync();
+
+            if (!pois.Any()) return Ok(new { message = "Không có active POI nào." });
+
+            _logger.LogInformation("Bắt đầu generate cho {Count} POIs x {Langs} ngôn ngữ...", pois.Count, targetLangs.Length);
+
+            var results = new List<object>();
+            var successCount = 0;
+            var failCount = 0;
+
+            foreach (var poi in pois)
+            {
+                foreach (var lang in targetLangs)
+                {
+                    try
+                    {
+                        var content = await _pipeline.EnsureContentAsync(poi, lang);
+                        
+                        // Nếu content đã tồn tại trước đó nhưng thiếu audio, gen tiếp audio
+                        if (string.IsNullOrEmpty(content.AudioUrl))
+                        {
+                            content = await _pipeline.GenerateAudioAsync(content);
+                        }
+
+                        results.Add(new
+                        {
+                            poiId = poi.PoiId,
+                            languageCode = lang,
+                            contentId = content.ContentId,
+                            status = "success"
+                        });
+                        successCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        failCount++;
+                        _logger.LogError(ex, "Lỗi generate cho {PoiId}/{Lang}", poi.PoiId, lang);
+                        results.Add(new
+                        {
+                            poiId = poi.PoiId,
+                            languageCode = lang,
+                            status = "error",
+                            error = ex.Message
+                        });
+                    }
+                }
+            }
+
+            return Ok(new
+            {
+                message = $"Hoàn tất: {successCount} thành công, {failCount} lỗi.",
+                totalPois = pois.Count,
+                successCount,
+                failCount,
+                results
+            });
+        }
+
+        /// <summary>
         /// Kiểm tra trạng thái audio — content nào đã có/thiếu.
         /// GET /api/cms/pipeline/status
         /// </summary>
