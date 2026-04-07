@@ -26,15 +26,25 @@ public class TranslationService : ITranslationService
         var route = $"/translate?api-version=3.0&from={from}&to={to}";
         var body = JsonSerializer.Serialize(new[] { new { Text = text } });
 
+        Console.WriteLine($"[DEBUG] Translating '{from}' -> '{to}'");
+        Console.WriteLine($"[DEBUG] Endpoint: {_endpoint}");
+        Console.WriteLine($"[DEBUG] Region: '{_region}'");
+        Console.WriteLine($"[DEBUG] Key: '{_key.Substring(0, Math.Min(5, _key.Length))}...{_key.Substring(Math.Max(0, _key.Length - 5))}' (Length: {_key.Length})");
+
+
         using var request = new HttpRequestMessage(HttpMethod.Post, _endpoint + route);
         request.Content = new StringContent(body, Encoding.UTF8, "application/json");
         request.Headers.Add("Ocp-Apim-Subscription-Key", _key);
         request.Headers.Add("Ocp-Apim-Subscription-Region", _region);
 
         var response = await _http.SendAsync(request);
-        response.EnsureSuccessStatusCode();
-
         var json = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception($"Translator API Error: {response.StatusCode} - {json}");
+        }
+
         using var doc = JsonDocument.Parse(json);
         // Response: [{ "translations": [{ "text": "...", "to": "..." }] }]
         return doc.RootElement[0]

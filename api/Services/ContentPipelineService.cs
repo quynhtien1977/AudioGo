@@ -106,10 +106,8 @@ public class ContentPipelineService : IContentPipelineService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Pipeline failed for POI {PoiId} lang={Lang}, falling back to master",
-                poi.PoiId, targetLang);
-            // Fallback: trả master content (sai ngôn ngữ nhưng không crash)
-            return master;
+            _logger.LogError(ex, "Pipeline failed for POI {PoiId} lang={Lang}", poi.PoiId, targetLang);
+            throw; // Không fallback nữa để GenerateAllLanguages biết lỗi thật sự
         }
         finally
         {
