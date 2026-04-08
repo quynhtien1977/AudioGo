@@ -1,6 +1,5 @@
 using AudioGo_Mobile.ViewModels;
 using Microsoft.Maui.Controls;
-using AudioGo_Mobile.ViewModels;
 using BarcodeScanner.Mobile;
 
 namespace AudioGo_Mobile.Views;
@@ -12,6 +11,7 @@ public partial class WelcomeQrScanPage : ContentPage
     public WelcomeQrScanPage(WelcomeQrScanViewModel viewModel)
     {
         InitializeComponent();
+        BarcodeScanner.Mobile.Methods.SetSupportBarcodeFormat(BarcodeFormats.QRCode);
         _viewModel = viewModel;
         BindingContext = _viewModel;
     }
@@ -33,7 +33,7 @@ public partial class WelcomeQrScanPage : ContentPage
         }
         else
         {
-            await DisplayAlert("Lỗi", "Chưa cấp quyền Camera. Không thể quét mã QR.", "Đóng");
+            await this.DisplayAlertAsync("Lỗi", "Chưa cấp quyền Camera. Không thể quét mã QR.", "Đóng");
         }
     }
 

@@ -48,7 +48,7 @@ public static class MauiProgram
             // Đổi về 192.168.x.x nếu dùng thiết bị thật trên cùng mạng WiFi
             client.BaseAddress = new Uri(DeviceInfo.DeviceType == DeviceType.Virtual 
                 ? "http://10.0.2.2:5086/" 
-                : "http://192.168.43.73:5086/");
+                : "http://192.168.1.12:5086/");
             client.Timeout = TimeSpan.FromSeconds(15);
         });
 
