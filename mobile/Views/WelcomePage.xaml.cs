@@ -12,7 +12,8 @@ public partial class WelcomePage : ContentPage
     private async void OnScanQrClicked(object sender, EventArgs e)
     {
         // Điều hướng sang trang quét QR (Push vào stack của NavigationPage)
-        await Navigation.PushAsync(new WelcomeQrScanPage(new ViewModels.WelcomeQrScanViewModel()));
+        var scanPage = (WelcomeQrScanPage)Handler.MauiContext.Services.GetService(typeof(WelcomeQrScanPage));
+        await Navigation.PushAsync(scanPage);
     }
 
     private async void OnSkipClicked(object sender, EventArgs e)
