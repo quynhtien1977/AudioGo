@@ -84,12 +84,7 @@ namespace AudioGo.ViewModels
             }
         }
 
-        private bool _isLoading;
-        public bool IsLoading
-        {
-            get => _isLoading;
-            private set { SetProperty(ref _isLoading, value); }
-        }
+
 
         private string _statusMessage = "Chờ GPS...";
         public string StatusMessage

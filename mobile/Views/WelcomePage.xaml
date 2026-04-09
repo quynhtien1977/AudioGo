@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="AudioGo_Mobile.Views.WelcomePage"
+             Shell.NavBarIsVisible="False"
+             NavigationPage.HasNavigationBar="False"
+             BackgroundColor="Black">
+
+    <Grid>
+        <!-- Background Image -->
+        <Image Source="splash_bg.jpg" Aspect="AspectFill" />
+        
+        <!-- Darker Gradient to make top text pop -->
+        <Border StrokeThickness="0">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#90000000" Offset="0.0" />
+                    <GradientStop Color="#40000000" Offset="0.5" />
+                    <GradientStop Color="#00000000" Offset="1.0" />
+                </LinearGradientBrush>
+            </Border.Background>
+        </Border>
+
+        <!-- Main Layout -->
+        <Grid RowDefinitions="*, Auto">
+            
+            <!-- Top Section -->
+            <VerticalStackLayout Grid.Row="0" Spacing="16" Padding="24, 60, 24, 0" HorizontalOptions="Center">
+                
+                <Border StrokeThickness="0" 
+                        WidthRequest="80" 
+                        HeightRequest="80" 
+                        BackgroundColor="White" 
+                        StrokeShape="RoundRectangle 20"
+                        HorizontalOptions="Center" 
+                        Margin="0, 0, 0, 8">
+                    <Image Source="logo.jpg" WidthRequest="50" HeightRequest="50" Aspect="AspectFit" VerticalOptions="Center" HorizontalOptions="Center" />
+                </Border>
+                
+                <Label Text="AudioGo" 
+                       FontSize="42" 
+                       FontFamily="InterBold"
+                       TextColor="White" 
+                       HorizontalTextAlignment="Center" />
+                
+                <Label Text="Khám phá Khu phố Vĩnh Khánh qua giọng thuyết minh tự động." 
+                       FontSize="16" 
+                       FontFamily="InterMedium"
+                       TextColor="White" 
+                       HorizontalTextAlignment="Center" />
+            </VerticalStackLayout>
+
+            <!-- Bottom Sheet -->
+            <Border Grid.Row="1"
+                    BackgroundColor="White"
+                    StrokeThickness="0"
+                    Padding="24, 20, 24, 30"
+                    Margin="0"
+                    StrokeShape="RoundRectangle 30,30,0,0">
+                
+                <VerticalStackLayout Spacing="16">
+                    <!-- Handle -->
+                    <BoxView Color="#E0E0E0" HeightRequest="4" WidthRequest="40" CornerRadius="2" HorizontalOptions="Center" Margin="0,0,0,8" />
+                    
+                    <Label Text="Chào mừng!" 
+                           FontSize="28" 
+                           FontFamily="InterBold"
+                           TextColor="#1E1E1E" />
+                    
+                    <Label Text="Trải nghiệm tinh hoa ẩm thực đường phố và lịch sử Vĩnh Khánh với hướng dẫn viên ảo." 
+                           FontSize="15" 
+                           FontFamily="InterRegular"
+                           TextColor="#666666" 
+                           LineHeight="1.4"
+                           Margin="0,0,0,16"/>
+
+                    <!-- Feature List -->
+                    <Grid RowDefinitions="Auto, Auto, Auto" RowSpacing="16" ColumnDefinitions="Auto, *" ColumnSpacing="16" Margin="0,0,0,24">
+                        
+                        <!-- 1 -->
+                        <Border Grid.Row="0" Grid.Column="0" WidthRequest="40" HeightRequest="40" StrokeShape="Ellipse" BackgroundColor="#FCE4E4" StrokeThickness="0">
+                            <Label Text="&#xe310;" FontFamily="MaterialIcons" TextColor="#EA4335" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center"/>
+                        </Border>
+                        <Label Grid.Row="0" Grid.Column="1" Text="Thuyết minh đa ngôn ngữ" FontFamily="InterMedium" TextColor="#333333" VerticalOptions="Center"/>
+                        
+                        <!-- 2 -->
+                        <Border Grid.Row="1" Grid.Column="0" WidthRequest="40" HeightRequest="40" StrokeShape="Ellipse" BackgroundColor="#FCE4E4" StrokeThickness="0">
+                            <Label Text="&#xe55b;" FontFamily="MaterialIcons" TextColor="#EA4335" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center"/>
+                        </Border>
+                        <Label Grid.Row="1" Grid.Column="1" Text="Bản đồ tương tác" FontFamily="InterMedium" TextColor="#333333" VerticalOptions="Center"/>
+                        
+                        <!-- 3 -->
+                        <Border Grid.Row="2" Grid.Column="0" WidthRequest="40" HeightRequest="40" StrokeShape="Ellipse" BackgroundColor="#FCE4E4" StrokeThickness="0">
+                            <Label Text="&#xe2c4;" FontFamily="MaterialIcons" TextColor="#EA4335" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center"/>
+                        </Border>
+                        <Label Grid.Row="2" Grid.Column="1" Text="Tải về offline" FontFamily="InterMedium" TextColor="#333333" VerticalOptions="Center"/>
+                    </Grid>
+
+                    <!-- Primary Button -->
+                    <Button Text="Bắt đầu khám phá"
+                            FontSize="16"
+                            FontFamily="InterBold"
+                            BackgroundColor="#EE4D2D"
+                            TextColor="White"
+                            CornerRadius="25"
+                            HeightRequest="56"
+                            Clicked="OnScanQrClicked"/>
+
+                <Button Text="Chạy giả lập (Tới App Shell)"
+                            FontSize="13"
+                            FontFamily="InterMedium"
+                            BackgroundColor="Transparent"
+                            TextColor="#999999"
+                            Margin="0, 8, 0, 0"
+                            Clicked="OnSkipClicked"/>
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+
+        <!-- Loading Overlay -->
+        <Grid x:Name="LoadingOverlay"
+              BackgroundColor="#CC000000"
+              IsVisible="False"
+              VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand">
+            <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="16">
+                <ActivityIndicator IsRunning="True" Color="{StaticResource Primary}" HorizontalOptions="Center"/>
+                <Label Text="Đang vào ứng dụng..." TextColor="White" FontFamily="InterMedium" HorizontalOptions="Center"/>
+            </VerticalStackLayout>
+        </Grid>
+    </Grid>
+</ContentPage>
