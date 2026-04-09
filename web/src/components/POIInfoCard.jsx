@@ -1,5 +1,5 @@
-const POIInfoCard = ({ poi, isEditing, form, handleChange, role }) => {
-  if (!poi) return null
+const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role }) => {
+  if (!poi) return null;
 
   // Helper để tạo style cho input đồng nhất
   const inputStyle = "w-full bg-transparent border-b border-pink-200 text-sm font-medium focus:border-pink-500 outline-none transition-colors pb-0.5";
@@ -10,14 +10,14 @@ const POIInfoCard = ({ poi, isEditing, form, handleChange, role }) => {
         THÔNG TIN CHI TIẾT
       </h4>
 
-      {/* Row 1: Category & Creator */}
+      {/* Row 1: Category & Language */}
       <div className="flex gap-6">
         <div className="flex-1 min-h-[45px]">
-          <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Thể loại</p>
+          <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Danh mục</p>
           {isEditing ? (
             <div className="relative group">
               <select
-                value={form.category}
+                value={form.category || poi.category || ""}
                 onChange={(e) => handleChange("category", e.target.value)}
                 className={`appearance-none cursor-pointer ${inputStyle}`}
               >
@@ -37,14 +37,47 @@ const POIInfoCard = ({ poi, isEditing, form, handleChange, role }) => {
           )}
         </div>
 
+        <div className="flex-1 min-h-[45px]">
+          <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Ngôn ngữ</p>
+          {isEditing ? (
+            <div className="relative group">
+      <select
+        value={form.languageCode || poi?.languageCode || ""}
+        onChange={(e) => handleChange("languageCode", e.target.value)}
+        className={`appearance-none cursor-pointer ${inputStyle}`}
+      >
+        <option value="" disabled>
+          Chọn ngôn ngữ
+        </option>
 
-          { role === "ADMIN" && (
-            <div className="flex-1 min-h-[45px]">
-              <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Người tạo</p>
-              <p className="text-sm font-medium text-gray-700">{poi.creator || "Admin"}</p>
-            </div>
+        {[
+          { code: "en", label: "Tiếng Anh" },
+          { code: "fr", label: "Tiếng Pháp" },
+          { code: "ja", label: "Tiếng Nhật" },
+          { code: "ko", label: "Tiếng Hàn" },
+          { code: "th", label: "Tiếng Thái" },
+          { code: "vi", label: "Tiếng Việt" },
+          { code: "zh-Hans", label: "Tiếng Trung (Giản thể)" },
+        ].map((lang) => (
+          <option key={lang.code} value={lang.code}>
+            {lang.label}
+          </option>
+        ))}
+      </select>
+
+      <div className="pointer-events-none absolute right-0 bottom-1 flex items-center text-pink-400">
+        <svg className="h-3 w-3 fill-current" viewBox="0 0 20 20">
+          <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+        </svg>
+      </div>
+    </div>
+            
+          ) : (
+            <span className="bg-pink-50 text-pink-600 px-2 py-0.5 rounded text-xs font-medium">
+              {languageLabels[poi.languageCode] || "N/A"}
+            </span>
           )}
-        
+        </div>
       </div>
 
       {/* Row 2: Location (Lat/Lng) */}
@@ -57,7 +90,7 @@ const POIInfoCard = ({ poi, isEditing, form, handleChange, role }) => {
               <input 
                 type="number"
                 step="0.000001"
-                value={form.lat} 
+                value={form.lat || poi.lat || ""} 
                 onChange={(e) => handleChange("lat", e.target.value)}
                 className={inputStyle}
               />
@@ -71,7 +104,7 @@ const POIInfoCard = ({ poi, isEditing, form, handleChange, role }) => {
               <input 
                 type="number" 
                 step="0.000001"
-                value={form.lng} 
+                value={form.lng || poi.lng || ""} 
                 onChange={(e) => handleChange("lng", e.target.value)}
                 className={inputStyle}
               />
@@ -85,19 +118,7 @@ const POIInfoCard = ({ poi, isEditing, form, handleChange, role }) => {
       {/* Row 3: Radius */}
       <div className="min-h-[45px]">
         <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Phạm vi</p>
-        {isEditing ? (
-          <div className="flex items-center gap-2">
-            <input 
-              type="number" 
-              value={form.ActivityRadius} 
-              onChange={(e) => handleChange("ActivityRadius", e.target.value)}
-              className={`${inputStyle} w-20 text-center font-bold`}
-            />
-            <span className="text-xs text-gray-400 font-bold italic">M</span>
-          </div>
-        ) : (
-          <p className="text-sm font-bold text-gray-700 italic">{poi.ActivityRadius || 50} M</p>
-        )}
+        <p className="text-sm font-bold text-gray-700 italic">{poi.ActivityRadius || 50} M</p>
       </div>
 
       {/* Status */}
@@ -140,7 +161,17 @@ const POIInfoCard = ({ poi, isEditing, form, handleChange, role }) => {
       </div>
 
     </div>
-  )
-}
+  );
+};
 
-export default POIInfoCard; 
+export default POIInfoCard;
+
+const languageLabels = {
+  en: "Tiếng Anh",
+  fr: "Tiếng Pháp",
+  ja: "Tiếng Nhật",
+  ko: "Tiếng Hàn",
+  th: "Tiếng Thái",
+  vi: "Tiếng Việt",
+  "zh-Hans": "Tiếng Trung (Giản thể)",
+};

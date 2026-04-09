@@ -1,127 +1,91 @@
-// let fakeCategories = [
-//   { id: "CAT-001", name: "Food & Drink", pois: 24 },
-//   { id: "CAT-002", name: "Entertainment", pois: 18 },
-//   { id: "CAT-003", name: "Culture", pois: 12 },
-//   { id: "CAT-004", name: "Shopping", pois: 9 },
-//   { id: "CAT-005", name: "Nature", pois: 15 },
-// ];
+import axios from "axios"
 
-// // 🟢 LẤY DANH SÁCH
-// export const getCategoriesApi = () =>
-//   new Promise((resolve) => {
-//     setTimeout(() => resolve([...fakeCategories]), 500);
-//   });
+const API_URL = "http://localhost:5086/api/cms/categories"
 
-// // 🟢 TẠO MỚI
-// export const createCategoryApi = (data) =>
-//   new Promise((resolve) => {
-//     setTimeout(() => {
-//       const newCat = {
-//         id: "CAT-" + Math.floor(1000 + Math.random() * 9000), // Tạo ID 4 số ngẫu nhiên
-//         name: data.name,
-//         pois: 0,
-//       };
-//       fakeCategories = [newCat, ...fakeCategories];
-//       resolve(newCat);
-//     }, 500);
-//   });
+const getToken = () =>
+  localStorage.getItem("token") || sessionStorage.getItem("token")
 
-// // 🟢 CẬP NHẬT (Sửa tên)
-// export const updateCategoryApi = (id, data) =>
-//   new Promise((resolve, reject) => {
-//     setTimeout(() => {
-//       const index = fakeCategories.findIndex((c) => c.id === id);
-//       if (index === -1) return reject("Category not found");
+const client = axios.create({
+  baseURL: API_URL,
+})
 
-//       fakeCategories[index] = { ...fakeCategories[index], ...data };
-//       resolve(fakeCategories[index]);
-//     }, 400);
-//   });
+// 🔐 attach token
+client.interceptors.request.use((config) => {
+  const token = getToken()
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
 
-// // 🟢 XÓA HẲN (Thay thế cho toggle)
-// export const deleteCategoryApi = (id) =>
-//   new Promise((resolve, reject) => {
-//     setTimeout(() => {
-//       const exists = fakeCategories.some((c) => c.id === id);
-//       if (!exists) return reject("Category not found");
+client.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    console.error("Category API Error:", err.response || err.message)
+    return Promise.reject(err)
+  }
+)
 
-//       fakeCategories = fakeCategories.filter((c) => c.id !== id);
-//       resolve({ success: true, id });
-//     }, 400);
-//   });
 
-// src/api/categoryApi.js
+// ======================
+// 🟢 GET ALL
+// ======================
+export const getCategoriesApi = async () => {
+  const res = await client.get("")
+  return res.data
+}
 
-let fakeCategories = [
-  {
-    id: "CAT-001",
-    name: "Food & Drink",
-    createdAt: new Date("2024-01-01").toISOString(),
-    updatedAt: new Date("2024-01-01").toISOString(),
-  },
-  {
-    id: "CAT-002",
-    name: "Entertainment",
-    createdAt: new Date("2024-01-05").toISOString(),
-    updatedAt: new Date("2024-01-05").toISOString(),
-  },
-  {
-    id: "CAT-003",
-    name: "Culture",
-    createdAt: new Date("2024-01-10").toISOString(),
-    updatedAt: new Date("2024-01-10").toISOString(),
-  },
-]
 
-// 🟢 GET
-export const getCategoriesApi = () =>
-  new Promise((resolve) => {
-    setTimeout(() => resolve([...fakeCategories]), 400)
-  })
-
+// ======================
 // 🟢 CREATE
-export const createCategoryApi = (data) =>
-  new Promise((resolve) => {
-    setTimeout(() => {
-      const now = new Date().toISOString()
-
-      const newCat = {
-        id: "CAT-" + Math.floor(1000 + Math.random() * 9000),
-        name: data.name,
-        createdAt: now,
-        updatedAt: now,
-      }
-
-      fakeCategories = [newCat, ...fakeCategories]
-      resolve(newCat)
-    }, 400)
+// ======================
+export const createCategoryApi = async (data) => {
+  const res = await client.post("", {
+    name: data.name,
   })
 
+  return res.data
+}
+
+
+// ======================
 // 🟢 UPDATE
-export const updateCategoryApi = (id, data) =>
-  new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const index = fakeCategories.findIndex((c) => c.id === id)
-      if (index === -1) return reject("Category not found")
-
-      fakeCategories[index] = {
-        ...fakeCategories[index],
-        ...data,
-        updatedAt: new Date().toISOString(),
-      }
-
-      resolve(fakeCategories[index])
-    }, 400)
+// ======================
+export const updateCategoryApi = async (id, data) => {
+  const res = await client.put(`/${id}`, {
+    name: data.name,
+    updatedAt: new Date(),
   })
 
+  return res.data
+}
+
+
+// ======================
 // 🟢 DELETE
-export const deleteCategoryApi = (id) =>
-  new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const exists = fakeCategories.some((c) => c.id === id)
-      if (!exists) return reject("Category not found")
+// ======================
+export const deleteCategoryApi = async (id) => {
+  const res = await client.delete(`/${id}`)
+  return res.data
+}
 
-      fakeCategories = fakeCategories.filter((c) => c.id !== id)
-      resolve({ success: true })
-    }, 400)
+
+// ======================
+// 🟢 ADD POI TO CATEGORY
+// ======================
+export const addPoiToCategoryApi = async (categoryId, poiId) => {
+  const res = await client.post(`/${categoryId}/pois`, poiId, {
+    headers: { "Content-Type": "application/json" }
   })
+
+  return res.data
+}
+
+
+// ======================
+// 🟢 REMOVE POI FROM CATEGORY
+// ======================
+export const removePoiFromCategoryApi = async (categoryId, poiId) => {
+  const res = await client.delete(`/${categoryId}/pois/${poiId}`)
+  return res.data
+}

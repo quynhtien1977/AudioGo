@@ -22,11 +22,11 @@ export default function App() {
         {/* Login */}
         <Route path="/" element={<LoginPage />} />
 
-        {/* Dashboard (ADMIN only) */}
+        {/* Dashboard */}
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute roles={["ADMIN"]}>
+            <ProtectedRoute roles={["Admin", "Owner"]}>
               <MainLayout>
                 <DashboardPage />
               </MainLayout>
@@ -38,7 +38,7 @@ export default function App() {
         <Route
           path="/pois"
           element={
-            <ProtectedRoute roles={["ADMIN","MANAGER"]}>
+            <ProtectedRoute roles={["Admin", "Owner"]}>
               <MainLayout>
                 <POIPage />
               </MainLayout>
@@ -50,7 +50,7 @@ export default function App() {
         <Route
           path="/pois/add"
           element={
-            <ProtectedRoute roles={["MANAGER"]}>
+            <ProtectedRoute roles={["Owner"]}>
               <MainLayout>
                 <AddPOIPage />
               </MainLayout>
@@ -62,7 +62,7 @@ export default function App() {
         <Route
           path="/pois/:id"
           element={
-            <ProtectedRoute roles={["ADMIN", "MANAGER"]}>
+            <ProtectedRoute roles={["Admin", "Owner"]}>
               <MainLayout>
                 <POIDetailPage />
               </MainLayout>
@@ -73,7 +73,7 @@ export default function App() {
         <Route
           path="/audio"
           element={
-            <ProtectedRoute roles={["MANAGER"]}>
+            <ProtectedRoute roles={["Owner"]}>
               <MainLayout>
                 <AudioPage />
               </MainLayout>
@@ -85,7 +85,7 @@ export default function App() {
         <Route
           path="/categories"
           element={
-            <ProtectedRoute roles={["ADMIN"]}>
+            <ProtectedRoute roles={["Admin"]}>
               <MainLayout>
                 <CategoryPage />
               </MainLayout>
@@ -97,7 +97,7 @@ export default function App() {
         <Route
           path="/accounts"
           element={
-            <ProtectedRoute roles={["ADMIN"]}>
+            <ProtectedRoute roles={["Admin"]}>
               <MainLayout>
                 <AccountsPage />
               </MainLayout>
@@ -108,7 +108,7 @@ export default function App() {
         <Route
           path="/tours"
           element={
-            <ProtectedRoute roles={["ADMIN"]}>
+            <ProtectedRoute roles={["Admin"]}>
               <MainLayout>
                 <ToursPage />
               </MainLayout>
@@ -119,7 +119,7 @@ export default function App() {
         <Route
           path="/tours/:id"
           element={
-            <ProtectedRoute roles={["ADMIN"]}>
+            <ProtectedRoute roles={["Admin"]}>
               <MainLayout>
                 <TourDetailPage />
               </MainLayout>

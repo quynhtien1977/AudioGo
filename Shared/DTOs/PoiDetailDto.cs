@@ -24,6 +24,7 @@ namespace Shared.DTOs
         bool IsMaster
     );
 
+    
     public record PoiCreateRequest(
         double Latitude,
         double Longitude,

@@ -1,170 +1,285 @@
 import { useEffect, useState } from "react"
-import { Lock, Unlock, ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, Trash, Lock, Unlock } from "lucide-react"
+
 import {
   getUsersApi,
-  toggleLockApi,
-  updateRoleApi,
-} from "../api/accountApi"
-import CreateAccountModal from "../components/CreateAccountModal"
+  updateUserApi,
+  deleteUserApi
+} from "@/api/accountApi"
+
+import CreateAccountModal from "@/components/CreateAccountModal"
 
 const roleStyle = (role) => {
-  if (role === "ADMIN") return "bg-pink-100 text-pink-500"
-  return "bg-blue-100 text-blue-500"
+  if (role === "Admin") return "bg-pink-100 text-pink-500"
+  if (role === "Owner") return "bg-blue-100 text-blue-500"
+  return "bg-gray-100 text-gray-500"
 }
 
-// Helper function để format ngày cho gọn
+// format date
 const formatDate = (dateString) => {
-  if (!dateString) return "-";
-  return new Date(dateString).toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-};
+  if (!dateString) return "Unknown"
+  return new Date(dateString).toLocaleDateString("vi-VN")
+}
+
+// fallback helper
+const safe = (value) => value || "Unknown"
 
 export default function AccountsPage() {
   const [users, setUsers] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
-  const pageSize = 5 // Tăng nhẹ size vì bảng dài hơn
 
+  const pageSize = 5
+
+  // LOAD DATA
   useEffect(() => {
-    getUsersApi().then(setUsers)
+    const fetchData = async () => {
+      try {
+        const res = await getUsersApi()
+        const data = Array.isArray(res) ? res : res?.data || []
+        setUsers(data)
+      } catch (err) {
+        console.error("Load users error:", err)
+      }
+    }
+
+    fetchData()
   }, [])
 
+  // CREATE
   const handleAddUser = (user) => {
-    setUsers((prev) => [user, ...prev])
+    setUsers(prev => [user, ...prev])
   }
 
-  const handleToggleLock = async (id) => {
-    await toggleLockApi(id)
-    const now = new Date().toISOString();
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === id ? { ...u, locked: !u.locked, updatedAt: now } : u
-      )
-    )
-  }
-
+  // UPDATE ROLE ✅ FIXED
   const handleChangeRole = async (id, role) => {
-    await updateRoleApi(id, role)
-    const now = new Date().toISOString();
-    setUsers((prev) =>
-      prev.map((u) =>
-        u.id === id ? { ...u, role, updatedAt: now } : u
+    try {
+      const res = await updateUserApi(id, { role })
+      const updated = res?.data ?? res
+
+      setUsers(prev =>
+        prev.map(u =>
+          u.accountId === id
+            ? {
+                ...u,
+                role: updated.role,
+                updatedAt: updated.updatedAt
+              }
+            : u
+        )
       )
-    )
+    } catch (err) {
+      console.error(err)
+      alert("Không thể cập nhật role")
+    }
   }
+
+  // DELETE
+  const handleDelete = async (id) => {
+    if (!window.confirm("Xóa tài khoản này?")) return
+
+    try {
+      await deleteUserApi(id)
+
+      setUsers(prev =>
+        prev.filter(u => u.accountId !== id)
+      )
+    } catch (err) {
+      console.error(err)
+      alert("Xóa thất bại")
+    }
+  }
+
+  const handleToggleLock = async (id, isLocked) => {
+    try {
+      const res = await updateUserApi(id, { isLocked: !isLocked })
+      const updated = res?.data ?? res
+
+      setUsers(prev =>
+        prev.map(u =>
+          u.accountId === id
+            ? {
+                ...u,
+                isLocked: updated.isLocked,
+                updatedAt: updated.updatedAt,
+              }
+            : u
+        )
+      )
+    } catch (err) {
+      console.error(err)
+      alert("Không thể cập nhật trạng thái khóa tài khoản")
+    }
+  }
+
+  useEffect(() => {
+    setUsers((prev) =>
+      prev.map((user) => ({
+        ...user,
+        isLocked: user.isLocked ?? false, // Default to false (not locked)
+      }))
+    );
+  }, []);
 
   const totalPages = Math.ceil(users.length / pageSize)
+
   const paginatedUsers = users.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   )
 
-  // Cấu hình Grid mới: 7 cột
-  const gridLayout = "grid grid-cols-[1.5fr_2fr_1.5fr_1fr_1.2fr_1.2fr_0.5fr]";
+  const gridLayout =
+    "grid grid-cols-[1.5fr_1.5fr_2fr_1fr_1.2fr_1.2fr_1fr_0.5fr]"
 
   return (
     <div>
-      {/* HEADER GIỮ NGUYÊN */}
+
+      {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold">QUẢN LÝ TÀI KHOẢN</h1>
-          <p className="text-gray-500 text-sm">Quản lý danh sách người dùng và quyền hệ thống</p>
+          <h1 className="text-2xl font-bold">
+            QUẢN LÝ TÀI KHOẢN
+          </h1>
+          <p className="text-gray-500 text-sm">
+            Quản lý danh sách người dùng
+          </p>
         </div>
+
         <button
           onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-pink-500 text-white rounded-lg shadow hover:bg-pink-600 transition-colors"
+          className="px-4 py-2 bg-pink-500 text-white rounded-lg"
         >
-          + Tạo tài khoản mới
+          + Tạo tài khoản
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
-        {/* TABLE HEADER */}
-        <div className={`${gridLayout} text-[13px] text-pink-400 px-6 py-3 border-b font-bold tracking-wider uppercase`}>
-          <span>Họ và tên</span>
+      {/* TABLE */}
+      <div className="bg-white rounded-2xl border overflow-hidden">
+
+        {/* HEADER */}
+        <div className={`${gridLayout} text-[13px] text-pink-400 px-6 py-3 border-b font-bold uppercase text-center`}>
+          <span className="text-left">Họ và tên</span>
+          <span>Username</span>
           <span>Email</span>
-          <span>Mật khẩu</span>
+          <span>SĐT</span>
           <span>Role</span>
           <span>Ngày tạo</span>
           <span>Cập nhật</span>
-          <span className="text-right">Khóa</span>
+          <span className="text-right">Action</span>
         </div>
 
-        {/* TABLE BODY */}
+        {/* BODY */}
         {paginatedUsers.map((user) => (
           <div
-            key={user.id}
-            className={`${gridLayout} items-center px-6 py-4 border-b hover:bg-gray-50 transition-colors ${
-              user.locked ? "opacity-50" : ""
-            }`}
+            key={user.accountId}
+            className={`${gridLayout} items-center px-6 py-4 border-b hover:bg-gray-50`}
           >
-            <div>
-              <p className="font-semibold text-sm text-gray-800">{user.name}</p>
-              <p className="text-[10px] text-gray-400 font-mono">ID: {user.id}</p>
+            {/* FULL NAME */}
+            <div className="text-left">
+              <p className="font-semibold text-sm text-gray-800">
+                {safe(user.fullName)}
+              </p>
             </div>
 
-            <div className="text-gray-500 text-sm truncate pr-2">{user.email}</div>
-
-            <div className="text-sm text-gray-400 font-mono italic">
-              {user.locked ? "****" : user.password}
+            {/* USERNAME */}
+            <div className="text-center text-gray-500 text-sm">
+              {safe(user.username)}
             </div>
 
-            <div>
+            {/* EMAIL */}
+            <div className="text-center text-gray-500 text-sm">
+              {safe(user.email)}
+            </div>
+
+            {/* PHONE */}
+            <div className="text-center text-gray-500 text-sm">
+              {safe(user.phoneNumber)}
+            </div>
+
+            {/* ROLE */}
+            <div className="text-center">
               <select
                 value={user.role}
-                onChange={(e) => handleChangeRole(user.id, e.target.value)}
-                className={`px-2 py-1 text-[10px] rounded-full font-bold outline-none border-none cursor-pointer ${roleStyle(user.role)}`}
-                disabled={user.locked}
+                onChange={(e) =>
+                  handleChangeRole(user.accountId, e.target.value)
+                }
+                disabled={user.isLocked}
+                className={`px-2 py-1 text-[10px] rounded-full font-bold ${roleStyle(user.role)} ${user.isLocked ? "opacity-50 cursor-not-allowed" : ""}`}
               >
-                <option value="ADMIN">ADMIN</option>
-                <option value="MANAGER">MANAGER</option>
+                <option value="Admin">Admin</option>
+                <option value="Owner">Owner</option>
               </select>
             </div>
 
-            {/* CỘT CREATED AT */}
-            <div className="text-xs text-gray-500">
+            {/* CREATED */}
+            <div className="text-center text-xs text-gray-500">
               {formatDate(user.createdAt)}
             </div>
 
-            {/* CỘT UPDATED AT */}
-            <div className="text-xs text-gray-500">
+            {/* UPDATED */}
+            <div className="text-center text-xs text-gray-500">
               {formatDate(user.updatedAt)}
             </div>
 
+            {/* ACTION */}
             <div className="flex justify-end">
               <button
-                onClick={() => handleToggleLock(user.id)}
-                className={`p-2 rounded-lg transition-colors ${user.locked ? "text-red-400 hover:bg-red-50" : "text-gray-400 hover:bg-gray-100"}`}
-                title={user.locked ? "Unlock account" : "Lock account"}
+                onClick={() => handleToggleLock(user.accountId, user.isLocked)}
+                className="text-gray-500 hover:text-pink-500 text-sm"
               >
-                {user.locked ? <Lock size={16} /> : <Unlock size={16} />}
+                {user.isLocked ? (
+                  <Lock size={16} />
+                ) : (
+                  <Unlock size={16} />
+                )}
               </button>
             </div>
           </div>
         ))}
 
-        {/* PAGINATION GIỮ NGUYÊN */}
-        <div className="flex justify-between items-center px-6 py-4 text-sm text-gray-500">
-          <p>Hiển thị {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, users.length)} của {users.length}</p>
-          <div className="flex items-center gap-1">
-             <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className="p-2 border rounded-md hover:bg-pink-50"><ChevronLeft size={14} /></button>
-             {[...Array(totalPages)].map((_, i) => (
-               <button 
-                 key={i} 
-                 onClick={() => setCurrentPage(i + 1)}
-                 className={`px-3 py-1 rounded-md ${currentPage === i + 1 ? "bg-pink-500 text-white" : "border hover:bg-pink-50"}`}
-               >
-                 {i + 1}
-               </button>
-             ))}
-             <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} className="p-2 border rounded-md hover:bg-pink-50"><ChevronRight size={14} /></button>
+        {/* EMPTY */}
+        {users.length === 0 && (
+          <div className="p-10 text-center text-gray-400">
+            Không có dữ liệu
+          </div>
+        )}
+
+        {/* PAGINATION */}
+        <div className="flex justify-between px-8 py-4 text-sm text-gray-500 items-center">
+          <p>
+            {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, users.length)} / {users.length}
+          </p>
+
+          <div className="flex gap-2">
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+              className={`p-2 rounded-full ${currentPage === 1 ? "text-gray-300" : "text-gray-500 hover:text-pink-500 transition"}`}
+            >
+              <ChevronLeft size={14} />
+            </button>
+
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentPage(i + 1)}
+                className={`px-3 py-1 rounded-lg ${currentPage === i + 1 ? "bg-pink-500 text-white font-bold" : "text-gray-500 hover:bg-gray-100 transition"}`}
+              >
+                {i + 1}</button>
+            ))}
+
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((p) => p + 1)}
+              className={`p-2 rounded-full ${currentPage === totalPages ? "text-gray-300" : "text-gray-500 hover:text-pink-500 transition"}`}
+            >
+              <ChevronRight size={14} />
+            </button>
           </div>
         </div>
       </div>
 
+      {/* MODAL */}
       {showModal && (
         <CreateAccountModal
           onClose={() => setShowModal(false)}

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Server.Models
 {
     public class PoiContent
@@ -14,6 +16,7 @@ namespace Server.Models
         public DateTime? UpdatedAt { get; set; }
 
         // Navigation
+        [JsonIgnore]
         public Poi? Poi { get; set; }
     }
 }

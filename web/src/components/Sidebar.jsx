@@ -27,12 +27,13 @@ export default function Sidebar() {
 
       <div className="space-y-2">
 
+        <MenuItem to="/dashboard" icon={<LayoutDashboard size={18} />} isDisabled>
+          Tổng quan
+        </MenuItem>
+        
         {/* ADMIN */}
-        {role === "ADMIN" && (
+        {role === "Admin" && (
           <>
-            <MenuItem to="/dashboard" icon={<LayoutDashboard size={18} />}>
-              Tổng quan
-            </MenuItem>
 
             <MenuItem to="/pois" icon={<MapPin size={18} />}>
               POIs
@@ -43,31 +44,31 @@ export default function Sidebar() {
             </MenuItem>
             
             <MenuItem to="/categories" icon={<Layers size={18} />}>
-              Thể loại
+              Danh mục
             </MenuItem>
 
-            <MenuItem to="/tours" icon={<RouteIcon size={18} />}>
-              Hành trình
+            <MenuItem to="/tours" icon={<RouteIcon size={18} />} isDisabled>
+              Tour
             </MenuItem>
             
           </>
         )}
 
-        {/* MANAGER */}
-        {role === "MANAGER" && (
+        {/* OWNER */}
+        {role === "Owner" && (
           <>
             <MenuItem to="/pois" icon={<MapPin size={18} />}>
               POIs
             </MenuItem>
 
-            <MenuItem to="/audio" icon={<Headphones size={18} />}>
+            <MenuItem to="/audio" icon={<Headphones size={18} />} isDisabled>
               Audio
             </MenuItem>
           </>
         )}
 
         {/* DISABLED */}
-        {role === "ADMIN" && (
+        {role === "Admin" && (
           <>
             <MenuItem to="/analytics" icon={<BarChart size={18} />} isDisabled>
               Phân tích

@@ -31,7 +31,8 @@ namespace Server.Controllers.Mobile
                     c.CategoryId,
                     c.Name,
                     c.CategoryPois.Count,
-                    c.CreatedAt))
+                    c.CreatedAt,
+                    c.UpdatedAt ?? c.CreatedAt))
                 .ToList();
             return Ok(dtos);
         }

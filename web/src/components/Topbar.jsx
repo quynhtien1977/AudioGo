@@ -1,10 +1,11 @@
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom"
 import { Search } from "lucide-react"
 
 export default function Topbar() {
   const navigate = useNavigate()
+  const location = useLocation()
 
-  // Lấy user thật từ localStorage / sessionStorage
+  // Lấy user từ localStorage / sessionStorage
   const user =
     JSON.parse(localStorage.getItem("user")) ||
     JSON.parse(sessionStorage.getItem("user"))
@@ -18,53 +19,46 @@ export default function Topbar() {
     navigate("/")
   }
 
-  // switch role = logout + về login
-  const handleSwitchRole = (targetRole) => {
-    if (role === targetRole) return
-
-    localStorage.clear()
-    sessionStorage.clear()
-    navigate("/")
+  // Determine placeholder text based on the current route
+  const getPlaceholder = () => {
+    if (location.pathname.includes("/poi")) {
+      return "Tìm POIs...";
+    } else if (location.pathname.includes("/account")) {
+      return "Tìm Tài khoản...";
+    } else if (location.pathname.includes("/categories")) {
+      return "Tìm Thể loại...";
+    }else if (location.pathname.includes("/tours")) {
+      return "Tìm Tour...";
+    }else if (location.pathname.includes("/audio")) {
+      return "Tìm Audio...";
+    }
+    else {
+      return "Tìm...";
+    }
   }
+
+  // Determine if the search bar should be displayed
+  const shouldDisplaySearch = !location.pathname.includes("/dashboard");
 
   return (
     <div className="flex justify-between items-center px-6 py-4 border-b bg-white">
 
       {/* Search */}
-      <Search className="text-gray-400 w-5 h-5 absolute ml-3" />
-      <input
-        placeholder="Search POIs, Tours..."
-        className="w-1/3 px-12 py-2 rounded-full bg-gray-100 outline-none"
-      />
+      {shouldDisplaySearch && (
+        <div className="relative w-1/3">
+          <Search className="text-gray-400 w-5 h-5 absolute ml-3 mt-2" />
+          <input
+            placeholder={getPlaceholder()}
+            className="w-full px-12 py-2 rounded-full bg-gray-100 outline-none"
+          />
+        </div>
+      )}
 
       {/* Right */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 ml-auto">
 
         {/* ROLE SWITCH */}
-        <div className="flex bg-gray-100 rounded-full p-1">
-          <button
-            onClick={() => handleSwitchRole("ADMIN")}
-            className={`px-3 py-1 rounded-full text-sm hover:bg-gray-200 ${
-              role === "ADMIN"
-                ? "bg-pink-500 text-white"
-                : "text-gray-500"
-            }`}
-          >
-            Admin
-          </button>
-
-          <button
-            onClick={() => handleSwitchRole("MANAGER")}
-            className={`px-3 py-1 rounded-full text-sm hover:bg-gray-200 ${
-              role === "MANAGER"
-                ? "bg-pink-500 text-white"
-                : "text-gray-500"
-            }`}
-          >
-            Restaurant Manager
-          </button>
-        </div>
-
+      
         {/*  Logout */}
         <button
           onClick={handleLogout}
@@ -75,7 +69,7 @@ export default function Topbar() {
 
         {/*  User Info */}
         <div className="text-right">
-          <p className="font-semibold">{user.name}</p>
+          <p className="font-semibold">{user.username}</p>
           <p className="text-xs text-gray-400">{user.role}</p>
         </div>
 

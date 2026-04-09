@@ -62,7 +62,7 @@ namespace Server.Controllers.Cms
         }
 
         private static CategoryDto ToDto(Category c) =>
-            new(c.CategoryId, c.Name, c.CategoryPois?.Count ?? 0, c.CreatedAt);
+            new(c.CategoryId, c.Name, c.CategoryPois?.Count ?? 0, c.CreatedAt, c.UpdatedAt ?? default);
 
         /// <summary>Gán một POI vào category.</summary>
         [HttpPost("{id}/pois")]

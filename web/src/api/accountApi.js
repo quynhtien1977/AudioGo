@@ -1,93 +1,103 @@
-// giả lập database
-let fakeUsers = [
-  {
-    name: "Jane Cooper",
-    email: "jane.cooper@culinary.com",
-    password: "123456",
-    role: "ADMIN",
-    id: "USR-9021",
-    locked: false,
-    createdAt: "2023-10-20T09:15:00Z",
-    updatedAt: "2023-10-21T10:00:00Z",
-  },
-  {
-    name: "Cody Fisher",
-    email: "cody.fisher@thebistro.com",
-    password: "123456",
-    role: "MANAGER",
-    id: "USR-8821",
-    locked: false,
-    createdAt: "2023-10-22T14:30:00Z",
-    updatedAt: "2023-10-22T14:30:00Z",
-  },
-  {
-    name: "Esther Howard",
-    email: "esther.h@cafearua.com",
-    password: "123456",
-    role: "MANAGER",
-    id: "USR-7712",
-    locked: false,
-    createdAt: "2023-10-23T08:00:00Z",
-    updatedAt: "2023-10-24T10:05:00Z",
-  },
-  {
-    name: "Esther Howard",
-    email: "esther.h@cafearua.com",
-    password: "123456",
-    role: "MANAGER",
-    id: "USR-7712",
-    locked: false,
-    createdAt: "2023-10-23T08:00:00Z",
-    updatedAt: "2023-10-24T10:05:00Z",
-  },
-]
+import axios from "axios"
 
-// GET
-export const getUsersApi = () =>
-  new Promise((resolve) =>
-    setTimeout(() => resolve([...fakeUsers]), 500)
-  )
+const API_URL = "http://localhost:5086/api/cms/accounts"
 
-// CREATE - Tự động thêm timestamp
-export const createUserApi = (newUser) =>
-  new Promise((resolve) => {
-    setTimeout(() => {
-      const now = new Date().toISOString();
-      const user = {
-        ...newUser,
-        password: newUser.password,
-        id: "USR-" + Math.floor(Math.random() * 10000),
-        locked: false,
-        createdAt: now,
-        updatedAt: now,
-      }
-      fakeUsers = [user, ...fakeUsers]
-      resolve(user)
-    }, 500)
+const getToken = () =>
+  localStorage.getItem("token") || sessionStorage.getItem("token")
+
+// ======================
+// 🔧 AXIOS INSTANCE
+// ======================
+const client = axios.create({
+  baseURL: API_URL,
+})
+
+// 🔐 attach token
+client.interceptors.request.use((config) => {
+  const token = getToken()
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+// ❗ handle lỗi chung
+client.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    console.error("Account API Error:", err.response || err.message)
+
+    if (err.response?.status === 401) {
+      localStorage.removeItem("token")
+      window.location.href = "/login"
+    }
+
+    return Promise.reject(err)
+  }
+)
+
+
+// ======================
+// 🟢 GET ALL
+// ======================
+export const getUsersApi = async () => {
+  const res = await client.get("")
+  return res.data
+}
+
+
+// ======================
+// 🟢 GET BY ID
+// ======================
+export const getUserByIdApi = async (id) => {
+  const res = await client.get(`/${id}`)
+  return res.data
+}
+
+
+// ======================
+// 🟢 CREATE (FULL FIELD)
+// ======================
+export const createUserApi = async (data) => {
+  const res = await client.post("", {
+    username: data.username,
+    password: data.password,
+    role: data.role,
+
+    fullName: data.fullName,
+    email: data.email,
+    phoneNumber: data.phoneNumber,
   })
 
-// LOCK - Cập nhật updatedAt khi thay đổi trạng thái
-export const toggleLockApi = (id) =>
-  new Promise((resolve) => {
-    setTimeout(() => {
-      const user = fakeUsers.find((u) => u.id === id)
-      if (user) {
-        user.locked = !user.locked
-        user.updatedAt = new Date().toISOString()
-      }
-      resolve(user)
-    }, 400)
-  })
+  return res.data
+}
 
-// UPDATE ROLE - Cập nhật updatedAt
-export const updateRoleApi = (id, role) =>
-  new Promise((resolve) => {
-    setTimeout(() => {
-      const user = fakeUsers.find((u) => u.id === id)
-      if (user) {
-        user.role = role
-        user.updatedAt = new Date().toISOString()
-      }
-      resolve(user)
-    }, 400)
-  });
+
+// ======================
+// 🟢 UPDATE (SAFE UPDATE)
+// ======================
+export const updateUserApi = async (id, data) => {
+  const payload = {}
+
+  // chỉ gửi field có giá trị (tránh ghi đè null)
+  if (data.username !== undefined) payload.username = data.username
+  if (data.password !== undefined) payload.password = data.password
+  if (data.role !== undefined) payload.role = data.role
+
+  if (data.fullName !== undefined) payload.fullName = data.fullName
+  if (data.email !== undefined) payload.email = data.email
+  if (data.phoneNumber !== undefined) payload.phoneNumber = data.phoneNumber
+  if (data.isLocked !== undefined) payload.isLocked = data.isLocked
+
+  const res = await client.put(`/${id}`, payload)
+  return res.data
+}
+
+
+// ======================
+// 🟢 DELETE
+// ======================
+export const deleteUserApi = async (id) => {
+  const res = await client.delete(`/${id}`)
+  return res.data
+}

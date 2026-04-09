@@ -8,14 +8,14 @@ export default function StatsCard({ title, value, percent, icon }) {
 
         <div className="flex items-center gap-3 mt-2">
           <h2 className="text-2xl font-bold">{value}</h2>
-          <span className="text-green-500 text-sm bg-green-100 px-2 py-1 rounded">
+          {/* <span className="text-green-500 text-sm bg-green-100 px-2 py-1 rounded">
             {percent}
-          </span>
+          </span> */}
         </div>
 
-        <p className="text-xs text-gray-400 mt-2">
+        {/* <p className="text-xs text-gray-400 mt-2">
           vs last 30 days
-        </p>
+        </p> */}
       </div>
 
       {/* Right Icon */}

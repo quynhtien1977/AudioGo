@@ -135,7 +135,7 @@ const TourDetailPage = () => {
               </div>
             </div>
             <div className="p-10 space-y-4">
-              <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Mô tả hành trình</h3>
+              <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Mô tả Tour</h3>
               <p className="text-gray-500 leading-relaxed italic">"{tour.description}"</p>
               <div className="flex gap-8 pt-4">
                 <div className="flex items-center gap-2">
@@ -181,7 +181,7 @@ const TourDetailPage = () => {
         {/* Cột phải: Bản đồ và Thống kê */}
         <div className="col-span-5 space-y-8">
           <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-8 space-y-4">
-            <h3 className="font-bold text-gray-800 tracking-tight">Bản đồ lộ trình</h3>
+            <h3 className="font-bold text-gray-800 tracking-tight">Bản đồ Tour</h3>
             <POIMapPreview pois={tour.pois} />
           </div>
           

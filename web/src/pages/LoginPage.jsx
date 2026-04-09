@@ -8,39 +8,43 @@ import useAuth from "@/hooks/useAuth";
 const loginBg = "/asset/loginImg.png";
 
 const LoginPage = () => {
-  const [email, setEmail] = useState("")
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("")
   const [rememberMe, setRememberMe] = useState(false)
 
-  // const { login, forgotPassword, loading, error, message } = useAuth()
   const { login, loading, error } = useAuth()
   const navigate = useNavigate()
 
+
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
     try {
-      const res = await login(email, password, rememberMe)
+      const res = await login(username, password, rememberMe);
 
-      if (res?.user) {
-        const role = res.user.role
+      console.log("LOGIN RESULT:", res); // 🔥 debug
 
-        if (role === "ADMIN") {
-          navigate("/dashboard")
-        } else if (role === "MANAGER") {
-          navigate("/pois")
-        } else {
-          navigate("/")
-        }
+      const role = res?.user?.role;
+
+      if (!role) {
+        console.error("Không có role trong response");
+        return;
       }
+
+      if (["Admin", "Owner"].includes(role)) {
+        navigate("/pois");
+      } else {
+        navigate("/");
+      }
+
     } catch (err) {
-      console.log(err)
+      console.log(err);
     }
-  }
+  };
   
   return (
-    <div className="min-h-screen bg-pink-50/30 flex items-center justify-center p-4 font-sans">
-      <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-pink-100/50 overflow-hidden w-full max-w-4xl flex flex-col md:flex-row border border-pink-100">
+    <div className="min-h-screen bg-pink-50 flex items-center justify-center p-4 font-sans">
+      <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-gray-100/50 overflow-hidden w-full max-w-4xl flex flex-col md:flex-row border border-gray-100">
         
         {/* LEFT */}
         <div className="w-full md:w-1/2 p-10 lg:p-14 flex flex-col justify-center">
@@ -49,7 +53,7 @@ const LoginPage = () => {
               <UtensilsCrossed className="text-white w-6 h-6" />
             </div>
             <span className="text-2xl font-black text-gray-900 tracking-tight">
-              AudioGo Admin
+              AudioGo
             </span>
           </div>
 
@@ -69,8 +73,10 @@ const LoginPage = () => {
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#EE4B8E] transition-colors w-5 h-5" />
                 <input 
                   type="text" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  // value={email}
+                   value={username}
+                  // onChange={(e) => setEmail(e.target.value)}
+                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Tên đăng nhập của bạn  " 
                   className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-[#EE4B8E] focus:ring-4 focus:ring-pink-100 outline-none transition-all text-gray-900"
                 />
@@ -101,24 +107,6 @@ const LoginPage = () => {
                   Ghi nhớ đăng nhập
                 </span>
               </label>
-            {/*  Forgot Password (mở rộng sau) */}
-              {/* <a href="#"
-                 onClick={async (e) => {
-                            e.preventDefault()
-
-                            if (!email) {
-                              alert("Please enter your email first")
-                              return
-                            }
-
-                            try {
-                              await forgotPassword(email)
-                            } catch (err) {
-                              console.log(err)
-                            }}} 
-                  className="text-sm font-bold text-[#EE4B8E] hover:underline">
-                Quên mật khẩu?
-              </a> */}
             </div>
 
             <button className="w-full bg-[#EE4B8E] hover:bg-[#D63A79] text-white font-bold py-4 rounded-2xl shadow-lg shadow-pink-200 transition-all active:scale-[0.98] flex items-center justify-center gap-3 text-lg mt-4">
@@ -129,9 +117,6 @@ const LoginPage = () => {
             {error && (
               <p className="text-red-500 text-sm mt-2">{error}</p>
             )}
-            {/* {message && (
-              <p className="text-green-500 text-sm mt-2">{message}</p>
-          )} */}
           </form>
 
           <p className="mt-10 text-center text-gray-400 text-xs font-medium uppercase tracking-widest">

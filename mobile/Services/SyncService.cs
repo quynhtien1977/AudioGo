@@ -86,7 +86,7 @@ namespace AudioGo.Services
                 .Where(p => !string.IsNullOrEmpty(p.CategoriesJson))
                 .SelectMany(p => System.Text.Json.JsonSerializer.Deserialize<List<string>>(p.CategoriesJson) ?? new())
                 .Distinct()
-                .Select(cName => new CategoryDto("", cName, 0, DateTime.MinValue))
+                .Select(cName => new CategoryDto("", cName, 0, DateTime.MinValue, DateTime.MinValue))
                 .ToList();
 
             return offlineCategories;

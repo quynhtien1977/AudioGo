@@ -1,10 +1,14 @@
-import { MapPin, Plus, Minus } from "lucide-react"
+import { MapPin, Plus, Minus } from "lucide-react";
 
-const InfoCardOfAddPOI = ({ form, handleChange }) => {
+const InfoCardOfAddPOI = ({ form, handleChange, contentApi }) => {
 
   const adjustValue = (key, amount) => {
-    handleChange(key, (parseFloat(form[key]) || 0) + amount)
-  }
+    handleChange(key, (parseFloat(form[key]) || 0) + amount);
+  };
+
+  const getLanguageName = (code) => {
+    return contentApi.languages[code] || code;
+  };
 
   return (
     <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm space-y-6">
@@ -32,7 +36,7 @@ const InfoCardOfAddPOI = ({ form, handleChange }) => {
         {/* CATEGORY */}
         <div>
           <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">
-            Thể loại
+            Danh mục
           </label>
           <select 
             value={form.category}
@@ -46,6 +50,38 @@ const InfoCardOfAddPOI = ({ form, handleChange }) => {
           </select>
         </div>
 
+        {/* LANGUAGE */}
+        {/* LANGUAGE */}
+        <div>
+          <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">
+            Ngôn ngữ
+          </label>
+
+          <select
+            value={form.languageCode || ""}
+            onChange={(e) => handleChange("languageCode", e.target.value)}
+            className="w-full bg-transparent border-b-2 border-pink-100 py-2 outline-none focus:border-pink-500 transition-all font-medium text-gray-600"
+          >
+            <option value="" disabled>
+              Chọn ngôn ngữ
+            </option>
+
+            {[
+              { code: "en", label: "English" },
+              { code: "fr", label: "French" },
+              { code: "ja", label: "Japanese" },
+              { code: "ko", label: "Korean" },
+              { code: "th", label: "Thai" },
+              { code: "vi", label: "Vietnamese" },
+              { code: "zh-Hans", label: "Chinese (Simplified)" },
+            ].map((lang) => (
+              <option key={lang.code} value={lang.code}>
+                {lang.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
         {/* RADIUS */}
         <div className="pt-2">
           <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">
@@ -54,9 +90,7 @@ const InfoCardOfAddPOI = ({ form, handleChange }) => {
           <div className="flex items-center gap-4">
             <input 
               type="range"
-              min="10" max="200"
               value={form.radius}
-              onChange={(e) => handleChange("radius", e.target.value)}
               className="flex-1 accent-pink-500"
             />
             <span className="text-xl font-black text-pink-500">
@@ -138,7 +172,7 @@ const InfoCardOfAddPOI = ({ form, handleChange }) => {
 
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default InfoCardOfAddPOI
+export default InfoCardOfAddPOI;

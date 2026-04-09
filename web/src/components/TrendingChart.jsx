@@ -9,19 +9,30 @@ import {
   ResponsiveContainer
 } from 'recharts';
 
-import { getTrendingData } from "../api/chartApi"
+import { getTrendingData } from "../api/chartApi";
 
 const TrendingChart = () => {
-  const [data, setData] = useState([])
+  const [data, setData] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
-      const res = await getTrendingData()
-      setData(res)
-    }
+      try {
+        const res = await getTrendingData();
+        // Ensure data is an array and map it to the required format
+        const formattedData = Array.isArray(res)
+          ? res.map((item) => ({
+              name: item.date, // Assuming API returns a `date` field
+              listens: item.count // Assuming API returns a `count` field
+            }))
+          : [];
+        setData(formattedData);
+      } catch (error) {
+        console.error("Error fetching trending data:", error);
+      }
+    };
 
-    fetchData()
-  }, [])
+    fetchData();
+  }, []);
 
   // loading state
   if (!data.length) {
@@ -29,12 +40,11 @@ const TrendingChart = () => {
       <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
         <p>Loading chart...</p>
       </div>
-    )
+    );
   }
 
   return (
     <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-      
       <div className="flex items-center justify-between mb-8">
         <h2 className="text-xl font-bold text-gray-900">Xu hướng phát audio</h2>
         <div className="flex items-center gap-2">
@@ -44,13 +54,11 @@ const TrendingChart = () => {
       </div>
 
       <div className="h-[350px]">
-        {/* giúp biểu đồ tự động co dãn theo chiều rộng màn hình */}
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={data}
             margin={{ top: 10, right: 30, left: -20, bottom: 0 }}
           >
-            {/* hiện grid mờ phía sau */}
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
 
             <XAxis 
@@ -65,12 +73,10 @@ const TrendingChart = () => {
               axisLine={false}
               tickLine={false}
               tick={{ fill: '#6B7280', fontSize: 12 }}
-              domain={[0, 2500]}
-              ticks={[0, 500, 1000, 1500, 2000, 2500]}
+              domain={[0, 'dataMax + 500']}
               tickFormatter={(value) => (value >= 1000 ? `${value / 1000}k` : value)}
             />
 
-            {/* khung nhỏ khi di chuột qua các điểm trên biểu đồ */}
             <Tooltip
               contentStyle={{ borderRadius: '8px', border: '1px solid #E5E7EB' }}
               labelStyle={{ fontWeight: 'bold' }}
@@ -93,11 +99,9 @@ const TrendingChart = () => {
                 <stop offset="95%" stopColor="#EE4B8E" stopOpacity={0} />
               </linearGradient>
             </defs>
-
           </AreaChart>
         </ResponsiveContainer>
       </div>
-
     </div>
   );
 };

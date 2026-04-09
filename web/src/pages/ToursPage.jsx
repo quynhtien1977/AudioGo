@@ -58,7 +58,7 @@ const ToursPage = () => {
 
   // === LOGIC TẠO TOUR ===
   const handleCreateTour = () => {
-    if (!newTourData.name) return alert("Vui lòng nhập tên hành trình");
+    if (!newTourData.name) return alert("Vui lòng nhập tên Tour");
 
     const newTour = {
       id: tours.length + 1,
@@ -88,38 +88,38 @@ const ToursPage = () => {
       {/* HEADER SECTION */}
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-800 tracking-tight">QUẢN LÝ HÀNH TRÌNH</h1>
-          <p className="text-gray-500 mt-1 font-medium">Thiết kế và quản lý lộ trình trải nghiệm ẩm thực.</p>
+          <h1 className="text-3xl font-bold text-gray-800 tracking-tight">QUẢN LÝ TOUR</h1>
+          <p className="text-gray-500 mt-1 font-medium">Thiết kế và quản lý tour trải nghiệm ẩm thực.</p>
         </div>
         <button 
           onClick={() => setShowCreateModal(true)}
           className="flex items-center gap-2 bg-gradient-to-r from-[#D81B60] to-[#EC4899] text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-pink-100 hover:scale-105 transition-all active:scale-95"
         >
-          <Plus size={20} /> Tạo Lộ Trình Mới
+          <Plus size={20} /> Tạo Tour Mới
         </button>
       </div>
 
       {/* STATS BARS */}
       <div className="grid grid-cols-3 gap-6">
         <Card
-            title = "TỔNG SỐ HÀNH TRÌNH"
+            title = "TỔNG SỐ TOUR"
             value = {tours.length}
             color = "text-blue-600"
-            sub = "Tất cả các hành trình đã tạo"
+            sub = "Tất cả các Tour đã tạo"
             icon = {<ExternalLink size={16} className="text-blue-600" />}>
         </Card>
         <Card
-            title = "HÀNH TRÌNH ĐANG HOẠT ĐỘNG"
+            title = "TOUR ĐANG HOẠT ĐỘNG"
             value = "12"
             color = "text-green-600"
-            sub = "Các hành trình đang hoạt động trong hệ thống"
+            sub = "Các Tour đang hoạt động trong hệ thống"
             icon = {<ShieldCheck size={16} className="text-green-600" />}>
         </Card>
         <Card
             title = "TỔNG POI ĐÃ GẮN"
             value = "48"
             color = "text-pink-600"
-            sub = "Số lượng điểm đến đã được gắn vào các hành trình"
+            sub = "Số lượng điểm đến đã được gắn vào các Tour"
             icon = {<MapPin size={16} className="text-pink-600" />} >
         </Card>
       </div>
@@ -179,10 +179,10 @@ const ToursPage = () => {
         cancelText="Hủy bỏ"
         message={
           <div className="w-full text-left">
-            <h2 className="text-xl font-black text-gray-800 border-b pb-4 mb-6">Tạo Hành trình Mới</h2>
+            <h2 className="text-xl font-black text-gray-800 border-b pb-4 mb-6">Tạo Tour Mới</h2>
             <div className="space-y-4">
               <div>
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Tên hành trình</label>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block">Tên Tour</label>
                 <input 
                   type="text" 
                   placeholder="Ví dụ: Tour Hải Sản 1"

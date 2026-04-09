@@ -1,106 +1,35 @@
-export const getTopPOIs = () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve([
-        {
-          rank: 1,
-          name: "The Pastel Bistro",
-          lat: 10.75704,
-          lng: 106.7042,
-          category: "Museum",
-          priority: "CRITICAL",
-          status: "PENDING",
-          listens: 2450,
-          percent: 95,
-          createdAt: "2024-02-02",
-          updatedAt: "2024-02-05",
-          ActivityRadius: 500,
-        },
-        {
-          rank: 2,
-          name: "Royal Art Gallery",
-          lat: 40.7128,
-          lng: -74.006,
-          category: "Museum",
-          priority: "MEDIUM",
-          status: "APPROVED",
-          listens: 1920,
-          percent: 78,
-          createdAt: "2024-07-02",
-          updatedAt: "2024-09-08",
-          ActivityRadius: 500,
-        },
-        {
-          rank: 3,
-          name: "Midnight Brews",
-          lat: 35.6762,
-          lng: 139.6503,
-          priority: "HIGH",
-          status: "PENDING",
-          category: "Cafe",
-          listens: 1810,
-          percent: 65,
-          createdAt: "2024-02-02",
-          updatedAt: "2024-02-05",
-          ActivityRadius: 500,
-        },
-          {
-          rank: 4,
-          name: "Sunset Terrace",
-          lat: 35.6762,
-          lng: 139.6503,
-          priority: "HIGH",
-          status: "PENDING",
-          category: "Cafe",
-          listens: 1500,
-          percent: 55,
-          createdAt: "2024-02-02",
-          updatedAt: "2024-02-05",
-          ActivityRadius: 500,
-        },
-        {
-          rank: 5,
-          name: "Heritage Walk",
-          lat: 35.6762,
-          lng: 139.6503,
-          priority: "HIGH",
-          status: "PENDING",
-          category: "Restaurant",
-          listens: 1400,
-          percent: 50,
-          createdAt: "2024-02-02",
-          updatedAt: "2024-02-05",
-          ActivityRadius: 500,
-        },
-        {
-          rank: 6,
-          name: "Neon Arcade",
-          lat: 35.6762,
-          lng: 139.6503,
-          priority: "HIGH",
-          status: "PENDING",
-          category: "Restaurant",
-          listens: 1300,
-          percent: 45,
-          createdAt: "2024-02-02",
-          updatedAt: "2024-02-05",
-          ActivityRadius: 500,
-        },
-        {
-          rank: 7,
-          name: "City Library",
-          lat: 35.6762,
-          lng: 139.6503,
-          priority: "HIGH",
-          status: "PENDING",
-          category: "Restaurant",
-          listens: 1200,
-          percent: 40,
-          createdAt: "2024-02-02",
-          updatedAt: "2024-02-05",
-          ActivityRadius: 500,
-        },
-      ])
-    }, 800)
+import axios from "axios"
+
+const API_URL = "http://localhost:5086/api"
+
+const getToken = () =>
+  localStorage.getItem("token") || sessionStorage.getItem("token")
+
+// GET ALL
+export const getAllPOIs = async () => {
+  const res = await axios.get(`${API_URL}/cms/pois`, {
+    headers: {
+      Authorization: `Bearer ${getToken()}`
+    }
+  })
+  return res.data
+}
+
+// UPDATE POI
+export const updatePOI = async (id, data) => {
+  const res = await axios.put(`${API_URL}/cms/pois/${id}`, data, {
+    headers: {
+      Authorization: `Bearer ${getToken()}`
+    }
+  })
+  return res.data
+}
+
+// DELETE 
+export const deletePOI = async (id) => {
+  await axios.delete(`${API_URL}/cms/pois/${id}`, {
+    headers: {
+      Authorization: `Bearer ${getToken()}`
+    }
   })
 }
