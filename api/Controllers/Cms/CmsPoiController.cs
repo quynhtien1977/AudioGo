@@ -26,11 +26,31 @@ namespace Server.Controllers.Cms
         }
 
         /// <summary>Danh sách tất cả POI (CMS - không filter status published, có thể filter theo status param).</summary>
+        // [HttpGet]
+        // public async Task<ActionResult<List<Poi>>> GetAll([FromQuery] string? status = null)
+        // {
+        //     var pois = await _pois.GetAllForCmsAsync(status);
+        //     return Ok(pois);
+        // }
+
         [HttpGet]
-        public async Task<ActionResult<List<Poi>>> GetAll([FromQuery] string? status = null)
+        public async Task<ActionResult<List<PoiListDto>>> GetAll([FromQuery] string? status = null)
         {
             var pois = await _pois.GetAllForCmsAsync(status);
-            return Ok(pois);
+
+            var result = pois.Select(p => new PoiListDto
+            {
+                PoiId = p.PoiId,
+                Latitude = p.Latitude,
+                Longitude = p.Longitude,
+                ActivationRadius = p.ActivationRadius,
+                Priority = p.Priority,
+                Status = p.Status,
+                LogoUrl = p.LogoUrl,
+                IsActive = p.IsActive,
+            }).ToList();
+
+            return Ok(result);
         }
 
         /// <summary>Chi tiết POI kèm tất cả content và gallery.</summary>
@@ -55,7 +75,7 @@ namespace Server.Controllers.Cms
                     .Select(g => new PoiGalleryDto(g.ImageId, g.PoiId, g.ImageUrl, g.SortOrder)).ToList()
             ));
         }
-
+        
         [HttpPost]
         public async Task<ActionResult<Poi>> Create([FromBody] PoiCreateRequest req)
         {

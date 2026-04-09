@@ -18,7 +18,8 @@ namespace Shared.DTOs
         string CategoryId,
         string Name,
         int PoiCount,           // Mới thêm: Cho mobile hiển thị số lượng
-        DateTime CreatedAt      // Cũ: CMS cần
+        DateTime CreatedAt,     // Cũ: CMS cần
+        DateTime UpdatedAt      // Cũ: CMS cần
     );
 
     public record CategoryCreateRequest(string Name);

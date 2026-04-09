@@ -61,6 +61,7 @@ builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>();
 builder.Services.AddSingleton<ITranslationService, TranslationService>();
 builder.Services.AddSingleton<ITtsService, TtsService>();
 builder.Services.AddScoped<IContentPipelineService, ContentPipelineService>();
+builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddHttpContextAccessor();
 
 // ── Controllers & OpenAPI ─────────────────────────────────────────────
