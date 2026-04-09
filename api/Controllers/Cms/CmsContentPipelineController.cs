@@ -84,7 +84,7 @@ namespace Server.Controllers.Cms
             var contents = await _db.PoiContents
                 .Include(c => c.Poi)
                 .Where(c => c.AudioUrl == null || c.AudioUrl == "")
-                .Where(c => c.Poi != null && c.Poi.Status == "active")
+                .Where(c => c.Poi != null && c.Poi.IsActive == true)
                 .ToListAsync();
 
             if (!contents.Any())
