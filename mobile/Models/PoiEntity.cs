@@ -22,6 +22,8 @@ namespace AudioGo.Models
         [MaxLength(50)]
         public string Status { get; set; } = string.Empty;
 
+        public bool IsActive { get; set; } = true;
+
         public string? LogoUrl { get; set; }
         public string? LocalLogoPath { get; set; }
 

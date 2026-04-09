@@ -12,7 +12,7 @@ namespace Server.Repositories
 
         public Task<List<Poi>> GetAllAsync() =>
             _db.Pois.AsNoTracking()
-                .Where(p => p.Status == "active" || p.Status == "published")
+                .Where(p => p.IsActive)
                 .Include(p => p.Contents)
                 .Include(p => p.Gallery)
                 .Include(p => p.CategoryPois)
@@ -27,7 +27,7 @@ namespace Server.Repositories
         public async Task<List<Poi>> SearchAsync(string? query, string? category)
         {
             var q = _db.Pois.AsNoTracking()
-                .Where(p => p.Status == "active" || p.Status == "published")
+                .Where(p => p.IsActive)
                 .Include(p => p.Contents)
                 .Include(p => p.Gallery)
                 .Include(p => p.CategoryPois)
@@ -76,7 +76,7 @@ namespace Server.Repositories
             double lonDelta = radiusMeters / (111_000 * Math.Cos(latRad));
 
             var candidates = await _db.Pois.AsNoTracking()
-                .Where(p => (p.Status == "active" || p.Status == "published")
+                .Where(p => p.IsActive
                          && p.Latitude  >= lat - latDelta && p.Latitude  <= lat + latDelta
                          && p.Longitude >= lon - lonDelta && p.Longitude <= lon + lonDelta)
                 .Include(p => p.Contents)

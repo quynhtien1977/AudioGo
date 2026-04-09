@@ -12,6 +12,7 @@ namespace Shared
         public int ActivationRadius { get; set; } = 20;
         public int Priority { get; set; } = 1;
         public string Status { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = true;
         public string? LogoUrl { get; set; }
         public string? LocalLogoPath { get; set; }
 
