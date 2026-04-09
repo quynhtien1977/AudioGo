@@ -21,7 +21,7 @@ namespace Server.Repositories
                 .ToListAsync();
 
         /// <summary>
-        /// Tìm kiếm POI theo từ khóa (title/description) và/hoặc tên category.
+        /// Tìm kiếm POI theo từ khóa (title) và/hoặc tên category.
         /// Case-insensitive, chỉ trả về POI active/published.
         /// </summary>
         public async Task<List<Poi>> SearchAsync(string? query, string? category)
@@ -42,7 +42,7 @@ namespace Server.Repositories
 
             var pois = await q.OrderBy(p => p.Priority).ToListAsync();
 
-            // Filter theo title/description trong contents (sau khi load — EF không support full-text trên nvarchar(max) tốt)
+            // Filter theo title trong contents (sau khi load — EF không support full-text trên nvarchar(max) tốt)
             if (!string.IsNullOrWhiteSpace(query))
             {
                 var lower = query.ToLower();
