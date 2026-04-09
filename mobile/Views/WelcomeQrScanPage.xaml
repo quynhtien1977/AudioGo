@@ -65,5 +65,16 @@
                    HorizontalTextAlignment="Center"
                    Margin="0, 10, 0, 0"/>
         </VerticalStackLayout>
+
+        <!-- Loading Overlay -->
+        <Grid x:Name="LoadingOverlay"
+              BackgroundColor="#CC000000"
+              IsVisible="{Binding IsLoading}"
+              VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand">
+            <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="16">
+                <ActivityIndicator IsRunning="{Binding IsLoading}" Color="#0066FF" HorizontalOptions="Center"/>
+                <Label Text="Đang xử lý mã QR..." TextColor="White" FontFamily="InterMedium" HorizontalOptions="Center"/>
+            </VerticalStackLayout>
+        </Grid>
     </Grid>
 </ContentPage>

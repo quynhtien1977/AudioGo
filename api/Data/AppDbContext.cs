@@ -17,6 +17,7 @@ namespace Server.Data
         public DbSet<TourPoi>       TourPois        => Set<TourPoi>();
         public DbSet<ListenHistory> ListenHistories => Set<ListenHistory>();
         public DbSet<LocationLog>   LocationLogs    => Set<LocationLog>();
+        public DbSet<AppAccessCode> AppAccessCodes  => Set<AppAccessCode>();
 
         protected override void OnModelCreating(ModelBuilder m)
         {
@@ -33,6 +34,7 @@ namespace Server.Data
             m.Entity<TourPoi>      ().ToTable("TourPoi");
             m.Entity<ListenHistory>().ToTable("ListenHistory");
             m.Entity<LocationLog>  ().ToTable("LocationLog");
+            m.Entity<AppAccessCode>().ToTable("AppAccessCode");
 
             // ── 2. Primary Keys ─────────────────────────────────────────
             m.Entity<PoiContent>   ().HasKey(e => e.ContentId);
@@ -106,6 +108,11 @@ namespace Server.Data
             // ── 4. Unique index ─────────────────────────────────────────
             m.Entity<PoiContent>()
                 .HasIndex(pc => new { pc.PoiId, pc.LanguageCode })
+                .IsUnique();
+
+            m.Entity<AppAccessCode>().HasKey(e => e.CodeId);
+            m.Entity<AppAccessCode>()
+                .HasIndex(e => e.Code)
                 .IsUnique();
         }
     }

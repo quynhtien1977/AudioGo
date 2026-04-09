@@ -122,5 +122,39 @@ namespace AudioGo.Services
             var resp = await _http.PostAsJsonAsync("api/mobile/tours", request, ct);
             return resp.IsSuccessStatusCode;
         }
+
+        public async Task<(bool IsSuccess, string Message, string? Token)> ScanQrAsync(string code, string deviceId, CancellationToken ct = default)
+        {
+            try
+            {
+                var resp = await _http.PostAsJsonAsync("api/mobile/auth/scan-qr", new
+                {
+                    Code = code,
+                    DeviceId = deviceId
+                }, ct);
+
+                if (resp.IsSuccessStatusCode)
+                {
+                    var result = await resp.Content.ReadFromJsonAsync<ScanQrResponse>(cancellationToken: ct);
+                    return (true, result?.Message ?? "Thành công", result?.Token);
+                }
+                else
+                {
+                    var errStr = await resp.Content.ReadAsStringAsync(ct);
+                    return (false, string.IsNullOrEmpty(errStr) ? "Có lỗi xảy ra khi quét mã." : errStr, null);
+                }
+            }
+            catch (Exception ex)
+            {
+                return (false, ex.Message, null);
+            }
+        }
+
+        private class ScanQrResponse
+        {
+            public string? Message { get; set; }
+            public string? Token { get; set; }
+            public DateTime? ExpireAt { get; set; }
+        }
     }
 }

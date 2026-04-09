@@ -10,5 +10,6 @@ namespace AudioGo.Services.Interfaces
         Task PostListenHistoryAsync(string poiId, string deviceId, int durationSeconds, CancellationToken ct = default);
         Task PostLocationLogAsync(string deviceId, double latitude, double longitude, CancellationToken ct = default);
         Task<bool> CreateTourAsync(Shared.DTOs.TourCreateRequest request, CancellationToken ct = default);
+        Task<(bool IsSuccess, string Message, string? Token)> ScanQrAsync(string code, string deviceId, CancellationToken ct = default);
     }
 }

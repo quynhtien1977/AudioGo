@@ -47,8 +47,7 @@ namespace Server.Repositories
             {
                 var lower = query.ToLower();
                 pois = pois.Where(p => p.Contents.Any(c =>
-                    c.Title.ToLower().Contains(lower) ||
-                    c.Description.ToLower().Contains(lower)
+                    c.Title.ToLower().Contains(lower)
                 )).ToList();
             }
 
