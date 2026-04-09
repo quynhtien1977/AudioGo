@@ -12,19 +12,9 @@
         <VerticalStackLayout Grid.Row="0"
                              BackgroundColor="{StaticResource Surface}"
                              Padding="20,52,20,16"
-                             Spacing="14">
-            <Grid ColumnDefinitions="*,Auto">
-                <VerticalStackLayout Grid.Column="0" Spacing="2">
-                    <Label Text="Tour của tôi" Style="{StaticResource HeadlineLabel}"/>
-                    <Label Text="Phố Vĩnh Khánh · Quận 4" Style="{StaticResource BodyLabel}"/>
-                </VerticalStackLayout>
-                <Button Grid.Column="1"
-                        Text="Tạo mới +"
-                        Style="{StaticResource PrimaryButton}"
-                        Padding="14,8" FontSize="13" CornerRadius="16"
-                        VerticalOptions="Center"
-                        Clicked="OnCreateTourClicked"/>
-            </Grid>
+                             Spacing="4">
+            <Label Text="Tours" Style="{StaticResource HeadlineLabel}"/>
+            <Label Text="{Binding CountLabel}" Style="{StaticResource BodyLabel}"/>
         </VerticalStackLayout>
 
         <!-- ── Tour List ── -->
@@ -43,7 +33,7 @@
                                      Spacing="16"
                                      HorizontalOptions="Center"
                                      Margin="0,60,0,0">
-                    <Label Text="🗺️" FontSize="60" HorizontalOptions="Center"/>
+                    <Label Text="&#xe55b;" FontFamily="MaterialIcons" TextColor="{StaticResource Gray400}" FontSize="60" HorizontalOptions="Center"/>
                     <Label Text="Chưa có tour nào"
                            Style="{StaticResource HeadlineLabel}"
                            HorizontalOptions="Center"/>
@@ -67,27 +57,22 @@
                             <Border Style="{StaticResource CardBorder}"
                                     Margin="0,0,0,12" Padding="0">
                                 <Grid RowDefinitions="Auto,*">
-                                    <!-- Map thumbnail header -->
+                                    <!-- Thumbnail / map placeholder -->
                                     <Border Grid.Row="0"
                                             BackgroundColor="{StaticResource DarkSurface}"
                                             StrokeShape="RoundRectangle 0"
                                             StrokeThickness="0"
-                                            HeightRequest="130">
+                                            HeightRequest="130"
+                                            IsClippedToBounds="True">
                                         <Grid>
-                                            <Label Text="🗺️" FontSize="48"
+                                            <!-- Fallback icon -->
+                                            <Label Text="&#xe55b;" FontFamily="MaterialIcons"
+                                                   TextColor="{StaticResource Gray400}" FontSize="48"
                                                    HorizontalOptions="Center" VerticalOptions="Center"/>
-                                            <!-- status badge -->
-                                            <Border BackgroundColor="{StaticResource Primary}"
-                                                    StrokeShape="RoundRectangle 12"
-                                                    StrokeThickness="0"
-                                                    HorizontalOptions="Start"
-                                                    VerticalOptions="End"
-                                                    Margin="12"
-                                                    Padding="8,4">
-                                                <Label Text="🎧 Đang theo dõi"
-                                                       TextColor="White" FontSize="11"
-                                                       FontAttributes="Bold"/>
-                                            </Border>
+                                            <!-- Thumbnail image (shown when URL set) -->
+                                            <Image Source="{Binding ThumbnailUrl}"
+                                                   Aspect="AspectFill"
+                                                   IsVisible="{Binding ThumbnailUrl, Converter={StaticResource IsNotNullConverter}}"/>
                                         </Grid>
                                     </Border>
                                     <!-- Info section -->
@@ -128,26 +113,12 @@
                                                 <Label Text="ngôn ngữ" Style="{StaticResource CaptionLabel}" HorizontalOptions="Center"/>
                                             </VerticalStackLayout>
                                         </Grid>
-                                        <!-- Action buttons -->
-                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                                            <Button Grid.Column="0"
-                                                    Text="▶  Tiếp tục Tour"
-                                                    Style="{StaticResource PrimaryButton}"
-                                                    Padding="16,12" FontSize="14"
-                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ContinueTourCommand}"
-                                                    CommandParameter="{Binding .}"/>
-                                            <Border Grid.Column="1"
-                                                    BackgroundColor="{StaticResource Gray100}"
-                                                    StrokeShape="RoundRectangle 24"
-                                                    StrokeThickness="0"
-                                                    WidthRequest="48" HeightRequest="48">
-                                                <Label Text="⋯" FontSize="20"
-                                                       HorizontalOptions="Center" VerticalOptions="Center"/>
-                                                <Border.GestureRecognizers>
-                                                    <TapGestureRecognizer Tapped="OnTourMenuTapped" CommandParameter="{Binding .}"/>
-                                                </Border.GestureRecognizers>
-                                            </Border>
-                                        </Grid>
+                                        <!-- Action button -->
+                                        <Button Text="▶  Continue Tour"
+                                                Style="{StaticResource PrimaryButton}"
+                                                Padding="16,12" FontSize="14"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ContinueTourCommand}"
+                                                CommandParameter="{Binding .}"/>
                                     </VerticalStackLayout>
                                 </Grid>
                                 <Border.GestureRecognizers>

@@ -21,8 +21,28 @@ namespace AudioGo.Services
             var status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
             if (status != PermissionStatus.Granted) return;
 
+            // Yêu cầu quyền hiển thị Notification cho Foreground Service (Android 13+)
+            // Thiếu quyền này, Service chạy nền sẽ bị ẩn Notification và bị hệ điều hành "kill" khi thiếu RAM.
+#if ANDROID
+            if (OperatingSystem.IsAndroidVersionAtLeast(33))
+            {
+                var notifStatus = await Permissions.CheckStatusAsync<Permissions.PostNotifications>();
+                if (notifStatus != PermissionStatus.Granted)
+                {
+                    await Permissions.RequestAsync<Permissions.PostNotifications>();
+                }
+            }
+#endif
+
             IsRunning = true;
             _cts = new CancellationTokenSource();
+            
+#if ANDROID
+            var intent = new Android.Content.Intent(Android.App.Application.Context, typeof(AudioGo.Platforms.Android.AndroidLocationService));
+            intent.SetAction("START_SERVICE");
+            Android.App.Application.Context.StartForegroundService(intent);
+#endif
+
             _ = LoopAsync(_cts.Token);
         }
 
@@ -30,6 +50,13 @@ namespace AudioGo.Services
         {
             _cts?.Cancel();
             IsRunning = false;
+
+#if ANDROID
+            var intent = new Android.Content.Intent(Android.App.Application.Context, typeof(AudioGo.Platforms.Android.AndroidLocationService));
+            intent.SetAction("STOP_SERVICE");
+            Android.App.Application.Context.StartService(intent);
+#endif
+
             return Task.CompletedTask;
         }
 

@@ -32,8 +32,7 @@ namespace Server.Controllers.Mobile
             // Filter theo tên tour nếu có search query
             if (!string.IsNullOrWhiteSpace(q))
                 tours = tours.Where(t =>
-                    t.Name.Contains(q, StringComparison.OrdinalIgnoreCase) ||
-                    (t.Description?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false)
+                    t.Name.Contains(q, StringComparison.OrdinalIgnoreCase)
                 ).ToList();
 
             var result = tours.Select(t => new TourSummaryDto(

@@ -2,10 +2,11 @@ using AudioGo.Data;
 using AudioGo.Services;
 using AudioGo.Services.Interfaces;
 using AudioGo.ViewModels;
+using AudioGo_Mobile.ViewModels;
 using AudioGo_Mobile.Views;
 using Microsoft.Extensions.Logging;
 using Plugin.Maui.Audio;
-using ZXing.Net.Maui.Controls;
+using BarcodeScanner.Mobile;
 
 namespace AudioGo_Mobile;
 
@@ -17,27 +18,39 @@ public static class MauiProgram
         builder
             .UseMauiApp<App>()
             .UseMauiMaps()
-            .UseBarcodeReader()
+            .ConfigureMauiHandlers(handlers => {
+                handlers.AddBarcodeScannerHandler();
+            })
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+                // Inter — Google Fonts (UI chính)
+                fonts.AddFont("Inter-Regular.ttf",  "InterRegular");
+                fonts.AddFont("Inter-Medium.ttf",   "InterMedium");
+                fonts.AddFont("Inter-SemiBold.ttf", "InterSemiBold");
+                fonts.AddFont("Inter-Bold.ttf",     "InterBold");
+                // Material Icons — Google icon font
+                fonts.AddFont("MaterialIcons.ttf",  "MaterialIcons");
             });
 
+#if ANDROID
+        AudioGo.Platforms.Android.CustomMapPinHandler.Register();
+#endif
         // ── Database ──────────────────────────────────────────────
         var dbPath = Path.Combine(FileSystem.AppDataDirectory, "audiogo.db3");
         builder.Services.AddSingleton(new AppDatabase(dbPath));
 
         // ── HTTP Client ───────────────────────────────────────────
-            builder.Services.AddHttpClient<IApiService, ApiService>(client =>
-            {
-                // 10.0.2.2 = IP đặc biệt dành cho Android Emulator kết nối về localhost của PC
-                // Đổi về 192.168.x.x nếu dùng thiết bị thật trên cùng mạng WiFi
-                client.BaseAddress = new Uri(DeviceInfo.DeviceType == DeviceType.Virtual 
-                    ? "http://10.0.2.2:5086/" 
-                    : "http://192.168.43.73:5086/");
-                client.Timeout = TimeSpan.FromSeconds(15);
-            });
+        builder.Services.AddHttpClient<IApiService, ApiService>(client =>
+        {
+            // 10.0.2.2 = IP đặc biệt dành cho Android Emulator kết nối về localhost của PC
+            // Đổi về 192.168.x.x nếu dùng thiết bị thật trên cùng mạng WiFi
+            client.BaseAddress = new Uri(DeviceInfo.DeviceType == DeviceType.Virtual 
+                ? "http://10.0.2.2:5086/" 
+                : "http://192.168.1.12:5086/");
+            client.Timeout = TimeSpan.FromSeconds(15);
+        });
 
         // ── Services ──────────────────────────────────────────────
         builder.Services.AddSingleton(AudioManager.Current);
@@ -52,8 +65,8 @@ public static class MauiProgram
         builder.Services.AddTransient<PoiDetailViewModel>();
         builder.Services.AddTransient<TourListViewModel>();
         builder.Services.AddTransient<SearchViewModel>();
-        builder.Services.AddTransient<CreateTourViewModel>();
         builder.Services.AddTransient<TourDetailViewModel>();
+        builder.Services.AddTransient<WelcomeQrScanViewModel>();
 
         // ── Views ─────────────────────────────────────────────────
         builder.Services.AddSingleton<MainPage>();
@@ -61,8 +74,9 @@ public static class MauiProgram
         builder.Services.AddTransient<TourListPage>();
         builder.Services.AddTransient<PoiDetailPage>();
         builder.Services.AddTransient<SearchPage>();
-        builder.Services.AddTransient<CreateTourPage>();
         builder.Services.AddTransient<TourDetailPage>();
+        builder.Services.AddTransient<WelcomePage>();
+        builder.Services.AddTransient<WelcomeQrScanPage>();
 
 #if DEBUG
         builder.Logging.AddDebug();
@@ -71,8 +85,6 @@ public static class MauiProgram
         var mauiApp = builder.Build();
 
         // Init SQLite tables trên background thread — không block main thread khi startup
-        // Dùng Task.Run để tránh deadlock SynchronizationContext; fire-and-forget vì
-        // DB chưa cần thiết trước khi page đầu tiên OnAppearing
         _ = Task.Run(() => mauiApp.Services.GetRequiredService<AppDatabase>().InitAsync());
 
         return mauiApp;

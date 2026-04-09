@@ -2,80 +2,23 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:maps="clr-namespace:Microsoft.Maui.Controls.Maps;assembly=Microsoft.Maui.Controls.Maps"
+             xmlns:vm="clr-namespace:AudioGo.ViewModels"
              x:Class="AudioGo_Mobile.Views.MapPage"
+             x:Name="ThisPage"
              Shell.NavBarIsVisible="False"
              BackgroundColor="{StaticResource Background}"
              Title="Bản đồ">
 
-    <Grid RowDefinitions="*,Auto">
+    <Grid>
 
         <!-- ── Map Full Screen ── -->
-        <Grid Grid.Row="0">
+        <Grid>
             <maps:Map x:Name="MainMap"
                       IsShowingUser="True"
                       MapType="Street"
                       IsScrollEnabled="True"
                       IsZoomEnabled="True"/>
 
-            <!-- ── Header overlay ── -->
-            <Border BackgroundColor="{StaticResource Surface}"
-                    StrokeShape="RoundRectangle 0"
-                    StrokeThickness="0"
-                    VerticalOptions="Start"
-                    Padding="20,52,20,14">
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                    <!-- Search bar pill -->
-                    <Border Grid.Column="0"
-                            BackgroundColor="{StaticResource Gray100}"
-                            StrokeShape="RoundRectangle 24"
-                            StrokeThickness="0"
-                            Padding="14,10">
-                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
-                            <Label Grid.Column="0" Text="🔍" FontSize="16"
-                                   VerticalOptions="Center"/>
-                            <Label Grid.Column="1" Text="Tìm kiếm địa điểm..."
-                                   Style="{StaticResource BodyLabel}"
-                                   VerticalOptions="Center"/>
-                            <Label Grid.Column="2" Text="🎤" FontSize="16"
-                                   TextColor="{StaticResource Primary}"
-                                   VerticalOptions="Center"/>
-                        </Grid>
-                        <Border.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnSearchTapped"/>
-                        </Border.GestureRecognizers>
-                    </Border>
-                    <!-- Filter button -->
-                    <Border Grid.Column="1"
-                            BackgroundColor="{StaticResource Primary}"
-                            StrokeShape="RoundRectangle 20"
-                            StrokeThickness="0"
-                            WidthRequest="44" HeightRequest="44">
-                        <Label Text="⚙" FontSize="18" TextColor="White"
-                               HorizontalOptions="Center" VerticalOptions="Center"/>
-                        <Border.GestureRecognizers>
-                            <TapGestureRecognizer Tapped="OnFilterTapped"/>
-                        </Border.GestureRecognizers>
-                    </Border>
-                </Grid>
-            </Border>
-
-            <!-- ── FAB: Vị trí của tôi ── -->
-            <Border BackgroundColor="{StaticResource Surface}"
-                    StrokeShape="RoundRectangle 24"
-                    StrokeThickness="0"
-                    HorizontalOptions="End"
-                    VerticalOptions="End"
-                    Margin="16,0,16,16"
-                    WidthRequest="48" HeightRequest="48">
-                <Border.Shadow>
-                    <Shadow Brush="Black" Offset="0,2" Radius="8" Opacity="0.2"/>
-                </Border.Shadow>
-                <Label Text="📍" FontSize="22"
-                       HorizontalOptions="Center" VerticalOptions="Center"/>
-                <Border.GestureRecognizers>
-                    <TapGestureRecognizer Tapped="OnLocateMeTapped"/>
-                </Border.GestureRecognizers>
-            </Border>
 
             <!-- ── Loading overlay ── -->
             <ActivityIndicator IsRunning="{Binding IsLoading}"
@@ -83,45 +26,162 @@
                                Color="{StaticResource Primary}"
                                HorizontalOptions="Center"
                                VerticalOptions="Center"/>
+
+            <!-- ── POI Banner (Anchored to center above pin) ── -->
+            <Border x:Name="PoiBanner"
+                    BackgroundColor="{StaticResource Surface}"
+                    StrokeShape="RoundRectangle 16"
+                    StrokeThickness="0"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Center"
+                    Margin="0,0,0,160"
+                    WidthRequest="280"
+                    Opacity="0"
+                    IsVisible="False">
+                <Border.Shadow>
+                    <Shadow Brush="Black" Offset="0,4" Radius="12" Opacity="0.15"/>
+                </Border.Shadow>
+                <VerticalStackLayout Padding="0" Spacing="0">
+                    <!-- Top section: Logo + Title/Tags -->
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12" Padding="14,14,14,10">
+                        <!-- POI Logo -->
+                        <Border Grid.Column="0"
+                                BackgroundColor="{StaticResource PrimaryLight}"
+                                StrokeShape="RoundRectangle 12"
+                                StrokeThickness="0"
+                                WidthRequest="56" HeightRequest="56"
+                                VerticalOptions="Center"
+                                ClipsToBounds="True">
+                             <Grid>
+                                 <Label Text="&#xe0c8;" FontFamily="MaterialIcons" FontSize="28" TextColor="{StaticResource Primary}"
+                                        HorizontalOptions="Center" VerticalOptions="Center"/>
+                                 <Image x:Name="BannerLogo" Aspect="AspectFill"/>
+                             </Grid>
+                        </Border>
+
+                        <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="4">
+                            <!-- Title -->
+                            <Label x:Name="BannerTitle" FontAttributes="Bold" FontSize="15"
+                                   MaxLines="2" LineBreakMode="TailTruncation" />
+
+                            <!-- Tags -->
+                            <FlexLayout JustifyContent="Start" Wrap="Wrap" DefaultMargin="0,0,6,0">
+                                <!-- Ngôn ngữ -->
+                                <Border StrokeShape="RoundRectangle 4" BackgroundColor="{StaticResource PrimaryLight}" StrokeThickness="0" Padding="4,2">
+                                    <Label x:Name="BannerLang" FontSize="10" TextColor="{StaticResource Primary}" FontAttributes="Bold" />
+                                </Border>
+                                <!-- Thời gian di chuyển -->
+                                <Border StrokeShape="RoundRectangle 4" BackgroundColor="{StaticResource Gray100}" StrokeThickness="0" Padding="4,2">
+                                    <Label x:Name="BannerTime" FontSize="10" TextColor="{StaticResource Gray500}" />
+                                </Border>
+                            </FlexLayout>
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <!-- Divider -->
+                    <BoxView HeightRequest="1" Color="{StaticResource Gray200}" Margin="14,0"/>
+
+                    <!-- 3 Buttons Row -->
+                    <Grid ColumnDefinitions="*,*,*" Padding="10,8,10,10" ColumnSpacing="6">
+                        <!-- Play -->
+                        <Border Grid.Column="0" BackgroundColor="{StaticResource PrimaryLight}"
+                                StrokeShape="RoundRectangle 8" StrokeThickness="0" Padding="0,8">
+                            <VerticalStackLayout Spacing="2" HorizontalOptions="Center" VerticalOptions="Center">
+                                <Label Text="&#xe039;" FontFamily="MaterialIcons" FontSize="20" TextColor="{StaticResource Primary}" HorizontalOptions="Center"/>
+                                <Label Text="Nghe" FontSize="11" FontAttributes="Bold" TextColor="{StaticResource Primary}" HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnPoiBannerPlayClicked"/>
+                            </Border.GestureRecognizers>
+                        </Border>
+                        <!-- Detail -->
+                        <Border Grid.Column="1" BackgroundColor="#FFC107"
+                                StrokeShape="RoundRectangle 8" StrokeThickness="0" Padding="0,8">
+                            <VerticalStackLayout Spacing="2" HorizontalOptions="Center" VerticalOptions="Center">
+                                <Label Text="&#xe8f4;" FontFamily="MaterialIcons" FontSize="20" TextColor="#333333" HorizontalOptions="Center"/>
+                                <Label Text="Chi tiết" FontSize="11" FontAttributes="Bold" TextColor="#333333" HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnPoiBannerDetailClicked"/>
+                            </Border.GestureRecognizers>
+                        </Border>
+                        <!-- Navigate -->
+                        <Border Grid.Column="2" BackgroundColor="{StaticResource Primary}"
+                                StrokeShape="RoundRectangle 8" StrokeThickness="0" Padding="0,8">
+                            <VerticalStackLayout Spacing="2" HorizontalOptions="Center" VerticalOptions="Center">
+                                <Label Text="&#xe52f;" FontFamily="MaterialIcons" FontSize="20" TextColor="White" HorizontalOptions="Center"/>
+                                <Label Text="Dẫn đường" FontSize="11" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
+                            </VerticalStackLayout>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnBannerDirectionsTapped"/>
+                            </Border.GestureRecognizers>
+                        </Border>
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+
+
         </Grid>
 
-        <!-- ── Bottom Sheet: Lọc / danh sách POI ── -->
-        <Border Grid.Row="1"
-                Style="{StaticResource MiniPlayerBar}"
-                Padding="0">
-            <VerticalStackLayout Spacing="0">
-                <!-- Drag handle -->
-                <BoxView HeightRequest="4" WidthRequest="40" Color="{StaticResource Gray300}"
-                         HorizontalOptions="Center" CornerRadius="2" Margin="0,10,0,0"/>
-
-                <!-- Category pills -->
-                <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never"
-                            Padding="16,12">
-                    <HorizontalStackLayout Spacing="8">
-                        <Border Style="{StaticResource PillBorderActive}">
-                            <Label Text="🗺 Tất cả" TextColor="White" FontSize="13" FontAttributes="Bold"/>
-                        </Border>
-                        <Border Style="{StaticResource PillBorder}">
-                            <Label Text="🦐 Hải sản" TextColor="{StaticResource TextSecondary}" FontSize="13"/>
-                        </Border>
-                        <Border Style="{StaticResource PillBorder}">
-                            <Label Text="🍜 Bún phở" TextColor="{StaticResource TextSecondary}" FontSize="13"/>
-                        </Border>
-                        <Border Style="{StaticResource PillBorder}">
-                            <Label Text="🍢 Ốc" TextColor="{StaticResource TextSecondary}" FontSize="13"/>
-                        </Border>
-                        <Border Style="{StaticResource PillBorder}">
-                            <Label Text="☕ Cà phê" TextColor="{StaticResource TextSecondary}" FontSize="13"/>
-                        </Border>
-                    </HorizontalStackLayout>
-                </ScrollView>
-
-                <!-- POI count -->
-                <Label Margin="16,0,16,12"
-                       Text="{Binding MapStatusLabel}"
-                       Style="{StaticResource CaptionLabel}"/>
-            </VerticalStackLayout>
-        </Border>
-
+        <!-- ── Bottom: Mini Player ── -->
+        <Grid x:Name="MiniPlayerGrid" VerticalOptions="End" Margin="0,0,0,16">
+            <Border Style="{StaticResource MiniPlayerBar}"
+                    Margin="12,0,12,8" Padding="12,10"
+                    IsVisible="{Binding HasActivePoi}">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding OpenPoiDetailCommand}"
+                                          CommandParameter="{Binding ActivePoi}"/>
+                </Border.GestureRecognizers>
+                <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="12">
+                    <Border Grid.Column="0"
+                            BackgroundColor="{StaticResource PrimaryLight}"
+                            StrokeShape="RoundRectangle 10"
+                            StrokeThickness="0"
+                            WidthRequest="44" HeightRequest="44"
+                            ClipsToBounds="True">
+                        <Grid>
+                            <Label Text="&#xe310;" FontFamily="MaterialIcons" FontSize="24"
+                                   TextColor="{StaticResource Primary}"
+                                   HorizontalOptions="Center" VerticalOptions="Center"/>
+                            <Image Source="{Binding ActivePoi.LogoUrl}" Aspect="AspectFill"/>
+                        </Grid>
+                    </Border>
+                    <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                        <Label Text="{Binding ActivePoi.Title}"
+                               Style="{StaticResource SectionTitle}" FontSize="14"
+                               LineBreakMode="TailTruncation"/>
+                        <HorizontalStackLayout Spacing="4">
+                            <Label Text="&#xe310;" FontFamily="MaterialIcons" FontSize="11"
+                                   TextColor="{StaticResource Primary}" VerticalOptions="Center"/>
+                            <Label Text="Đang phát" Style="{StaticResource CaptionLabel}"/>
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
+                    <Border Grid.Column="2"
+                            BackgroundColor="{StaticResource Primary}"
+                            StrokeShape="RoundRectangle 18"
+                            StrokeThickness="0"
+                            WidthRequest="36" HeightRequest="36">
+                        <Label Text="{Binding MiniPlayerPlayIcon}" FontFamily="MaterialIcons"
+                               FontSize="20" TextColor="White"
+                               HorizontalOptions="Center" VerticalOptions="Center"/>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnMiniPlayClicked"/>
+                        </Border.GestureRecognizers>
+                    </Border>
+                    <Border Grid.Column="3"
+                            BackgroundColor="{StaticResource Gray100}"
+                            StrokeShape="RoundRectangle 18"
+                            StrokeThickness="0"
+                            WidthRequest="36" HeightRequest="36">
+                        <Label Text="&#xe5cd;" FontFamily="MaterialIcons" FontSize="20"
+                               HorizontalOptions="Center" VerticalOptions="Center"/>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnMiniPlayerCloseTapped"/>
+                        </Border.GestureRecognizers>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </ContentPage>

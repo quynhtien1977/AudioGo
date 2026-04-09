@@ -12,14 +12,16 @@ namespace Shared
         public int ActivationRadius { get; set; } = 20;
         public int Priority { get; set; } = 1;
         public string Status { get; set; } = string.Empty;
-        public string LogoUrl { get; set; } = string.Empty;
+        public bool IsActive { get; set; } = true;
+        public string? LogoUrl { get; set; }
+        public string? LocalLogoPath { get; set; }
 
         // ── PoiContent table (ngôn ngữ yêu cầu / master) ──────────
         public string LanguageCode { get; set; } = "vi";
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public string AudioUrl { get; set; } = string.Empty;
-        public string LocalAudioPath { get; set; } = string.Empty;
+        public string? AudioUrl { get; set; }
+        public string? LocalAudioPath { get; set; }
 
         // ── Relations ──────────────────────────────────────────────
         /// <summary>Danh sách tên category (ví dụ: ["Ẩm thực", "Hải sản"]).</summary>

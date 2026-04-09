@@ -29,9 +29,6 @@ public partial class MainPage : ContentPage
     private async void OnStartTourClicked(object? sender, EventArgs e)
         => await Shell.Current.GoToAsync("//TourList");
 
-    private async void OnCreateTourClicked(object? sender, EventArgs e)
-        => await Shell.Current.GoToAsync(nameof(CreateTourPage));
-
     private void OnMiniPlayerPauseTapped(object? sender, TappedEventArgs e)
         => _vm.ToggleAudio();
 

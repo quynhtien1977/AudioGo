@@ -18,11 +18,12 @@ public partial class SearchPage : ContentPage
         base.OnAppearing();
     }
 
-    private void OnSearchTextChanged(object? sender, TextChangedEventArgs e)
+    private void OnClearSearchTapped(object? sender, TappedEventArgs e)
     {
-        _vm.Query = e.NewTextValue ?? string.Empty;
+        _vm.Query = string.Empty;
     }
 
     private async void OnMapViewTapped(object? sender, TappedEventArgs e)
         => await Shell.Current.GoToAsync("//Map");
 }
+

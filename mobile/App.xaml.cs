@@ -1,4 +1,6 @@
-﻿namespace AudioGo_Mobile;
+namespace AudioGo_Mobile;
+
+using AudioGo_Mobile.Views;
 
 public partial class App : Application
 {
@@ -9,6 +11,6 @@ public partial class App : Application
 
 	protected override Window CreateWindow(IActivationState? activationState)
 	{
-		return new Window(new AppShell());
+		return new Window(new NavigationPage(new WelcomePage()));
 	}
 }

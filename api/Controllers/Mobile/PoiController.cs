@@ -91,6 +91,7 @@ namespace Server.Controllers.Mobile
                 ActivationRadius = p.ActivationRadius,
                 Priority         = p.Priority,
                 Status           = p.Status   ?? string.Empty,
+                IsActive         = p.IsActive,
                 LogoUrl          = p.LogoUrl  ?? string.Empty,
                 LanguageCode     = content.LanguageCode,
                 Title            = content.Title,

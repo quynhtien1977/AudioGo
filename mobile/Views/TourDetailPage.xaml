@@ -22,7 +22,7 @@
                         StrokeShape="RoundRectangle 20"
                         StrokeThickness="0"
                         WidthRequest="40" HeightRequest="40">
-                    <Label Text="←" FontSize="20"
+                    <Label Text="&#xe5c4;" FontFamily="MaterialIcons" FontSize="20"
                            HorizontalOptions="Center" VerticalOptions="Center"/>
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Tapped="OnBackTapped"/>
@@ -33,7 +33,7 @@
                         StrokeShape="RoundRectangle 20"
                         StrokeThickness="0"
                         WidthRequest="40" HeightRequest="40">
-                    <Label Text="⋯" FontSize="20"
+                    <Label Text="&#xe5d3;" FontFamily="MaterialIcons" FontSize="20"
                            HorizontalOptions="Center" VerticalOptions="Center"/>
                 </Border>
             </Grid>
@@ -73,7 +73,8 @@
                             Style="{StaticResource PrimaryButton}"
                             Clicked="OnContinueClicked"/>
                     <Button Grid.Column="1"
-                            Text="🗺️  Bản đồ"
+                            Text="Bản đồ"
+                            ImageSource="{FontImage FontFamily=MaterialIcons, Glyph=&#xe55b;, Color={StaticResource Primary}}"
                             Style="{StaticResource OutlineButton}"
                             Padding="14,12"
                             Clicked="OnMapClicked"/>
@@ -179,7 +180,7 @@
                         StrokeShape="RoundRectangle 10"
                         StrokeThickness="0"
                         WidthRequest="44" HeightRequest="44">
-                    <Label Text="🎧" FontSize="22"
+                    <Label Text="&#xe310;" FontFamily="MaterialIcons" FontSize="24" TextColor="{StaticResource Primary}"
                            HorizontalOptions="Center" VerticalOptions="Center"/>
                 </Border>
                 <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
@@ -205,7 +206,7 @@
                         StrokeShape="RoundRectangle 18"
                         StrokeThickness="0"
                         WidthRequest="36" HeightRequest="36">
-                    <Label Text="⏭" FontSize="16" TextColor="White"
+                    <Label Text="&#xe044;" FontFamily="MaterialIcons" FontSize="20" TextColor="White"
                            HorizontalOptions="Center" VerticalOptions="Center"/>
                     <Border.GestureRecognizers>
                         <TapGestureRecognizer Tapped="OnNextStopTapped"/>

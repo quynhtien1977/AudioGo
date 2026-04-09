@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-	<application android:allowBackup="true" android:icon="@mipmap/appicon" android:supportsRtl="true"
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
+    <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="36" />
+	<application android:allowBackup="true" android:icon="@mipmap/logoapp" android:roundIcon="@mipmap/logoapp_round" android:supportsRtl="true"
 	             android:networkSecurityConfig="@xml/network_security_config">
 		<!-- Google Maps API Key — thay YOUR_GOOGLE_MAPS_API_KEY bằng key thật -->
 		<meta-data android:name="com.google.android.geo.API_KEY" android:value="@string/google_maps_api_key" />
@@ -11,6 +12,10 @@
 	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 	<!-- Geofencing chạy nền — yêu cầu Android 10+ (API 29+) -->
 	<uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+	<!-- Cần thiết để khởi động service foreground và theo dõi vị trí -->
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+	<uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+	<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 	<!-- QR Code Scanner -->
 	<uses-permission android:name="android.permission.CAMERA" />
 	<uses-feature android:name="android.hardware.camera" android:required="false" />

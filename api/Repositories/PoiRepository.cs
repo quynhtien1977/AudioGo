@@ -12,7 +12,7 @@ namespace Server.Repositories
 
         public Task<List<Poi>> GetAllAsync() =>
             _db.Pois.AsNoTracking()
-                .Where(p => p.Status == "active" || p.Status == "published")
+                .Where(p => p.IsActive)
                 .Include(p => p.Contents)
                 .Include(p => p.Gallery)
                 .Include(p => p.CategoryPois)
@@ -21,13 +21,13 @@ namespace Server.Repositories
                 .ToListAsync();
 
         /// <summary>
-        /// Tìm kiếm POI theo từ khóa (title/description) và/hoặc tên category.
+        /// Tìm kiếm POI theo từ khóa (title) và/hoặc tên category.
         /// Case-insensitive, chỉ trả về POI active/published.
         /// </summary>
         public async Task<List<Poi>> SearchAsync(string? query, string? category)
         {
             var q = _db.Pois.AsNoTracking()
-                .Where(p => p.Status == "active" || p.Status == "published")
+                .Where(p => p.IsActive)
                 .Include(p => p.Contents)
                 .Include(p => p.Gallery)
                 .Include(p => p.CategoryPois)
@@ -42,13 +42,12 @@ namespace Server.Repositories
 
             var pois = await q.OrderBy(p => p.Priority).ToListAsync();
 
-            // Filter theo title/description trong contents (sau khi load — EF không support full-text trên nvarchar(max) tốt)
+            // Filter theo title trong contents (sau khi load — EF không support full-text trên nvarchar(max) tốt)
             if (!string.IsNullOrWhiteSpace(query))
             {
                 var lower = query.ToLower();
                 pois = pois.Where(p => p.Contents.Any(c =>
-                    c.Title.ToLower().Contains(lower) ||
-                    c.Description.ToLower().Contains(lower)
+                    c.Title.ToLower().Contains(lower)
                 )).ToList();
             }
 
@@ -77,7 +76,7 @@ namespace Server.Repositories
             double lonDelta = radiusMeters / (111_000 * Math.Cos(latRad));
 
             var candidates = await _db.Pois.AsNoTracking()
-                .Where(p => (p.Status == "active" || p.Status == "published")
+                .Where(p => p.IsActive
                          && p.Latitude  >= lat - latDelta && p.Latitude  <= lat + latDelta
                          && p.Longitude >= lon - lonDelta && p.Longitude <= lon + lonDelta)
                 .Include(p => p.Contents)
