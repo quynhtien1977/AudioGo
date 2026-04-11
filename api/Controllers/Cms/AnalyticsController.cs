@@ -54,5 +54,23 @@ namespace Server.Controllers.Cms
             var points = await _location.GetHeatmapAsync();
             return Ok(points.Select(p => new HeatmapPointDto(p.Lat, p.Lon, p.Count)));
         }
+
+        /// <summary>Thống kê tổng lượt nghe + biểu đồ theo ngày</summary>
+        [HttpGet("listen-stats")]
+        public async Task<ActionResult<DashboardStatsDto>> GetListenStats(
+            [FromQuery] int? days)
+        {
+            var totalListens = await _history.GetTotalListensAsync();
+
+            // cho chart
+            // var dailyListens = await _history.GetDailyListensAsync(days);
+
+            return Ok(new DashboardStatsDto
+            {
+                TotalListens = totalListens,
+                // cho chart
+                // DailyListens = dailyListens
+            });
+        }
     }
 }

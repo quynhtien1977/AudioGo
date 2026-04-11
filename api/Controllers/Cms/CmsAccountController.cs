@@ -50,7 +50,7 @@ namespace Server.Controllers.Cms
         {
             // 🔥 check username trùng
             if (await _accounts.ExistsByUsernameAsync(req.Username))
-                return BadRequest("Username already exists");
+                return BadRequest("Username đã tồn tại");
 
             var account = new Account
             {

@@ -11,6 +11,7 @@ const LoginPage = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("")
   const [rememberMe, setRememberMe] = useState(false)
+  const [errorMsg, setErrorMsg] = useState("");
 
   const { login, loading, error } = useAuth()
   const navigate = useNavigate()
@@ -20,25 +21,25 @@ const LoginPage = () => {
     e.preventDefault();
 
     try {
-      const res = await login(username, password, rememberMe);
+      setErrorMsg("");
 
-      console.log("LOGIN RESULT:", res); // 🔥 debug
+      const res = await login(username, password, rememberMe);
 
       const role = res?.user?.role;
 
       if (!role) {
-        console.error("Không có role trong response");
+        setErrorMsg("Không có quyền truy cập");
         return;
       }
 
       if (["Admin", "Owner"].includes(role)) {
-        navigate("/pois");
+        navigate("/dashboard");
       } else {
         navigate("/");
       }
 
     } catch (err) {
-      console.log(err);
+      setErrorMsg(err); 
     }
   };
   
@@ -73,9 +74,7 @@ const LoginPage = () => {
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#EE4B8E] transition-colors w-5 h-5" />
                 <input 
                   type="text" 
-                  // value={email}
                    value={username}
-                  // onChange={(e) => setEmail(e.target.value)}
                    onChange={(e) => setUsername(e.target.value)}
                   placeholder="Tên đăng nhập của bạn  " 
                   className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-[#EE4B8E] focus:ring-4 focus:ring-pink-100 outline-none transition-all text-gray-900"
@@ -115,7 +114,9 @@ const LoginPage = () => {
             </button>
 
             {error && (
-              <p className="text-red-500 text-sm mt-2">{error}</p>
+              <p className="text-red-500 text-sm mt-2">
+                {errorMsg}
+              </p>
             )}
           </form>
 

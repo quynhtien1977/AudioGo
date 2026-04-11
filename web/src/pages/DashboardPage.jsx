@@ -5,76 +5,136 @@ import StatsCard from "@/components/StatsCard"
 import TrendingChart from "@/components/TrendingChart"
 import TopPOIModal from "@/components/TopPOIModal"
 
-import { getTopPOIs } from "@/api/analyticsApi"
+import { getTopPOIs, getListenStats } from "@/api/analyticsApi"
 import { getAllPOIs } from "@/api/poiApi"
 
 export default function DashboardPage() {
   const [stats, setStats] = useState(null)
   const [pois, setPois] = useState([])
   const [showModal, setShowModal] = useState(false)
+  const [chartData, setChartData] = useState([])
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // 🔥 gọi song song
-        const [topPoisRes, allPoisRes] = await Promise.all([
-          getTopPOIs(10),
-          getAllPOIs()
-        ])
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     try {
+  //       const [topPoisRes, allPoisRes] = await Promise.all([
+  //         getTopPOIs(10),
+  //         getAllPOIs()
+  //       ])
 
-        // Validate topPoisRes is an array
-        if (!Array.isArray(topPoisRes)) {
-          throw new Error("getTopPOIs did not return an array")
-        }
+  //       // Validate topPoisRes is an array
+  //       if (!Array.isArray(topPoisRes)) {
+  //         throw new Error("getTopPOIs did not return an array")
+  //       }
 
-        // 🔥 map poiId -> full info
-        const poiMap = {}
-        allPoisRes.forEach(p => {
-          poiMap[p.id] = p
-        })
+  //       //  map poiId -> full info
+  //       const poiMap = {}
+  //       allPoisRes.forEach(p => {
+  //         poiMap[p.id] = p
+  //       })
 
-        // 🔥 merge data
-        const merged = topPoisRes.map((tp, index) => {
-          const poi = poiMap[tp.poiId]
+  //       // merge data
+  //       const merged = topPoisRes.map((tp, index) => {
+  //         const poi = poiMap[tp.poiId]
 
-          return {
-            rank: index + 1,
-            name: tp.title || "Unknown",
-            listens: tp.count || 0,
-            lat: poi?.latitude ?? "Unknown",
-            lng: poi?.longitude ?? "Unknown",
-            category: poi?.category ?? "Unknown"
-          }
-        })
+  //         return {
+  //           rank: index + 1,
+  //           name: tp.title || "Unknown",
+  //           listens: tp.count || 0,
+  //           lat: poi?.latitude ?? "Unknown",
+  //           lng: poi?.longitude ?? "Unknown",
+  //           category: poi?.category ?? "Unknown"
+  //         }
+  //       })
 
-        //  stats
-        const totalPOIs = allPoisRes.length
+  //       //  stats
+  //       const totalPOIs = allPoisRes.length
 
-        const totalListens = topPoisRes.reduce(
-          (sum, p) => sum + p.count,
-          0
-        )
+  //       const totalListens = topPoisRes.reduce(
+  //         (sum, p) => sum + p.count,
+  //         0
+  //       )
 
-        setStats({
-          pois: {
-            total: totalPOIs,
-            percent: "+0%" // chưa có growth thì để tạm
-          },
-          audio: {
-            total: totalListens,
-            percent: "+0%"
-          }
-        })
+  //       setStats({
+  //         pois: {
+  //           total: totalPOIs,
+  //         },
+  //         audio: {
+  //           total: totalListens,
+  //         }
+  //       })
 
-        setPois(merged)
+  //       setPois(merged)
 
-      } catch (err) {
-        console.error("Dashboard error:", err)
+  //     } catch (err) {
+  //       console.error("Dashboard error:", err)
+  //     }
+  //   }
+
+  //   fetchData()
+  // }, [])
+
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const [topPoisRes, allPoisRes, statsRes] = await Promise.all([
+        getTopPOIs(10),
+        getAllPOIs(),
+        getListenStats(7) // 🔥 thêm dòng này
+      ])
+
+      if (!Array.isArray(topPoisRes)) {
+        throw new Error("getTopPOIs did not return an array")
       }
-    }
 
-    fetchData()
-  }, [])
+      // map poiId -> full info
+      const poiMap = {}
+      allPoisRes.forEach(p => {
+        poiMap[p.id] = p
+      })
+
+      // merge top POIs
+      const merged = topPoisRes.map((tp, index) => {
+        const poi = poiMap[tp.poiId]
+
+        return {
+          rank: index + 1,
+          name: tp.title || "Unknown",
+          listens: tp.count || 0,
+          lat: poi?.latitude ?? "Unknown",
+          lng: poi?.longitude ?? "Unknown",
+          category: poi?.category ?? "Unknown"
+        }
+      })
+
+      console.log("statsRes:", statsRes);
+
+      // ✅ stats chuẩn từ backend
+      setStats({
+        pois: {
+          total: allPoisRes.length,
+        },
+        audio: {
+          total: statsRes.totalListens, // 🔥 FIX CHÍNH
+        }
+      })
+
+      // ✅ chart data
+      // const chart = statsRes.dailyListens.map(item => ({
+      //   date: new Date(item.date).toLocaleDateString(),
+      //   value: item.count
+      // }))
+
+      // setChartData(chart)
+      // setPois(merged)
+
+    } catch (err) {
+      console.error("Dashboard error:", err)
+    }
+  }
+
+  fetchData()
+}, [])
 
   if (!stats) {
     return <div className="p-6">Loading dashboard...</div>
@@ -111,19 +171,17 @@ export default function DashboardPage() {
         <StatsCard
           title="TỔNG SỐ LƯỢNG POIs"
           value={stats.pois.total}
-          percent={stats.pois.percent}
           icon={<MapPin size={20} />}
         />
         <StatsCard
           title="TỔNG SỐ LẦN PHÁT AUDIO"
           value={stats.audio.total}
-          percent={stats.audio.percent}
           icon={<Headphones size={20} />}
         />
       </div>
 
       {/* Chart (tạm để rỗng hoặc mock) */}
-      <TrendingChart data={[]} />
+      <TrendingChart data={chartData} />
 
       {/* Table */}
       <div className="bg-white rounded-2xl border p-6">

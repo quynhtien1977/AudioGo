@@ -1,4 +1,4 @@
-export default function StatsCard({ title, value, percent, icon }) {
+export default function StatsCard({ title, value, icon }) {
   return (
     <div className="bg-white p-5 rounded-2xl border flex justify-between items-center">
       
