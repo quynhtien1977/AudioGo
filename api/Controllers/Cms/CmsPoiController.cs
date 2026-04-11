@@ -45,7 +45,6 @@ namespace Server.Controllers.Cms
                 Longitude = p.Longitude,
                 ActivationRadius = p.ActivationRadius,
                 Priority = p.Priority,
-                Status = p.Status,
                 LogoUrl = p.LogoUrl,
                 IsActive = p.IsActive,
             }).ToList();
@@ -66,7 +65,7 @@ namespace Server.Controllers.Cms
 
             return Ok(new PoiDetailDto(
                 poi.PoiId, poi.Latitude, poi.Longitude,
-                poi.ActivationRadius, poi.Priority, poi.Status, poi.LogoUrl,
+                poi.ActivationRadius, poi.Priority, poi.IsActive ? "active" : "inactive", poi.LogoUrl,
                 poi.CreatedAt, poi.UpdatedAt,
                 poi.Contents.Select(c => new PoiContentDto(
                     c.ContentId, c.PoiId, c.LanguageCode,
@@ -90,7 +89,6 @@ namespace Server.Controllers.Cms
                 Longitude        = req.Longitude,
                 ActivationRadius = req.ActivationRadius,
                 Priority         = req.Priority,
-                Status           = req.Status,
                 LogoUrl          = req.LogoUrl
             };
             var created = await _pois.CreateAsync(poi);
@@ -107,7 +105,6 @@ namespace Server.Controllers.Cms
             if (req.Longitude.HasValue)        existing.Longitude        = req.Longitude.Value;
             if (req.ActivationRadius.HasValue) existing.ActivationRadius = req.ActivationRadius.Value;
             if (req.Priority.HasValue)         existing.Priority         = req.Priority.Value;
-            if (req.Status is not null)        existing.Status           = req.Status;
             if (req.LogoUrl is not null)       existing.LogoUrl          = req.LogoUrl;
 
             var updated = await _pois.UpdateAsync(existing);

@@ -6,7 +6,7 @@ namespace Shared.DTOs
         double Longitude,
         int ActivationRadius,
         int Priority,
-        string Status,
+        string Status, // computed: "active" | "inactive" — map từ IsActive
         string LogoUrl,
         DateTime CreatedAt,
         DateTime? UpdatedAt,
@@ -30,8 +30,7 @@ namespace Shared.DTOs
         double Longitude,
         int ActivationRadius,
         int Priority,
-        string Status,
-        string LogoUrl
+        string? LogoUrl
     );
 
     public record PoiUpdateRequest(
@@ -39,7 +38,6 @@ namespace Shared.DTOs
         double? Longitude,
         int? ActivationRadius,
         int? Priority,
-        string? Status,
         string? LogoUrl
     );
 

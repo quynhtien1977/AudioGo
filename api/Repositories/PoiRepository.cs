@@ -106,11 +106,17 @@ namespace Server.Repositories
                     .ThenInclude(cp => cp.Category)
                 .AsQueryable();
 
+            // status param: "active" | "inactive" => map sang IsActive
+            // Không truyền status → trả hết (CMS cần thấy toàn bộ)
             if (!string.IsNullOrEmpty(status))
-                query = query.Where(p => p.Status == status);
+            {
+                bool active = status.Equals("active", StringComparison.OrdinalIgnoreCase);
+                query = query.Where(p => p.IsActive == active);
+            }
 
             return await query.OrderByDescending(p => p.CreatedAt).ToListAsync();
         }
+
 
         public async Task<Poi> CreateAsync(Poi poi)
         {
