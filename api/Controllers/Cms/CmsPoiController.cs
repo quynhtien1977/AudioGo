@@ -25,18 +25,12 @@ namespace Server.Controllers.Cms
             _db   = db;
         }
 
-        /// <summary>Danh sách tất cả POI (CMS - không filter status published, có thể filter theo status param).</summary>
-        // [HttpGet]
-        // public async Task<ActionResult<List<Poi>>> GetAll([FromQuery] string? status = null)
-        // {
-        //     var pois = await _pois.GetAllForCmsAsync(status);
-        //     return Ok(pois);
-        // }
+        /// <summary>Danh sách tất cả POI (CMS - không filter status published, có thể filter theo isActive).</summary>
 
         [HttpGet]
-        public async Task<ActionResult<List<PoiListDto>>> GetAll([FromQuery] string? status = null)
+        public async Task<ActionResult<List<PoiListDto>>> GetAll([FromQuery] bool? isActive = null)
         {
-            var pois = await _pois.GetAllForCmsAsync(status);
+            var pois = await _pois.GetAllForCmsAsync(isActive);
 
             var result = pois.Select(p => new PoiListDto
             {
@@ -65,7 +59,7 @@ namespace Server.Controllers.Cms
 
             return Ok(new PoiDetailDto(
                 poi.PoiId, poi.Latitude, poi.Longitude,
-                poi.ActivationRadius, poi.Priority, poi.IsActive ? "active" : "inactive", poi.LogoUrl,
+                poi.ActivationRadius, poi.Priority, poi.IsActive, poi.LogoUrl,
                 poi.CreatedAt, poi.UpdatedAt,
                 poi.Contents.Select(c => new PoiContentDto(
                     c.ContentId, c.PoiId, c.LanguageCode,

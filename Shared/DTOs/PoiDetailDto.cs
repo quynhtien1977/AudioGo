@@ -6,7 +6,7 @@ namespace Shared.DTOs
         double Longitude,
         int ActivationRadius,
         int Priority,
-        string Status, // computed: "active" | "inactive" — map từ IsActive
+        bool IsActive,
         string LogoUrl,
         DateTime CreatedAt,
         DateTime? UpdatedAt,

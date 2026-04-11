@@ -90,7 +90,6 @@ namespace Server.Controllers.Mobile
                 Longitude        = p.Longitude,
                 ActivationRadius = p.ActivationRadius,
                 Priority         = p.Priority,
-                Status           = p.IsActive ? "active" : "inactive",
                 IsActive         = p.IsActive,
                 LogoUrl          = p.LogoUrl  ?? string.Empty,
                 LanguageCode     = content.LanguageCode,
