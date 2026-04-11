@@ -14,65 +14,6 @@ export default function DashboardPage() {
   const [showModal, setShowModal] = useState(false)
   const [chartData, setChartData] = useState([])
 
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       const [topPoisRes, allPoisRes] = await Promise.all([
-  //         getTopPOIs(10),
-  //         getAllPOIs()
-  //       ])
-
-  //       // Validate topPoisRes is an array
-  //       if (!Array.isArray(topPoisRes)) {
-  //         throw new Error("getTopPOIs did not return an array")
-  //       }
-
-  //       //  map poiId -> full info
-  //       const poiMap = {}
-  //       allPoisRes.forEach(p => {
-  //         poiMap[p.id] = p
-  //       })
-
-  //       // merge data
-  //       const merged = topPoisRes.map((tp, index) => {
-  //         const poi = poiMap[tp.poiId]
-
-  //         return {
-  //           rank: index + 1,
-  //           name: tp.title || "Unknown",
-  //           listens: tp.count || 0,
-  //           lat: poi?.latitude ?? "Unknown",
-  //           lng: poi?.longitude ?? "Unknown",
-  //           category: poi?.category ?? "Unknown"
-  //         }
-  //       })
-
-  //       //  stats
-  //       const totalPOIs = allPoisRes.length
-
-  //       const totalListens = topPoisRes.reduce(
-  //         (sum, p) => sum + p.count,
-  //         0
-  //       )
-
-  //       setStats({
-  //         pois: {
-  //           total: totalPOIs,
-  //         },
-  //         audio: {
-  //           total: totalListens,
-  //         }
-  //       })
-
-  //       setPois(merged)
-
-  //     } catch (err) {
-  //       console.error("Dashboard error:", err)
-  //     }
-  //   }
-
-  //   fetchData()
-  // }, [])
 
 useEffect(() => {
   const fetchData = async () => {
@@ -80,7 +21,7 @@ useEffect(() => {
       const [topPoisRes, allPoisRes, statsRes] = await Promise.all([
         getTopPOIs(10),
         getAllPOIs(),
-        getListenStats(7) // 🔥 thêm dòng này
+        getListenStats()      //đợi có data fix lại lấy 5 ngày
       ])
 
       if (!Array.isArray(topPoisRes)) {
@@ -90,7 +31,7 @@ useEffect(() => {
       // map poiId -> full info
       const poiMap = {}
       allPoisRes.forEach(p => {
-        poiMap[p.id] = p
+        poiMap[p.poiId] = p   // ✅ FIX CHÍNH
       })
 
       // merge top POIs
@@ -100,14 +41,13 @@ useEffect(() => {
         return {
           rank: index + 1,
           name: tp.title || "Unknown",
-          listens: tp.count || 0,
-          lat: poi?.latitude ?? "Unknown",
-          lng: poi?.longitude ?? "Unknown",
-          category: poi?.category ?? "Unknown"
+          listens: tp.listenCount || 0,
+          lat: poi?.latitude ?? "N/A",   // ✅ FIX
+          lng: poi?.longitude ?? "N/A",  // ✅ FIX
+          category: tp.category || "Unknown"
         }
       })
 
-      console.log("statsRes:", statsRes);
 
       // ✅ stats chuẩn từ backend
       setStats({
@@ -119,14 +59,9 @@ useEffect(() => {
         }
       })
 
-      // ✅ chart data
-      // const chart = statsRes.dailyListens.map(item => ({
-      //   date: new Date(item.date).toLocaleDateString(),
-      //   value: item.count
-      // }))
-
       // setChartData(chart)
-      // setPois(merged)
+      setChartData(statsRes.dailyListens || [])
+      setPois(merged)
 
     } catch (err) {
       console.error("Dashboard error:", err)
@@ -141,17 +76,32 @@ useEffect(() => {
   }
 
   const getCategoryColor = (category) => {
-    switch (category) {
-      case "Restaurant":
-        return "bg-pink-100 text-pink-500"
-      case "Cafe":
-        return "bg-orange-100 text-orange-500"
-      case "Museum":
-        return "bg-blue-100 text-blue-500"
-      default:
-        return "bg-gray-100 text-gray-500"
-    }
+  switch (category) {
+    case "Di tích lịch sử":
+      return "bg-blue-100 text-blue-500"
+
+    case "Ẩm thực":
+      return "bg-pink-100 text-pink-500"
+
+    case "Hải sản & Ốc":
+      return "bg-cyan-100 text-cyan-500"
+
+    case "Cà phê & Giải khát":
+      return "bg-orange-100 text-orange-500"
+
+    case "Chùa & Tôn giáo":
+      return "bg-purple-100 text-purple-500"
+
+    case "Giải trí":
+      return "bg-green-100 text-green-500"
+
+    case "Mua sắm":
+      return "bg-yellow-100 text-yellow-600"
+
+    default:
+      return "bg-gray-100 text-gray-500"
   }
+}
 
   return (
     <div className="p-6 space-y-6">
@@ -196,13 +146,20 @@ useEffect(() => {
           </span>
         </div>
 
-        {showModal && (
+        {/* {showModal && (
           <TopPOIModal onClose={() => setShowModal(false)} />
+        )} */}
+        {showModal && (
+          <TopPOIModal 
+            onClose={() => setShowModal(false)} 
+            pois={pois}   
+          />
         )}
 
         <table className="w-full text-sm">
           <thead className="text-gray-400 text-left">
             <tr>
+              <th>XẾP HẠNG</th>
               <th>TÊN POI</th>
               <th>VỊ TRÍ</th>
               <th>THỂ LOẠI</th>
@@ -213,6 +170,9 @@ useEffect(() => {
           <tbody className="text-gray-700">
             {pois.slice(0, 3).map((poi) => (
               <tr key={poi.rank} className="border-t">
+                <td className="py-3 font-semibold">
+                  {String(poi.rank).padStart(2, "0")}
+                </td> 
                 <td className="py-3">{poi.name}</td>
 
                 <td>

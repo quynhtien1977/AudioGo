@@ -1,4 +1,5 @@
 using Server.Models;
+using Shared.DTOs;
 
 namespace Server.Repositories.Interfaces
 {
@@ -11,6 +12,6 @@ namespace Server.Repositories.Interfaces
         Task<int> GetTotalListensAsync();
 
         // cho chart
-        // Task<List<DailyListenDto>> GetDailyListensAsync(int? days = null);
+        Task<List<DailyListenDto>> GetDailyListensAsync(int? days = null);
     }
 }

@@ -4,7 +4,8 @@ namespace Shared.DTOs
     public record TopPoiDto(
         string PoiId,
         string Title,
-        int ListenCount
+        int ListenCount,
+        string Category
     );
 
     public record HeatmapPointDto(
