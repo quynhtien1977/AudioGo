@@ -64,7 +64,7 @@ namespace Server.Repositories
 
         /// <summary>
         /// Haversine filter: lấy POI trong bán kính (metres) từ toạ độ cho trước.
-        /// Chỉ trả về POI có status = "published".
+        /// Chỉ trả về POI có IsActive = true.
         /// </summary>
         public async Task<List<Poi>> GetNearbyAsync(double lat, double lon, double radiusMeters)
         {
@@ -97,7 +97,7 @@ namespace Server.Repositories
             }).ToList();
         }
 
-        public async Task<List<Poi>> GetAllForCmsAsync(string? status = null)
+        public async Task<List<Poi>> GetAllForCmsAsync(bool? isActive = null)
         {
             var query = _db.Pois.AsNoTracking()
                 .Include(p => p.Contents)
@@ -106,11 +106,13 @@ namespace Server.Repositories
                     .ThenInclude(cp => cp.Category)
                 .AsQueryable();
 
-            if (!string.IsNullOrEmpty(status))
-                query = query.Where(p => p.Status == status);
+            // isActive null → trả hết (CMS cần thấy toàn bộ)
+            if (isActive.HasValue)
+                query = query.Where(p => p.IsActive == isActive.Value);
 
             return await query.OrderByDescending(p => p.CreatedAt).ToListAsync();
         }
+
 
         public async Task<Poi> CreateAsync(Poi poi)
         {

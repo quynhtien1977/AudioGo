@@ -18,6 +18,8 @@ namespace Server.Data
         public DbSet<ListenHistory> ListenHistories => Set<ListenHistory>();
         public DbSet<LocationLog>   LocationLogs    => Set<LocationLog>();
         public DbSet<AppAccessCode> AppAccessCodes  => Set<AppAccessCode>();
+        public DbSet<PoiRequest>    PoiRequests     => Set<PoiRequest>();
+        
 
         protected override void OnModelCreating(ModelBuilder m)
         {
@@ -35,6 +37,7 @@ namespace Server.Data
             m.Entity<ListenHistory>().ToTable("ListenHistory");
             m.Entity<LocationLog>  ().ToTable("LocationLog");
             m.Entity<AppAccessCode>().ToTable("AppAccessCode");
+            m.Entity<PoiRequest>   ().ToTable("PoiRequest", t => t.HasTrigger("TR_PoiRequest_UpdateTimestamp"));
 
             // ── 2. Primary Keys ─────────────────────────────────────────
             m.Entity<PoiContent>   ().HasKey(e => e.ContentId);
@@ -114,6 +117,34 @@ namespace Server.Data
             m.Entity<AppAccessCode>()
                 .HasIndex(e => e.Code)
                 .IsUnique();
+
+            // ── PoiRequest ───────────────────────────────────────────────────────
+            m.Entity<PoiRequest>().HasKey(e => e.RequestId);
+
+            // PoiRequest → Account (chủ quán gửi yêu cầu)
+            m.Entity<PoiRequest>()
+                .HasOne(r => r.Account)
+                .WithMany()
+                .HasForeignKey(r => r.AccountId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // PoiRequest → Poi (nullable: NULL khi ActionType = CREATE)
+            m.Entity<PoiRequest>()
+                .HasOne(r => r.Poi)
+                .WithMany()
+                .HasForeignKey(r => r.PoiId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Index để query nhanh theo trạng thái
+            m.Entity<PoiRequest>()
+                .HasIndex(r => r.ApprovalStatus)
+                .HasDatabaseName("IX_PoiRequest_ApprovalStatus");
+
+            // Index theo POI để kiểm tra POI có đang có request PENDING không
+            m.Entity<PoiRequest>()
+                .HasIndex(r => new { r.PoiId, r.ApprovalStatus })
+                .HasDatabaseName("IX_PoiRequest_PoiId_ApprovalStatus");
         }
     }
 }

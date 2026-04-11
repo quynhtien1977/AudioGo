@@ -234,7 +234,6 @@ namespace AudioGo.Services
             Longitude        = dto.Longitude,
             ActivationRadius = dto.ActivationRadius,
             Priority         = dto.Priority,
-            Status           = dto.Status ?? string.Empty,
             IsActive         = dto.IsActive,
             LogoUrl          = dto.LogoUrl,         // nullable OK
             LocalLogoPath    = dto.LocalLogoPath,
@@ -260,7 +259,6 @@ namespace AudioGo.Services
             Longitude       = e.Longitude,
             ActivationRadius= e.ActivationRadius,
             Priority        = e.Priority,
-            Status          = e.Status ?? string.Empty,
             IsActive        = e.IsActive,
             LogoUrl         = e.LogoUrl,           // nullable OK
             LocalLogoPath   = e.LocalLogoPath,

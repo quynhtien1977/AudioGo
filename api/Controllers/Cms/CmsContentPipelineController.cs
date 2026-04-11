@@ -150,7 +150,7 @@ namespace Server.Controllers.Cms
 
             var pois = await _db.Pois
                 .Include(p => p.Contents)
-                .Where(p => p.Status == "active")
+                .Where(p => p.IsActive)  // IsActive = true thay thế Status == "active"
                 .ToListAsync();
 
             if (!pois.Any()) return Ok(new { message = "Không có active POI nào." });
@@ -225,7 +225,7 @@ namespace Server.Controllers.Cms
             var summary = contents.Select(c => new
             {
                 poiId = c.PoiId,
-                poiStatus = c.Poi?.Status,
+                poiStatus = c.Poi != null ? (c.Poi.IsActive ? "active" : "inactive") : null,
                 contentId = c.ContentId,
                 languageCode = c.LanguageCode,
                 title = c.Title,

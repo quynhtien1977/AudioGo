@@ -25,18 +25,12 @@ namespace Server.Controllers.Cms
             _db   = db;
         }
 
-        /// <summary>Danh sách tất cả POI (CMS - không filter status published, có thể filter theo status param).</summary>
-        // [HttpGet]
-        // public async Task<ActionResult<List<Poi>>> GetAll([FromQuery] string? status = null)
-        // {
-        //     var pois = await _pois.GetAllForCmsAsync(status);
-        //     return Ok(pois);
-        // }
+        /// <summary>Danh sách tất cả POI (CMS - không filter status published, có thể filter theo isActive).</summary>
 
         [HttpGet]
-        public async Task<ActionResult<List<PoiListDto>>> GetAll([FromQuery] string? status = null)
+        public async Task<ActionResult<List<PoiListDto>>> GetAll([FromQuery] bool? isActive = null)
         {
-            var pois = await _pois.GetAllForCmsAsync(status);
+            var pois = await _pois.GetAllForCmsAsync(isActive);
 
             var result = pois.Select(p => new PoiListDto
             {
@@ -45,7 +39,6 @@ namespace Server.Controllers.Cms
                 Longitude = p.Longitude,
                 ActivationRadius = p.ActivationRadius,
                 Priority = p.Priority,
-                Status = p.Status,
                 LogoUrl = p.LogoUrl,
                 IsActive = p.IsActive,
             }).ToList();
@@ -66,7 +59,7 @@ namespace Server.Controllers.Cms
 
             return Ok(new PoiDetailDto(
                 poi.PoiId, poi.Latitude, poi.Longitude,
-                poi.ActivationRadius, poi.Priority, poi.Status, poi.LogoUrl,
+                poi.ActivationRadius, poi.Priority, poi.IsActive, poi.LogoUrl,
                 poi.CreatedAt, poi.UpdatedAt,
                 poi.Contents.Select(c => new PoiContentDto(
                     c.ContentId, c.PoiId, c.LanguageCode,
@@ -90,7 +83,6 @@ namespace Server.Controllers.Cms
                 Longitude        = req.Longitude,
                 ActivationRadius = req.ActivationRadius,
                 Priority         = req.Priority,
-                Status           = req.Status,
                 LogoUrl          = req.LogoUrl
             };
             var created = await _pois.CreateAsync(poi);
@@ -107,7 +99,6 @@ namespace Server.Controllers.Cms
             if (req.Longitude.HasValue)        existing.Longitude        = req.Longitude.Value;
             if (req.ActivationRadius.HasValue) existing.ActivationRadius = req.ActivationRadius.Value;
             if (req.Priority.HasValue)         existing.Priority         = req.Priority.Value;
-            if (req.Status is not null)        existing.Status           = req.Status;
             if (req.LogoUrl is not null)       existing.LogoUrl          = req.LogoUrl;
 
             var updated = await _pois.UpdateAsync(existing);

@@ -19,9 +19,6 @@ namespace AudioGo.Models
         public int ActivationRadius { get; set; } = 20;
         public int Priority { get; set; } = 1;
 
-        [MaxLength(50)]
-        public string Status { get; set; } = string.Empty;
-
         public bool IsActive { get; set; } = true;
 
         public string? LogoUrl { get; set; }
