@@ -8,12 +8,16 @@ import {
 
 import CreateCategoryModal from "@/components/CreateCategoryModal"
 import EditCategoryModal from "@/components/EditCategoryModal"
+import ConfirmModal from "@/components/ConfirmModal"
 
 export default function CategoryPage() {
   const [categories, setCategories] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [editingCategory, setEditingCategory] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null)
 
   const pageSize = 5
 
@@ -34,23 +38,27 @@ export default function CategoryPage() {
     fetchData()
   }, [])
 
-  // 🔥 DELETE
-  const handleDelete = async (id) => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete this category?"
-      )
-    ) {
-      await deleteCategoryApi(id)
+  const openDeleteConfirm = (id) => {
+    setSelectedCategoryId(id)
+    setShowDeleteModal(true)
+  }
 
-      setCategories((prev) =>
-        prev.filter((c) => c.categoryId !== id)
+  const handleConfirmDelete = async () => {
+    try {
+      await deleteCategoryApi(selectedCategoryId)
+
+      setCategories(prev =>
+        prev.filter(c => c.categoryId !== selectedCategoryId)
       )
 
       if (paginatedData.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1)
       }
+    } catch (err) {
+      console.error(err)
     }
+
+    setShowDeleteModal(false)
   }
 
   const totalPages = Math.ceil(categories.length / pageSize)
@@ -125,7 +133,7 @@ export default function CategoryPage() {
 
                 <button
                   onClick={() =>
-                    handleDelete(c.categoryId)
+                    openDeleteConfirm(c.categoryId)
                   }
                   className="p-2 text-gray-400 hover:text-red-500 transition"
                 >
@@ -202,6 +210,18 @@ export default function CategoryPage() {
           }}
         />
       )}
+
+      {showDeleteModal && (
+      <ConfirmModal
+        open={showDeleteModal}
+        title="Xác nhận xóa danh mục?"
+        message="Bạn có chắc chắn muốn xóa danh mục này không? Hành động này không thể hoàn tác."
+        confirmText="Xóa"
+        cancelText="Hủy"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setShowDeleteModal(false)}
+      />
+    )}
     </div>
   )
 }

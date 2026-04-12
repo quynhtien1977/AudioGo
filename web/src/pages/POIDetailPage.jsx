@@ -29,26 +29,25 @@ const POIDetailPage = () => {
   const [showConfirm, setShowConfirm] = useState(false)
 
   // MOCK fallback nếu BE chưa có 
-  const buildPOI = (p) => ({
-    id: p.poiId,
-    name: p.contents?.[0]?.title || "Unknown POI",
-    category: p.category || "Restaurant",
-    lat: p.latitude ?? 10.7769,
-    lng: p.longitude ?? 106.7009,
-    priority: Number(p.priority) || 1,
-    status: p.status || "PENDING",
+  // const buildPOI = (p) => ({
+  //   id: p.poiId,
+  //   name: p.contents?.[0]?.title || "Unknown POI",
+  //   category: p.category || "Restaurant",
+  //   lat: p.latitude ?? 10.7769,
+  //   lng: p.longitude ?? 106.7009,
+  //   priority: Number(p.priority) || 1,
 
-    // 👇 BE chưa có → fake
-    script: p.script || "Chưa có nội dung mô tả...",
-    audio: p.audio || "",
-    images: Array.isArray(p.images)
-      ? p.images
-      : [
-          "https://placehold.co/600x400?text=POI+Image",
-          "https://placehold.co/600x400?text=No+Data",
-        ],
-    ActivityRadius: p.activityRadius ?? 100,
-  })
+  //   // 👇 BE chưa có → fake
+  //   script: p.script || "Chưa có nội dung mô tả...",
+  //   audio: p.audio || "",
+  //   images: Array.isArray(p.images)
+  //     ? p.images
+  //     : [
+  //         "https://placehold.co/600x400?text=POI+Image",
+  //         "https://placehold.co/600x400?text=No+Data",
+  //       ],
+  //   ActivityRadius: p.activityRadius ?? 100,
+  // })
 
   // INIT FORM
   useEffect(() => {
@@ -80,9 +79,9 @@ const POIDetailPage = () => {
         lat: found.latitude,
         lng: found.longitude,
         priority: Number(found.priority) || 1,
-        status: found.status,
+        // status: found.status,
 
-        // ✅ FIX HERE (lấy từ gallery API)
+        // FIX HERE (lấy từ gallery API)
         images: gallery.length > 0
           ? gallery.map(g => g.imageUrl)
           : ["https://placehold.co/600x400?text=POI"],
@@ -214,9 +213,21 @@ const POIDetailPage = () => {
         <div className="col-span-4 space-y-6">
 
           <POIInfoCard
-            poi={isEditing ? form : poi}
+            poi={{
+              ...poi,
+              priority: priorityMap[poi.priority] || "UNKNOWN", // Map priority to string
+            }}
             isEditing={isEditing}
-            handleChange={handleChange}
+            handleChange={(key, value) => { 
+              if (key === "priority") {
+                const numericPriority = Object.keys(priorityMap).find(
+                  (k) => priorityMap[k] === value
+                );
+                handleChange(key, numericPriority ? Number(numericPriority) : value);
+              } else {
+                handleChange(key, value);
+              }
+            }}
             role={role}
           />
 
@@ -248,3 +259,5 @@ const POIDetailPage = () => {
 }
 
 export default POIDetailPage
+
+const priorityMap = { 1: "LOW", 2: "MEDIUM", 3: "HIGH", 4: "CRITICAL" };

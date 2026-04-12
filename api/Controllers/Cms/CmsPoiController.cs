@@ -27,10 +27,46 @@ namespace Server.Controllers.Cms
 
         /// <summary>Danh sách tất cả POI (CMS - không filter status published, có thể filter theo isActive).</summary>
 
+        // [HttpGet]
+        // public async Task<ActionResult<List<PoiListDto>>> GetAll([FromQuery] string? status = null)
+        // {
+        //     var pois = await _pois.GetAllForCmsAsync(status);
+
+        //     var result = pois.Select(p => new PoiListDto
+        //     {
+        //         PoiId = p.PoiId,
+        //         Latitude = p.Latitude,
+        //         Longitude = p.Longitude,
+        //         ActivationRadius = p.ActivationRadius,
+        //         Priority = p.Priority,
+        //         Status = p.Status,
+        //         LogoUrl = p.LogoUrl,
+        //         IsActive = p.IsActive,
+        //     }).ToList();
+
+        //     return Ok(result);
+        // }
+
+        // api đã fix để lấy category name
         [HttpGet]
         public async Task<ActionResult<List<PoiListDto>>> GetAll([FromQuery] bool? isActive = null)
         {
             var pois = await _pois.GetAllForCmsAsync(isActive);
+
+            var poiIds = pois.Select(p => p.PoiId).ToList();
+
+            // 🔥 JOIN lấy category
+            var categoryMap = await (
+                from cp in _db.CategoryPois
+                join c in _db.Categories on cp.CategoryId equals c.CategoryId
+                where poiIds.Contains(cp.PoiId)
+                group c by cp.PoiId into g
+                select new
+                {
+                    PoiId = g.Key,
+                    Category = g.Select(x => x.Name).FirstOrDefault()
+                }
+            ).ToDictionaryAsync(x => x.PoiId, x => x.Category);
 
             var result = pois.Select(p => new PoiListDto
             {
@@ -41,6 +77,9 @@ namespace Server.Controllers.Cms
                 Priority = p.Priority,
                 LogoUrl = p.LogoUrl,
                 IsActive = p.IsActive,
+
+                // thêm category
+                Category = categoryMap.GetValueOrDefault(p.PoiId, "Unknown")
             }).ToList();
 
             return Ok(result);
@@ -100,6 +139,7 @@ namespace Server.Controllers.Cms
             if (req.ActivationRadius.HasValue) existing.ActivationRadius = req.ActivationRadius.Value;
             if (req.Priority.HasValue)         existing.Priority         = req.Priority.Value;
             if (req.LogoUrl is not null)       existing.LogoUrl          = req.LogoUrl;
+            if (req.IsActive.HasValue)         existing.IsActive         = req.IsActive.Value;
 
             var updated = await _pois.UpdateAsync(existing);
             return Ok(updated);

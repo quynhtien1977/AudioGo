@@ -38,7 +38,8 @@ namespace Shared.DTOs
         double? Longitude,
         int? ActivationRadius,
         int? Priority,
-        string? LogoUrl
+        string? LogoUrl,
+        bool? IsActive 
     );
 
     public record PoiGalleryDto(
