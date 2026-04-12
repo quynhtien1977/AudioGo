@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   AreaChart,
   Area,
@@ -9,36 +9,21 @@ import {
   ResponsiveContainer
 } from 'recharts';
 
-import { getTrendingData } from "../api/chartApi";
+const TrendingChart = ({ data }) => {
 
-const TrendingChart = () => {
-  const [data, setData] = useState([]);
+  const formattedData = (data || []).map(item => {
+  const [year, month, day] = item.date.split("T")[0].split("-")
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await getTrendingData();
-        // Ensure data is an array and map it to the required format
-        const formattedData = Array.isArray(res)
-          ? res.map((item) => ({
-              name: item.date, // Assuming API returns a `date` field
-              listens: item.count // Assuming API returns a `count` field
-            }))
-          : [];
-        setData(formattedData);
-      } catch (error) {
-        console.error("Error fetching trending data:", error);
-      }
-    };
+  return {
+    name: `${day}-${month}`, // 🔥 chuẩn 26-03
+    listens: item.count
+  }
+})
 
-    fetchData();
-  }, []);
-
-  // loading state
-  if (!data.length) {
+  if (!formattedData.length) {
     return (
       <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-        <p>Loading chart...</p>
+        <p>No data available</p>
       </div>
     );
   }
@@ -56,7 +41,7 @@ const TrendingChart = () => {
       <div className="h-[350px]">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
-            data={data}
+            data={formattedData}
             margin={{ top: 10, right: 30, left: -20, bottom: 0 }}
           >
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
@@ -66,22 +51,15 @@ const TrendingChart = () => {
               axisLine={false}
               tickLine={false}
               tick={{ fill: '#6B7280', fontSize: 12 }}
-              padding={{ left: 10, right: 10 }}
             />
 
             <YAxis 
               axisLine={false}
               tickLine={false}
               tick={{ fill: '#6B7280', fontSize: 12 }}
-              domain={[0, 'dataMax + 500']}
-              tickFormatter={(value) => (value >= 1000 ? `${value / 1000}k` : value)}
             />
 
-            <Tooltip
-              contentStyle={{ borderRadius: '8px', border: '1px solid #E5E7EB' }}
-              labelStyle={{ fontWeight: 'bold' }}
-              cursor={{ stroke: '#EE4B8E', strokeWidth: 1 }}
-            />
+            <Tooltip />
 
             <Area
               type="monotone"
@@ -89,8 +67,6 @@ const TrendingChart = () => {
               stroke="#EE4B8E"
               strokeWidth={3}
               fill="url(#colorListens)"
-              dot={{ stroke: '#EE4B8E', strokeWidth: 3, fill: 'white', r: 5 }}
-              activeDot={{ stroke: '#EE4B8E', strokeWidth: 3, fill: '#EE4B8E', r: 7 }}
             />
 
             <defs>

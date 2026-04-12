@@ -1,0 +1,9 @@
+using Shared.DTOs;
+
+namespace Services.Interfaces
+{
+    public interface IDashboardService
+    {
+        Task<DashboardStatsDto> GetStats();
+    }
+}

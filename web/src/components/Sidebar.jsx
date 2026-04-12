@@ -27,7 +27,7 @@ export default function Sidebar() {
 
       <div className="space-y-2">
 
-        <MenuItem to="/dashboard" icon={<LayoutDashboard size={18} />} isDisabled>
+        <MenuItem to="/dashboard" icon={<LayoutDashboard size={18} />}>
           Tổng quan
         </MenuItem>
         

@@ -8,7 +8,7 @@ export const loginApi = async (username, password) => {
     },
     body: JSON.stringify({
       username,
-      password,
+      password, 
     }),
   });
 
@@ -17,5 +17,12 @@ export const loginApi = async (username, password) => {
     throw err || "Đăng nhập thất bại";
   }
 
-  return res.json();
+  // return res.json();
+  const data = await res.json();
+
+  return {
+    token: data.token,
+    role: data.role,
+    isLocked: data.isLocked,
+  };
 };

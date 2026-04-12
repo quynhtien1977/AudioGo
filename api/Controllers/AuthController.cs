@@ -23,8 +23,21 @@ namespace Server.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest req)
         {
-            var result = await _auth.LoginAsync(req);
-            return result is null ? Unauthorized("Sai tên đăng nhập hoặc mật khẩu.") : Ok(result);
+            // var result = await _auth.LoginAsync(req);
+            // return result is null ? Unauthorized("Sai tên đăng nhập hoặc mật khẩu.") : Ok(result);
+            try
+            {
+                var result = await _auth.LoginAsync(req);
+
+                if (result is null)
+                    return Unauthorized("Sai tên đăng nhập hoặc mật khẩu.");
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message); //  trả lỗi bị khóa
+            }
         }
 
         // POST /api/auth/register

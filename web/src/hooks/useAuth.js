@@ -21,7 +21,10 @@ export default function useAuth() {
 
     try {
       const res = await loginApi(username, password);
-      console.log("LOGIN RESPONSE:", res);
+
+      if (res.isLocked === true) {
+        throw "Tài khoản của bạn đã bị khóa";
+      }
 
       const userData = {
         username: username, // LẤY TỪ INPUT
