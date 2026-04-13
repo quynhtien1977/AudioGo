@@ -20,6 +20,9 @@ namespace Shared
         public string Title { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string? AudioUrl { get; set; }
+
+        // ── Local cache paths (device-only, set by SyncService) ────
+        /// <summary>Đường dẫn file audio đã tải về máy. Chỉ tồn tại trên SQLite device, không từ server.</summary>
         public string? LocalAudioPath { get; set; }
 
         // ── Relations ──────────────────────────────────────────────
