@@ -138,13 +138,13 @@ namespace Server.Data
 
             // Index để query nhanh theo trạng thái
             m.Entity<PoiRequest>()
-                .HasIndex(r => r.ApprovalStatus)
-                .HasDatabaseName("IX_PoiRequest_ApprovalStatus");
+                .HasIndex(r => r.Status)
+                .HasDatabaseName("IX_PoiRequest_Status");
 
             // Index theo POI để kiểm tra POI có đang có request PENDING không
             m.Entity<PoiRequest>()
-                .HasIndex(r => new { r.PoiId, r.ApprovalStatus })
-                .HasDatabaseName("IX_PoiRequest_PoiId_ApprovalStatus");
+                .HasIndex(r => new { r.PoiId, r.Status })
+                .HasDatabaseName("IX_PoiRequest_PoiId_Status");
         }
     }
 }

@@ -46,7 +46,7 @@ namespace Shared.DTOs
         string?  PoiId,
         string   AccountId,
         string   ActionType,
-        string   ApprovalStatus,
+        string   Status,
         DateTime CreatedAt,
         string?  RejectReason
     );
@@ -57,9 +57,9 @@ namespace Shared.DTOs
         string?       PoiId,
         string        AccountId,
         string        ActionType,
-        string        ApprovalStatus,
-        PoiDraftDto?  ProposedDraft,  // Đã deserialize JSON → object
-        PoiDetailDto? CurrentPoi,     // NULL nếu là CREATE request
+        string        Status,
+        PoiDraftDto?  ProposedDraft,
+        PoiDetailDto? CurrentPoi,
         DateTime      CreatedAt,
         string?       RejectReason
     );

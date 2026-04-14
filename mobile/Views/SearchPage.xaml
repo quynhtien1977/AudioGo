@@ -130,8 +130,9 @@
                 <!-- Empty state -->
                 <VerticalStackLayout IsVisible="{Binding IsEmpty}" Spacing="12" HorizontalOptions="Center" Margin="0,40,0,0">
                     <Label Text="&#xe8b6;" FontFamily="MaterialIcons" FontSize="56" TextColor="{StaticResource Gray300}" HorizontalOptions="Center"/>
-                    <Label Text="Không tìm thấy kết quả" Style="{StaticResource SectionTitle}" HorizontalOptions="Center"/>
-                    <Label Text="Thử tìm &quot;bún bò&quot;, &quot;cà phê&quot;, &quot;di tích&quot;..." Style="{StaticResource BodyLabel}" HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
+                    <!-- ── FIX: Bind title & subtitle để customize theo network state (online vs offline) ── -->
+                    <Label Text="{Binding EmptyTitle}" Style="{StaticResource SectionTitle}" HorizontalOptions="Center"/>
+                    <Label Text="{Binding EmptySubtitle}" Style="{StaticResource BodyLabel}" HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
                 </VerticalStackLayout>
 
                 <!-- Welcome state -->

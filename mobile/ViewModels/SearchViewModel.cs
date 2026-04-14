@@ -26,7 +26,7 @@ namespace AudioGo.ViewModels
         public string Query
         {
             get => _query;
-            set { SetProperty(ref _query, value); Task.Run(() => SearchAsync(value)); }
+            set { SetProperty(ref _query, value); _ = SearchAsync(value); }
         }
 
         // Alias used by some XAML bindings
@@ -40,7 +40,7 @@ namespace AudioGo.ViewModels
         public string ActiveCategory
         {
             get => _activeCategory;
-            set { SetProperty(ref _activeCategory, value); Task.Run(() => SearchAsync(Query)); }
+            set { SetProperty(ref _activeCategory, value); _ = SearchAsync(Query); }
         }
 
         public ObservableCollection<PoiSearchVm>      Pois        { get; } = new();
@@ -134,16 +134,42 @@ namespace AudioGo.ViewModels
             }
         }
 
+        private CancellationTokenSource? _searchCts;
+
         private async Task SearchAsync(string query)
         {
             ShowWelcome = false;
 
-            // Debounce if the query is just 1 character
-            if (!string.IsNullOrEmpty(query) && query.Length == 1) return;
+            _searchCts?.Cancel();
+            _searchCts = new CancellationTokenSource();
+            var token = _searchCts.Token;
+
+            // ── FIX: Bỏ chặn query 1 ký tự, cho phép search tự do offline/kể cả online nếu muốn ──
+            // Xóa early return if (query.Length == 1) để offline search chạy bình thường
+
+
+            try
+            {
+                await Task.Delay(300, token);
+            }
+            catch (TaskCanceledException)
+            {
+                return;
+            }
+
+            if (token.IsCancellationRequested) return;
 
             IsLoading = true;
             Pois.Clear();
             Tours.Clear();
+
+            if (!AudioGo.Helpers.NetworkHelper.HasInternet())
+            {
+                await OfflineSearchAsync(query);
+                IsLoading = false;
+                UpdateStates();
+                return;
+            }
 
             try
             {
@@ -158,14 +184,7 @@ namespace AudioGo.ViewModels
             }
             catch 
             { 
-                // API unavailable — fallback to offline SQLite search
-                var allPois = await _sync.GetPoisAsync();
-                var filtered = allPois.Where(p => 
-                    (string.IsNullOrEmpty(query) || p.Title?.Contains(query, StringComparison.OrdinalIgnoreCase) == true || p.Description?.Contains(query, StringComparison.OrdinalIgnoreCase) == true) &&
-                    (string.IsNullOrEmpty(ActiveCategory) || p.Categories?.Contains(ActiveCategory) == true)
-                );
-                
-                foreach (var p in filtered) Pois.Add(new PoiSearchVm(p));
+                await OfflineSearchAsync(query);
             }
             finally
             {
@@ -174,13 +193,48 @@ namespace AudioGo.ViewModels
             }
         }
 
+        private async Task OfflineSearchAsync(string query)
+        {
+            // ── FIX: Lấy language thiết bị để load đúng cache SQLite ngôn ngữ đang dùng ──
+            string lang = AudioGo.Helpers.LanguageHelper.GetDeviceLanguageCode();
+            var allPois = await _sync.GetPoisAsync(lang);
+            
+            // ── FIX: Cải thiện filter (OrdinalIgnoreCase) và ưu tiên category 'all' ──
+            var filtered = allPois.Where(p => 
+                (string.IsNullOrEmpty(query) || p.Title?.Contains(query, StringComparison.OrdinalIgnoreCase) == true || p.Description?.Contains(query, StringComparison.OrdinalIgnoreCase) == true) &&
+                (string.IsNullOrEmpty(ActiveCategory) || ActiveCategory == "all" || p.Categories?.Contains(ActiveCategory, StringComparer.OrdinalIgnoreCase) == true)
+            );
+            
+            foreach (var p in filtered) Pois.Add(new PoiSearchVm(p));
+        }
+
+        private string _emptyTitle = "Không tìm thấy kết quả";
+        public string EmptyTitle { get => _emptyTitle; set => SetProperty(ref _emptyTitle, value); }
+        
+        private string _emptySubtitle = "Thử tìm \"bún bò\", \"cà phê\", \"di tích\"...";
+        public string EmptySubtitle { get => _emptySubtitle; set => SetProperty(ref _emptySubtitle, value); }
+
         private void UpdateStates()
         {
             HasResults  = Pois.Count > 0;
             HasTours    = Tours.Count > 0;
-            IsEmpty     = !IsLoading && Pois.Count == 0 && Tours.Count == 0
-                          && ((Query?.Length ?? 0) > 1 || !string.IsNullOrEmpty(ActiveCategory));
-            ShowWelcome = !IsLoading && (Query?.Length ?? 0) <= 1 && string.IsNullOrEmpty(ActiveCategory) && Pois.Count == 0 && Tours.Count == 0;
+            
+            bool isSearching = !string.IsNullOrEmpty(Query) || (!string.IsNullOrEmpty(ActiveCategory) && ActiveCategory != "all");
+            
+            IsEmpty     = !IsLoading && Pois.Count == 0 && Tours.Count == 0 && isSearching;
+            ShowWelcome = !IsLoading && !isSearching && Pois.Count == 0 && Tours.Count == 0;
+
+            // ── FIX: Cảnh báo rõ ràng nếu user search lúc mất mạng + chưa có cache ──
+            if (!AudioGo.Helpers.NetworkHelper.HasInternet())
+            {
+                EmptyTitle = "Bạn đang ngoại tuyến";
+                EmptySubtitle = "App chưa có dữ liệu điểm đến để tìm kiếm offline. Vui lòng thử lại khi có mạng.";
+            } 
+            else 
+            {
+                EmptyTitle = "Không tìm thấy kết quả";
+                EmptySubtitle = "Thử tìm \"bún bò\", \"cà phê\", \"di tích\"...";
+            }
         }
     }
 

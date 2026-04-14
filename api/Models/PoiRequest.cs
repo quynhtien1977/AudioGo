@@ -23,7 +23,7 @@ namespace Server.Models
         public string ActionType { get; set; } = string.Empty;
 
         /// <summary>Trạng thái xét duyệt: PENDING | APPROVED | REJECTED</summary>
-        public string ApprovalStatus { get; set; } = "PENDING";
+        public string Status { get; set; } = "PENDING";
 
         /// <summary>
         /// Chuỗi JSON chứa toàn bộ dữ liệu muốn thay đổi (PoiDraftDto).
@@ -32,7 +32,7 @@ namespace Server.Models
         /// </summary>
         public string? ProposedData { get; set; }
 
-        /// <summary>Lý do Admin từ chối (ghi vào khi ApprovalStatus = REJECTED).</summary>
+        /// <summary>Lý do Admin từ chối (ghi vào khi Status = REJECTED).</summary>
         public string? RejectReason { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

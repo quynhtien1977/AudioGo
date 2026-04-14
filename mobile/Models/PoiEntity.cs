@@ -42,6 +42,12 @@ namespace AudioGo.Models
         /// <summary>JSON-serialised list of gallery image URLs.</summary>
         public string GalleryUrlsJson { get; set; } = string.Empty;
 
+        /// <summary>
+        /// JSON-serialised list of local gallery image paths (device-only).
+        /// Populated by SyncService.DownloadGalleryFilesAsync after offline caching.
+        /// </summary>
+        public string? GalleryLocalPathsJson { get; set; }
+
         public DateTime? LastSyncedAt { get; set; }
     }
 }

@@ -43,12 +43,20 @@ public class WelcomeQrScanViewModel : BaseViewModel
             
             MainThread.BeginInvokeOnMainThread(async () =>
             {
-                // Gọi API check mã QR
-                var deviceId = Preferences.Get("AppDeviceId", string.Empty);
+                // Lấy DeviceId ổn định — dùng SecureStorage để persist qua reinstall
+                // (Preferences có thể bị xóa khi uninstall trên Android)
+                var deviceId = await SecureStorage.GetAsync("AppDeviceId");
                 if (string.IsNullOrEmpty(deviceId))
                 {
-                    deviceId = Guid.NewGuid().ToString();
-                    Preferences.Set("AppDeviceId", deviceId);
+                    // Tạo ID từ thông tin phần cứng để ổn định hơn GUID thuần túy
+                    var rawId = $"{DeviceInfo.Current.Name}_{DeviceInfo.Current.Model}_{DeviceInfo.Current.Manufacturer}_{DeviceInfo.Current.Platform}";
+                    // Hash thành chuỗi ngắn gọn, deterministic
+                    deviceId = Convert.ToHexString(
+                        System.Security.Cryptography.SHA256.HashData(
+                            System.Text.Encoding.UTF8.GetBytes(rawId)
+                        )
+                    )[..16]; // Lấy 16 ký tự đầu là đủ unique
+                    await SecureStorage.SetAsync("AppDeviceId", deviceId);
                 }
 
                 var result = await _apiService.ScanQrAsync(barcode, deviceId);
