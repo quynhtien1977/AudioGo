@@ -143,8 +143,7 @@
                             <BindableLayout.ItemTemplate>
                                 <DataTemplate x:DataType="x:String">
                                     <Border StrokeShape="RoundRectangle 12" StrokeThickness="0"
-                                            WidthRequest="130" HeightRequest="90"
-                                            ClipsToBounds="True">
+                                            WidthRequest="130" HeightRequest="90">
                                         <Image Source="{Binding .}" Aspect="AspectFill"/>
                                         <Border.GestureRecognizers>
                                             <TapGestureRecognizer Tapped="OnGalleryFullScreenTapped"

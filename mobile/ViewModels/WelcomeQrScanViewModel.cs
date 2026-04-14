@@ -1,9 +1,7 @@
-using System.Linq;
 using System.Windows.Input;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Controls;
 using AudioGo.ViewModels;
-
 using AudioGo.Services.Interfaces;
 
 namespace AudioGo_Mobile.ViewModels;
@@ -11,6 +9,10 @@ namespace AudioGo_Mobile.ViewModels;
 public class WelcomeQrScanViewModel : BaseViewModel
 {
     private readonly IApiService _apiService;
+
+    // ── Guard: ngăn scanner trigger xử lý 2 lần trong cùng 1 scan ──
+    private bool _isProcessing = false;
+
     private bool _isDetecting = false;
     public bool IsDetecting
     {
@@ -35,27 +37,26 @@ public class WelcomeQrScanViewModel : BaseViewModel
 
     private void ProcessBarcode(string barcode)
     {
-        if (!string.IsNullOrWhiteSpace(barcode))
+        // Guard: scanner có thể trigger nhiều lần liên tiếp với cùng 1 mã
+        if (_isProcessing || string.IsNullOrWhiteSpace(barcode)) return;
+        _isProcessing = true;
+
+        IsDetecting = false;
+        IsLoading = true;
+
+        MainThread.BeginInvokeOnMainThread(async () =>
         {
-            // Đã nhận diện được mã
-            IsDetecting = false;
-            IsLoading = true;
-            
-            MainThread.BeginInvokeOnMainThread(async () =>
+            try
             {
-                // Lấy DeviceId ổn định — dùng SecureStorage để persist qua reinstall
-                // (Preferences có thể bị xóa khi uninstall trên Android)
+                // Lấy DeviceId ổn định — persist qua SecureStorage
                 var deviceId = await SecureStorage.GetAsync("AppDeviceId");
                 if (string.IsNullOrEmpty(deviceId))
                 {
-                    // Tạo ID từ thông tin phần cứng để ổn định hơn GUID thuần túy
                     var rawId = $"{DeviceInfo.Current.Name}_{DeviceInfo.Current.Model}_{DeviceInfo.Current.Manufacturer}_{DeviceInfo.Current.Platform}";
-                    // Hash thành chuỗi ngắn gọn, deterministic
                     deviceId = Convert.ToHexString(
                         System.Security.Cryptography.SHA256.HashData(
-                            System.Text.Encoding.UTF8.GetBytes(rawId)
-                        )
-                    )[..16]; // Lấy 16 ký tự đầu là đủ unique
+                            System.Text.Encoding.UTF8.GetBytes(rawId))
+                    )[..16];
                     await SecureStorage.SetAsync("AppDeviceId", deviceId);
                 }
 
@@ -63,28 +64,44 @@ public class WelcomeQrScanViewModel : BaseViewModel
 
                 if (result.IsSuccess)
                 {
-                    // Lưu Token vào bộ nhớ an toàn
                     if (!string.IsNullOrEmpty(result.Token))
-                    {
                         await SecureStorage.SetAsync("GuestToken", result.Token);
-                    }
 
-                    Application.Current.MainPage = new AppShell();
-                    
-                    // Preload tab
-                    await Shell.Current.GoToAsync("//Map", animate: false);
-                    await Shell.Current.GoToAsync("//Search", animate: false);
-                    await Shell.Current.GoToAsync("//Home", animate: false);
+                    App.MarkSessionValid();
+
+                    // ── FIX CRITICAL: lấy AppShell từ DI thay vì "new AppShell()" ──
+                    // Lý do: new AppShell() tạo Shell ngoài DI container.
+                    // Khi Shell render DataTemplate views:MainPage, MAUI dùng
+                    // Activator.CreateInstance (không qua DI) → MainPage không nhận
+                    // được MainViewModel qua constructor → NullReferenceException → crash.
+                    // Giải pháp: lấy AppShell đã được đăng ký Singleton trong MauiProgram.
+                    var services = IPlatformApplication.Current!.Services;
+                    var shell = services.GetRequiredService<AppShell>();
+                    Application.Current!.MainPage = shell;
+
+                    // ── Không preload tabs bằng GoToAsync ──────────────────
+                    // GoToAsync("//Map"), ("//Search"), ("//Home") gọi ngay sau khi set
+                    // MainPage khiến MainViewModel.InitAsync() chạy 3 lần song song,
+                    // tranh CPU/network với SyncService download batch đầu tiên.
+                    // MAUI sẽ tự render tab Home (default) theo AppShell.xaml.
                 }
                 else
                 {
-                    // Quét thất bại / Hết hạn / Khác Device
                     IsLoading = false;
-                    IsDetecting = true; // Bật lại camera cho quét lại
-                    
-                    await Application.Current.MainPage.DisplayAlert("Lỗi quét mã", result.Message, "OK");
+                    IsDetecting = true; // Bật lại camera
+                    _isProcessing = false; // Cho phép scan lại khi thất bại
+
+                    await Application.Current!.MainPage!.DisplayAlert(
+                        "Lỗi quét mã", result.Message, "OK");
                 }
-            });
-        }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[QrScan] Error: {ex.Message}");
+                IsLoading = false;
+                IsDetecting = true;
+                _isProcessing = false;
+            }
+        });
     }
 }

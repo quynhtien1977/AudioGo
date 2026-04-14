@@ -52,11 +52,15 @@
 
             <!-- Bottom Sheet -->
             <Border Grid.Row="1"
+                    x:Name="BottomSheetBorder"
                     BackgroundColor="White"
                     StrokeThickness="0"
                     Padding="24, 20, 24, 30"
                     Margin="0"
                     StrokeShape="RoundRectangle 30,30,0,0">
+                <Border.GestureRecognizers>
+                    <PanGestureRecognizer PanUpdated="OnBottomSheetPanUpdated" />
+                </Border.GestureRecognizers>
                 
                 <VerticalStackLayout Spacing="16">
                     <!-- Handle -->
@@ -106,13 +110,6 @@
                             HeightRequest="56"
                             Clicked="OnScanQrClicked"/>
 
-                <Button Text="Chạy giả lập (Tới App Shell)"
-                            FontSize="13"
-                            FontFamily="InterMedium"
-                            BackgroundColor="Transparent"
-                            TextColor="#999999"
-                            Margin="0, 8, 0, 0"
-                            Clicked="OnSkipClicked"/>
                 </VerticalStackLayout>
             </Border>
         </Grid>

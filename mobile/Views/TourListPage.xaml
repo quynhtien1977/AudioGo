@@ -62,8 +62,7 @@
                                             BackgroundColor="{StaticResource DarkSurface}"
                                             StrokeShape="RoundRectangle 0"
                                             StrokeThickness="0"
-                                            HeightRequest="130"
-                                            IsClippedToBounds="True">
+                                            HeightRequest="130">
                                         <Grid>
                                             <!-- Fallback icon -->
                                             <Label Text="&#xe55b;" FontFamily="MaterialIcons"

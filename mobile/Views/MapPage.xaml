@@ -50,8 +50,7 @@
                                 StrokeShape="RoundRectangle 12"
                                 StrokeThickness="0"
                                 WidthRequest="56" HeightRequest="56"
-                                VerticalOptions="Center"
-                                ClipsToBounds="True">
+                                VerticalOptions="Center">
                              <Grid>
                                  <Label Text="&#xe0c8;" FontFamily="MaterialIcons" FontSize="28" TextColor="{StaticResource Primary}"
                                         HorizontalOptions="Center" VerticalOptions="Center"/>
@@ -65,13 +64,13 @@
                                    MaxLines="2" LineBreakMode="TailTruncation" />
 
                             <!-- Tags -->
-                            <FlexLayout JustifyContent="Start" Wrap="Wrap" DefaultMargin="0,0,6,0">
+                            <FlexLayout JustifyContent="Start" Wrap="Wrap">
                                 <!-- Ngôn ngữ -->
-                                <Border StrokeShape="RoundRectangle 4" BackgroundColor="{StaticResource PrimaryLight}" StrokeThickness="0" Padding="4,2">
+                                <Border Margin="0,0,6,0" StrokeShape="RoundRectangle 4" BackgroundColor="{StaticResource PrimaryLight}" StrokeThickness="0" Padding="4,2">
                                     <Label x:Name="BannerLang" FontSize="10" TextColor="{StaticResource Primary}" FontAttributes="Bold" />
                                 </Border>
                                 <!-- Thời gian di chuyển -->
-                                <Border StrokeShape="RoundRectangle 4" BackgroundColor="{StaticResource Gray100}" StrokeThickness="0" Padding="4,2">
+                                <Border Margin="0,0,6,0" StrokeShape="RoundRectangle 4" BackgroundColor="{StaticResource Gray100}" StrokeThickness="0" Padding="4,2">
                                     <Label x:Name="BannerTime" FontSize="10" TextColor="{StaticResource Gray500}" />
                                 </Border>
                             </FlexLayout>
@@ -138,8 +137,7 @@
                             BackgroundColor="{StaticResource PrimaryLight}"
                             StrokeShape="RoundRectangle 10"
                             StrokeThickness="0"
-                            WidthRequest="44" HeightRequest="44"
-                            ClipsToBounds="True">
+                            WidthRequest="44" HeightRequest="44">
                         <Grid>
                             <Label Text="&#xe310;" FontFamily="MaterialIcons" FontSize="24"
                                    TextColor="{StaticResource Primary}"

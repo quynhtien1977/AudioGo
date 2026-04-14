@@ -6,6 +6,10 @@ using System.Text.Json;
 
 public partial class App : Application
 {
+	// Key lưu trong Preferences (sync, không cần await)
+	// để CreateWindow biết ngay cần render trang nào.
+	private const string SessionValidKey = "SessionValid";
+
 	public App()
 	{
 		InitializeComponent();
@@ -13,44 +17,118 @@ public partial class App : Application
 
 	protected override Window CreateWindow(IActivationState? activationState)
 	{
-		// KHÔNG gọi async ở đây — sẽ gây deadlock trên Android/iOS.
-		// Luôn mở NavigationPage + WelcomePage trước,
-		// rồi OnStart sẽ check token và redirect nếu còn hạn.
-		return new Window(new NavigationPage(new WelcomePage()));
-	}
+		// Đọc Preferences synchronously — không block main thread vì là disk read nhỏ.
+		// Nếu flag "SessionValid" = true → đi thẳng vào AppShell, không flash QR.
+		bool hasSession = Preferences.Default.Get(SessionValidKey, false);
 
-	protected override async void OnStart()
-	{
-		base.OnStart();
-		await CheckAndRestoreSessionAsync();
+		Page startPage;
+		if (hasSession)
+		{
+			// ── FIX: lấy AppShell từ DI container (Singleton) thay vì new AppShell() ──
+			// new AppShell() tạo Shell ngoài DI → DataTemplate tạo Pages bằng
+			// Activator.CreateInstance (không qua DI) → crash vì thiếu ViewModel injection.
+			var services = activationState?.Context?.Services
+				?? IPlatformApplication.Current!.Services;
+			startPage = services.GetRequiredService<AppShell>();
+		}
+		else
+		{
+			var services = activationState?.Context?.Services
+				?? IPlatformApplication.Current!.Services;
+			startPage = new NavigationPage(services.GetRequiredService<WelcomePage>());
+		}
+
+		var window = new Window(startPage);
+
+		// Nếu đã có session, verify token async ngay sau khi window tạo xong
+		if (hasSession)
+		{
+			_ = Task.Run(async () =>
+			{
+				try
+				{
+					var token = await SecureStorage.GetAsync("GuestToken");
+					if (string.IsNullOrEmpty(token) || !IsJwtValid(token))
+					{
+						// Token hết hạn → xóa flag và về trang QR
+						Preferences.Default.Remove(SessionValidKey);
+						SecureStorage.Remove("GuestToken");
+						MainThread.BeginInvokeOnMainThread(() =>
+						{
+							if (Application.Current is not null)
+							{
+								var services = IPlatformApplication.Current!.Services;
+								Application.Current.MainPage = new NavigationPage(services.GetRequiredService<WelcomePage>());
+							}
+						});
+					}
+				}
+				catch (Exception ex)
+				{
+					System.Diagnostics.Debug.WriteLine($"[App] Token verify error: {ex.Message}");
+					// SecureStorage crash trên một số device khi không có USB
+					// → xóa session, để user scan QR lại
+					Preferences.Default.Remove(SessionValidKey);
+					MainThread.BeginInvokeOnMainThread(() =>
+					{
+						if (Application.Current is not null)
+						{
+							var services = IPlatformApplication.Current!.Services;
+							Application.Current.MainPage = new NavigationPage(services.GetRequiredService<WelcomePage>());
+						}
+					});
+				}
+			});
+		}
+
+		return window;
 	}
 
 	/// <summary>
-	/// Nếu GuestToken còn hạn → chuyển thẳng vào AppShell mà không cần quét QR lại.
+	/// Đánh dấu session hợp lệ để lần sau CreateWindow dùng được.
+	/// Gọi từ WelcomeQrScanViewModel sau khi scan thành công.
 	/// </summary>
-	private static async Task CheckAndRestoreSessionAsync()
-	{
-		try
-		{
-			var token = await SecureStorage.GetAsync("GuestToken");
-			if (!string.IsNullOrEmpty(token) && IsJwtValid(token))
-			{
-				// Token hợp lệ → vào thẳng app
-				if (Application.Current?.MainPage is NavigationPage)
-				{
-					Application.Current.MainPage = new AppShell();
-					await Shell.Current.GoToAsync("//Home", animate: false);
-				}
-				return;
-			}
+	public static void MarkSessionValid() =>
+		Preferences.Default.Set(SessionValidKey, true);
 
-			// Token hết hạn → xóa
-			if (!string.IsNullOrEmpty(token))
-				SecureStorage.Remove("GuestToken");
-		}
-		catch
+	/// <summary>
+	/// Xóa flag session (logout / token expire).
+	/// </summary>
+	public static void ClearSession()
+	{
+		Preferences.Default.Remove(SessionValidKey);
+		SecureStorage.Remove("GuestToken");
+	}
+
+	/// <summary>
+	/// Gọi khi app quay lại foreground từ background.
+	/// Trigger retry download các file audio/logo/gallery còn thiếu.
+	/// </summary>
+	protected override void OnResume()
+	{
+		base.OnResume();
+
+		// Chỉ retry nếu đang có mạng và session hợp lệ
+		if (!AudioGo.Helpers.NetworkHelper.HasInternet()) return;
+		if (!Preferences.Default.Get(SessionValidKey, false)) return;
+
+		var syncService = IPlatformApplication.Current?.Services
+			?.GetService<AudioGo.Services.SyncService>();
+
+		if (syncService is not null)
 		{
-			// Lỗi SecureStorage (Android key store issue, ...) → để WelcomePage bình thường
+			_ = Task.Run(async () =>
+			{
+				try
+				{
+					System.Diagnostics.Debug.WriteLine("[App] OnResume — retrying pending downloads");
+					await syncService.RetryPendingDownloadsAsync();
+				}
+				catch (Exception ex)
+				{
+					System.Diagnostics.Debug.WriteLine($"[App] OnResume retry error: {ex.Message}");
+				}
+			});
 		}
 	}
 
@@ -64,7 +142,6 @@ public partial class App : Application
 			var parts = token.Split('.');
 			if (parts.Length != 3) return false;
 
-			// Base64Url → Base64 chuẩn
 			var payload = parts[1]
 				.Replace('-', '+')
 				.Replace('_', '/');
