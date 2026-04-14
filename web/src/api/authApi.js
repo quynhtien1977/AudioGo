@@ -23,6 +23,7 @@ export const loginApi = async (username, password) => {
   return {
     token: data.token,
     role: data.role,
+    accountId: data.accountId,
     isLocked: data.isLocked,
   };
 };

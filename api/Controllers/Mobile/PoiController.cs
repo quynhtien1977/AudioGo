@@ -86,6 +86,7 @@ namespace Server.Controllers.Mobile
             return new POI
             {
                 PoiId            = p.PoiId,
+                AccountId        = p.AccountId,
                 Latitude         = p.Latitude,
                 Longitude        = p.Longitude,
                 ActivationRadius = p.ActivationRadius,

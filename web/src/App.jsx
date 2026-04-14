@@ -4,6 +4,11 @@ import MainLayout from "@/layouts/MainLayout";
 
 import DashboardPage from "@/pages/DashboardPage";
 import POIPage from "@/pages/POIPage";
+import POIManagementPage from "@/pages/POIManagementPage";
+import POINewListPage from "@/pages/POINewListPage";
+import POIUpdateListPage from "@/pages/POIUpdateListPage";
+import POIUpdateDetailPage from "@/pages/POIUpdateDetailPage";
+import POIDeletionListPage from "@/pages/POIDeletionListPage";
 import AccountsPage from "@/pages/AccountsPage";
 import LoginPage from "@/pages/LoginPage";
 import CategoryPage from "@/pages/CategoryPage";
@@ -65,6 +70,66 @@ export default function App() {
             <ProtectedRoute roles={["Admin", "Owner"]}>
               <MainLayout>
                 <POIDetailPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* POI Management (ADMIN only) */}
+        <Route
+          path="/poi/management"
+          element={
+            <ProtectedRoute roles={["Admin"]}>
+              <MainLayout>
+                <POIManagementPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* POI New List */}
+        <Route
+          path="/poi/management/new"
+          element={
+            <ProtectedRoute roles={["Admin"]}>
+              <MainLayout>
+                <POINewListPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* POI Update List */}
+        <Route
+          path="/poi/management/updates"
+          element={
+            <ProtectedRoute roles={["Admin"]}>
+              <MainLayout>
+                <POIUpdateListPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* POI Update Detail */}
+        <Route
+          path="/poi/management/updates/:id"
+          element={
+            <ProtectedRoute roles={["Admin"]}>
+              <MainLayout>
+                <POIUpdateDetailPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* POI Deletion List */}
+        <Route
+          path="/poi/management/deletions"
+          element={
+            <ProtectedRoute roles={["Admin"]}>
+              <MainLayout>
+                <POIDeletionListPage />
               </MainLayout>
             </ProtectedRoute>
           }

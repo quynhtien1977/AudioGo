@@ -29,6 +29,7 @@ export default function useAuth() {
       const userData = {
         username: username, // LẤY TỪ INPUT
         role: res.role,
+        accountId: res.accountId,
       };
 
       if (rememberMe) {

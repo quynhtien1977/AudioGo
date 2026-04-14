@@ -7,6 +7,7 @@ namespace Shared
     {
         // ── Poi table ──────────────────────────────────────────────
         public string PoiId { get; set; } = string.Empty;
+        public string AccountId { get; set; } = string.Empty;
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public int ActivationRadius { get; set; } = 20;

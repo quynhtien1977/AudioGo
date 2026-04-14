@@ -21,6 +21,7 @@ import ConfirmModal from "@/components/ConfirmModal"
 
 import { getAllPOIs, updatePOI, deletePOI } from "@/api/poiApi"
 import { getContentsByPOI } from "@/api/contentApi"
+import { getMyPoiRequests } from "@/api/poiRequestApi"
 
 import useAuth from "@/hooks/useAuth";
 
@@ -29,57 +30,143 @@ export default function POIPage() {
 
   const { user } = useAuth();
   const role = user?.role;
+  const accountId = user?.accountId;
 
   const [pois, setPois] = useState([])
-
-  
+  const [poiRequests, setPoiRequests] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   // PAGINATION STATE
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 4
 
+  // Fetch POIs data
   useEffect(() => {
-    const fetchData = async () => {
+    if (!role || !accountId) {
+      setPois([])
+      return
+    }
+
+    let isMounted = true
+    const controller = new AbortController()
+
+    const fetchPOIs = async () => {
       try {
+        setIsLoading(true)
+        setError(null)
+
         const res = await getAllPOIs()
-        const contentsList = await Promise.all(
-          res.map(p => getContentsByPOI(p.poiId))
+        if (!isMounted) return
+
+        // Filter POIs
+        const filteredPOIs =
+          role === "Owner"
+            ? res.filter(p =>
+                String(p.accountId) === String(accountId) &&
+                p.isActive === true
+              )
+            : res
+
+        if (!isMounted) return
+
+        // Fetch content for each POI with error handling
+        const contentsList = await Promise.allSettled(
+          filteredPOIs.map(p => getContentsByPOI(p.poiId))
         )
 
-        // setPois(mapped)
-        const mapped = res.map((p, index) => {
-        const contents = contentsList[index] || []
+        if (!isMounted) return
 
-        const masterContent =
-          contents.find(c => c.isMaster) || contents[0]
+        // Map data with content
+        const mapped = filteredPOIs.map((p, index) => {
+          const contentResult = contentsList[index]
+          const contents = contentResult?.status === 'fulfilled' 
+            ? (contentResult.value || [])
+            : []
+          const masterContent =
+            contents.find(c => c.isMaster) || contents[0]
+          const title = masterContent?.title || "No name"
 
-        const title =
-          masterContent?.title || "No name"
+          // Extract category
+          let categoryName = "Unknown"
+          if (p.categoryPois && p.categoryPois.length > 0) {
+            const categoryPoi = p.categoryPois[0]
+            categoryName =
+              categoryPoi?.category?.name ||
+              categoryPoi?.categoryName ||
+              categoryPoi?.name ||
+              "Unknown"
+          } else if (p.category) {
+            categoryName = p.category?.name || p.category || "Unknown"
+          }
 
           return {
             rank: p.poiId,
-
             name: title,
-
             lat: p.latitude,
             lng: p.longitude,
-
-            category: p.category || "Unknown",
-
+            category: categoryName,
             priority: Number(p.priority),
-            status: p.status,
-
             isActive: p.isActive
           }
         })
-        setPois(mapped)
+
+        if (isMounted) {
+          setPois(mapped)
+          setCurrentPage(1) // Reset pagination
+        }
       } catch (err) {
-        console.error(err)
+        if (isMounted && err.name !== 'AbortError') {
+          console.error("Error fetching POIs:", err)
+          setError(err.message)
+          setPois([])
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false)
+        }
       }
     }
 
-    fetchData()
-  }, [])
+    fetchPOIs()
+
+    return () => {
+      isMounted = false
+      controller.abort()
+    }
+  }, [role, accountId])
+
+  // Fetch PoiRequests for Owner
+  useEffect(() => {
+    if (role !== "Owner" || !accountId) {
+      setPoiRequests([])
+      return
+    }
+
+    let isMounted = true
+    const controller = new AbortController()
+
+    const fetchPoiRequests = async () => {
+      try {
+        const requests = await getMyPoiRequests()
+        if (isMounted) {
+          setPoiRequests(requests || [])
+        }
+      } catch (err) {
+        if (isMounted && err.name !== 'AbortError') {
+          console.error("Error fetching PoiRequests:", err)
+          setPoiRequests([])
+        }
+      }
+    }
+
+    fetchPoiRequests()
+
+    return () => {
+      isMounted = false
+      controller.abort()
+    }
+  }, [role, accountId])
 
   // PAGINATION LOGIC
   const totalItems = pois.length
@@ -179,7 +266,7 @@ export default function POIPage() {
 
   const handleHiddenPOI = async (id) => {
     try {
-      const poi = pois.find(p => p.rank === id) // ✅ đúng key
+      const poi = pois.find(p => p.rank === id) 
 
       if (!poi) {
         console.error("Không tìm thấy POI")
@@ -435,6 +522,137 @@ export default function POIPage() {
         </div>
 
       </div>
+      
+      {role === "Owner" && (<div className="bg-white rounded-2xl border overflow-hidden">
+        <div className="p-4 border-b">
+          <h2 className="text-lg font-semibold">DANH SÁCH YÊU CẦU (POI REQUEST)</h2>
+        </div>
+        <table className="w-full text-sm">
+          
+          <thead className="bg-gray-50 text-gray-400">
+            <tr>
+              <th className="p-4 text-left">TÊN POI</th>
+              <th className="p-4 text-left">LOẠI HÀNH ĐỘNG</th>
+              <th className="p-4 text-left">TRẠNG THÁI</th>
+              <th className="p-4 text-left">NGÀY TẠO</th>
+              <th className="p-4 text-left">GHI CHÚ</th>
+              <th className="p-4 text-left">THAO TÁC</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {poiRequests.length === 0 ? (
+              <tr>
+                <td colSpan="6" className="p-4 text-center text-gray-400">
+                  Không có yêu cầu nào
+                </td>
+              </tr>
+            ) : (
+              poiRequests.map((request) => {
+                let title = "N/A"
+                try {
+                  if (request.proposedData) {
+                    const data = typeof request.proposedData === 'string' 
+                      ? JSON.parse(request.proposedData) 
+                      : request.proposedData
+                    title = data.title || data.Title || "N/A"
+                  }
+                } catch (e) {
+                  console.error("Error parsing proposedData:", e)
+                }
+
+                const getActionTypeBadge = (type) => {
+                  switch (type) {
+                    case "CREATE":
+                      return "bg-green-100 text-green-600"
+                    case "UPDATE":
+                      return "bg-blue-100 text-blue-600"
+                    case "DELETE":
+                      return "bg-red-100 text-red-600"
+                    default:
+                      return "bg-gray-100 text-gray-600"
+                  }
+                }
+
+                const getStatusBadge = (status) => {
+                  switch (status) {
+                    case "PENDING":
+                      return "bg-yellow-100 text-yellow-600"
+                    case "APPROVED":
+                      return "bg-green-100 text-green-600"
+                    case "REJECTED":
+                      return "bg-red-100 text-red-600"
+                    default:
+                      return "bg-gray-100 text-gray-600"
+                  }
+                }
+
+                const formatDate = (dateString) => {
+                  const date = new Date(dateString)
+                  return date.toLocaleDateString('vi-VN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })
+                }
+
+                return (
+                  <tr key={request.requestId} className="border-t hover:bg-gray-50 transition-all">
+                    <td className="p-4">
+                      <p className="font-semibold">{title}</p>
+                      {request.poiId && (
+                        <p className="text-xs text-gray-400">{request.poiId}</p>
+                      )}
+                    </td>
+
+                    <td className="p-4">
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${getActionTypeBadge(request.actionType)}`}>
+                        {request.actionType}
+                      </span>
+                    </td>
+
+                    <td className="p-4">
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${getStatusBadge(request.status)}`}>
+                        {request.status}
+                      </span>
+                    </td>
+
+                    <td className="p-4">
+                      <p className="text-sm text-gray-600">
+                        {formatDate(request.createdAt)}
+                      </p>
+                    </td>
+
+                    <td className="p-4">
+                      {request.rejectReason ? (
+                        <p className="text-xs text-red-600 line-clamp-2">
+                          {request.rejectReason}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-400">-</p>
+                      )}
+                    </td>
+
+                    <td className="p-4">
+                      <div className="flex items-center gap-1">
+                          <NavLink
+                            to={`/pois/${request.requestId}`}
+                            className="w-8 h-8 flex items-center justify-center rounded-full transition-colors text-pink-500 hover:text-pink-600"
+                            title="Xem chi tiết POI"
+                          >
+                            <List size={18} />
+                          </NavLink>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })
+            )}
+          </tbody>
+        </table>
+      </div>)}
 
       <div className="flex justify-end items-center mb-6">
 
