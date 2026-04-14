@@ -146,9 +146,6 @@ useEffect(() => {
           </span>
         </div>
 
-        {/* {showModal && (
-          <TopPOIModal onClose={() => setShowModal(false)} />
-        )} */}
         {showModal && (
           <TopPOIModal 
             onClose={() => setShowModal(false)} 

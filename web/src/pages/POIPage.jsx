@@ -32,12 +32,12 @@ export default function POIPage() {
 
   const [pois, setPois] = useState([])
 
+  
+
   // PAGINATION STATE
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 4
 
-  // PAGINATION LOGIC
- 
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -64,7 +64,7 @@ export default function POIPage() {
             lat: p.latitude,
             lng: p.longitude,
 
-            category: p.categoryPois?.[0]?.category?.name || "Unknown",
+            category: p.category || "Unknown",
 
             priority: Number(p.priority),
             status: p.status,
@@ -81,6 +81,7 @@ export default function POIPage() {
     fetchData()
   }, [])
 
+  // PAGINATION LOGIC
   const totalItems = pois.length
   const totalPages = Math.ceil(totalItems / itemsPerPage)
 
@@ -97,16 +98,31 @@ export default function POIPage() {
 
   const getCategoryColor = (category) => {
     switch (category) {
-        case "Restaurant":
-        return "bg-pink-100 text-pink-500"
-        case "Cafe":
-        return "bg-orange-100 text-orange-500"
-        case "Museum":
+      case "Di tích lịch sử":
         return "bg-blue-100 text-blue-500"
-        default:
+
+      case "Ẩm thực":
+        return "bg-pink-100 text-pink-500"
+
+      case "Hải sản & Ốc":
+        return "bg-cyan-100 text-cyan-500"
+
+      case "Cà phê & Giải khát":
+        return "bg-orange-100 text-orange-500"
+
+      case "Chùa & Tôn giáo":
+        return "bg-purple-100 text-purple-500"
+
+      case "Giải trí":
+        return "bg-green-100 text-green-500"
+
+      case "Mua sắm":
+        return "bg-yellow-100 text-yellow-600"
+
+      default:
         return "bg-gray-100 text-gray-500"
     }
-    }
+  }
 
     // xử lý duyệt POI
   const handleApprove = async (id) => {
@@ -162,27 +178,39 @@ export default function POIPage() {
   }
 
   const handleHiddenPOI = async (id) => {
-  try {
-    const poi = pois.find(p => p.rank === id)
+    try {
+      const poi = pois.find(p => p.rank === id) // ✅ đúng key
 
-    const newIsActive = poi.isActive === 1 ? 0 : 1
+      if (!poi) {
+        console.error("Không tìm thấy POI")
+        return
+      }
 
-    await updatePOI(id, {
-      isActive: newIsActive
-    })
+      const newIsActive = !poi.isActive // ✅ boolean
 
-    setPois(prev =>
-      prev.map(p =>
-        p.rank === id
-          ? { ...p, isActive: newIsActive }
-          : p
+      await updatePOI(id, {
+        isActive: newIsActive
+      })
+
+      setPois(prev =>
+        prev.map(p =>
+          p.rank === id
+            ? { ...p, isActive: newIsActive }
+            : p
+        )
       )
-    )
 
-  } catch (err) {
-    console.error(err)
+    } catch (err) {
+      console.error(err)
+    }
   }
-}
+
+  const updateFilter = (key, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: prev[key] === value ? null : value // toggle
+    }))
+  }
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedPoiId, setSelectedPoiId] = useState(null);
@@ -246,8 +274,8 @@ export default function POIPage() {
           sub="hiện có trong hệ thống" 
         />
         <Card 
-        title="CHỜ DUYỆT" 
-        value={pois.filter(p => p.status === "PENDING").length} 
+        title="POI KHÔNG HOẠT ĐỘNG" 
+        value={pois.filter(p => !p.isActive).length} 
         sub="Cần xem xét" color="text-orange-500" />
 
         <Card 
@@ -261,7 +289,7 @@ export default function POIPage() {
       {/* FILTER */}
       <div className="flex justify-between items-center bg-white p-4 rounded-2xl border">
         <div className="flex gap-3">
-          <Filter label="Trạng thái: Tất cả" active />
+          <Filter label="Tất cả" active={true} />
           <Filter label="Thể loại: Đồ ăn & Nước uống" />
           <Filter label="Độ ưu tiên: Cao" />
           <Filter label="Lọc" icon={<SlidersHorizontal size={14} />} />
@@ -281,13 +309,6 @@ export default function POIPage() {
               <th className="p-4 text-left">THỂ LOẠI</th>
               <th className="p-4 text-left">VỊ TRÍ</th>
               <th className="p-4 text-left">ĐỘ ƯU TIÊN</th>
-              <th className="p-4 text-left">TRẠNG THÁI</th>
-
-              {role === "Admin" && (
-                <>
-                  <th className="p-4 text-left">DUYỆT</th>
-                </>
-              )}
               <th className="p-4 text-left">THAO TÁC</th>
             </tr>
           </thead>
@@ -336,55 +357,15 @@ export default function POIPage() {
                   )}
                 </td>
 
-              
-                <td className="p-4">
-                  <StatusBadge value={poi.status} />
-                </td>
-
-
-                {role === "Admin" && (
-                  <td className="p-4 flex items-center gap-2">
-                      {poi.status === "PENDING" && (
-                        <button
-                          onClick={() => openApproveConfirm(poi.rank)}
-                          className="w-8 h-8 flex items-center justify-center rounded-full bg-pink-100 text-pink-500 hover:bg-pink-200"
-                        >
-                          <CheckCircle size={16} />
-                        </button>
-                      )}
-
-                      {poi.status === "PENDING" && (
-                        <button
-                          onClick={() => openRejectConfirm(poi.rank)}
-                          className="w-8 h-8 flex items-center justify-center rounded-full bg-red-100 text-red-500 hover:text-red-600 hover:bg-red-200"
-                        >
-                          <CircleX size={16} />
-                        </button>
-                      )}
-
-                      {poi.status === "APPROVED" && (
-                        <div className="w-8 h-8 flex items-center justify-center rounded-full bg-green-200 text-green-500">
-                          <CheckCircle size={16} />
-                        </div>
-                      )}
-
-                      {poi.status === "REJECTED" && (
-                        <div className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 text-gray-400">
-                          <CircleX size={16} />
-                        </div>
-                      )}
-                  </td>
-                )}
-                  
                 <td className="p-4">  
                   <div className="flex items-center gap-1">
                     {role === "Admin" && (
                       <button
                           onClick={() => handleHiddenPOI(poi.rank)}
                           className={`w-8 h-8 flex items-center justify-end rounded-full transition-colors text-pink-500`}
-                          title={poi.status === "INACTIVE" ? "Hiện POI" : "Ẩn POI"}
+                          title={!poi.isActive ? "Hiện POI" : "Ẩn POI"}
                       >
-                          {poi.isActive === 0 ? <EyeOff size={18} /> : <Eye size={18} />}
+                          {!poi.isActive ? <EyeOff size={18} /> : <Eye size={18} />}
                       </button>)}
 
                       {role === "Owner" && (

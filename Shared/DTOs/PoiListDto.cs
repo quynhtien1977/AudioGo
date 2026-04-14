@@ -12,6 +12,8 @@ namespace Shared.DTOs
 
         public bool IsActive { get; set; } = true;
 
+        public string Category { get; set; }
+
         public List<PoiContentDto> Contents { get; set; }
     }
 
