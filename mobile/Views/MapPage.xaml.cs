@@ -27,7 +27,7 @@ public partial class MapPage : ContentPage
         MiniPlayerGrid.BindingContext = _main;
     }
 
-    protected override async void OnAppearing()
+    protected override void OnAppearing()
     {
         base.OnAppearing();
 
@@ -43,10 +43,10 @@ public partial class MapPage : ContentPage
             _vm.PropertyChanged += OnVmPropertyChanged;
             _isSubscribed = true;
         }
-
-        // Yêu cầu vị trí hiện tại để căn giữa bản đồ
-        await RequestInitialLocationAsync();
     }
+
+        // Location sẽ được cập nhật tự động qua MapViewModel (lắng nghe ILocationService)
+        // tránh gọi trực tiếp RequestInitialLocationAsync() lúc load page để không xung đột với MainViewModel.
 
     protected override void OnDisappearing()
     {
@@ -251,26 +251,4 @@ public partial class MapPage : ContentPage
         _main.StopAudio();
     }
 
-    private async Task RequestInitialLocationAsync()
-    {
-        try
-        {
-            var loc = await Geolocation.Default.GetLastKnownLocationAsync();
-            if (loc is not null)
-            {
-                _vm.MoveTo(loc.Latitude, loc.Longitude);
-                MainThread.BeginInvokeOnMainThread(() =>
-                {
-                    try
-                    {
-                        MapControl.MoveToRegion(MapSpan.FromCenterAndRadius(
-                            new Location(loc.Latitude, loc.Longitude),
-                            Distance.FromKilometers(1)));
-                    }
-                    catch { /* Map chưa sẵn sàng */ }
-                });
-            }
-        }
-        catch { /* GPS không khả dụng — bản đồ ở vị trí mặc định */ }
-    }
 }

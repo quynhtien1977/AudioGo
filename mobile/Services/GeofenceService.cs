@@ -7,7 +7,7 @@ namespace AudioGo.Services
     public class GeofenceService : IGeofenceService
     {
         private readonly TimeSpan _cooldown = TimeSpan.FromMinutes(5);
-        private readonly Dictionary<string, DateTime> _lastTriggered = new();
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, DateTime> _lastTriggered = new();
         private List<POI> _pois = new();
 
         public event EventHandler<POI>? PoiTriggered;

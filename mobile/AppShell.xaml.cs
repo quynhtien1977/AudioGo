@@ -8,9 +8,10 @@ public partial class AppShell : Shell
     {
         InitializeComponent();
 
-        // Routes cho navigation (không có tab — navigate bằng GoToAsync)
+        // Đăng ký routes — MAUI Shell tự resolve từ DI khi page được register vào Services.
+        // (Yêu cầu AddTransient<PoiDetailPage>() đã có trong MauiProgram.cs)
         Routing.RegisterRoute(nameof(PoiDetailPage),    typeof(PoiDetailPage));
-        Routing.RegisterRoute(nameof(TourDetailPage),   typeof(TourDetailPage));
-        Routing.RegisterRoute(nameof(CreateTourPage),   typeof(CreateTourPage));
+        // Routing.RegisterRoute(nameof(TourDetailPage),   typeof(TourDetailPage));
+        // Routing.RegisterRoute(nameof(CreateTourPage),   typeof(CreateTourPage));
     }
 }

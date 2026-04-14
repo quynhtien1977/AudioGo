@@ -25,13 +25,13 @@ namespace AudioGo.ViewModels
             set
             {
                 SetProperty(ref _poiId, value);
-                // Only stop audio if we're picking a different POI
-                Task.Run(async () =>
+                // Chạy LoadAsync trực tiếp trên MainThread (không cần Task.Run).
+                // MainThread.InvokeOnMainThreadAsync đảm bảo tất cả OnPropertyChanged
+                // fired đúng thread mà không cần marshal riêng.
+                MainThread.BeginInvokeOnMainThread(async () =>
                 {
                     if (_mainViewModel.ActivePoi?.PoiId != value)
-                    {
                         await _audio.StopAsync();
-                    }
                     await LoadAsync(value);
                 });
             }
@@ -39,9 +39,14 @@ namespace AudioGo.ViewModels
 
         // ── POI data ───────────────────────────────────────────────
         private PoiEntity? _poi;
+        // Cached GalleryImages — chỉ tính lại khi Poi thay đổi, không tính mỗi binding cycle
+        private List<string> _galleryImages = [];
+
         public PoiEntity? Poi
         {
             get => _poi;
+            // setter chỉ được gọi từ LoadAsync sau khi đã có gallery có sẵn.
+            // Không gọi ComputeGalleryImages() ở đây nữa — đã chạy trên background thread.
             private set
             {
                 SetProperty(ref _poi, value);
@@ -59,7 +64,16 @@ namespace AudioGo.ViewModels
         // ── Computed POI properties ────────────────────────────────
         public string Title        => _poi?.Title       ?? string.Empty;
         public string Description  => _poi?.Description ?? string.Empty;
-        public string HeroImageUrl => _poi?.LogoUrl     ?? string.Empty;
+        public string HeroImageUrl 
+        {
+            get 
+            {
+                if (_poi is null) return string.Empty;
+                if (!string.IsNullOrEmpty(_poi.LocalLogoPath) && File.Exists(_poi.LocalLogoPath))
+                    return _poi.LocalLogoPath;
+                return _poi.LogoUrl ?? string.Empty;
+            }
+        }
 
         public string LanguageName
         {
@@ -89,20 +103,47 @@ namespace AudioGo.ViewModels
             }
         }
 
-        public List<string> GalleryImages
+        // GalleryImages trả về cache ─ đã tính sẵn trong Poi setter,
+        // không gọi File.Exists() mỗi lần XAML binding evaluate.
+        public List<string> GalleryImages => _galleryImages;
+
+        /// <summary>Tính GalleryImages 1 lần khi Poi được set.</summary>
+        private List<string> ComputeGalleryImages() => ComputeGalleryImages(_poi);
+
+        /// <summary>Overload nhận tham số — thread-safe, dùng trong Task.Run.</summary>
+        private static List<string> ComputeGalleryImages(PoiEntity? poi)
         {
-            get
+            if (poi is null) return [];
+            try
             {
-                if (_poi is null || string.IsNullOrEmpty(_poi.GalleryUrlsJson)) return [];
-                try
+                List<string> images;
+
+                if (!string.IsNullOrEmpty(poi.GalleryLocalPathsJson))
                 {
-                    var urls = JsonSerializer.Deserialize<List<string>>(_poi.GalleryUrlsJson) ?? [];
-                    if (!string.IsNullOrEmpty(_poi.LogoUrl) && !urls.Contains(_poi.LogoUrl))
-                        return [_poi.LogoUrl, .. urls];
-                    return urls;
+                    var localPaths = JsonSerializer.Deserialize<List<string>>(poi.GalleryLocalPathsJson) ?? [];
+                    // Chỉ dùng local path nào thực sự tồn tại trên máy
+                    images = localPaths.Where(File.Exists).ToList();
                 }
-                catch { return []; }
+                else
+                {
+                    images = [];
+                }
+
+                // Nếu local chưa đủ, bổ sung từ HTTP URLs (cần mạng)
+                if (images.Count == 0 && !string.IsNullOrEmpty(poi.GalleryUrlsJson))
+                    images = JsonSerializer.Deserialize<List<string>>(poi.GalleryUrlsJson) ?? [];
+
+                // Thêm logo vào đầu danh sách nếu chưa có
+                string? logoSource = (!string.IsNullOrEmpty(poi.LocalLogoPath) && File.Exists(poi.LocalLogoPath))
+                    ? poi.LocalLogoPath
+                    : poi.LogoUrl;
+
+                if (!string.IsNullOrEmpty(logoSource) && !images.Contains(logoSource))
+                    return [logoSource, .. images];
+
+                return images;
             }
+            catch { return []; }
         }
 
         public bool   HasGallery   => GalleryImages.Count > 0;
@@ -228,9 +269,6 @@ namespace AudioGo.ViewModels
             _audio = audio;
             _mainViewModel = mainViewModel;
 
-            // Subscribe to global audio state changes
-            _audio.PlaybackStateChanged += OnAudioStateChanged;
-
             GoToNextPoiCommand = new Command(async () =>
             {
                 if (!HasNextPoi) return;
@@ -255,7 +293,6 @@ namespace AudioGo.ViewModels
             }
             else if (e.IsPaused)
             {
-                // Paused — stop timer, hold current position display
                 StopProgressTimer();
             }
             else
@@ -268,7 +305,6 @@ namespace AudioGo.ViewModels
                 }
                 else
                 {
-                    // Full stop — reset
                     AudioProgress = 0;
                     CurrentTime   = "0:00";
                     TotalTime     = "--:--";
@@ -283,21 +319,72 @@ namespace AudioGo.ViewModels
 
             IsLoading = true;
             ErrorMessage = string.Empty;
+
+#if DEBUG
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+#endif
+
             try
             {
-                Poi = await _db.GetPoiAsync(poiId);
-                if (Poi is null)
+                // Bước 1: Fetch data cơ bản
+                var p = await _db.GetPoiAsync(poiId);
+
+#if DEBUG
+                System.Diagnostics.Debug.WriteLine($"[PoiDetail Latency] GetPoiAsync (SQLite): {sw.ElapsedMilliseconds}ms");
+                sw.Restart();
+#endif
+                
+                if (p is null)
                 {
                     ErrorMessage = "Không tìm thấy điểm tham quan.";
+                    return;
                 }
-                else
+
+                // Prepare navigation (can be done on main thread as it's fast Linq on RAM)
+                var pois = _mainViewModel.Pois
+                    .Select(x => new PoiEntity
+                    {
+                        PoiId    = x.PoiId,
+                        Title    = x.Title ?? string.Empty,
+                        IsActive = x.IsActive,
+                    }).ToList();
+                var idx = pois.FindIndex(x => x.PoiId == poiId);
+
+                _allPois       = pois;
+                _currentIndex  = idx;
+                _galleryImages = []; // Tạm rỗng chưa có ảnh
+                Poi            = p;  // Emit basic properties (Text, HeroImage, ...)
+
+                OnPropertyChanged(nameof(HasNextPoi));
+                OnPropertyChanged(nameof(NextPoiTitle));
+                OnPropertyChanged(nameof(NextPoiButtonText));
+
+#if DEBUG
+                System.Diagnostics.Debug.WriteLine($"[PoiDetail Latency] UI Binding Basic Data: {sw.ElapsedMilliseconds}ms");
+                sw.Restart();
+#endif
+
+                // Bước 2: Deferred loading cho Gallery (I/O File.Exists rất chậm nếu list lớn)
+                _ = Task.Run(() =>
                 {
-                    _allPois = await _db.GetAllPoisAsync();
-                    _currentIndex = _allPois.FindIndex(p => p.PoiId == poiId);
-                    OnPropertyChanged(nameof(HasNextPoi));
-                    OnPropertyChanged(nameof(NextPoiTitle));
-                    OnPropertyChanged(nameof(NextPoiButtonText));
-                }
+                    var imgs = ComputeGalleryImages(p);
+
+#if DEBUG
+                    var ioMs = sw.ElapsedMilliseconds;
+                    System.Diagnostics.Debug.WriteLine($"[PoiDetail Latency] ComputeGalleryImages (File I/O): {ioMs}ms");
+#endif
+
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        _galleryImages = imgs;
+                        OnPropertyChanged(nameof(GalleryImages));
+                        OnPropertyChanged(nameof(HasGallery));
+                        OnPropertyChanged(nameof(GalleryCount));
+#if DEBUG
+                        System.Diagnostics.Debug.WriteLine($"[PoiDetail Latency] UI Binding Gallery complete!");
+#endif
+                    });
+                });
             }
             catch (Exception ex)
             {
@@ -384,10 +471,19 @@ namespace AudioGo.ViewModels
         {
             if (Poi is null) return;
 
+            // Lấy AudioPath mới nhất từ DB để chắc chắn nếu vừa tải xong trong ngầm
+            var freshPoi = await _db.GetPoiAsync(Poi.PoiId);
+            if (freshPoi is not null && !string.IsNullOrEmpty(freshPoi.LocalAudioPath))
+            {
+                Poi.LocalAudioPath = freshPoi.LocalAudioPath;
+            }
+
             // Trigger through MainViewModel to keep global mini-player context in sync
             var mainPoi = _mainViewModel.Pois.FirstOrDefault(p => p.PoiId == Poi.PoiId);
             if (mainPoi != null)
             {
+                mainPoi.LocalAudioPath = Poi.LocalAudioPath;
+
                 AudioProgress = 0;
                 CurrentTime   = "0:00";
                 TotalTime     = "--:--";
@@ -446,12 +542,30 @@ namespace AudioGo.ViewModels
             }
         }
 
+        public void SubscribeEvents()
+        {
+            // Tránh subscribe nhiều lần
+            _audio.PlaybackStateChanged -= OnAudioStateChanged;
+            _audio.PlaybackStateChanged += OnAudioStateChanged;
+            RefreshAudioState();
+        }
+
         public void ToggleDescExpanded() => DescExpanded = !DescExpanded;
 
         // ── Cleanup ────────────────────────────────────────────────
+        /// <summary>
+        /// Gọi từ PoiDetailPage.OnDisappearing để dừng timer và hủy event subscription.
+        /// Chạy logic này khi trang bị che lấp (đi vào nền hoặc mở popup) để tiết kiệm CPU & Pin.
+        /// </summary>
+        public void Cleanup()
+        {
+            StopProgressTimer();
+            _audio.PlaybackStateChanged -= OnAudioStateChanged;
+        }
+
+        // Giữ finalizer như safety-net (phòng khi Cleanup không được gọi)
         ~PoiDetailViewModel()
         {
-            _audio.PlaybackStateChanged -= OnAudioStateChanged;
             StopProgressTimer();
         }
     }

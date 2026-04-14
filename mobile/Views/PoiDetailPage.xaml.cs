@@ -28,8 +28,16 @@ public partial class PoiDetailPage : ContentPage
     protected override void OnAppearing()
     {
         base.OnAppearing();
-        // Sync audio UI state — audio may be running from the MainPage mini-player
-        _vm.RefreshAudioState();
+        // Đồng bộ hóa việc subscribe UI event cùng với lifecycle của Page để đảm bảo nhất quán
+        _vm.SubscribeEvents();
+    }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        // Stop 60fps progress timer khi rời trang — tránh memory/CPU leak
+        // PoiDetailViewModel là Transient nên finalizer không chạy kịp thời
+        _vm.Cleanup();
     }
 
     private async void OnBackTapped(object? sender, TappedEventArgs e)
