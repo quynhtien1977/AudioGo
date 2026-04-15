@@ -1,3 +1,4 @@
+using AudioGo.Helpers;
 using AudioGo.ViewModels;
 
 namespace AudioGo_Mobile.Views;
@@ -14,33 +15,35 @@ public partial class SettingsPage : ContentPage
 
     private async void OnChangeLanguageClicked(object sender, EventArgs e)
     {
-        var result = await DisplayActionSheet("Chọn ngôn ngữ", "Hủy", null, 
-            "🇻🇳 Tiếng Việt", 
-            "🇬🇧 English", 
-            "🇨🇳 中文", 
-            "🇯🇵 日本語", 
+        // Title and cancel label are localized in the current language
+        var sheetTitle  = AppStrings.Get("settings_lang_sheet_title");
+        var cancelLabel = AppStrings.Get("settings_lang_sheet_cancel");
+
+        var result = await DisplayActionSheet(
+            sheetTitle,
+            cancelLabel,
+            null,
+            "🇻🇳 Tiếng Việt",
+            "🇬🇧 English",
+            "🇨🇳 中文",
+            "🇯🇵 日本語",
             "🇰🇷 한국어",
             "🇫🇷 Français",
-            "🇪🇸 Español");
+            "🇹🇭 ภาษาไทย");
 
         var langCode = result switch
         {
-            "🇻🇳 Tiếng Việt" => "vi",
-            "🇬🇧 English" => "en",
-            "🇨🇳 中文" => "zh-Hans",
-            "🇯🇵 日本語" => "ja",
-            "🇰🇷 한국어" => "ko",
-            "🇫🇷 Français" => "fr",
-            "🇪🇸 Español" => "es",
-            _ => null
+            "🇻🇳 Tiếng Việt"  => "vi",
+            "🇬🇧 English"     => "en",
+            "🇨🇳 中文"        => "zh-Hans",
+            "🇯🇵 日本語"       => "ja",
+            "🇰🇷 한국어"       => "ko",
+            "🇫🇷 Français"    => "fr",
+            "🇹🇭 ภาษาไทย"    => "th",
+            _                 => null
         };
 
-        if (langCode != null)
-        {
-            if (_vm.ChangeLanguageCommand.CanExecute(langCode))
-            {
-                _vm.ChangeLanguageCommand.Execute(langCode);
-            }
-        }
+        if (langCode is not null)
+            await _vm.ChangeLanguageAsync(langCode);
     }
 }

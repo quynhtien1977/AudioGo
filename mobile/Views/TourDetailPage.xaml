@@ -69,11 +69,11 @@
 
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                     <Button Grid.Column="0"
-                            Text="▶  Tiếp tục Tour"
+                            Text="{Binding LabelContinue}"
                             Style="{StaticResource PrimaryButton}"
                             Clicked="OnContinueClicked"/>
                     <Button Grid.Column="1"
-                            Text="Bản đồ"
+                            Text="{Binding LabelMap}"
                             ImageSource="{FontImage FontFamily=MaterialIcons, Glyph=&#xe55b;, Color={StaticResource Primary}}"
                             Style="{StaticResource OutlineButton}"
                             Padding="14,12"
@@ -81,7 +81,7 @@
                 </Grid>
 
                 <!-- POI Stops List -->
-                <Label Text="Danh sách điểm dừng" Style="{StaticResource SectionTitle}"/>
+                <Label Text="{Binding LabelStopList}" Style="{StaticResource SectionTitle}"/>
 
                 <CollectionView ItemsSource="{Binding Stops}"
                                 SelectionMode="None">

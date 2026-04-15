@@ -1,4 +1,4 @@
-using AudioGo.Services.Interfaces;
+﻿using AudioGo.Services.Interfaces;
 using AudioGo.Helpers;
 using AudioGo_Mobile.Views;
 using AudioGo.Services;
@@ -48,6 +48,13 @@ namespace AudioGo.ViewModels
         public ObservableCollection<TourSearchVm>     Tours       { get; } = new();
         public ObservableCollection<PoiSearchVm>      FilteredPois => Pois;
         public ObservableCollection<CategoryChipVm>   CategoryChips { get; }
+        public string PageTitle => AppStrings.Get("search_title");
+        public string AreaSubtitle => AppStrings.Get("search_area_sub");
+        public string SearchPlaceholder => AppStrings.Get("search_placeholder");
+        public string WelcomeTitle => AppStrings.Get("search_welcome_title");
+        public string WelcomeSubtitle => AppStrings.Get("search_welcome_subtitle");
+        public string PoiSectionTitle => AppStrings.Get("search_section_poi");
+        public string TourSectionTitle => AppStrings.Get("search_section_tour");
 
         // Legacy string list kept for any leftover bindings
         public List<string> Categories { get; } = CategoryChipVm.GetDefaultChips().Select(c => c.label).ToList();
@@ -105,6 +112,13 @@ namespace AudioGo.ViewModels
 
         private void OnLanguageChanged(object? sender, string e)
         {
+            OnPropertyChanged(nameof(PageTitle));
+            OnPropertyChanged(nameof(AreaSubtitle));
+            OnPropertyChanged(nameof(SearchPlaceholder));
+            OnPropertyChanged(nameof(WelcomeTitle));
+            OnPropertyChanged(nameof(WelcomeSubtitle));
+            OnPropertyChanged(nameof(PoiSectionTitle));
+            OnPropertyChanged(nameof(TourSectionTitle));
             _ = LoadCategoriesAsync();
             Pois.Clear();
             Tours.Clear();
@@ -217,10 +231,10 @@ namespace AudioGo.ViewModels
             foreach (var p in filtered) Pois.Add(new PoiSearchVm(p));
         }
 
-        private string _emptyTitle = "Không tìm thấy kết quả";
+        private string _emptyTitle = AppStrings.Get("search_empty_title");
         public string EmptyTitle { get => _emptyTitle; set => SetProperty(ref _emptyTitle, value); }
         
-        private string _emptySubtitle = "Thử tìm \"bún bò\", \"cà phê\", \"di tích\"...";
+        private string _emptySubtitle = AppStrings.Get("search_empty_subtitle");
         public string EmptySubtitle { get => _emptySubtitle; set => SetProperty(ref _emptySubtitle, value); }
 
         private void UpdateStates()
@@ -236,13 +250,13 @@ namespace AudioGo.ViewModels
             // ── FIX: Cảnh báo rõ ràng nếu user search lúc mất mạng + chưa có cache ──
             if (!AudioGo.Helpers.NetworkHelper.HasInternet())
             {
-                EmptyTitle = "Bạn đang ngoại tuyến";
-                EmptySubtitle = "App chưa có dữ liệu điểm đến để tìm kiếm offline. Vui lòng thử lại khi có mạng.";
-            } 
-            else 
+                EmptyTitle = AppStrings.Get("search_offline_title");
+                EmptySubtitle = AppStrings.Get("search_offline_subtitle");
+            }
+            else
             {
-                EmptyTitle = "Không tìm thấy kết quả";
-                EmptySubtitle = "Thử tìm \"bún bò\", \"cà phê\", \"di tích\"...";
+                EmptyTitle = AppStrings.Get("search_empty_title");
+                EmptySubtitle = AppStrings.Get("search_empty_subtitle");
             }
         }
     }
@@ -256,7 +270,9 @@ namespace AudioGo.ViewModels
         public string  PoiId         => _poi.PoiId;
         public string  Title         => _poi.Title;
         public string? LogoUrl       => _poi.LogoUrl;
-        public string  CategoryLabel => _poi.Categories?.Count > 0 ? _poi.Categories[0] : "Địa điểm";
+        public string  CategoryLabel => _poi.Categories?.Count > 0
+            ? AppStrings.TranslateCategory(_poi.Categories[0])
+            : AppStrings.Get("search_section_poi");
     }
 
     public class TourSearchVm
@@ -267,6 +283,6 @@ namespace AudioGo.ViewModels
         public string  TourId        => _dto.TourId;
         public string  Name          => _dto.Name;
         public string? ThumbnailUrl  => _dto.ThumbnailUrl;
-        public string  PoiCountLabel => $"📍 {_dto.PoiCount} điểm";
+        public string  PoiCountLabel => $"📍 {_dto.PoiCount} {AppStrings.Get("tour_points")}";
     }
 }

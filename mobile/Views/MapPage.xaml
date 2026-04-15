@@ -7,7 +7,7 @@
              x:Name="ThisPage"
              Shell.NavBarIsVisible="False"
              BackgroundColor="{StaticResource Background}"
-             Title="Bản đồ">
+             Title="{Binding MapTitle}">
 
     <Grid>
 
@@ -87,7 +87,7 @@
                                 StrokeShape="RoundRectangle 8" StrokeThickness="0" Padding="0,8">
                             <VerticalStackLayout Spacing="2" HorizontalOptions="Center" VerticalOptions="Center">
                                 <Label Text="&#xe039;" FontFamily="MaterialIcons" FontSize="20" TextColor="{StaticResource Primary}" HorizontalOptions="Center"/>
-                                <Label Text="Nghe" FontSize="11" FontAttributes="Bold" TextColor="{StaticResource Primary}" HorizontalOptions="Center"/>
+                                <Label Text="{Binding MapListenLabel}" FontSize="11" FontAttributes="Bold" TextColor="{StaticResource Primary}" HorizontalOptions="Center"/>
                             </VerticalStackLayout>
                             <Border.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnPoiBannerPlayClicked"/>
@@ -98,7 +98,7 @@
                                 StrokeShape="RoundRectangle 8" StrokeThickness="0" Padding="0,8">
                             <VerticalStackLayout Spacing="2" HorizontalOptions="Center" VerticalOptions="Center">
                                 <Label Text="&#xe8f4;" FontFamily="MaterialIcons" FontSize="20" TextColor="#333333" HorizontalOptions="Center"/>
-                                <Label Text="Chi tiết" FontSize="11" FontAttributes="Bold" TextColor="#333333" HorizontalOptions="Center"/>
+                                <Label Text="{Binding MapDetailsLabel}" FontSize="11" FontAttributes="Bold" TextColor="#333333" HorizontalOptions="Center"/>
                             </VerticalStackLayout>
                             <Border.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnPoiBannerDetailClicked"/>
@@ -109,7 +109,7 @@
                                 StrokeShape="RoundRectangle 8" StrokeThickness="0" Padding="0,8">
                             <VerticalStackLayout Spacing="2" HorizontalOptions="Center" VerticalOptions="Center">
                                 <Label Text="&#xe52f;" FontFamily="MaterialIcons" FontSize="20" TextColor="White" HorizontalOptions="Center"/>
-                                <Label Text="Dẫn đường" FontSize="11" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
+                                <Label Text="{Binding MapDirectionsLabel}" FontSize="11" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
                             </VerticalStackLayout>
                             <Border.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnBannerDirectionsTapped"/>
@@ -152,7 +152,7 @@
                         <HorizontalStackLayout Spacing="4">
                             <Label Text="&#xe310;" FontFamily="MaterialIcons" FontSize="11"
                                    TextColor="{StaticResource Primary}" VerticalOptions="Center"/>
-                            <Label Text="Đang phát" Style="{StaticResource CaptionLabel}"/>
+                            <Label Text="{Binding MiniPlayerNowPlaying}" Style="{StaticResource CaptionLabel}"/>
                         </HorizontalStackLayout>
                     </VerticalStackLayout>
                     <Border Grid.Column="2"

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:AudioGo.ViewModels"
@@ -6,7 +6,7 @@
              x:Name="ThisPage"
              Shell.NavBarIsVisible="False"
              BackgroundColor="{StaticResource Background}"
-             Title="Khám phá">
+             Title="{Binding PageTitle}">
 
     <Grid RowDefinitions="Auto,*">
 
@@ -17,8 +17,8 @@
                              Spacing="14">
             <Grid ColumnDefinitions="*,Auto">
                 <VerticalStackLayout Grid.Column="0" Spacing="2">
-                    <Label Text="Khám phá" Style="{StaticResource HeadlineLabel}"/>
-                    <Label Text="Vĩnh Khánh · Quận 4" Style="{StaticResource BodyLabel}"/>
+                    <Label Text="{Binding PageTitle}" Style="{StaticResource HeadlineLabel}"/>
+                    <Label Text="{Binding AreaSubtitle}" Style="{StaticResource BodyLabel}"/>
                 </VerticalStackLayout>
                 <Border Grid.Column="1"
                         BackgroundColor="{StaticResource Gray100}"
@@ -43,7 +43,7 @@
                     <Label Grid.Column="0" Text="&#xe8b6;" FontFamily="MaterialIcons" FontSize="18"
                            TextColor="{StaticResource TextSecondary}" VerticalOptions="Center"/>
                     <Entry Grid.Column="1"
-                           Placeholder="Tìm kiếm địa điểm, ẩm thực..."
+                           Placeholder="{Binding SearchPlaceholder}"
                            PlaceholderColor="{StaticResource Gray400}"
                            BackgroundColor="Transparent"
                            TextColor="{StaticResource TextPrimary}"
@@ -138,12 +138,12 @@
                 <!-- Welcome state -->
                 <VerticalStackLayout IsVisible="{Binding ShowWelcome}" Spacing="12" HorizontalOptions="Center" Margin="0,40,0,0">
                     <Label Text="&#xe0c8;" FontFamily="MaterialIcons" FontSize="56" TextColor="{StaticResource Primary}" HorizontalOptions="Center"/>
-                    <Label Text="Khám phá Phố Vĩnh Khánh" Style="{StaticResource HeadlineLabel}" HorizontalOptions="Center"/>
-                    <Label Text="Gõ tên địa điểm hoặc chọn danh mục bên trên" Style="{StaticResource BodyLabel}" HorizontalTextAlignment="Center" HorizontalOptions="Center"/>
+                    <Label Text="{Binding WelcomeTitle}" Style="{StaticResource HeadlineLabel}" HorizontalOptions="Center"/>
+                    <Label Text="{Binding WelcomeSubtitle}" Style="{StaticResource BodyLabel}" HorizontalTextAlignment="Center" HorizontalOptions="Center"/>
                 </VerticalStackLayout>
 
                 <!-- Results: POI section -->
-                <Label IsVisible="{Binding HasResults}" Text="Địa điểm" Style="{StaticResource SectionTitle}"/>
+                <Label IsVisible="{Binding HasResults}" Text="{Binding PoiSectionTitle}" Style="{StaticResource SectionTitle}"/>
 
                 <CollectionView ItemsSource="{Binding FilteredPois}" IsVisible="{Binding HasResults}" SelectionMode="None">
                     <CollectionView.ItemsLayout>
@@ -173,7 +173,7 @@
                 </CollectionView>
 
                 <!-- Tours section -->
-                <Label IsVisible="{Binding HasTours}" Text="Tour nổi bật" Style="{StaticResource SectionTitle}"/>
+                <Label IsVisible="{Binding HasTours}" Text="{Binding TourSectionTitle}" Style="{StaticResource SectionTitle}"/>
 
                 <CollectionView ItemsSource="{Binding Tours}" IsVisible="{Binding HasTours}" SelectionMode="None">
                     <CollectionView.ItemTemplate>

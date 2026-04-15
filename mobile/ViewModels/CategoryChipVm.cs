@@ -81,13 +81,14 @@ namespace AudioGo.ViewModels
             var list = new List<CategoryChipVm>();
 
             // "All / Tất cả" chip always first
-            var allLabel = lang == "vi" ? "Tất cả" : "All";
-            list.Add(new CategoryChipVm(allLabel, "\ue88a", ""));
+            list.Add(new CategoryChipVm(AudioGo.Helpers.AppStrings.GetForLanguage("cat_all", lang), "\ue88a", ""));
 
             foreach (var cat in apiCategories)
             {
                 var icon = GetIconForCategory(cat.Name);
-                list.Add(new CategoryChipVm(cat.Name, icon, cat.Name));
+                // Translate category name from Vietnamese (DB key) to current language
+                var displayLabel = AudioGo.Helpers.AppStrings.TranslateCategory(cat.Name);
+                list.Add(new CategoryChipVm(displayLabel, icon, cat.Name));
             }
 
             // If nothing from API, use hardcoded defaults (minus "all" which we already added)
@@ -105,32 +106,17 @@ namespace AudioGo.ViewModels
 
         public static (string label, string icon, string value)[] GetDefaultChips()
         {
-            if (AudioGo.Helpers.LanguageHelper.GetDeviceLanguageCode() == "vi")
+            // Uses AppStrings to return translated labels for the current app language
+            return new[]
             {
-                return new[]
-                {
-                    ("Tất cả",   "\ue88a", ""),           // home
-                    ("Ẩm thực",  "\ue56c", "Ẩm thực"),   // restaurant
-                    ("Di tích",  "\ue84f", "Di tích"),    // account_balance
-                    ("Cà phê",   "\uef6c", "Cà phê"),     // local_cafe
-                    ("Mua sắm",  "\ue8cb", "Mua sắm"),   // shopping_bag
-                    ("Giải trí", "\ue552", "Giải trí"),   // local_activity
-                    ("Văn hóa",  "\ue54e", "Văn hóa"),   // museum
-                };
-            }
-            else
-            {
-                return new[]
-                {
-                    ("All",             "\ue88a", ""),
-                    ("Food",            "\ue56c", "Ẩm thực"),
-                    ("Historical",      "\ue84f", "Di tích"),
-                    ("Coffee",          "\uef6c", "Cà phê"),
-                    ("Shopping",        "\ue8cb", "Mua sắm"),
-                    ("Entertainment",   "\ue552", "Giải trí"),
-                    ("Culture",         "\ue54e", "Văn hóa"),
-                };
-            }
+                (AudioGo.Helpers.AppStrings.Get("cat_all"),           "\ue88a", ""),
+                (AudioGo.Helpers.AppStrings.Get("cat_food"),          "\ue56c", "Ẩm thực"),
+                (AudioGo.Helpers.AppStrings.Get("cat_historical"),    "\ue84f", "Di tích"),
+                (AudioGo.Helpers.AppStrings.Get("cat_coffee"),        "\uef6c", "Cà phê"),
+                (AudioGo.Helpers.AppStrings.Get("cat_shopping"),      "\ue8cb", "Mua sắm"),
+                (AudioGo.Helpers.AppStrings.Get("cat_entertainment"), "\ue552", "Giải trí"),
+                (AudioGo.Helpers.AppStrings.Get("cat_culture"),       "\ue54e", "Văn hóa"),
+            };
         }
     }
 }

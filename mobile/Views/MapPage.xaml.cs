@@ -169,6 +169,14 @@ public partial class MapPage : ContentPage
         {
             MainThread.BeginInvokeOnMainThread(RefreshGeofenceOverlays);
         }
+        else if (e.PropertyName == nameof(MapViewModel.TravelTimeLabel))
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                if (_vm.SelectedPoi is not null)
+                    BannerTime.Text = _vm.TravelTimeLabel;
+            });
+        }
     }
 
     private async void OnPoiBannerDetailClicked(object? sender, EventArgs e)

@@ -63,6 +63,24 @@ namespace AudioGo.ViewModels
         }
 
         // ── Computed display properties (MainPage XAML bindings) ──────
+        public string AreaName => AppStrings.Get("main_area_name");
+        public string AreaSubTitle => AppStrings.Get("main_area_sub");
+        public string HomePageTitle => AppStrings.Get("tab_home");
+        public string HeroDiscoverLabel => AppStrings.Get("main_hero_discover");
+        public string HeroFoodStreetLabel => AppStrings.Get("main_hero_food_street");
+        public string HeroVinhKhanhLabel => AppStrings.Get("main_hero_vinh_khanh");
+        public string NearbyTitle => AppStrings.Get("nearby_title");
+        public string NearbyViewAll => AppStrings.Get("nearby_view_all");
+        public string NearbyEmptyTitle => AppStrings.Get("nearby_empty_title");
+        public string NearbyEmptyDesc => AppStrings.Get("nearby_empty_desc");
+        public string MiniPlayerNowPlaying => AppStrings.Get("mini_playing");
+        
+        // Map Page Labels
+        public string MapTitle => AppStrings.Get("map_title");
+        public string MapListenLabel => AppStrings.Get("map_listen");
+        public string MapDetailsLabel => AppStrings.Get("map_details");
+        public string MapDirectionsLabel => AppStrings.Get("map_directions");
+
         private ObservableCollection<POI> _nearbyPois = new();
         public ObservableCollection<POI> NearbyPois => _nearbyPois;
 
@@ -90,7 +108,7 @@ namespace AudioGo.ViewModels
 
 
 
-        private string _statusMessage = "Chờ GPS...";
+        private string _statusMessage = AppStrings.Get("status_gps");
         public string StatusMessage
         {
             get => _statusMessage;
@@ -105,7 +123,9 @@ namespace AudioGo.ViewModels
         }
 
         public bool AllowCellularDownloads => AppSettings.IsCellularDownloadsAllowed();
-        public string DownloadPolicyLabel => AllowCellularDownloads ? "Wi-Fi + 4G/5G" : "Chi Wi-Fi";
+        public string DownloadPolicyLabel => AllowCellularDownloads
+            ? AppStrings.Get("settings_cellular_on")
+            : AppStrings.Get("settings_cellular_off");
 
         public bool IsAudioPlaying => _audio.IsPlaying;
 
@@ -147,20 +167,20 @@ namespace AudioGo.ViewModels
         public async Task InitAsync()
             {
                 IsLoading = true;
-                StatusMessage = "Đang tải dữ liệu...";
+                StatusMessage = AppStrings.Get("status_loading");
             try
             {
                 Pois = await _sync.GetPoisAsync(CurrentLanguage);
                 await _geofence.StartMonitoringAsync(Pois);
                 await _location.StartAsync();
-                                    StatusMessage = $"Đang theo dõi {Pois.Count} điểm";
+                StatusMessage = AppStrings.Get("status_tracking", Pois.Count.ToString());
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Đang theo dõi {Pois.Count} điểm";
+                StatusMessage = AppStrings.Get("status_tracking", Pois.Count.ToString());
                 MainThread.BeginInvokeOnMainThread(async () =>
                 {
-                    try { await CommunityToolkit.Maui.Alerts.Toast.Make("Lỗi: " + ex.Message).Show(); } catch { }
+                    try { await CommunityToolkit.Maui.Alerts.Toast.Make(AppStrings.Get("error_prefix", ex.Message)).Show(); } catch { }
                 });
             }
             finally
@@ -175,7 +195,7 @@ namespace AudioGo.ViewModels
             if (normalized == CurrentLanguage) return;
 
             IsLoading = true;
-            StatusMessage = "Dang cap nhat ngon ngu...";
+            StatusMessage = AppStrings.Get("status_updating_lang");
             try
             {
                 var newPois = await _sync.SwitchLanguageAsync(normalized);
@@ -188,11 +208,12 @@ namespace AudioGo.ViewModels
 
                 Pois = newPois;
                 await _geofence.StartMonitoringAsync(Pois);
-                StatusMessage = $"Dang theo doi {Pois.Count} diem ({CurrentLanguage})";
+                StatusMessage = AppStrings.Get("status_tracking", Pois.Count.ToString());
+                _sync.NotifyLanguageChanged(normalized);
             }
             catch (Exception)
             {
-                StatusMessage = $"Đang theo dõi {Pois.Count} điểm";
+                StatusMessage = AppStrings.Get("status_tracking", Pois.Count.ToString());
                 throw;
             }
             finally
@@ -208,14 +229,14 @@ namespace AudioGo.ViewModels
                 await _audio.StopAsync();
                 Pois = await _sync.GetPoisAsync(CurrentLanguage);
                 await _geofence.StartMonitoringAsync(Pois);
-                StatusMessage = $"Đang theo dõi {Pois.Count} điểm ({CurrentLanguage})";
+                StatusMessage = AppStrings.Get("status_tracking", Pois.Count.ToString());
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Đang theo dõi {Pois.Count} điểm";
+                StatusMessage = AppStrings.Get("status_tracking", Pois.Count.ToString());
                 MainThread.BeginInvokeOnMainThread(async () =>
                 {
-                    try { await CommunityToolkit.Maui.Alerts.Toast.Make("Lỗi: " + ex.Message).Show(); } catch { }
+                    try { await CommunityToolkit.Maui.Alerts.Toast.Make(AppStrings.Get("error_prefix", ex.Message)).Show(); } catch { }
                 });
             }
             finally
@@ -230,7 +251,26 @@ namespace AudioGo.ViewModels
             {
                 CurrentLanguage = newLang;
             }
-            _ = ReloadPoisAsync();
+
+            OnPropertyChanged(nameof(HomePageTitle));
+            OnPropertyChanged(nameof(AreaName));
+            OnPropertyChanged(nameof(AreaSubTitle));
+            OnPropertyChanged(nameof(HeroDiscoverLabel));
+            OnPropertyChanged(nameof(HeroFoodStreetLabel));
+            OnPropertyChanged(nameof(HeroVinhKhanhLabel));
+            OnPropertyChanged(nameof(NearbyTitle));
+            OnPropertyChanged(nameof(NearbyViewAll));
+            OnPropertyChanged(nameof(NearbyEmptyTitle));
+            OnPropertyChanged(nameof(NearbyEmptyDesc));
+            OnPropertyChanged(nameof(MiniPlayerNowPlaying));
+            OnPropertyChanged(nameof(DownloadPolicyLabel));
+            OnPropertyChanged(nameof(MapTitle));
+            OnPropertyChanged(nameof(MapListenLabel));
+            OnPropertyChanged(nameof(MapDetailsLabel));
+            OnPropertyChanged(nameof(MapDirectionsLabel));
+
+            if (!IsLoading)
+                StatusMessage = AppStrings.Get("status_tracking", Pois.Count.ToString());
         }
 
         public async Task StopAsync()
@@ -248,12 +288,12 @@ namespace AudioGo.ViewModels
 
             if (allowed)
             {
-                StatusMessage = "Dang tai tai nguyen nen bang mang hien tai...";
+                StatusMessage = AppStrings.Get("status_downloading_cellular");
                 await _sync.RetryPendingDownloadsAsync();
             }
             else
             {
-                StatusMessage = "Da bat che do chi tai ngam khi co Wi-Fi.";
+                StatusMessage = AppStrings.Get("status_wifi_only");
             }
         }
 
@@ -261,7 +301,7 @@ namespace AudioGo.ViewModels
         {
             _ = _audio.StopAsync();
             ActivePoi = null;
-            StatusMessage = $"Đang theo dõi {Pois.Count} điểm";
+            StatusMessage = AppStrings.Get("status_tracking", Pois.Count.ToString());
             OnPropertyChanged(nameof(IsAudioPlaying));
             OnPropertyChanged(nameof(IsAudioPaused));
             OnPropertyChanged(nameof(MiniPlayerPlayIcon));
@@ -335,7 +375,7 @@ namespace AudioGo.ViewModels
 
         private async void OnPoiTriggered(object? sender, POI poi)
         {
-            StatusMessage = $"Đang tự động phát: {poi.Title}";
+            StatusMessage = AppStrings.Get("status_auto_playing", poi.Title);
             await TriggerAudioAsync(poi);
         }
 

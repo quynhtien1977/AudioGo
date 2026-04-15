@@ -30,7 +30,13 @@ namespace AudioGo.ViewModels
 
         public bool HasTours => !IsLoading && Tours.Count > 0;
         public bool IsEmpty => !IsLoading && Tours.Count == 0;
-        public string CountLabel => $"{Tours.Count} tour quanh bạn";
+        public string CountLabel => AudioGo.Helpers.AppStrings.Get("tour_list_count", Tours.Count);
+
+        // UI Strings
+        public string LabelTours => AudioGo.Helpers.AppStrings.Get("tour_list_tours");
+        public string LabelEmptyTitle => AudioGo.Helpers.AppStrings.Get("tour_list_empty_title");
+        public string LabelEmptyDesc => AudioGo.Helpers.AppStrings.Get("tour_list_empty_desc");
+        public string LabelCreateBtn => "+ " + AudioGo.Helpers.AppStrings.Get("tour_list_create_btn");
 
         public ICommand OpenTourCommand { get; }
         public ICommand RefreshCommand { get; }
@@ -137,7 +143,13 @@ namespace AudioGo.ViewModels
 
         // Properties used by TourListPage XAML
         public int    PoiCount      => _dto.PoiCount;
-        public string PoiCountLabel => $"📍 {_dto.PoiCount} điểm";
+        
+        public string LabelProgress => AudioGo.Helpers.AppStrings.Get("tour_progress");
+        public string LabelPoints => AudioGo.Helpers.AppStrings.Get("tour_points");
+        public string LabelMinutes => AudioGo.Helpers.AppStrings.Get("tour_minutes");
+        public string LabelLang => AudioGo.Helpers.AppStrings.Get("tour_lang");
+        public string LabelContinue => "▶  " + AudioGo.Helpers.AppStrings.Get("tour_continue");
+
         // Duration & language — not in DTO yet, show placeholder
         public string DurationText  => "--";
         public string Language      => "VI";

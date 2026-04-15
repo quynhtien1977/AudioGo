@@ -1,10 +1,11 @@
-using AudioGo.Services;
+﻿using AudioGo.Services;
 using AudioGo.Services.Interfaces;
 using Microsoft.Maui.Controls.Maps;
 using Microsoft.Maui.Maps;
 using Shared;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
+using AudioGo.Helpers;
 
 namespace AudioGo.ViewModels
 {
@@ -47,7 +48,7 @@ namespace AudioGo.ViewModels
             }
         }
 
-        /// <summary>Distance label for POI banner, e.g. "cách 150m".</summary>
+        /// <summary>Distance label for POI banner, e.g. "cÃ¡ch 150m".</summary>
         public string SelectedPoiDistanceLabel
         {
             get
@@ -57,8 +58,8 @@ namespace AudioGo.ViewModels
                     _userLocation.Latitude, _userLocation.Longitude,
                     _selectedPoi.Latitude, _selectedPoi.Longitude);
                 return dist < 1000
-                    ? $"cách {(int)dist}m"
-                    : $"cách {dist / 1000.0:F1}km";
+                    ? AppStrings.Get("map_distance_m", ((int)dist).ToString())
+                    : AppStrings.Get("map_distance_km", (dist / 1000.0).ToString("F1"));
             }
         }
 
@@ -71,7 +72,7 @@ namespace AudioGo.ViewModels
                     _userLocation.Latitude, _userLocation.Longitude,
                     _selectedPoi.Latitude, _selectedPoi.Longitude);
                 int minutes = (int)Math.Max(1, Math.Round(dist / 83.33)); // ~5km/h walking
-                return $"~{minutes} phút đi bộ";
+                return AppStrings.Get("map_walk_time", minutes.ToString());
             }
         }
 
@@ -104,6 +105,13 @@ namespace AudioGo.ViewModels
 
         private void OnLanguageChanged(object? sender, string e)
         {
+            OnPropertyChanged(nameof(MapTitle));
+            OnPropertyChanged(nameof(MapListenLabel));
+            OnPropertyChanged(nameof(MapDetailsLabel));
+            OnPropertyChanged(nameof(MapDirectionsLabel));
+            OnPropertyChanged(nameof(MapStatusLabel));
+            OnPropertyChanged(nameof(SelectedPoiDistanceLabel));
+            OnPropertyChanged(nameof(TravelTimeLabel));
             _ = LoadCategoriesAsync();
         }
 
@@ -158,7 +166,7 @@ namespace AudioGo.ViewModels
                 {
                     var pin = new AudioGo.Controls.CustomPin
                     {
-                        Label = poi.Title ?? "Không tên",
+                        Label = poi.Title ?? "Unknown",
                         Address = poi.Description ?? string.Empty,
                         Location = new Location(poi.Latitude, poi.Longitude),
                         Type = PinType.Place,
@@ -257,8 +265,13 @@ namespace AudioGo.ViewModels
         }
 
         public string MapStatusLabel => Pins.Count > 0
-            ? $"{Pins.Count} địa điểm quanh bạn"
-            : "Đang tải địa điểm...";
+            ? string.Format(AppStrings.Get("search_poi_points"), Pins.Count)
+            : AppStrings.Get("map_status");
+
+        public string MapTitle => AppStrings.Get("map_title");
+        public string MapListenLabel => AppStrings.Get("map_listen");
+        public string MapDetailsLabel => AppStrings.Get("map_details");
+        public string MapDirectionsLabel => AppStrings.Get("map_directions");
 
         public void MoveTo(double lat, double lon, double radiusKm = 1.0)
         {

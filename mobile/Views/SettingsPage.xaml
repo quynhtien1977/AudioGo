@@ -4,36 +4,149 @@
              xmlns:vm="clr-namespace:AudioGo.ViewModels"
              x:Class="AudioGo_Mobile.Views.SettingsPage"
              x:DataType="vm:SettingsViewModel"
-             Title="Cài Đặt"
+             x:Name="ThisPage"
+             Shell.NavBarIsVisible="False"
              BackgroundColor="{StaticResource Background}">
 
     <ScrollView>
-        <VerticalStackLayout Spacing="20" Padding="20">
-            <!-- Ngôn ngữ -->
-            <Label Text="Ngôn Ngữ" Style="{StaticResource HeadlineLabel}" />
-            
-            <Border Style="{StaticResource CardBorder}">
-                <VerticalStackLayout>
-                    <Label Text="Chọn ngôn ngữ ứng dụng" Style="{StaticResource CaptionLabel}" Margin="15,15,15,5"/>
-                    <Label Text="{Binding CurrentLanguageName}" Style="{StaticResource BodyLabel}" Margin="15,0,15,15" FontAttributes="Bold"/>
-                    <Button Text="ĐỔI NGÔN NGỮ" Clicked="OnChangeLanguageClicked" Style="{StaticResource OutlineButton}" HorizontalOptions="Start" Margin="15,5,15,15"/>
-                </VerticalStackLayout>
-            </Border>
+        <VerticalStackLayout Spacing="0">
 
-            <!-- Tải dữ liệu -->
-            <Label Text="Dữ Liệu" Style="{StaticResource HeadlineLabel}" Margin="0,10,0,0"/>
-            
-            <Border Style="{StaticResource CardBorder}">
-                <Grid Padding="15" ColumnDefinitions="*, Auto">
-                    <VerticalStackLayout Grid.Column="0" VerticalOptions="Center" Spacing="4">
-                        <Label Text="Tải qua 4G/5G" Style="{StaticResource BodyLabel}" />
-                        <Label Text="{Binding DownloadPolicyLabel}" Style="{StaticResource CaptionLabel}" />
-                    </VerticalStackLayout>
-                    
-                    <Switch Grid.Column="1" IsToggled="{Binding AllowCellularDownloads}" OnColor="{StaticResource Primary}" VerticalOptions="Center"/>
-                </Grid>
-            </Border>
-            
+            <!-- ── Header (matches MainPage / MapPage pattern) ── -->
+            <Grid Padding="20,56,20,16"
+                  BackgroundColor="{StaticResource Surface}">
+                <VerticalStackLayout Spacing="2">
+                    <Label Text="{Binding PageTitle}"
+                           Style="{StaticResource HeadlineLabel}" />
+                    <Label Text="{Binding CurrentLanguageName}"
+                           Style="{StaticResource BodyLabel}"
+                           TextColor="{StaticResource Primary}" />
+                </VerticalStackLayout>
+            </Grid>
+
+            <VerticalStackLayout Padding="20,20,20,32" Spacing="24">
+
+                <!-- ── Language Section ── -->
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="{Binding LabelLanguageSection}"
+                           Style="{StaticResource SectionTitle}" />
+
+                    <Border Style="{StaticResource CardBorder}" Padding="0">
+                        <VerticalStackLayout>
+                            <!-- Current language row -->
+                            <Grid Padding="16,14" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                <!-- Flag/icon -->
+                                <Border Grid.Column="0"
+                                        BackgroundColor="{StaticResource PrimaryLight}"
+                                        StrokeShape="RoundRectangle 10"
+                                        StrokeThickness="0"
+                                        WidthRequest="40" HeightRequest="40">
+                                    <Label Text="&#xe8e2;" FontFamily="MaterialIcons" FontSize="22"
+                                           TextColor="{StaticResource Primary}"
+                                           HorizontalOptions="Center" VerticalOptions="Center" />
+                                </Border>
+                                <!-- Label + name -->
+                                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                                    <Label Text="{Binding LabelLanguageSection}"
+                                           Style="{StaticResource CaptionLabel}" />
+                                    <Label Text="{Binding CurrentLanguageName}"
+                                           Style="{StaticResource BodyLabel}"
+                                           FontAttributes="Bold" />
+                                </VerticalStackLayout>
+                                <!-- Chevron -->
+                                <Label Grid.Column="2" Text="&#xe5cc;"
+                                       FontFamily="MaterialIcons" FontSize="20"
+                                       TextColor="{StaticResource TextSecondary}"
+                                       VerticalOptions="Center" />
+                                <Grid.GestureRecognizers>
+                                    <TapGestureRecognizer Tapped="OnChangeLanguageClicked" />
+                                </Grid.GestureRecognizers>
+                            </Grid>
+
+                            <!-- Divider -->
+                            <BoxView HeightRequest="1" Color="{StaticResource Gray200}" Margin="16,0" />
+
+                            <!-- Change button row -->
+                            <Grid Padding="16,12" ColumnDefinitions="*,Auto">
+                                <Label Grid.Column="0"
+                                       Text="{Binding LabelLanguageSection}"
+                                       Style="{StaticResource CaptionLabel}"
+                                       VerticalOptions="Center" />
+                                <Button Grid.Column="1"
+                                        Text="&#xe8e2;"
+                                        FontFamily="MaterialIcons"
+                                        FontSize="20"
+                                        BackgroundColor="Transparent"
+                                        TextColor="{StaticResource Primary}"
+                                        Padding="0"
+                                        WidthRequest="40" HeightRequest="40"
+                                        Clicked="OnChangeLanguageClicked" />
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Border>
+                </VerticalStackLayout>
+
+                <!-- ── Download / Data Section ── -->
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="{Binding LabelDownloadSection}"
+                           Style="{StaticResource SectionTitle}" />
+
+                    <Border Style="{StaticResource CardBorder}" Padding="0">
+                        <Grid Padding="16" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                            <!-- Icon -->
+                            <Border Grid.Column="0"
+                                    BackgroundColor="{StaticResource PrimaryLight}"
+                                    StrokeShape="RoundRectangle 10"
+                                    StrokeThickness="0"
+                                    WidthRequest="40" HeightRequest="40">
+                                <Label Text="&#xe2bd;" FontFamily="MaterialIcons" FontSize="22"
+                                       TextColor="{StaticResource Primary}"
+                                       HorizontalOptions="Center" VerticalOptions="Center" />
+                            </Border>
+                            <!-- Label + sub -->
+                            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                                <Label Text="{Binding LabelCellularToggle}"
+                                       Style="{StaticResource BodyLabel}" />
+                                <Label Text="{Binding DownloadPolicyLabel}"
+                                       Style="{StaticResource CaptionLabel}" />
+                            </VerticalStackLayout>
+                            <!-- Toggle -->
+                            <Switch Grid.Column="2"
+                                    IsToggled="{Binding AllowCellularDownloads}"
+                                    OnColor="{StaticResource Primary}"
+                                    VerticalOptions="Center" />
+                        </Grid>
+                    </Border>
+                </VerticalStackLayout>
+
+                <!-- ── App Version ── -->
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="{Binding LabelAppVersion}"
+                           Style="{StaticResource SectionTitle}" />
+
+                    <Border Style="{StaticResource CardBorder}" Padding="0">
+                        <Grid Padding="16" ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                            <Border Grid.Column="0"
+                                    BackgroundColor="{StaticResource PrimaryLight}"
+                                    StrokeShape="RoundRectangle 10"
+                                    StrokeThickness="0"
+                                    WidthRequest="40" HeightRequest="40">
+                                <Label Text="&#xe88e;" FontFamily="MaterialIcons" FontSize="22"
+                                       TextColor="{StaticResource Primary}"
+                                       HorizontalOptions="Center" VerticalOptions="Center" />
+                            </Border>
+                            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                                <Label Text="AudioGo"
+                                       Style="{StaticResource BodyLabel}"
+                                       FontAttributes="Bold" />
+                                <Label Text="v1.0.0 (Beta)"
+                                       Style="{StaticResource CaptionLabel}" />
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Border>
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
         </VerticalStackLayout>
     </ScrollView>
+
 </ContentPage>

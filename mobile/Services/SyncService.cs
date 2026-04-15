@@ -20,6 +20,12 @@ namespace AudioGo.Services
         public event EventHandler<string>? SyncNotice;
         public event EventHandler<string>? LanguageChanged;
 
+        public void NotifyLanguageChanged(string languageCode)
+        {
+            var normalized = LanguageHelper.NormalizeToSupported(languageCode);
+            MainThread.BeginInvokeOnMainThread(() => LanguageChanged?.Invoke(this, normalized));
+        }
+
         public SyncService(IApiService api, AppDatabase db, IHttpClientFactory httpFactory)
         {
             _api = api;
@@ -40,7 +46,7 @@ namespace AudioGo.Services
             if (CanDownloadAssetsNow())
                 _ = Task.Run(() => RetryPendingDownloadsAsync());
             else
-                PublishNotice("Dang cho Wi-Fi de tai audio/anh nen. Ban co the bat du lieu di dong trong cai dat tai.");
+                PublishNotice("Đang chờ wifi tải nền. Bạn có thể dùng dữ liệu di động trong cài đặt.");
         }
 
         public void Dispose()
@@ -72,13 +78,13 @@ namespace AudioGo.Services
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[SyncService] SwitchLanguage fetch failed: {ex.Message}");
-                PublishNotice("Khong the tai du lieu ngon ngu moi. Du lieu hien tai duoc giu nguyen.");
+                PublishNotice("Không thể cập nhật ngôn ngữ. Dữ liệu hiện tại được giữ nguyên.");
                 return null;
             }
 
             if (serverPois.Count == 0)
             {
-                PublishNotice("Khong nhan duoc du lieu ngon ngu moi. Du lieu hien tai duoc giu nguyen.");
+                PublishNotice("Không có dữ liệu ngôn ngữ mới. Dữ liệu hiện tại được giữ nguyên.");
                 return null;
             }
 
@@ -96,9 +102,7 @@ namespace AudioGo.Services
                 }
             });
 
-            var updatedPois = (await _db.GetAllPoisAsync()).Select(MapToDto).ToList();
-            MainThread.BeginInvokeOnMainThread(() => LanguageChanged?.Invoke(this, normalizedLang));
-            return updatedPois;
+            return (await _db.GetAllPoisAsync()).Select(MapToDto).ToList();
         }
 
         public async Task RetryPendingDownloadsAsync(CancellationToken ct = default)
@@ -167,7 +171,7 @@ namespace AudioGo.Services
                 if (CanDownloadAssetsNow())
                     _ = Task.Run(() => DownloadAllAssetsAsync(serverPois, CancellationToken.None));
                 else
-                    PublishNotice("Da dong bo noi dung text. Audio/anh se tai khi co Wi-Fi.");
+                    PublishNotice("Đã đồng bộ nội dung text. Audio/ảnh sẽ tải khi có Wi-Fi.");
 
                 return (await _db.GetAllPoisAsync()).Select(MapToDto).ToList();
             }
@@ -231,7 +235,7 @@ namespace AudioGo.Services
                 }
                 else
                 {
-                    PublishNotice("Da dong bo noi dung text. Audio/anh se tai khi co Wi-Fi.");
+                    PublishNotice("Đã đồng bộ nội dung text. Audio/ảnh sẽ tải khi có Wi-Fi.");
                 }
 
                 return (await _db.GetAllPoisAsync()).Select(MapToDto).ToList();
@@ -284,7 +288,7 @@ namespace AudioGo.Services
             }
             else
             {
-                PublishNotice("Dang cho Wi-Fi de tai ngam audio/anh. Ban co the bat du lieu di dong neu muon tai ngay.");
+                PublishNotice("Đang chờ Wi-Fi để tải âm thanh/ảnh. Bạn có thể bật dữ liệu di động nếu muốn tải ngay.");
             }
 
             return (await _db.GetAllPoisAsync()).Select(MapToDto).ToList();
