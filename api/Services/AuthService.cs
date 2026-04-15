@@ -33,7 +33,7 @@ namespace Server.Services
                 throw new Exception("Tài khoản của bạn đã bị khóa");
             }
 
-            return new LoginResponse(GenerateToken(account), account.Role,
+            return new LoginResponse(GenerateToken(account), account.Role, account.AccountId,
                 DateTime.UtcNow.AddMinutes(GetExpiryMinutes()));
         }
 

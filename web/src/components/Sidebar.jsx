@@ -6,7 +6,8 @@ import {
   BarChart,
   Users,
   Map,
-  Headphones
+  Headphones,
+  BadgeCheck
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
@@ -45,6 +46,10 @@ export default function Sidebar() {
             
             <MenuItem to="/categories" icon={<Layers size={18} />}>
               Danh mục
+            </MenuItem>
+
+            <MenuItem to="/poi/management" icon={<BadgeCheck size={18} />}>
+              Xét duyệt
             </MenuItem>
 
             <MenuItem to="/tours" icon={<RouteIcon size={18} />} isDisabled>

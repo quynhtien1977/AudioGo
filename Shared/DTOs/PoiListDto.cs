@@ -3,6 +3,7 @@ namespace Shared.DTOs
     public class PoiListDto
     {
         public string PoiId { get; set; }
+        public string AccountId { get; set; }
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public int ActivationRadius { get; set; }

@@ -2,6 +2,7 @@ namespace Shared.DTOs
 {
     public record PoiDetailDto(
         string PoiId,
+        string AccountId,
         double Latitude,
         double Longitude,
         int ActivationRadius,

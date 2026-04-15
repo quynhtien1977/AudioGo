@@ -123,7 +123,7 @@ const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role }) => {
           <p className="text-sm font-bold text-gray-700 italic">{poi.ActivityRadius || 50} M</p>
         </div>
         {/* Priority */}
-        <div className="flex-1 min-h-[45px]">
+        {/* <div className="flex-1 min-h-[45px]">
           <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Độ ưu tiên</p>
           <span
             className={`px-2 py-1 rounded-full text-xs font-semibold ${
@@ -138,6 +138,47 @@ const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role }) => {
           >
             {poi.priority}
           </span>
+        </div> */}
+        {/* Priority */}
+        <div className="flex-1 min-h-[45px]">
+          <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Độ ưu tiên</p>
+
+          {isEditing ? (
+            <div className="relative">
+              <select
+                value={form.priority ?? poi.priority ?? 1}
+                onChange={(e) => handleChange("priority", Number(e.target.value))}
+                className={`appearance-none cursor-pointer ${inputStyle}`}
+              >
+                <option value={1}>LOW</option>
+                <option value={2}>MEDIUM</option>
+                <option value={3}>HIGH</option>
+                <option value={4}>CRITICAL</option>
+              </select>
+
+              <div className="pointer-events-none absolute right-0 bottom-1 flex items-center text-pink-400">
+                <svg className="h-3 w-3 fill-current" viewBox="0 0 20 20">
+                  <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                </svg>
+              </div>
+            </div>
+          ) : (
+            <span
+              className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                (poi.priority === 4 || poi.priority === "CRITICAL")
+                  ? "bg-red-100 text-red-500"
+                  : (poi.priority === 3 || poi.priority === "HIGH")
+                  ? "bg-yellow-100 text-yellow-600"
+                  : (poi.priority === 2 || poi.priority === "MEDIUM")
+                  ? "bg-gray-200 text-gray-600"
+                  : "bg-gray-100 text-gray-400"
+              }`}
+            >
+              {typeof poi.priority === "number"
+                ? ["LOW", "MEDIUM", "HIGH", "CRITICAL"][poi.priority - 1]
+                : poi.priority}
+            </span>
+          )}
         </div>
       </div>
 

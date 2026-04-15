@@ -55,7 +55,7 @@ namespace Server.Controllers.Cms
 
             var poiIds = pois.Select(p => p.PoiId).ToList();
 
-            // 🔥 JOIN lấy category
+            // JOIN lấy category
             var categoryMap = await (
                 from cp in _db.CategoryPois
                 join c in _db.Categories on cp.CategoryId equals c.CategoryId
@@ -71,6 +71,7 @@ namespace Server.Controllers.Cms
             var result = pois.Select(p => new PoiListDto
             {
                 PoiId = p.PoiId,
+                AccountId = p.AccountId,
                 Latitude = p.Latitude,
                 Longitude = p.Longitude,
                 ActivationRadius = p.ActivationRadius,
@@ -81,6 +82,39 @@ namespace Server.Controllers.Cms
                 // thêm category
                 Category = categoryMap.GetValueOrDefault(p.PoiId, "Unknown")
             }).ToList();
+
+            return Ok(result);
+        }
+
+        /// <summary>Danh sách yêu cầu POI của Owner hiện tại.</summary>
+        [HttpGet("requests/my-requests")]
+        public async Task<ActionResult<List<PoiRequestListDto>>> GetMyPoiRequests([FromQuery] string? status = null)
+        {
+            var accountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(accountId)) return Unauthorized();
+
+            var query = _db.PoiRequests
+                .Where(pr => pr.AccountId == accountId)
+                .AsNoTracking();
+
+            if (!string.IsNullOrEmpty(status))
+            {
+                query = query.Where(pr => pr.Status == status);
+            }
+
+            var requests = await query
+                .OrderByDescending(pr => pr.CreatedAt)
+                .ToListAsync();
+
+            var result = requests.Select(pr => new PoiRequestListDto(
+                RequestId: pr.RequestId,
+                PoiId: pr.PoiId,
+                AccountId: pr.AccountId,
+                ActionType: pr.ActionType,
+                Status: pr.Status,
+                CreatedAt: pr.CreatedAt,
+                RejectReason: pr.RejectReason
+            )).ToList();
 
             return Ok(result);
         }
@@ -97,7 +131,7 @@ namespace Server.Controllers.Cms
             if (poi is null) return NotFound();
 
             return Ok(new PoiDetailDto(
-                poi.PoiId, poi.Latitude, poi.Longitude,
+                poi.PoiId, poi.AccountId, poi.Latitude, poi.Longitude,
                 poi.ActivationRadius, poi.Priority, poi.IsActive, poi.LogoUrl,
                 poi.CreatedAt, poi.UpdatedAt,
                 poi.Contents.Select(c => new PoiContentDto(
