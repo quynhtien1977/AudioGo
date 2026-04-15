@@ -99,6 +99,12 @@ namespace AudioGo.ViewModels
             });
 
             _ = LoadCategoriesAsync();
+            _sync.LanguageChanged += OnLanguageChanged;
+        }
+
+        private void OnLanguageChanged(object? sender, string e)
+        {
+            _ = LoadCategoriesAsync();
         }
 
         private async Task LoadCategoriesAsync()
@@ -108,7 +114,7 @@ namespace AudioGo.ViewModels
                 var apiCategories = await _sync.GetCategoriesAsync();
                 if (apiCategories.Count == 0) return;
 
-                var lang = AudioGo.Helpers.LanguageHelper.GetDeviceLanguageCode();
+                var lang = AudioGo.Helpers.AppSettings.GetAppLanguage();
                 var newChips = CategoryChipVm.BuildFromApiCategories(apiCategories, lang);
                 var currentActive = CategoryChips.FirstOrDefault(c => c.IsActive)?.Value ?? "";
 

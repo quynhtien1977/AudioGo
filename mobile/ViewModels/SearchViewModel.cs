@@ -1,4 +1,5 @@
 using AudioGo.Services.Interfaces;
+using AudioGo.Helpers;
 using AudioGo_Mobile.Views;
 using AudioGo.Services;
 using Shared;
@@ -91,14 +92,24 @@ namespace AudioGo.ViewModels
                 await Shell.Current.GoToAsync($"{nameof(PoiDetailPage)}?poiId={vm.PoiId}");
             });
 
-            OpenTourCommand = new Command<TourSearchVm>(async vm =>
+            OpenTourCommand = new Command<TourSearchVm>(_ =>
             {
-                if (vm is null) return;
-                await Shell.Current.GoToAsync($"{nameof(TourDetailPage)}?tourId={vm.TourId}");
+                // Tour tam an de ship som
             });
 
             // Load real categories from API asynchronously
             _ = LoadCategoriesAsync();
+
+            _sync.LanguageChanged += OnLanguageChanged;
+        }
+
+        private void OnLanguageChanged(object? sender, string e)
+        {
+            _ = LoadCategoriesAsync();
+            Pois.Clear();
+            Tours.Clear();
+            Query = string.Empty;
+            UpdateStates();
         }
 
         private async Task LoadCategoriesAsync()
@@ -108,7 +119,7 @@ namespace AudioGo.ViewModels
                 var apiCategories = await _sync.GetCategoriesAsync();
                 if (apiCategories.Count == 0) return;
 
-                var lang = AudioGo.Helpers.LanguageHelper.GetDeviceLanguageCode();
+                var lang = AppSettings.GetAppLanguage();
                 var newChips = CategoryChipVm.BuildFromApiCategories(apiCategories, lang);
 
                 // Preserve active category if any
@@ -173,14 +184,12 @@ namespace AudioGo.ViewModels
 
             try
             {
-                string lang = AudioGo.Helpers.LanguageHelper.GetDeviceLanguageCode();
+                string lang = AppSettings.GetAppLanguage();
                 var pois = await _api.GetPoisAsync(languageCode: lang, query: query, category: ActiveCategory);
                 if (pois is not null)
                     foreach (var p in pois) Pois.Add(new PoiSearchVm(p));
 
-                var tours = await _api.GetToursAsync(languageCode: lang, query: query);
-                if (tours is not null)
-                    foreach (var t in tours) Tours.Add(new TourSearchVm(t));
+                // Tour tam an de ship som
             }
             catch 
             { 
@@ -196,7 +205,7 @@ namespace AudioGo.ViewModels
         private async Task OfflineSearchAsync(string query)
         {
             // ── FIX: Lấy language thiết bị để load đúng cache SQLite ngôn ngữ đang dùng ──
-            string lang = AudioGo.Helpers.LanguageHelper.GetDeviceLanguageCode();
+            string lang = AppSettings.GetAppLanguage();
             var allPois = await _sync.GetPoisAsync(lang);
             
             // ── FIX: Cải thiện filter (OrdinalIgnoreCase) và ưu tiên category 'all' ──
@@ -217,7 +226,7 @@ namespace AudioGo.ViewModels
         private void UpdateStates()
         {
             HasResults  = Pois.Count > 0;
-            HasTours    = Tours.Count > 0;
+            HasTours    = false;
             
             bool isSearching = !string.IsNullOrEmpty(Query) || (!string.IsNullOrEmpty(ActiveCategory) && ActiveCategory != "all");
             

@@ -22,15 +22,6 @@
                         <Label Text="Khu phố Vĩnh Khánh" Style="{StaticResource HeadlineLabel}"/>
                         <Label Text="Quận 4, TP. Hồ Chí Minh" Style="{StaticResource BodyLabel}"/>
                     </VerticalStackLayout>
-                    <!-- Nút thông báo -->
-                    <Border Grid.Column="1"
-                            BackgroundColor="{StaticResource Gray100}"
-                            StrokeShape="RoundRectangle 20"
-                            StrokeThickness="0"
-                            WidthRequest="40" HeightRequest="40"
-                            VerticalOptions="Center">
-                        <Label Text="&#xe7f4;" FontFamily="MaterialIcons" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center"/>
-                    </Border>
                 </Grid>
 
                 <VerticalStackLayout Padding="20,20,20,0" Spacing="24">

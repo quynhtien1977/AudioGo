@@ -50,6 +50,19 @@
                     Size="26" />
             </ShellContent.Icon>
         </ShellContent>
+
+        <ShellContent
+            Title="Cài đặt"
+            ContentTemplate="{DataTemplate views:SettingsPage}"
+            Route="Settings">
+            <ShellContent.Icon>
+                <FontImageSource
+                    FontFamily="MaterialIcons"
+                    Glyph="&#xe8b8;"
+                    Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource Primary}}"
+                    Size="26" />
+            </ShellContent.Icon>
+        </ShellContent>
     </TabBar>
 
     <!-- ── Modal / Push Routes (không phải tab) ── -->

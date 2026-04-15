@@ -97,16 +97,15 @@ namespace AudioGo.ViewModels
             private set { SetProperty(ref _statusMessage, value); }
         }
 
-        private string _currentLanguage = LanguageHelper.GetDeviceLanguageCode();
+        private string _currentLanguage = AppSettings.GetAppLanguage();
         public string CurrentLanguage
         {
             get => _currentLanguage;
-            set
-            {
-                if (SetProperty(ref _currentLanguage, value))
-                    _ = ReloadPoisAsync();
-            }
+            private set => SetProperty(ref _currentLanguage, LanguageHelper.NormalizeToSupported(value));
         }
+
+        public bool AllowCellularDownloads => AppSettings.IsCellularDownloadsAllowed();
+        public string DownloadPolicyLabel => AllowCellularDownloads ? "Wi-Fi + 4G/5G" : "Chi Wi-Fi";
 
         public bool IsAudioPlaying => _audio.IsPlaying;
 
@@ -120,6 +119,7 @@ namespace AudioGo.ViewModels
 
             _geofence.PoiTriggered += OnPoiTriggered;
             _location.LocationUpdated += OnLocationUpdated;
+            _sync.LanguageChanged += OnLanguageChanged;
 
             // Keep mini-player icon in sync regardless of who stops the audio
             _audio.PlaybackStateChanged += (_, _) =>
@@ -157,7 +157,11 @@ namespace AudioGo.ViewModels
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Lỗi: {ex.Message}";
+                StatusMessage = $"Đang theo dõi {Pois.Count} điểm";
+                MainThread.BeginInvokeOnMainThread(async () =>
+                {
+                    try { await CommunityToolkit.Maui.Alerts.Toast.Make("Lỗi: " + ex.Message).Show(); } catch { }
+                });
             }
             finally
             {
@@ -165,10 +169,40 @@ namespace AudioGo.ViewModels
             }
         }
 
+                public async Task ChangeLanguageAsync(string languageCode)
+        {
+            var normalized = LanguageHelper.NormalizeToSupported(languageCode);
+            if (normalized == CurrentLanguage) return;
+
+            IsLoading = true;
+            StatusMessage = "Dang cap nhat ngon ngu...";
+            try
+            {
+                var newPois = await _sync.SwitchLanguageAsync(normalized);
+                if (newPois is null)
+                    throw new Exception("Cannot switch language (offline or data unavailable).");
+
+                await _audio.StopAsync();
+                CurrentLanguage = normalized;
+                AppSettings.SetAppLanguage(normalized);
+
+                Pois = newPois;
+                await _geofence.StartMonitoringAsync(Pois);
+                StatusMessage = $"Dang theo doi {Pois.Count} diem ({CurrentLanguage})";
+            }
+            catch (Exception)
+            {
+                StatusMessage = $"Đang theo dõi {Pois.Count} điểm";
+                throw;
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
         public async Task ReloadPoisAsync()
         {
             IsLoading = true;
-            StatusMessage = "Đang chuyển ngôn ngữ...";
             try
             {
                 await _audio.StopAsync();
@@ -178,12 +212,25 @@ namespace AudioGo.ViewModels
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Lỗi: {ex.Message}";
+                StatusMessage = $"Đang theo dõi {Pois.Count} điểm";
+                MainThread.BeginInvokeOnMainThread(async () =>
+                {
+                    try { await CommunityToolkit.Maui.Alerts.Toast.Make("Lỗi: " + ex.Message).Show(); } catch { }
+                });
             }
             finally
             {
                 IsLoading = false;
             }
+        }
+        
+        private void OnLanguageChanged(object? sender, string newLang)
+        {
+            if (CurrentLanguage != newLang)
+            {
+                CurrentLanguage = newLang;
+            }
+            _ = ReloadPoisAsync();
         }
 
         public async Task StopAsync()
@@ -193,7 +240,23 @@ namespace AudioGo.ViewModels
             await _audio.StopAsync();
         }
 
-        /// <summary>Dừng audio — được gọi từ MainPage mini-player Close button.</summary>
+        public async Task SetCellularDownloadsAsync(bool allowed)
+        {
+            AppSettings.SetCellularDownloadsAllowed(allowed);
+            OnPropertyChanged(nameof(AllowCellularDownloads));
+            OnPropertyChanged(nameof(DownloadPolicyLabel));
+
+            if (allowed)
+            {
+                StatusMessage = "Dang tai tai nguyen nen bang mang hien tai...";
+                await _sync.RetryPendingDownloadsAsync();
+            }
+            else
+            {
+                StatusMessage = "Da bat che do chi tai ngam khi co Wi-Fi.";
+            }
+        }
+
         public void StopAudio()
         {
             _ = _audio.StopAsync();
@@ -275,6 +338,8 @@ namespace AudioGo.ViewModels
             StatusMessage = $"Đang tự động phát: {poi.Title}";
             await TriggerAudioAsync(poi);
         }
+
+
 
         public void UpdatePoiAudioPath(POI updatedPoi)
         {

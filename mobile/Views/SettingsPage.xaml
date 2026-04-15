@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:AudioGo.ViewModels"
+             x:Class="AudioGo_Mobile.Views.SettingsPage"
+             x:DataType="vm:SettingsViewModel"
+             Title="Cài Đặt"
+             BackgroundColor="{StaticResource Background}">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="20">
+            <!-- Ngôn ngữ -->
+            <Label Text="Ngôn Ngữ" Style="{StaticResource HeadlineLabel}" />
+            
+            <Border Style="{StaticResource CardBorder}">
+                <VerticalStackLayout>
+                    <Label Text="Chọn ngôn ngữ ứng dụng" Style="{StaticResource CaptionLabel}" Margin="15,15,15,5"/>
+                    <Label Text="{Binding CurrentLanguageName}" Style="{StaticResource BodyLabel}" Margin="15,0,15,15" FontAttributes="Bold"/>
+                    <Button Text="ĐỔI NGÔN NGỮ" Clicked="OnChangeLanguageClicked" Style="{StaticResource OutlineButton}" HorizontalOptions="Start" Margin="15,5,15,15"/>
+                </VerticalStackLayout>
+            </Border>
+
+            <!-- Tải dữ liệu -->
+            <Label Text="Dữ Liệu" Style="{StaticResource HeadlineLabel}" Margin="0,10,0,0"/>
+            
+            <Border Style="{StaticResource CardBorder}">
+                <Grid Padding="15" ColumnDefinitions="*, Auto">
+                    <VerticalStackLayout Grid.Column="0" VerticalOptions="Center" Spacing="4">
+                        <Label Text="Tải qua 4G/5G" Style="{StaticResource BodyLabel}" />
+                        <Label Text="{Binding DownloadPolicyLabel}" Style="{StaticResource CaptionLabel}" />
+                    </VerticalStackLayout>
+                    
+                    <Switch Grid.Column="1" IsToggled="{Binding AllowCellularDownloads}" OnColor="{StaticResource Primary}" VerticalOptions="Center"/>
+                </Grid>
+            </Border>
+            
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
