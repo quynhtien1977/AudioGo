@@ -105,7 +105,7 @@ namespace AudioGo.ViewModels
 
         public static (string label, string icon, string value)[] GetDefaultChips()
         {
-            if (AudioGo.Helpers.LanguageHelper.GetDeviceLanguageCode() == "vi")
+            if (AudioGo.Helpers.AppSettings.GetAppLanguage() == "vi")
             {
                 return new[]
                 {
