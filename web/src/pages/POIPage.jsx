@@ -22,7 +22,7 @@ import ConfirmModal from "@/components/ConfirmModal"
 
 import { getAllPOIs, updatePOI, deletePOI } from "@/api/poiApi"
 import { getContentsByPOI } from "@/api/contentApi"
-import { getMyPoiRequests, getPoiRequestDetail } from "@/api/poiRequestApi"
+import { getMyPoiRequests, getPoiRequestDetail, createPoiRequest } from "@/api/poiRequestApi"
 
 import useAuth from "@/hooks/useAuth";
 
@@ -348,11 +348,22 @@ export default function POIPage() {
 
   const handleConfirmDelete = async () => {
     try {
-      await deletePOI(selectedPoiId)
+      // Tạo DELETE request thay vì xóa ngay
+      const payload = {
+        ActionType: "DELETE",
+        PoiId: selectedPoiId,
+        Draft: null
+      }
 
-      setPois(prev => prev.filter(p => p.rank !== selectedPoiId))
+      await createPoiRequest(payload)
+      alert("Gửi yêu cầu xóa thành công! Admin sẽ xem xét.")
+      
+      // Refresh danh sách request
+      const requests = await getMyPoiRequests()
+      setPoiRequests(requests || [])
     } catch (err) {
       console.error(err)
+      alert("Gửi yêu cầu thất bại!")
     }
 
     setShowDeleteModal(false)
@@ -412,7 +423,7 @@ export default function POIPage() {
       </div>
 
       {/* FILTER */}
-      <div className="flex justify-between items-center bg-white p-4 rounded-2xl border">
+      {/* <div className="flex justify-between items-center bg-white p-4 rounded-2xl border">
         <div className="flex gap-3">
           <Filter label="Tất cả" active={true} />
           <Filter label="Thể loại: Đồ ăn & Nước uống" />
@@ -422,7 +433,7 @@ export default function POIPage() {
         <div className="text-sm text-gray-500">
           Sắp bởi: <span className="font-semibold text-gray-700">Lần cập nhật mới nhất</span>
         </div>
-      </div>
+      </div> */}
 
       {/* TABLE */}
       <div className="bg-white rounded-2xl border overflow-hidden">
@@ -641,9 +652,7 @@ export default function POIPage() {
                   <tr key={request.requestId} className="border-t hover:bg-gray-50 transition-all">
                     <td className="p-4">
                       <p className="font-semibold">{title}</p>
-                      {request.poiId && (
-                        <p className="text-xs text-gray-400">{request.poiId}</p>
-                      )}
+                      
                     </td>
 
                     <td className="p-4">

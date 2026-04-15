@@ -1,6 +1,6 @@
 import { MapPin, Plus, Minus } from "lucide-react";
 
-const InfoCardOfAddPOI = ({ form, handleChange, contentApi }) => {
+const InfoCardOfAddPOI = ({ form, handleChange, contentApi, categories = [] }) => {
 
   const adjustValue = (key, amount) => {
     handleChange(key, (parseFloat(form[key]) || 0) + amount);
@@ -43,10 +43,12 @@ const InfoCardOfAddPOI = ({ form, handleChange, contentApi }) => {
             onChange={(e) => handleChange("category", e.target.value)}
             className="w-full bg-transparent border-b-2 border-pink-100 py-2 outline-none focus:border-pink-500 transition-all font-medium text-gray-600"
           >
-            <option value="Restaurant">Restaurant</option>
-            <option value="Cafe">Cafe</option>
-            <option value="Museum">Museum</option>
-            <option value="Street Food">Street Food</option>
+            <option value="">-- Chọn danh mục --</option>
+            {categories.map((cat) => (
+              <option key={cat.categoryId} value={cat.name}>
+                {cat.name}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -67,13 +69,13 @@ const InfoCardOfAddPOI = ({ form, handleChange, contentApi }) => {
             </option>
 
             {[
-              { code: "en", label: "English" },
-              { code: "fr", label: "French" },
-              { code: "ja", label: "Japanese" },
-              { code: "ko", label: "Korean" },
-              { code: "th", label: "Thai" },
-              { code: "vi", label: "Vietnamese" },
-              { code: "zh-Hans", label: "Chinese (Simplified)" },
+              { code: "en", label: "Tiếng Anh" },
+              { code: "fr", label: "Tiếng Pháp" },
+              { code: "ja", label: "Tiếng Nhật" },
+              { code: "ko", label: "Tiếng Hàn" },
+              { code: "th", label: "Tiếng Thái" },
+              { code: "vi", label: "Tiếng Việt" },
+              { code: "zh-Hans", label: "Tiếng Trung (Giản thể)" },
             ].map((lang) => (
               <option key={lang.code} value={lang.code}>
                 {lang.label}
