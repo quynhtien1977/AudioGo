@@ -194,11 +194,6 @@ public partial class MapPage : ContentPage
         }
     }
 
-    private async void OnQrScanClicked(object? sender, EventArgs e)
-    {
-        // TODO: QrScanPage không tồn tại
-        // await Shell.Current.GoToAsync(nameof(QrScanPage));
-    }
 
     private async void OnLanguageClicked(object? sender, EventArgs e)
     {

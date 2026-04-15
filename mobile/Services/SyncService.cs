@@ -280,27 +280,53 @@ namespace AudioGo.Services
                 var entity = MapToEntity(poi);
                 existingMap.TryGetValue(poi.PoiId, out var existing);
 
-                // Giữ lại LocalAudioPath cũ nếu file vẫn còn
+                // Giữ lại LocalAudioPath cũ nếu file vẫn còn VÀ URL TƯƠNG ĐỒNG
                 if (existing is not null &&
                     !string.IsNullOrEmpty(existing.LocalAudioPath) &&
                     File.Exists(existing.LocalAudioPath))
                 {
-                    entity.LocalAudioPath = existing.LocalAudioPath;
+                    if (existing.AudioUrl == poi.AudioUrl)
+                    {
+                        entity.LocalAudioPath = existing.LocalAudioPath;
+                    }
+                    else
+                    {
+                        // URL thay đổi -> xoá file cũ đi để bắt buộc tải lại
+                        try { File.Delete(existing.LocalAudioPath); } catch { }
+                    }
                 }
 
-                // Giữ lại LocalLogoPath cũ nếu file vẫn còn
+                // Giữ lại LocalLogoPath cũ nếu file vẫn còn VÀ URL TƯƠNG ĐỒNG
                 if (existing is not null &&
                     !string.IsNullOrEmpty(existing.LocalLogoPath) &&
                     File.Exists(existing.LocalLogoPath))
                 {
-                    entity.LocalLogoPath = existing.LocalLogoPath;
+                    if (existing.LogoUrl == poi.LogoUrl)
+                    {
+                        entity.LocalLogoPath = existing.LocalLogoPath;
+                    }
+                    else
+                    {
+                        try { File.Delete(existing.LocalLogoPath); } catch { }
+                    }
                 }
 
-                // Giữ lại GalleryLocalPathsJson cũ nếu có
+                // Giữ lại GalleryLocalPathsJson cũ nếu có VÀ URL TƯƠNG ĐỒNG
                 if (existing is not null &&
                     !string.IsNullOrEmpty(existing.GalleryLocalPathsJson))
                 {
-                    entity.GalleryLocalPathsJson = existing.GalleryLocalPathsJson;
+                    if (existing.GalleryUrlsJson == entity.GalleryUrlsJson)
+                    {
+                        entity.GalleryLocalPathsJson = existing.GalleryLocalPathsJson;
+                    }
+                    else
+                    {
+                        var oldPaths = SafeDeserializeList(existing.GalleryLocalPathsJson);
+                        foreach (var p in oldPaths)
+                        {
+                            if (File.Exists(p)) { try { File.Delete(p); } catch { } }
+                        }
+                    }
                 }
 
                 await _db.SavePoiAsync(entity);
