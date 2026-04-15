@@ -1,6 +1,6 @@
-import { useParams } from "react-router-dom"
+import { useParams, useLocation } from "react-router-dom"
 import { useEffect, useState } from "react"
-import { Trash2, PencilLine, CornerDownLeft, Save, Ban } from "lucide-react"
+import { PencilLine, CornerDownLeft } from "lucide-react"
 
 import POIGallery from "@/components/POIGallery"
 import POIAudioPlayer from "@/components/POIAudioPlayer"
@@ -9,9 +9,8 @@ import POIInfoCard from "@/components/POIInfoCard"
 import POIMapPreview from "@/components/POIMapPreview"
 import ConfirmModal from "@/components/ConfirmModal"
 
-import { getAllPOIs } from "@/api/poiApi"
-import { getContentsByPOI } from "@/api/contentApi"
-import { getGalleryByPOI } from "@/api/galleryApi"
+import { getPoiDetail } from "@/api/poiApi"
+import { getPoiRequestDetail } from "@/api/poiRequestApi"
 
 import useAuth from "@/hooks/useAuth"
 
@@ -20,6 +19,9 @@ const POIDetailPage = () => {
   const role = user?.role
 
   const { id } = useParams()
+  const location = useLocation()
+
+  const isRequest = location.pathname.includes("/pois/requests")
 
   const [poi, setPoi] = useState(null)
   const [form, setForm] = useState({})
@@ -28,90 +30,104 @@ const POIDetailPage = () => {
   const [isEditing, setIsEditing] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
 
-  // MOCK fallback nếu BE chưa có 
-  // const buildPOI = (p) => ({
-  //   id: p.poiId,
-  //   name: p.contents?.[0]?.title || "Unknown POI",
-  //   category: p.category || "Restaurant",
-  //   lat: p.latitude ?? 10.7769,
-  //   lng: p.longitude ?? 106.7009,
-  //   priority: Number(p.priority) || 1,
+  const [rejectReason, setRejectReason] = useState("")
+  const [requestStatus, setRequestStatus] = useState("")
 
-  //   // 👇 BE chưa có → fake
-  //   script: p.script || "Chưa có nội dung mô tả...",
-  //   audio: p.audio || "",
-  //   images: Array.isArray(p.images)
-  //     ? p.images
-  //     : [
-  //         "https://placehold.co/600x400?text=POI+Image",
-  //         "https://placehold.co/600x400?text=No+Data",
-  //       ],
-  //   ActivityRadius: p.activityRadius ?? 100,
-  // })
-
-  // INIT FORM
+  // ================= FETCH =================
   useEffect(() => {
-  const fetch = async () => {
-    try {
-      const pois = await getAllPOIs()
-      const found = pois.find(p => String(p.poiId) === String(id))
+    const fetch = async () => {
+      try {
+        let mapped = null
 
-      if (!found) return
+        if (isRequest) {
+          // ===== POI REQUEST =====
+          const res = await getPoiRequestDetail(id)
 
-      // 🔥 gọi song song content + gallery
-      const [contents, gallery] = await Promise.all([
-        getContentsByPOI(id),
-        getGalleryByPOI(id)
-      ])
+          // 🔥 FIX QUAN TRỌNG: parse JSON string
+          let data = {}
+          try {
+            data = JSON.parse(res.proposedData || "{}")
+          } catch (e) {
+            console.error("Parse proposedData failed", e)
+          }
 
-      const master =
-        contents.find(c => c.isMaster) || contents[0]
+          mapped = {
+            id: res.requestId,
 
-      const mapped = {
-        id: found.poiId,
-        name: master?.title || "Unknown POI",
-        description: master?.description || "",
-        audio: master?.audioUrl || "",
+            // 🔥 FIX FIELD NAME
+            name: data.title || "Unknown POI",
+            description: data.description || "",
+            audio: data.audio || "",
 
-        languageCode: master?.languageCode || "en",
+            languageCode: data.languageCode || "vi",
 
-        category: found.category || "Restaurant",
-        lat: found.latitude,
-        lng: found.longitude,
-        priority: Number(found.priority) || 1,
-        // status: found.status,
+            category: data.category || "Unknown",
 
-        // FIX HERE (lấy từ gallery API)
-        images: gallery.length > 0
-          ? gallery.map(g => g.imageUrl)
-          : ["https://placehold.co/600x400?text=POI"],
+            // 🔥 FIX KEY (Latitude + longtitude)
+            lat: data.Latitude || 0,
+            lng: data.longtitude || 0,
 
-        ActivityRadius: found.activationRadius ?? 100,
+            priority: Number(data.priority) || 1,
+
+            // 🔥 FIX IMAGE
+            images: data.imgURL
+              ? [data.imgURL]
+              : ["https://placehold.co/600x400?text=POI"],
+
+            ActivityRadius: data.activationRadius ?? 100,
+          }
+
+          setRejectReason(res.rejectReason || "")
+          setRequestStatus(res.status)
+
+        } else {
+          // ===== NORMAL POI =====
+          const poiDetail = await getPoiDetail(id)
+
+          const master =
+            poiDetail.contents?.find(c => c.isMaster) ||
+            poiDetail.contents?.[0]
+
+          mapped = {
+            id: poiDetail.poiId,
+            name: master?.title || "Unknown POI",
+            description: master?.description || "",
+            audio: master?.audioUrl || "",
+            languageCode: master?.languageCode || "vi",
+
+            category: poiDetail.category || "Unknown",
+            lat: poiDetail.latitude,
+            lng: poiDetail.longitude,
+            priority: Number(poiDetail.priority) || 1,
+
+            images: poiDetail.gallery?.length
+              ? poiDetail.gallery.map(g => g.imageUrl)
+              : ["https://placehold.co/600x400?text=POI"],
+
+            ActivityRadius: poiDetail.activationRadius ?? 100,
+          }
+        }
+
+        setPoi(mapped)
+
+      } catch (err) {
+        console.error("FETCH ERROR:", err)
+      } finally {
+        setLoading(false)
       }
-
-      setPoi(mapped)
-
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
     }
-  }
 
-  fetch()
-}, [id])
+    fetch()
+  }, [id, isRequest])
 
   useEffect(() => {
-    if (poi) {
-      setForm({ ...poi })
-    }
+    if (poi) setForm({ ...poi })
   }, [poi])
 
   const handleChange = (key, value) => {
     setForm(prev => ({ ...prev, [key]: value }))
   }
 
-  // SAVE (hiện tại giả lập)
   const handleConfirmSave = () => {
     console.log("UPDATE DATA:", form)
 
@@ -124,13 +140,33 @@ const POIDetailPage = () => {
     setShowConfirm(false)
   }
 
-  if (loading) return <div className="p-6">Loading...</div>
+  const getCategoryColor = (category) => {
+    switch (category) {
+      case "Di tích lịch sử":
+        return "bg-blue-100 text-blue-500"
+      case "Ẩm thực":
+        return "bg-pink-100 text-pink-500"
+      case "Hải sản & Ốc":
+        return "bg-cyan-100 text-cyan-500"
+      case "Cà phê & Giải khát":
+        return "bg-orange-100 text-orange-500"
+      case "Chùa & Tôn giáo":
+        return "bg-purple-100 text-purple-500"
+      case "Giải trí":
+        return "bg-green-100 text-green-500"
+      case "Mua sắm":
+        return "bg-yellow-100 text-yellow-600"
+      default:
+        return "bg-gray-100 text-gray-500"
+    }
+  }
 
-  if (!poi) return <div className="p-6 text-red-500">POI not found</div>
+  if (loading) return <div className="p-6">Loading...</div>
+  if (!poi) return <div className="p-6 text-red-500">Not found</div>
 
   return (
     <div className="p-6 space-y-8">
-      
+
       {/* HEADER */}
       <div className="flex justify-between items-end">
         <div>
@@ -143,10 +179,17 @@ const POIDetailPage = () => {
           ) : (
             <h1 className="text-4xl font-bold">{poi.name}</h1>
           )}
+
+          {/* 🔥 SHOW REJECT */}
+          {isRequest && requestStatus === "REJECTED" && (
+            <p className="mt-2 text-red-500 text-sm">
+              Lý do từ chối: {rejectReason || "Không có"}
+            </p>
+          )}
         </div>
 
         <div className="flex gap-3">
-          {role === "Owner" && !isEditing && (
+          {role === "Owner" && !isEditing && !isRequest && (
             <button
               onClick={() => setIsEditing(true)}
               className="flex items-center gap-2 border px-4 py-2 rounded-lg text-pink-600 border-pink-600"
@@ -161,7 +204,6 @@ const POIDetailPage = () => {
                 onClick={() => setShowConfirm(true)}
                 className="px-4 py-2 bg-pink-500 text-white rounded-lg"
               >
-                {/* <Save size={16}/>  */}
                 Lưu
               </button>
 
@@ -169,7 +211,6 @@ const POIDetailPage = () => {
                 onClick={() => setIsEditing(false)}
                 className="px-4 py-2 border rounded-lg"
               >
-                {/* <Ban size={16}/>  */}
                 Hủy
               </button>
             </>
@@ -187,48 +228,26 @@ const POIDetailPage = () => {
       {/* GRID */}
       <div className="grid grid-cols-12 gap-6">
 
-        {/* LEFT */}
         <div className="col-span-8 space-y-6">
-
-          <POIGallery
-            images={isEditing ? form.images : poi.images}
-            isEditing={isEditing}
-            onChange={handleChange}
-          />
-
-          <POIAudioPlayer
-            src={isEditing ? form.audio : poi.audio}
-            isEditing={isEditing}
-            onChange={handleChange}
-          />
-
-          <POIScript
-            value={isEditing ? form.description : poi.description}
-            onChange={(val) => handleChange("script", val)}
-            isEditing={isEditing}
-          />
+          <POIGallery images={isEditing ? form.images : poi.images} isEditing={isEditing} onChange={handleChange} />
+          <POIAudioPlayer src={isEditing ? form.audio : poi.audio} isEditing={isEditing} onChange={handleChange} />
+          <POIScript value={isEditing ? form.description : poi.description} onChange={(val) => handleChange("description", val)} isEditing={isEditing} />
         </div>
 
-        {/* RIGHT */}
         <div className="col-span-4 space-y-6">
-
           <POIInfoCard
-            poi={{
-              ...poi,
-              priority: priorityMap[poi.priority] || "UNKNOWN", // Map priority to string
-            }}
+            poi={{ ...poi, priority: priorityMap[poi.priority] || "UNKNOWN" }}
             isEditing={isEditing}
-            handleChange={(key, value) => { 
+            handleChange={(key, value) => {
               if (key === "priority") {
-                const numericPriority = Object.keys(priorityMap).find(
-                  (k) => priorityMap[k] === value
-                );
-                handleChange(key, numericPriority ? Number(numericPriority) : value);
+                const numeric = Object.keys(priorityMap).find(k => priorityMap[k] === value)
+                handleChange(key, numeric ? Number(numeric) : value)
               } else {
-                handleChange(key, value);
+                handleChange(key, value)
               }
             }}
             role={role}
+            getCategoryColor={getCategoryColor}
           />
 
           <POIMapPreview
@@ -244,7 +263,6 @@ const POIDetailPage = () => {
         </div>
       </div>
 
-      {/* MODAL */}
       <ConfirmModal
         open={showConfirm}
         title="Gửi yêu cầu cập nhật"
@@ -260,4 +278,9 @@ const POIDetailPage = () => {
 
 export default POIDetailPage
 
-const priorityMap = { 1: "LOW", 2: "MEDIUM", 3: "HIGH", 4: "CRITICAL" };
+const priorityMap = {
+  1: "LOW",
+  2: "MEDIUM",
+  3: "HIGH",
+  4: "CRITICAL"
+}

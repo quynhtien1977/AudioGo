@@ -22,3 +22,16 @@ export const getMyPoiRequests = async (status = null) => {
   )
   return res.data
 }
+
+// GET POI REQUEST DETAIL BY REQUEST ID
+export const getPoiRequestDetail = async (requestId) => {
+  const res = await axios.get(
+    `${API_URL}/cms/pois/requests/${requestId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${getToken()}`
+      }
+    }
+  )
+  return res.data
+}

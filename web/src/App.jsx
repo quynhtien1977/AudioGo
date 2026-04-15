@@ -75,6 +75,18 @@ export default function App() {
           }
         />
 
+        {/* POI REQUEST Detail */}
+        <Route
+          path="/pois/requests/:id"
+          element={
+            <ProtectedRoute roles={["Admin", "Owner"]}>
+              <MainLayout>
+                <POIDetailPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
         {/* POI Management (ADMIN only) */}
         <Route
           path="/poi/management"

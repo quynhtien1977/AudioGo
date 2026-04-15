@@ -1,4 +1,4 @@
-const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role }) => {
+const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role, getCategoryColor }) => {
   if (!poi) return null;
 
   // Helper để tạo style cho input đồng nhất
@@ -31,7 +31,7 @@ const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role }) => {
               </div>
             </div>
           ) : (
-            <span className="bg-pink-50 text-pink-600 px-2 py-0.5 rounded text-xs font-medium">
+            <span className={`px-2 py-0.5 rounded text-xs font-medium ${getCategoryColor ? getCategoryColor(poi.category) : "bg-pink-50 text-pink-600"}`}>
               {poi.category || "N/A"}
             </span>
           )}

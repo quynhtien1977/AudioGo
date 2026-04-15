@@ -10,7 +10,8 @@ import {
   List,
   CircleX,
   Trash,
-  Plus
+  Plus,
+  SquareMenu
 } from "lucide-react"
 
 import POIMap from "@/components/POIMap"
@@ -21,7 +22,7 @@ import ConfirmModal from "@/components/ConfirmModal"
 
 import { getAllPOIs, updatePOI, deletePOI } from "@/api/poiApi"
 import { getContentsByPOI } from "@/api/contentApi"
-import { getMyPoiRequests } from "@/api/poiRequestApi"
+import { getMyPoiRequests, getPoiRequestDetail } from "@/api/poiRequestApi"
 
 import useAuth from "@/hooks/useAuth";
 
@@ -34,12 +35,17 @@ export default function POIPage() {
 
   const [pois, setPois] = useState([])
   const [poiRequests, setPoiRequests] = useState([])
+  const [poiRequestDetails, setPoiRequestDetails] = useState({})
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
 
   // PAGINATION STATE
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 4
+
+  // PAGINATION STATE FOR REQUESTS
+  const [requestsCurrentPage, setRequestsCurrentPage] = useState(1)
+  const requestsPerPage = 4
 
   // Fetch POIs data
   useEffect(() => {
@@ -140,6 +146,7 @@ export default function POIPage() {
   useEffect(() => {
     if (role !== "Owner" || !accountId) {
       setPoiRequests([])
+      setPoiRequestDetails({})
       return
     }
 
@@ -149,8 +156,26 @@ export default function POIPage() {
     const fetchPoiRequests = async () => {
       try {
         const requests = await getMyPoiRequests()
-        if (isMounted) {
-          setPoiRequests(requests || [])
+        if (isMounted && requests) {
+          setPoiRequests(requests)
+
+          // Fetch details for each request
+          const detailsMap = {}
+          const detailsPromises = requests.map(async (request) => {
+            try {
+              const detail = await getPoiRequestDetail(request.requestId)
+              if (isMounted) {
+                detailsMap[request.requestId] = detail
+              }
+            } catch (err) {
+              console.error(`Error fetching detail for request ${request.requestId}:`, err)
+            }
+          })
+
+          await Promise.all(detailsPromises)
+          if (isMounted) {
+            setPoiRequestDetails(detailsMap)
+          }
         }
       } catch (err) {
         if (isMounted && err.name !== 'AbortError') {
@@ -180,6 +205,19 @@ export default function POIPage() {
   const goToPage = (page) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page)
+    }
+  }
+
+  // PAGINATION LOGIC FOR REQUESTS
+  const requestsTotalPages = Math.ceil(poiRequests.length / requestsPerPage)
+  const requestsStartIndex = (requestsCurrentPage - 1) * requestsPerPage
+  const requestsEndIndex = requestsStartIndex + requestsPerPage
+
+  const currentRequests = poiRequests.slice(requestsStartIndex, requestsEndIndex)
+
+  const goToRequestsPage = (page) => {
+    if (page >= 1 && page <= requestsTotalPages) {
+      setRequestsCurrentPage(page)
     }
   }
 
@@ -525,7 +563,7 @@ export default function POIPage() {
       
       {role === "Owner" && (<div className="bg-white rounded-2xl border overflow-hidden">
         <div className="p-4 border-b">
-          <h2 className="text-lg font-semibold">DANH SÁCH YÊU CẦU (POI REQUEST)</h2>
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-pink-400"><SquareMenu size={18} /> DANH SÁCH YÊU CẦU</h2>
         </div>
         <table className="w-full text-sm">
           
@@ -548,13 +586,14 @@ export default function POIPage() {
                 </td>
               </tr>
             ) : (
-              poiRequests.map((request) => {
+              currentRequests.map((request) => {
                 let title = "N/A"
                 try {
-                  if (request.proposedData) {
-                    const data = typeof request.proposedData === 'string' 
-                      ? JSON.parse(request.proposedData) 
-                      : request.proposedData
+                  const detail = poiRequestDetails[request.requestId]
+                  if (detail && detail.proposedData) {
+                    const data = typeof detail.proposedData === 'string' 
+                      ? JSON.parse(detail.proposedData) 
+                      : detail.proposedData
                     title = data.title || data.Title || "N/A"
                   }
                 } catch (e) {
@@ -593,8 +632,8 @@ export default function POIPage() {
                     year: 'numeric',
                     month: '2-digit',
                     day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit'
+                    // hour: '2-digit',
+                    // minute: '2-digit'
                   })
                 }
 
@@ -638,7 +677,7 @@ export default function POIPage() {
                     <td className="p-4">
                       <div className="flex items-center gap-1">
                           <NavLink
-                            to={`/pois/${request.requestId}`}
+                            to={`/pois/requests/${request.requestId}`}
                             className="w-8 h-8 flex items-center justify-center rounded-full transition-colors text-pink-500 hover:text-pink-600"
                             title="Xem chi tiết POI"
                           >
@@ -652,6 +691,45 @@ export default function POIPage() {
             )}
           </tbody>
         </table>
+        {/* PAGINATION */}
+        <div className="flex justify-between items-center p-4 text-sm text-gray-500">
+          <p>
+            Hiển thị {requestsStartIndex + 1} - {Math.min(requestsEndIndex, poiRequests.length)} của {poiRequests.length} Requests
+          </p>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => goToRequestsPage(requestsCurrentPage - 1)}
+              disabled={requestsCurrentPage === 1}
+              className="p-2 border rounded-lg hover:bg-pink-500 hover:text-white disabled:opacity-50"
+            >
+              <ChevronLeft size={14} />
+            </button>
+
+            {[...Array(requestsTotalPages)].map((_, i) => (
+              <button
+                key={i}
+                onClick={() => goToRequestsPage(i + 1)}
+                className={`px-3 py-1 rounded-lg ${
+                  requestsCurrentPage === i + 1
+                    ? "bg-pink-500 text-white"
+                    : "border hover:bg-pink-500 hover:text-white"
+                }`}
+              >
+                {i + 1}
+              </button>
+            ))}
+
+            <button
+              onClick={() => goToRequestsPage(requestsCurrentPage + 1)}
+              disabled={requestsCurrentPage === requestsTotalPages}
+              className="p-2 border rounded-lg hover:bg-pink-500 hover:text-white disabled:opacity-50"
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
+
+        </div>
       </div>)}
 
       <div className="flex justify-end items-center mb-6">

@@ -119,9 +119,25 @@ namespace Server.Controllers.Cms
             return Ok(result);
         }
 
-        /// <summary>Chi tiết POI kèm tất cả content và gallery.</summary>
+        /// <summary>Chi tiết một yêu cầu POI - lấy proposedData (JSON) và rejectReason.</summary>
+        [HttpGet("requests/{requestId}")]
+        public async Task<ActionResult> GetPoiRequestDetail(string requestId)
+        {
+            var request = await _db.PoiRequests.AsNoTracking()
+                .FirstOrDefaultAsync(r => r.RequestId == requestId);
+
+            if (request is null) return NotFound();
+
+            return Ok(new
+            {
+                ProposedData = request.ProposedData,
+                RejectReason = request.RejectReason
+            });
+        }
+
+        /// <summary>Chi tiết POI kèm tất cả content, gallery và category.</summary>
         [HttpGet("{id}")]
-        public async Task<ActionResult<PoiDetailDto>> GetById(string id)
+        public async Task<ActionResult> GetById(string id)
         {
             var poi = await _db.Pois.AsNoTracking()
                 .Include(p => p.Contents)
@@ -130,16 +146,46 @@ namespace Server.Controllers.Cms
 
             if (poi is null) return NotFound();
 
-            return Ok(new PoiDetailDto(
-                poi.PoiId, poi.AccountId, poi.Latitude, poi.Longitude,
-                poi.ActivationRadius, poi.Priority, poi.IsActive, poi.LogoUrl,
-                poi.CreatedAt, poi.UpdatedAt,
-                poi.Contents.Select(c => new PoiContentDto(
-                    c.ContentId, c.PoiId, c.LanguageCode,
-                    c.Title, c.Description, c.AudioUrl, c.IsMaster)).ToList(),
-                poi.Gallery.OrderBy(g => g.SortOrder)
-                    .Select(g => new PoiGalleryDto(g.ImageId, g.PoiId, g.ImageUrl, g.SortOrder)).ToList()
-            ));
+            // Lấy category
+            var category = await (
+                from cp in _db.CategoryPois
+                join c in _db.Categories on cp.CategoryId equals c.CategoryId
+                where cp.PoiId == id
+                select c.Name
+            ).FirstOrDefaultAsync();
+
+            return Ok(new
+            {
+                poiId = poi.PoiId,
+                accountId = poi.AccountId,
+                latitude = poi.Latitude,
+                longitude = poi.Longitude,
+                activationRadius = poi.ActivationRadius,
+                priority = poi.Priority,
+                isActive = poi.IsActive,
+                logoUrl = poi.LogoUrl,
+                createdAt = poi.CreatedAt,
+                updatedAt = poi.UpdatedAt,
+                category = category ?? "Unknown",
+                contents = poi.Contents.Select(c => new
+                {
+                    contentId = c.ContentId,
+                    poiId = c.PoiId,
+                    languageCode = c.LanguageCode,
+                    title = c.Title,
+                    description = c.Description,
+                    audioUrl = c.AudioUrl,
+                    isMaster = c.IsMaster
+                }).ToList(),
+                gallery = poi.Gallery.OrderBy(g => g.SortOrder)
+                    .Select(g => new
+                    {
+                        imageId = g.ImageId,
+                        poiId = g.PoiId,
+                        imageUrl = g.ImageUrl,
+                        sortOrder = g.SortOrder
+                    }).ToList()
+            });
         }
         
         [HttpPost]
