@@ -32,7 +32,7 @@
         </Grid>
 
         <!-- Top Header & Back Button -->
-        <Grid VerticalOptions="Start" Padding="16, 50, 16, 16" ColumnDefinitions="Auto, *">
+        <Grid VerticalOptions="Start" Padding="16, 50, 16, 16" ColumnDefinitions="Auto, *, Auto">
             <Border Grid.Column="0"
                     BackgroundColor="#40000000"
                     StrokeThickness="0"
@@ -42,6 +42,19 @@
                        HorizontalOptions="Center" VerticalOptions="Center"/>
                 <Border.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnBackTapped" />
+                </Border.GestureRecognizers>
+            </Border>
+            
+            <!-- Pick photo from Gallery -->
+            <Border Grid.Column="2"
+                    BackgroundColor="#40000000"
+                    StrokeThickness="0"
+                    StrokeShape="Ellipse"
+                    WidthRequest="40" HeightRequest="40">
+                <Label Text="&#xe413;" FontFamily="MaterialIcons" FontSize="22" TextColor="White"
+                       HorizontalOptions="Center" VerticalOptions="Center"/>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnPickPhotoTapped" />
                 </Border.GestureRecognizers>
             </Border>
         </Grid>

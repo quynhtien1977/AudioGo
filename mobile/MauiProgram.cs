@@ -7,6 +7,7 @@ using AudioGo_Mobile.Views;
 using Microsoft.Extensions.Logging;
 using Plugin.Maui.Audio;
 using BarcodeScanner.Mobile;
+using CommunityToolkit.Maui;
 
 namespace AudioGo_Mobile;
 
@@ -17,6 +18,7 @@ public static class MauiProgram
         var builder = MauiApp.CreateBuilder();
         builder
             .UseMauiApp<App>()
+            .UseMauiCommunityToolkit()
             .UseMauiMaps()
             .ConfigureMauiHandlers(handlers => {
                 handlers.AddBarcodeScannerHandler();
@@ -49,7 +51,14 @@ public static class MauiProgram
             client.BaseAddress = new Uri(DeviceInfo.DeviceType == DeviceType.Virtual 
                 ? "http://10.0.2.2:5086/" 
                 : "http://192.168.1.12:5086/");
-            client.Timeout = TimeSpan.FromSeconds(15);
+            // 8s: đủ cho WiFi nội bộ, fail-fast để fallback cache kịp thời
+            client.Timeout = TimeSpan.FromSeconds(8);
+        });
+
+        // Named client cho download files nền (audio/image) — không cần timeout ngắn
+        builder.Services.AddHttpClient("downloader", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(60);
         });
 
         // ── Services ──────────────────────────────────────────────
@@ -69,6 +78,9 @@ public static class MauiProgram
         builder.Services.AddTransient<WelcomeQrScanViewModel>();
 
         // ── Views ─────────────────────────────────────────────────
+        // AppShell phải là Singleton để WelcomeQrScanViewModel có thể
+        // resolve qua DI (tránh "new AppShell()" ngoài DI container).
+        builder.Services.AddSingleton<AppShell>();
         builder.Services.AddSingleton<MainPage>();
         builder.Services.AddSingleton<MapPage>();
         builder.Services.AddTransient<TourListPage>();
@@ -84,8 +96,30 @@ public static class MauiProgram
 
         var mauiApp = builder.Build();
 
-        // Init SQLite tables trên background thread — không block main thread khi startup
-        _ = Task.Run(() => mauiApp.Services.GetRequiredService<AppDatabase>().InitAsync());
+        // ── Global exception handlers ─────────────────────────────
+        AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+        {
+            System.Diagnostics.Debug.WriteLine($"[APPDOMAIN UNHANDLED] {((Exception)e.ExceptionObject)?.Message}");
+        };
+
+        // Ngăn các fire-and-forget tasks (download, refresh) crash toàn app.
+        // Trên Android, một Task ném exception mà không có await → crash process.
+        TaskScheduler.UnobservedTaskException += (_, e) =>
+        {
+            System.Diagnostics.Debug.WriteLine(
+                $"[UNOBSERVED TASK] {e.Exception?.GetType().Name}: {e.Exception?.Message}");
+            e.SetObserved(); // Đánh dấu đã xử lý → ngăn crash
+        };
+
+#if ANDROID
+        // ✅ Chỉ log, không handle — để Android xử lý đúng cách
+        Android.Runtime.AndroidEnvironment.UnhandledExceptionRaiser += (_, e) =>
+        {
+            System.Diagnostics.Debug.WriteLine(
+                $"[ANDROID UNHANDLED] {e.Exception?.GetType().Name}: {e.Exception?.Message}");
+            // Không set Handled = true
+        };
+#endif
 
         return mauiApp;
     }

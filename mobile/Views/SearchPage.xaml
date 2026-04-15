@@ -151,9 +151,9 @@
                     </CollectionView.ItemsLayout>
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="vm:PoiSearchVm">
-                            <Border Style="{StaticResource PoiGridCard}" Padding="0" ClipsToBounds="True">
+                            <Border Style="{StaticResource PoiGridCard}" Padding="0">
                                 <VerticalStackLayout Spacing="0">
-                                    <Grid HeightRequest="120" ClipsToBounds="True">
+                                    <Grid HeightRequest="120">
                                         <Border BackgroundColor="{StaticResource DarkSurface}" StrokeThickness="0">
                                             <Label Text="&#xe0c8;" FontFamily="MaterialIcons" FontSize="40" TextColor="{StaticResource Gray400}" HorizontalOptions="Center" VerticalOptions="Center"/>
                                         </Border>
@@ -178,9 +178,9 @@
                 <CollectionView ItemsSource="{Binding Tours}" IsVisible="{Binding HasTours}" SelectionMode="None">
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="vm:TourSearchVm">
-                            <Border Style="{StaticResource CardBorder}" Margin="0,0,0,10" Padding="0" ClipsToBounds="True">
+                            <Border Style="{StaticResource CardBorder}" Margin="0,0,0,10" Padding="0">
                                 <Grid ColumnDefinitions="100,*" ColumnSpacing="0">
-                                    <Grid Grid.Column="0" ClipsToBounds="True">
+                                    <Grid Grid.Column="0">
                                         <Border BackgroundColor="{StaticResource DarkSurface}" StrokeThickness="0">
                                             <Label Text="&#xe55b;" FontFamily="MaterialIcons" FontSize="36" TextColor="{StaticResource Gray400}" HorizontalOptions="Center" VerticalOptions="Center"/>
                                         </Border>

@@ -105,8 +105,7 @@
                                                     BackgroundColor="{StaticResource PrimaryLight}"
                                                     StrokeShape="RoundRectangle 12"
                                                     StrokeThickness="0"
-                                                    WidthRequest="52" HeightRequest="52"
-                                                    ClipsToBounds="True">
+                                                    WidthRequest="52" HeightRequest="52">
                                                 <Grid>
                                                     <!-- Emoji luôn hiện (fallback khi ảnh chưa load) -->
                                                     <Label Text="&#xe0c8;" FontFamily="MaterialIcons" FontSize="28" TextColor="{StaticResource Primary}"
@@ -173,8 +172,7 @@
                             BackgroundColor="{StaticResource PrimaryLight}"
                             StrokeShape="RoundRectangle 10"
                             StrokeThickness="0"
-                            WidthRequest="44" HeightRequest="44"
-                            ClipsToBounds="True">
+                            WidthRequest="44" HeightRequest="44">
                         <Grid>
                             <Label Text="&#xe310;" FontFamily="MaterialIcons" FontSize="24"
                                    TextColor="{StaticResource Primary}"

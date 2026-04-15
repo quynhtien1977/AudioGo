@@ -16,21 +16,41 @@ public partial class WelcomePage : ContentPage
         await Navigation.PushAsync(scanPage);
     }
 
-    private async void OnSkipClicked(object sender, EventArgs e)
+    private double _sheetTranslationY;
+
+    private void OnBottomSheetPanUpdated(object sender, PanUpdatedEventArgs e)
     {
-        // Hiện màn hình loading overlay
-        LoadingOverlay.IsVisible = true;
+        switch (e.StatusType)
+        {
+            case GestureStatus.Running:
+                // Kéo xuống -> TranslationY tăng (dương)
+                // Kéo lên -> TranslationY giảm (âm). Ta giới hạn không cho kéo lên quá vị trí ban đầu (TranslationY = 0)
+                var targetY = _sheetTranslationY + e.TotalY;
+                if (targetY > 0)
+                {
+                    BottomSheetBorder.TranslationY = targetY;
+                }
+                else
+                {
+                    BottomSheetBorder.TranslationY = 0;
+                }
+                break;
 
-        // Đợi 1 chút xíu để UI kịp gọi render LoadingOverlay lên màn hình
-        await Task.Delay(2000);
-
-        // Đổi Root Page sang AppShell để truy cập app luôn (giả lập đã quét xong)
-        Application.Current.MainPage = new AppShell();
-
-
-        // Preload các tab (Map, Search) rồi về lại Home để khi user bấm sẽ mượt mà không bị khựng
-        await Shell.Current.GoToAsync("//Map", animate: false);
-        await Shell.Current.GoToAsync("//Search", animate: false);
-        await Shell.Current.GoToAsync("//Home", animate: false);
+            case GestureStatus.Completed:
+                _sheetTranslationY = BottomSheetBorder.TranslationY;
+                
+                // Nếu kéo xuống quá 100px, thu nhỏ một chút và nảy lại
+                if (_sheetTranslationY > 100)
+                {
+                    BottomSheetBorder.TranslateTo(0, 0, 300, Easing.SpringOut);
+                    _sheetTranslationY = 0;
+                }
+                else
+                {
+                    BottomSheetBorder.TranslateTo(0, 0, 250, Easing.CubicOut);
+                    _sheetTranslationY = 0;
+                }
+                break;
+        }
     }
 }

@@ -31,20 +31,19 @@ namespace AudioGo.ViewModels
             private set
             {
                 SetProperty(ref _pois, value);
-                OnPropertyChanged(nameof(NearbyPois));
-                OnPropertyChanged(nameof(HasNearbyPois));
-                OnPropertyChanged(nameof(NearbyEmpty));
+                UpdateNearbyPois();
             }
         }
 
-        // ── Computed display properties (MainPage XAML bindings) ──────
-        public ObservableCollection<POI> NearbyPois
+        private void UpdateNearbyPois()
         {
-            get
+            if (_userLocation is null)
             {
-                if (_userLocation is null)
-                    return new(_pois); // GPS not yet available → hiển thị tất cả
-
+                _nearbyPois.Clear();
+                foreach (var p in _pois) _nearbyPois.Add(p);
+            }
+            else
+            {
                 var (uLat, uLon) = _userLocation.Value;
                 var nearby = _pois
                     .Select(p => (poi: p,
@@ -55,15 +54,20 @@ namespace AudioGo.ViewModels
                     .Select(x => x.poi)
                     .ToList();
 
-                // Nếu không có POI nào trong 50m → trả về mảng rỗng (theo yêu cầu lọc cứng)
-                if (nearby.Count == 0)
-                    return new();
-
-                return new(nearby);
+                _nearbyPois.Clear();
+                foreach (var p in nearby) _nearbyPois.Add(p);
             }
+
+            OnPropertyChanged(nameof(HasNearbyPois));
+            OnPropertyChanged(nameof(NearbyEmpty));
         }
-        public bool HasNearbyPois => _pois.Count > 0;
-        public bool NearbyEmpty   => _pois.Count == 0;
+
+        // ── Computed display properties (MainPage XAML bindings) ──────
+        private ObservableCollection<POI> _nearbyPois = new();
+        public ObservableCollection<POI> NearbyPois => _nearbyPois;
+
+        public bool HasNearbyPois => _nearbyPois.Count > 0;
+        public bool NearbyEmpty   => _nearbyPois.Count == 0;
         public bool HasActivePoi  => _activePoi is not null;
         public bool IsAudioPaused => !_audio.IsPlaying;
     /// <summary>Icon Material cho mini-player: pause khi đang phát, play khi dừng/paused.</summary>
@@ -141,15 +145,15 @@ namespace AudioGo.ViewModels
         }
 
         public async Task InitAsync()
-        {
-            IsLoading = true;
-            StatusMessage = "Đang tải dữ liệu...";
+            {
+                IsLoading = true;
+                StatusMessage = "Đang tải dữ liệu...";
             try
             {
                 Pois = await _sync.GetPoisAsync(CurrentLanguage);
                 await _geofence.StartMonitoringAsync(Pois);
                 await _location.StartAsync();
-                StatusMessage = $"Đang theo dõi {Pois.Count} điểm";
+                                    StatusMessage = $"Đang theo dõi {Pois.Count} điểm";
             }
             catch (Exception ex)
             {
@@ -245,12 +249,13 @@ namespace AudioGo.ViewModels
             _pausedPoiId = null;
             ActivePoi = poi;
 
-            if (!string.IsNullOrEmpty(poi.LocalAudioPath) && System.IO.File.Exists(poi.LocalAudioPath))
-                await _audio.PlayFileAsync(poi.LocalAudioPath);
-            else if (!string.IsNullOrEmpty(poi.AudioUrl))
-                await _audio.PlayFileAsync(poi.AudioUrl);
-            else if (!string.IsNullOrEmpty(poi.Description))
-                await _audio.SpeakAsync(poi.Description, poi.LanguageCode);
+            // PlayPoiAudioAsync xử lý toàn bộ fallback chain: Local → Stream → TTS
+            // Nếu stream HTTP fail (timeout/network), tự động fallback sang TTS Description
+            await _audio.PlayPoiAudioAsync(
+                localAudioPath: poi.LocalAudioPath,
+                audioUrl: poi.AudioUrl,
+                fallbackText: poi.Description,
+                languageCode: string.IsNullOrEmpty(poi.LanguageCode) ? "vi" : poi.LanguageCode);
 
             OnPropertyChanged(nameof(IsAudioPlaying));
             OnPropertyChanged(nameof(IsAudioPaused));
@@ -262,15 +267,28 @@ namespace AudioGo.ViewModels
             _userLocation = (loc.Lat, loc.Lon);
             _geofence.OnLocationUpdated(loc.Lat, loc.Lon);
             // Refresh nearby list whenever GPS position changes
-            OnPropertyChanged(nameof(NearbyPois));
-            OnPropertyChanged(nameof(HasNearbyPois));
-            OnPropertyChanged(nameof(NearbyEmpty));
+            UpdateNearbyPois();
         }
 
         private async void OnPoiTriggered(object? sender, POI poi)
         {
             StatusMessage = $"Đang tự động phát: {poi.Title}";
             await TriggerAudioAsync(poi);
+        }
+
+        public void UpdatePoiAudioPath(POI updatedPoi)
+        {
+            var poi = _pois.FirstOrDefault(p => p.PoiId == updatedPoi.PoiId);
+            if (poi is not null)
+            {
+                poi.LocalAudioPath = updatedPoi.LocalAudioPath;
+            }
+
+            var nearbyPoi = _nearbyPois.FirstOrDefault(p => p.PoiId == updatedPoi.PoiId);
+            if (nearbyPoi is not null)
+            {
+                nearbyPoi.LocalAudioPath = updatedPoi.LocalAudioPath;
+            }
         }
     }
 }
