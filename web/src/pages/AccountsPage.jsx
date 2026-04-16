@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { ChevronLeft, ChevronRight, Trash, Lock, Unlock } from "lucide-react"
+import toast from "react-hot-toast"
 
 import {
   getUsersApi,
@@ -8,6 +9,7 @@ import {
 } from "@/api/accountApi"
 
 import CreateAccountModal from "@/components/CreateAccountModal"
+import ConfirmModal from "@/components/ConfirmModal"
 
 const roleStyle = (role) => {
   if (role === "Admin") return "bg-pink-100 text-pink-500"
@@ -28,6 +30,10 @@ export default function AccountsPage() {
   const [users, setUsers] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [showRoleChangeModal, setShowRoleChangeModal] = useState(false)
+  const [roleChangeData, setRoleChangeData] = useState({ id: null, newRole: null, oldRole: null })
+  const [showLockModal, setShowLockModal] = useState(false)
+  const [lockData, setLockData] = useState({ id: null, isLocked: null })
 
   const pageSize = 5
 
@@ -51,15 +57,21 @@ export default function AccountsPage() {
     setUsers(prev => [user, ...prev])
   }
 
-  // UPDATE ROLE ✅ FIXED
-  const handleChangeRole = async (id, role) => {
+  // UPDATE ROLE 
+  const handleChangeRole = (id, newRole) => {
+    const user = users.find(u => u.accountId === id)
+    setRoleChangeData({ id, newRole, oldRole: user?.role })
+    setShowRoleChangeModal(true)
+  }
+
+  const handleConfirmRoleChange = async () => {
     try {
-      const res = await updateUserApi(id, { role })
+      const res = await updateUserApi(roleChangeData.id, { role: roleChangeData.newRole })
       const updated = res?.data ?? res
 
       setUsers(prev =>
         prev.map(u =>
-          u.accountId === id
+          u.accountId === roleChangeData.id
             ? {
                 ...u,
                 role: updated.role,
@@ -68,9 +80,11 @@ export default function AccountsPage() {
             : u
         )
       )
+      toast.success(`Thay đổi role thành ${roleChangeData.newRole} thành công`)
+      setShowRoleChangeModal(false)
     } catch (err) {
       console.error(err)
-      alert("Không thể cập nhật role")
+      toast.error("Không thể cập nhật role")
     }
   }
 
@@ -84,20 +98,26 @@ export default function AccountsPage() {
       setUsers(prev =>
         prev.filter(u => u.accountId !== id)
       )
+      toast.success("Xóa tài khoản thành công")
     } catch (err) {
       console.error(err)
-      alert("Xóa thất bại")
+      toast.error("Xóa thất bại")
     }
   }
 
   const handleToggleLock = async (id, isLocked) => {
+    setLockData({ id, isLocked })
+    setShowLockModal(true)
+  }
+
+  const handleConfirmToggleLock = async () => {
     try {
-      const res = await updateUserApi(id, { isLocked: !isLocked })
+      const res = await updateUserApi(lockData.id, { isLocked: !lockData.isLocked })
       const updated = res?.data ?? res
 
       setUsers(prev =>
         prev.map(u =>
-          u.accountId === id
+          u.accountId === lockData.id
             ? {
                 ...u,
                 isLocked: updated.isLocked,
@@ -106,9 +126,12 @@ export default function AccountsPage() {
             : u
         )
       )
+      toast.success(lockData.isLocked ? "Mở khóa tài khoản thành công" : "Khóa tài khoản thành công")
+      setShowLockModal(false)
     } catch (err) {
       console.error(err)
-      alert("Không thể cập nhật trạng thái khóa tài khoản")
+      toast.error("Không thể cập nhật trạng thái khóa tài khoản")
+      setShowLockModal(false)
     }
   }
 
@@ -245,38 +268,52 @@ export default function AccountsPage() {
         )}
 
         {/* PAGINATION */}
-        <div className="flex justify-between px-8 py-4 text-sm text-gray-500 items-center">
-          <p>
-            {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, users.length)} / {users.length}
-          </p>
+        {totalPages > 0 && (
+          <div className="flex justify-between items-center px-6 py-4 text-sm text-gray-500 bg-gray-50/50 border-t">
+            <p>
+              Hiển thị trang <span className="font-bold text-gray-800">{currentPage}</span> / <span className="font-bold">{totalPages}</span>
+            </p>
 
-          <div className="flex gap-2">
-            <button
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => p - 1)}
-              className={`p-2 rounded-full ${currentPage === 1 ? "text-gray-300" : "text-gray-500 hover:text-pink-500 transition"}`}
-            >
-              <ChevronLeft size={14} />
-            </button>
-
-            {Array.from({ length: totalPages }).map((_, i) => (
+            <div className="flex gap-1 items-center">
               <button
-                key={i}
-                onClick={() => setCurrentPage(i + 1)}
-                className={`px-3 py-1 rounded-lg ${currentPage === i + 1 ? "bg-pink-500 text-white font-bold" : "text-gray-500 hover:bg-gray-100 transition"}`}
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+                className={`p-2 rounded-full ${currentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
               >
-                {i + 1}</button>
-            ))}
+                <ChevronLeft size={16} />
+              </button>
 
-            <button
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => p + 1)}
-              className={`p-2 rounded-full ${currentPage === totalPages ? "text-gray-300" : "text-gray-500 hover:text-pink-500 transition"}`}
-            >
-              <ChevronRight size={14} />
-            </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(i => i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1))
+                .reduce((acc, curr, idx, arr) => {
+                  if (idx > 0 && curr - arr[idx - 1] > 1) acc.push('...');
+                  acc.push(curr);
+                  return acc;
+                }, [])
+                .map((p, idx) => (
+                  p === '...' ? (
+                    <span key={`dots-${idx}`} className="px-2 text-gray-400">...</span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => setCurrentPage(p)}
+                      className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === p ? "bg-pink-500 text-white shadow-sm" : "hover:bg-pink-50 hover:text-pink-600"}`}
+                    >
+                      {p}
+                    </button>
+                  )
+                ))}
+
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className={`p-2 rounded-full ${currentPage === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* MODAL */}
@@ -284,6 +321,32 @@ export default function AccountsPage() {
         <CreateAccountModal
           onClose={() => setShowModal(false)}
           onCreated={handleAddUser}
+        />
+      )}
+
+      {/* ROLE CHANGE CONFIRMATION MODAL */}
+      {showRoleChangeModal && (
+        <ConfirmModal
+          open={showRoleChangeModal}
+          title="Xác nhận thay đổi role?"
+          message={`Bạn có chắc chắn muốn thay đổi role từ "${roleChangeData.oldRole}" thành "${roleChangeData.newRole}" không?`}
+          confirmText="Thay đổi"
+          cancelText="Hủy bỏ"
+          onConfirm={handleConfirmRoleChange}
+          onCancel={() => setShowRoleChangeModal(false)}
+        />
+      )}
+
+      {/* LOCK CONFIRMATION MODAL */}
+      {showLockModal && (
+        <ConfirmModal
+          open={showLockModal}
+          title={lockData.isLocked ? "Xác nhận mở khóa?" : "Xác nhận khóa?"}
+          message={lockData.isLocked ? "Bạn có chắc chắn muốn mở khóa tài khoản này không?" : "Bạn có chắc chắn muốn khóa tài khoản này không?"}
+          confirmText={lockData.isLocked ? "Mở khóa" : "Khóa"}
+          cancelText="Hủy bỏ"
+          onConfirm={handleConfirmToggleLock}
+          onCancel={() => setShowLockModal(false)}
         />
       )}
     </div>

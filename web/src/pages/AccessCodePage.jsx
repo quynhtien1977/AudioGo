@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import { 
     QrCode, 
     Plus, 
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { accessCodeApi } from "../api/accessCodeApi";
+import ConfirmModal from "@/components/ConfirmModal";
 
 export default function AccessCodePage() {
     const [codes, setCodes] = useState([]);
@@ -53,21 +55,34 @@ export default function AccessCodePage() {
             await accessCodeApi.createCodes(generateCount);
             setPage(1); // Reset to page 1 to see the newest
             fetchCodes();
+            toast.success("Tạo mã mới thành công!");
         } catch (error) {
             console.error("Failed to generate codes:", error);
-            alert("Lỗi khi tạo mã: " + (error.response?.data || error.message));
+            toast.error("Lỗi khi tạo mã: " + (error.response?.data || error.message));
         } finally {
             setIsGenerating(false);
         }
     };
 
-    const handleDelete = async (id) => {
-        if (!confirm("Bạn có chắc chắn muốn xóa mã truy cập này?")) return;
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [codeToDelete, setCodeToDelete] = useState(null);
+
+    const checkDelete = (id) => {
+        setCodeToDelete(id);
+        setShowDeleteModal(true);
+    };
+
+    const handleConfirmDelete = async () => {
         try {
-            await accessCodeApi.deleteCode(id);
+            await accessCodeApi.deleteCode(codeToDelete);
+            toast.success("Xóa mã thành công");
             fetchCodes();
         } catch (error) {
             console.error("Failed to delete:", error);
+            toast.error("Lỗi khi xóa mã");
+        } finally {
+            setShowDeleteModal(false);
+            setCodeToDelete(null);
         }
     };
 
@@ -81,7 +96,7 @@ export default function AccessCodePage() {
             }
         } catch (error) {
             console.error("Lỗi lấy mã QR:", error);
-            alert("Không thể tải mã QR");
+            toast.error("Không thể tải mã QR");
             setPreviewCode(null);
         }
     };
@@ -261,7 +276,7 @@ export default function AccessCodePage() {
                                             </button>
                                             
                                             <button 
-                                                onClick={() => handleDelete(c.codeId)}
+                                                onClick={() => checkDelete(c.codeId)}
                                                 className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors flex-shrink-0"
                                                 title="Xóa mã"
                                             >
@@ -323,6 +338,22 @@ export default function AccessCodePage() {
                     )}
                 </div>
             </div>
+
+            {/* Modal Xác nhận Xóa */}
+            {showDeleteModal && (
+                <ConfirmModal
+                    open={showDeleteModal}
+                    title="Xác nhận xóa"
+                    message="Bạn có chắc chắn muốn xóa mã truy cập này? Hành động này không thể hoàn tác."
+                    confirmText="Xóa"
+                    cancelText="Hủy"
+                    onConfirm={handleConfirmDelete}
+                    onCancel={() => {
+                        setShowDeleteModal(false);
+                        setCodeToDelete(null);
+                    }}
+                />
+            )}
         </div>
     );
 }

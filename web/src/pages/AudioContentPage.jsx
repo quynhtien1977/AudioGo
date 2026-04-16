@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Headphones, Play, Pause, RefreshCw, Search, ChevronDown, ChevronUp, Languages } from "lucide-react";
+import { Headphones, Play, Pause, RefreshCw, Search, ChevronDown, ChevronUp, Languages, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { audioContentApi } from "../api/audioContentApi";
 
@@ -237,7 +237,7 @@ export default function AudioContentPage() {
 
                 {/* PAGINATION */}
                 {totalPages > 0 && (
-                    <div className="flex justify-between px-6 py-4 text-sm text-gray-500 items-center bg-white border-t">
+                    <div className="flex justify-between px-6 py-4 text-sm text-gray-500 items-center bg-gray-50/50 border-t">
                         <p>
                             Hiển thị trang <span className="font-bold text-gray-800">{page}</span> / <span className="font-bold">{totalPages}</span>
                         </p>
@@ -246,40 +246,38 @@ export default function AudioContentPage() {
                             <button
                                 disabled={page === 1}
                                 onClick={() => setPage((p) => p - 1)}
-                                className={`px-3 py-1.5 border rounded-lg font-medium text-sm transition-colors ${page === 1 ? "text-gray-300 border-gray-200 cursor-not-allowed" : "text-gray-600 hover:bg-gray-50 hover:text-gray-800"}`}
+                                className={`p-2 rounded-full ${page === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
                             >
-                                Trước
+                                <ChevronLeft size={16} />
                             </button>
                             
-                            <div className="flex gap-1 mx-2">
-                                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                                    .filter(i => i === 1 || i === totalPages || (i >= page - 1 && i <= page + 1))
-                                    .reduce((acc, curr, idx, arr) => {
-                                        if (idx > 0 && curr - arr[idx - 1] > 1) acc.push('...');
-                                        acc.push(curr);
-                                        return acc;
-                                    }, [])
-                                    .map((p, idx) => (
-                                        p === '...' ? (
-                                            <span key={`dots-${idx}`} className="px-2 text-gray-400">...</span>
-                                        ) : (
-                                            <button
-                                                key={p}
-                                                onClick={() => setPage(p)}
-                                                className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${page === p ? "bg-pink-500 text-white shadow-sm" : "text-gray-600 hover:bg-pink-50 hover:text-pink-600"}`}
-                                            >
-                                                {p}
-                                            </button>
-                                        )
-                                    ))}
-                            </div>
+                            {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                .filter(i => i === 1 || i === totalPages || (i >= page - 1 && i <= page + 1))
+                                .reduce((acc, curr, idx, arr) => {
+                                    if (idx > 0 && curr - arr[idx - 1] > 1) acc.push('...');
+                                    acc.push(curr);
+                                    return acc;
+                                }, [])
+                                .map((p, idx) => (
+                                    p === '...' ? (
+                                        <span key={`dots-${idx}`} className="px-2 text-gray-400">...</span>
+                                    ) : (
+                                        <button
+                                            key={p}
+                                            onClick={() => setPage(p)}
+                                            className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${page === p ? "bg-pink-500 text-white shadow-sm" : "hover:bg-pink-50 hover:text-pink-600"}`}
+                                        >
+                                            {p}
+                                        </button>
+                                    )
+                                ))}
 
                             <button
                                 disabled={page === totalPages}
                                 onClick={() => setPage((p) => p + 1)}
-                                className={`px-3 py-1.5 border rounded-lg font-medium text-sm transition-colors ${page === totalPages ? "text-gray-300 border-gray-200 cursor-not-allowed" : "text-gray-600 hover:bg-gray-50 hover:text-gray-800"}`}
+                                className={`p-2 rounded-full ${page === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
                             >
-                                Tiếp
+                                <ChevronRight size={16} />
                             </button>
                         </div>
                     </div>
