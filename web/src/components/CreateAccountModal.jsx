@@ -1,5 +1,6 @@
   import { useState } from "react";
   import { Eye as EyeIcon, EyeOff as EyeOffIcon } from "lucide-react";
+  import toast from "react-hot-toast";
   import { createUserApi } from "@/api/accountApi";
 
   export default function CreateAccountModal({ onClose, onCreated }) {
@@ -15,7 +16,6 @@
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // ✅ FIX: password = username + phone
   const generatePassword = (username, phone) => {
     if (!username || !phone) return "";
     return `${username}${phone}`;
@@ -25,7 +25,6 @@
     setForm((prev) => {
       const updatedForm = { ...prev, [key]: value };
 
-      // ✅ FIX logic generate password
       if (key === "username" || key === "phone") {
         updatedForm.password = generatePassword(
           updatedForm.username,
@@ -39,30 +38,30 @@
 
   const handleSubmit = async () => {
     if (!form.name || !form.email || !form.role || !form.username || !form.phone) {
-      alert("Please fill all fields");
+      toast.error("Vui lòng điền tất cả các trường");
       return;
     }
 
     try {
       setLoading(true);
 
-      // ✅ FIX: mapping đúng DTO backend
       const payload = {
         username: form.username,
         password: form.password,
         role: form.role,
-        fullName: form.name,          // FIX
+        fullName: form.name,          
         email: form.email,
-        phoneNumber: form.phone,      // FIX
+        phoneNumber: form.phone,     
       };
 
       const res = await createUserApi(payload);
 
+      toast.success("Tạo tài khoản thành công!");
       onCreated(res);
       onClose();
     } catch (err) {
       console.error(err);
-      alert("Error creating account");
+      toast.error("Lỗi khi tạo tài khoản");
     } finally {
       setLoading(false);
     }

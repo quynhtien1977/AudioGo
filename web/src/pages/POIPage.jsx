@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { NavLink } from "react-router-dom"
+import toast from "react-hot-toast"
 import {
   ChevronLeft,
   ChevronRight,
@@ -249,35 +250,7 @@ export default function POIPage() {
     }
   }
 
-    // xử lý duyệt POI
-  const handleApprove = async (id) => {
-    try {
-      await updatePOI(id, { status: "APPROVED" })
-
-      setPois(prev =>
-        prev.map(p =>
-          p.rank === id ? { ...p, status: "APPROVED" } : p
-        )
-      )
-    } catch (err) {
-      console.error(err)
-    }
-  }
-
-  const handleReject = async (id) => {
-    try {
-      await updatePOI(id, { status: "REJECTED" })
-
-      setPois(prev =>
-        prev.map(p =>
-          p.rank === id ? { ...p, status: "REJECTED" } : p
-        )
-      )
-    } catch (err) {
-      console.error(err)
-    }
-  }
-
+  // HANDLERS SET PRIORITY
   const handleSetPriority = async (id, newPriority) => {
     try {
       await updatePOI(id, { priority: newPriority })
@@ -311,7 +284,7 @@ export default function POIPage() {
         return
       }
 
-      const newIsActive = !poi.isActive // ✅ boolean
+      const newIsActive = !poi.isActive 
 
       await updatePOI(id, {
         isActive: newIsActive
@@ -339,16 +312,22 @@ export default function POIPage() {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedPoiId, setSelectedPoiId] = useState(null);
+  const [showHideModal, setShowHideModal] = useState(false);
+  const [selectedHidePoiId, setSelectedHidePoiId] = useState(null);
 
   const openDeleteConfirm = (id) => {
       setSelectedPoiId(id);
       setShowDeleteModal(true);
   };
 
+  const openHideConfirm = (id) => {
+    setSelectedHidePoiId(id);
+    setShowHideModal(true);
+  };
+
 
   const handleConfirmDelete = async () => {
     try {
-      // Tạo DELETE request thay vì xóa ngay
       const payload = {
         ActionType: "DELETE",
         PoiId: selectedPoiId,
@@ -356,17 +335,30 @@ export default function POIPage() {
       }
 
       await createPoiRequest(payload)
-      alert("Gửi yêu cầu xóa thành công! Admin sẽ xem xét.")
+      toast.success("Gửi yêu cầu xóa thành công! Admin sẽ xem xét.")
       
       // Refresh danh sách request
       const requests = await getMyPoiRequests()
       setPoiRequests(requests || [])
     } catch (err) {
       console.error(err)
-      alert("Gửi yêu cầu thất bại!")
+      toast.error("Gửi yêu cầu thất bại!")
     }
 
     setShowDeleteModal(false)
+  }
+
+  const handleConfirmHide = async () => {
+    try {
+      await handleHiddenPOI(selectedHidePoiId)
+      const poi = pois.find(p => p.rank === selectedHidePoiId)
+      const message = !poi?.isActive ? "Đã hiện POI" : "Đã ẩn POI"
+      toast.success(message)
+    } catch (err) {
+      console.error(err)
+      toast.error("Thao tác thất bại!")
+    }
+    setShowHideModal(false)
   }
 
   const [showApproveModal, setShowApproveModal] = useState(false);
@@ -497,7 +489,7 @@ export default function POIPage() {
                   <div className="flex items-center gap-1">
                     {role === "Admin" && (
                       <button
-                          onClick={() => handleHiddenPOI(poi.rank)}
+                          onClick={() => openHideConfirm(poi.rank)}
                           className={`w-8 h-8 flex items-center justify-end rounded-full transition-colors text-pink-500`}
                           title={!poi.isActive ? "Hiện POI" : "Ẩn POI"}
                       >
@@ -685,13 +677,15 @@ export default function POIPage() {
 
                     <td className="p-4">
                       <div className="flex items-center gap-1">
-                          <NavLink
-                            to={`/pois/requests/${request.requestId}`}
-                            className="w-8 h-8 flex items-center justify-center rounded-full transition-colors text-pink-500 hover:text-pink-600"
-                            title="Xem chi tiết POI"
-                          >
-                            <List size={18} />
-                          </NavLink>
+                          {request.actionType !== "DELETE" && (
+                            <NavLink
+                              to={`/pois/requests/${request.requestId}`}
+                              className="w-8 h-8 flex items-center justify-center rounded-full transition-colors text-pink-500 hover:text-pink-600"
+                              title="Xem chi tiết POI"
+                            >
+                              <List size={18} />
+                            </NavLink>
+                          )}
                       </div>
                     </td>
                   </tr>
@@ -775,40 +769,19 @@ export default function POIPage() {
           onCancel={() => setShowDeleteModal(false)}
         />
       )}
-      
-      { showApproveModal && (
+
+      { showHideModal && (
         <ConfirmModal
-          open={showApproveModal}
-          title="Xác nhận duyệt?"
-          message="Bạn có chắc chắn muốn duyệt POI này không?"
-          confirmText="Duyệt"
+          open={showHideModal}
+          title={pois.find(p => p.rank === selectedHidePoiId)?.isActive ? "Xác nhận ẩn POI?" : "Xác nhận hiện POI?"}
+          message={pois.find(p => p.rank === selectedHidePoiId)?.isActive ? "Bạn có chắc chắn muốn ẩn POI này?" : "Bạn có chắc chắn muốn hiện POI này?"}
+          confirmText={pois.find(p => p.rank === selectedHidePoiId)?.isActive ? "Ẩn" : "Hiện"}
           cancelText="Hủy bỏ"
-          onConfirm={handleConfirmApprove}
-          onCancel={() => setShowApproveModal(false)}
+          onConfirm={handleConfirmHide}
+          onCancel={() => setShowHideModal(false)}
         />
       )}
       
-      { showRejectModal && (
-        <ConfirmModal
-          open={showRejectModal}
-          title="Xác nhận từ chối?"
-          message={
-            <div>
-              <p>Bạn có chắc chắn muốn từ chối POI này không?</p>
-              <textarea
-                className="w-full mt-2 p-2 border rounded"
-                placeholder="Nhập lý do từ chối..."
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-              />
-            </div>
-          }
-          confirmText="Từ chối"
-          cancelText="Hủy bỏ"
-          onConfirm={handleConfirmReject}
-          onCancel={() => setShowRejectModal(false)}
-        />
-      )}
       
     </div>
   )

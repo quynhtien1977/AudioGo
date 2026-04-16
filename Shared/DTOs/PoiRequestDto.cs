@@ -49,7 +49,8 @@ namespace Shared.DTOs
         string   ActionType,
         string   Status,
         DateTime CreatedAt,
-        string?  RejectReason
+        string?  RejectReason,
+        string?  ProposedData
     );
 
     /// <summary>Chi tiết 1 yêu cầu (dùng trên màn hình Diff của Admin).</summary>
