@@ -32,6 +32,8 @@ export default function AccountsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [showRoleChangeModal, setShowRoleChangeModal] = useState(false)
   const [roleChangeData, setRoleChangeData] = useState({ id: null, newRole: null, oldRole: null })
+  const [showLockModal, setShowLockModal] = useState(false)
+  const [lockData, setLockData] = useState({ id: null, isLocked: null })
 
   const pageSize = 5
 
@@ -55,7 +57,7 @@ export default function AccountsPage() {
     setUsers(prev => [user, ...prev])
   }
 
-  // UPDATE ROLE ✅ FIXED
+  // UPDATE ROLE 
   const handleChangeRole = (id, newRole) => {
     const user = users.find(u => u.accountId === id)
     setRoleChangeData({ id, newRole, oldRole: user?.role })
@@ -104,13 +106,18 @@ export default function AccountsPage() {
   }
 
   const handleToggleLock = async (id, isLocked) => {
+    setLockData({ id, isLocked })
+    setShowLockModal(true)
+  }
+
+  const handleConfirmToggleLock = async () => {
     try {
-      const res = await updateUserApi(id, { isLocked: !isLocked })
+      const res = await updateUserApi(lockData.id, { isLocked: !lockData.isLocked })
       const updated = res?.data ?? res
 
       setUsers(prev =>
         prev.map(u =>
-          u.accountId === id
+          u.accountId === lockData.id
             ? {
                 ...u,
                 isLocked: updated.isLocked,
@@ -119,10 +126,12 @@ export default function AccountsPage() {
             : u
         )
       )
-      toast.success(isLocked ? "Mở khóa tài khoản thành công" : "Khóa tài khoản thành công")
+      toast.success(lockData.isLocked ? "Mở khóa tài khoản thành công" : "Khóa tài khoản thành công")
+      setShowLockModal(false)
     } catch (err) {
       console.error(err)
       toast.error("Không thể cập nhật trạng thái khóa tài khoản")
+      setShowLockModal(false)
     }
   }
 
@@ -311,6 +320,19 @@ export default function AccountsPage() {
           cancelText="Hủy bỏ"
           onConfirm={handleConfirmRoleChange}
           onCancel={() => setShowRoleChangeModal(false)}
+        />
+      )}
+
+      {/* LOCK CONFIRMATION MODAL */}
+      {showLockModal && (
+        <ConfirmModal
+          open={showLockModal}
+          title={lockData.isLocked ? "Xác nhận mở khóa?" : "Xác nhận khóa?"}
+          message={lockData.isLocked ? "Bạn có chắc chắn muốn mở khóa tài khoản này không?" : "Bạn có chắc chắn muốn khóa tài khoản này không?"}
+          confirmText={lockData.isLocked ? "Mở khóa" : "Khóa"}
+          cancelText="Hủy bỏ"
+          onConfirm={handleConfirmToggleLock}
+          onCancel={() => setShowLockModal(false)}
         />
       )}
     </div>
