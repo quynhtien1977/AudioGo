@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { ChevronLeft, ChevronRight, Trash, Lock, Unlock } from "lucide-react"
+import toast from "react-hot-toast"
 
 import {
   getUsersApi,
@@ -8,6 +9,7 @@ import {
 } from "@/api/accountApi"
 
 import CreateAccountModal from "@/components/CreateAccountModal"
+import ConfirmModal from "@/components/ConfirmModal"
 
 const roleStyle = (role) => {
   if (role === "Admin") return "bg-pink-100 text-pink-500"
@@ -28,6 +30,8 @@ export default function AccountsPage() {
   const [users, setUsers] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
+  const [showRoleChangeModal, setShowRoleChangeModal] = useState(false)
+  const [roleChangeData, setRoleChangeData] = useState({ id: null, newRole: null, oldRole: null })
 
   const pageSize = 5
 
@@ -52,14 +56,20 @@ export default function AccountsPage() {
   }
 
   // UPDATE ROLE ✅ FIXED
-  const handleChangeRole = async (id, role) => {
+  const handleChangeRole = (id, newRole) => {
+    const user = users.find(u => u.accountId === id)
+    setRoleChangeData({ id, newRole, oldRole: user?.role })
+    setShowRoleChangeModal(true)
+  }
+
+  const handleConfirmRoleChange = async () => {
     try {
-      const res = await updateUserApi(id, { role })
+      const res = await updateUserApi(roleChangeData.id, { role: roleChangeData.newRole })
       const updated = res?.data ?? res
 
       setUsers(prev =>
         prev.map(u =>
-          u.accountId === id
+          u.accountId === roleChangeData.id
             ? {
                 ...u,
                 role: updated.role,
@@ -68,9 +78,11 @@ export default function AccountsPage() {
             : u
         )
       )
+      toast.success(`Thay đổi role thành ${roleChangeData.newRole} thành công`)
+      setShowRoleChangeModal(false)
     } catch (err) {
       console.error(err)
-      alert("Không thể cập nhật role")
+      toast.error("Không thể cập nhật role")
     }
   }
 
@@ -84,9 +96,10 @@ export default function AccountsPage() {
       setUsers(prev =>
         prev.filter(u => u.accountId !== id)
       )
+      toast.success("Xóa tài khoản thành công")
     } catch (err) {
       console.error(err)
-      alert("Xóa thất bại")
+      toast.error("Xóa thất bại")
     }
   }
 
@@ -106,9 +119,10 @@ export default function AccountsPage() {
             : u
         )
       )
+      toast.success(isLocked ? "Mở khóa tài khoản thành công" : "Khóa tài khoản thành công")
     } catch (err) {
       console.error(err)
-      alert("Không thể cập nhật trạng thái khóa tài khoản")
+      toast.error("Không thể cập nhật trạng thái khóa tài khoản")
     }
   }
 
@@ -284,6 +298,19 @@ export default function AccountsPage() {
         <CreateAccountModal
           onClose={() => setShowModal(false)}
           onCreated={handleAddUser}
+        />
+      )}
+
+      {/* ROLE CHANGE CONFIRMATION MODAL */}
+      {showRoleChangeModal && (
+        <ConfirmModal
+          open={showRoleChangeModal}
+          title="Xác nhận thay đổi role?"
+          message={`Bạn có chắc chắn muốn thay đổi role từ "${roleChangeData.oldRole}" thành "${roleChangeData.newRole}" không?`}
+          confirmText="Thay đổi"
+          cancelText="Hủy bỏ"
+          onConfirm={handleConfirmRoleChange}
+          onCancel={() => setShowRoleChangeModal(false)}
         />
       )}
     </div>

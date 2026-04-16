@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { ArrowLeft, MessageSquare, X, Check, MapPin, Zap, Layers, FileText, Volume2, Globe } from "lucide-react"
+import { getPoiDetail } from "@/api/poiApi"
+import { getPoiRequestDetail, reviewPoiRequest } from "@/api/poiRequestApi"
+import ConfirmModal from "@/components/ConfirmModal"
 
 // Helper to check if values are different
 const isDifferent = (old, new_) => old !== new_
@@ -41,84 +44,153 @@ const Section = ({ title, children }) => (
 )
 
 export default function POIUpdateDetailPage() {
-  const { id } = useParams()
+  const { id: requestId } = useParams()
   const navigate = useNavigate()
   const [oldPoi, setOldPoi] = useState(null)
   const [newPoi, setNewPoi] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  
+  // Modal states
+  const [showApproveModal, setShowApproveModal] = useState(false)
+  const [showRejectModal, setShowRejectModal] = useState(false)
+  const [rejectReason, setRejectReason] = useState("")
 
   useEffect(() => {
-    // TODO: Fetch POI detailed info từ API
-    // const fetchPoiDetail = async () => {
-    //   try {
-    //     setLoading(true)
-    //     const res = await getPoiUpdateDetailApi(id)
-    //     setOldPoi(res.current)
-    //     setNewPoi(res.proposed)
-    //   } catch (err) {
-    //     console.error("Load POI detail error:", err)
-    //   } finally {
-    //     setLoading(false)
-    //   }
-    // }
-    // fetchPoiDetail()
+    const fetchPoiDetail = async () => {
+      try {
+        setLoading(true)
+        
+        // Fetch request detail
+        const request = await getPoiRequestDetail(requestId)
+        console.log("Request:", request)
+        
+        // Fetch POI detail (current data)
+        const poiDetail = await getPoiDetail(request.poiId)
+        console.log("POI Detail:", poiDetail)
+        
+        // Parse proposed data
+        let proposedData = {}
+        if (request.proposedData) {
+          proposedData = typeof request.proposedData === 'string' 
+            ? JSON.parse(request.proposedData)
+            : request.proposedData
+        }
+        console.log("Proposed Data:", proposedData)
+        
+        // Format old POI data (from database)
+        const oldPoiFormatted = {
+          id: poiDetail.poiId,
+          name: poiDetail.contents?.find(c => c.isMaster)?.title || "Không có tên",
+          category: poiDetail.categoryIds?.[0] || "Không xác định",
+          description: poiDetail.contents?.find(c => c.isMaster)?.description || "",
+          latitude: poiDetail.latitude || "",
+          longitude: poiDetail.longitude || "",
+          address: poiDetail.contents?.find(c => c.isMaster)?.address || "",
+          priority: poiDetail.priority || 2,
+          language: poiDetail.contents?.map(c => c.language).join(", ") || "",
+          audio: poiDetail.contents?.find(c => c.isMaster)?.audioFileName || "",
+          images: poiDetail.gallery?.map(g => g.imageFileName) || [],
+        }
+        
+        // Format new POI data (from proposed data)
+        const newPoiFormatted = {
+          id: proposedData.poiId || oldPoiFormatted.id,
+          name: proposedData.Title || oldPoiFormatted.name,
+          category: proposedData.CategoryIds?.[0] || oldPoiFormatted.category,
+          description: proposedData.Description || oldPoiFormatted.description,
+          latitude: proposedData.Latitude?.toString() || oldPoiFormatted.latitude,
+          longitude: proposedData.Longitude?.toString() || oldPoiFormatted.longitude,
+          address: proposedData.Address || oldPoiFormatted.address,
+          priority: proposedData.Priority || oldPoiFormatted.priority,
+          language: proposedData.Language || oldPoiFormatted.language,
+          audio: proposedData.AudioFileName || oldPoiFormatted.audio,
+          images: proposedData.ImageFileNames || oldPoiFormatted.images,
+        }
+        
+        setOldPoi(oldPoiFormatted)
+        setNewPoi(newPoiFormatted)
+      } catch (err) {
+        console.error("Load POI detail error:", err)
+        setError("Không thể tải dữ liệu. Vui lòng thử lại.")
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    if (requestId) {
+      fetchPoiDetail()
+    }
+  }, [requestId])
 
-    // Mock data
-    setOldPoi({
-      id: 1,
-      name: "Ca Phê Sáng Modernist",
-      category: "Ẩm thực",
-      description: "Một quán ăn phở truyền thống với nước dùng được nấu suốt ngày đêm",
-      latitude: "10.7654",
-      longitude: "106.6850",
-      address: "123 Đường Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh",
-      categoryTag: "Coffee Shop",
-      priority: 2,
-      language: "Tiếng Việt",
-      audio: "audio-001.mp3",
-      images: ["image1.jpg", "image2.jpg"],
-    })
+  const handleApprove = () => {
+    setShowApproveModal(true)
+  }
 
-    setNewPoi({
-      id: 1,
-      name: "Modernist Coffee & Roastery",
-      category: "Ẩm thực",
-      description: "Một quán ăn phở truyền thống với nước dùng được nấu suốt ngày đêm. Nước dùng được nấu từ xương bò và các loại gia vị tây bắc",
-      latitude: "10.7654",
-      longitude: "106.6851",
-      address: "123 Đường Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh",
-      categoryTag: "Specialty Coffee",
-      priority: 1,
-      language: "Tiếng Việt, English",
-      audio: "audio-001-multilang.mp3",
-      images: ["image1.jpg", "image2.jpg", "image3.jpg"],
-    })
-
-    setLoading(false)
-  }, [id])
-
-  const handleRequestChanges = () => {
-    // TODO: Gọi API request changes
-    alert("Yêu cầu sửa lại đã được gửi")
-    navigate("/poi/management/updates")
+  const handleConfirmApprove = async () => {
+    try {
+      await reviewPoiRequest(requestId, {
+        status: "APPROVED"
+      })
+      
+      setShowApproveModal(false)
+      alert("Cập nhật đã được phê duyệt")
+      navigate("/poi/management/updates")
+    } catch (err) {
+      console.error("Approve error:", err)
+      alert("Lỗi khi phê duyệt: " + err.message)
+    }
   }
 
   const handleReject = () => {
-    // TODO: Gọi API reject
-    alert("Cập nhật đã bị từ chối")
-    navigate("/poi/management/updates")
+    setRejectReason("")
+    setShowRejectModal(true)
   }
 
-  const handleApprove = () => {
-    // TODO: Gọi API approve
-    alert("Cập nhật đã được phê duyệt")
-    navigate("/poi/management/updates")
+  const handleConfirmReject = async () => {
+    try {
+      await reviewPoiRequest(requestId, {
+        status: "REJECTED",
+        rejectReason: rejectReason
+      })
+      
+      setShowRejectModal(false)
+      setRejectReason("")
+      alert("Cập nhật đã bị từ chối")
+      navigate("/poi/management/updates")
+    } catch (err) {
+      console.error("Reject error:", err)
+      alert("Lỗi khi từ chối: " + err.message)
+    }
+  }
+
+  const handleRequestChanges = async () => {
+    try {
+      await reviewPoiRequest(requestId, {
+        approved: false,
+        rejectReason: "Yêu cầu sửa lại"
+      })
+      
+      alert("Yêu cầu sửa lại đã được gửi")
+      navigate("/poi/management/updates")
+    } catch (err) {
+      console.error("Request changes error:", err)
+      alert("Lỗi: " + err.message)
+    }
   }
 
   if (loading) {
     return (
       <div className="p-6 text-center text-gray-500">
         Đang tải...
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 text-center text-red-500">
+        {error}
       </div>
     )
   }
@@ -194,10 +266,16 @@ export default function POIUpdateDetailPage() {
               <div className="space-y-9">
               <Section title="Thông tin cơ bản">
                 <InfoCard 
+                  icon={FileText}
+                  label="Tên địa điểm"
+                  value={oldPoi.name}
+                  isChanged={isDifferent(oldPoi.name, newPoi.name)}
+                />
+                <InfoCard 
                   icon={Layers}
                   label="Danh mục"
-                  value={oldPoi.categoryTag}
-                  isChanged={isDifferent(oldPoi.categoryTag, newPoi.categoryTag)}
+                  value={oldPoi.category}
+                  isChanged={isDifferent(oldPoi.category, newPoi.category)}
                 />
                 <InfoCard 
                   icon={MapPin}
@@ -220,12 +298,34 @@ export default function POIUpdateDetailPage() {
                   value={oldPoi.language}
                   isChanged={isDifferent(oldPoi.language, newPoi.language)}
                 />
-                <InfoCard 
-                  icon={Volume2}
-                  label="File audio"
-                  value={oldPoi.audio}
-                  isChanged={isDifferent(oldPoi.audio, newPoi.audio)}
-                />
+                <div className={`p-4 rounded-lg border transition ${
+                  isDifferent(oldPoi.audio, newPoi.audio)
+                    ? "bg-amber-50 border-amber-200"
+                    : "bg-gray-50 border-gray-200"
+                }`}>
+                  <div className="flex items-start gap-3">
+                    <div className={`p-2 rounded-lg ${
+                      isDifferent(oldPoi.audio, newPoi.audio)
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-gray-100 text-gray-600"
+                    }`}>
+                      <Volume2 size={20} />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">
+                        File audio
+                      </label>
+                      {oldPoi.audio ? (
+                        <audio controls className="w-full h-10 rounded">
+                          <source src={`http://localhost:5086/api/cms/pois/audio/${oldPoi.audio}`} type="audio/mpeg" />
+                          Trình duyệt của bạn không hỗ trợ audio
+                        </audio>
+                      ) : (
+                        <p className="text-sm text-gray-500">Không có file audio</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </Section>
 
               <Section title="Mô tả">
@@ -262,10 +362,16 @@ export default function POIUpdateDetailPage() {
               <div className="space-y-9">
               <Section title="Thông tin cơ bản">
                 <InfoCard 
+                  icon={FileText}
+                  label="Tên địa điểm"
+                  value={newPoi.name}
+                  isChanged={isDifferent(oldPoi.name, newPoi.name)}
+                />
+                <InfoCard 
                   icon={Layers}
                   label="Danh mục"
-                  value={newPoi.categoryTag}
-                  isChanged={isDifferent(oldPoi.categoryTag, newPoi.categoryTag)}
+                  value={newPoi.category}
+                  isChanged={isDifferent(oldPoi.category, newPoi.category)}
                 />
                 <InfoCard 
                   icon={MapPin}
@@ -288,12 +394,34 @@ export default function POIUpdateDetailPage() {
                   value={newPoi.language}
                   isChanged={isDifferent(oldPoi.language, newPoi.language)}
                 />
-                <InfoCard 
-                  icon={Volume2}
-                  label="File audio"
-                  value={newPoi.audio}
-                  isChanged={isDifferent(oldPoi.audio, newPoi.audio)}
-                />
+                <div className={`p-4 rounded-lg border transition ${
+                  isDifferent(oldPoi.audio, newPoi.audio)
+                    ? "bg-amber-50 border-amber-300"
+                    : "bg-blue-50 border-blue-200"
+                }`}>
+                  <div className="flex items-start gap-3">
+                    <div className={`p-2 rounded-lg ${
+                      isDifferent(oldPoi.audio, newPoi.audio)
+                        ? "bg-amber-100 text-amber-700"
+                        : "bg-blue-100 text-blue-600"
+                    }`}>
+                      <Volume2 size={20} />
+                    </div>
+                    <div className="flex-1">
+                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">
+                        File audio
+                      </label>
+                      {newPoi.audio ? (
+                        <audio controls className="w-full h-10 rounded">
+                          <source src={`http://localhost:5086/api/cms/pois/audio/${newPoi.audio}`} type="audio/mpeg" />
+                          Trình duyệt của bạn không hỗ trợ audio
+                        </audio>
+                      ) : (
+                        <p className="text-sm text-gray-500">Không có file audio</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </Section>
 
               <Section title="Mô tả">
@@ -350,11 +478,48 @@ export default function POIUpdateDetailPage() {
               className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-xl hover:from-pink-600 hover:to-pink-700 transition font-semibold shadow-md hover:shadow-lg"
             >
               <Check size={18} />
-              Phê duyệt
+              Chấp nhận
             </button>
           </div>
         </div>
       </div>
+
+      {/* APPROVE MODAL */}
+      {showApproveModal && (
+        <ConfirmModal
+          open={showApproveModal}
+          title="Xác nhận phê duyệt?"
+          message="Bạn có chắc chắn muốn phê duyệt cập nhật POI này không?"
+          confirmText="Phê duyệt"
+          cancelText="Hủy bỏ"
+          onConfirm={handleConfirmApprove}
+          onCancel={() => setShowApproveModal(false)}
+        />
+      )}
+
+      {/* REJECT MODAL */}
+      {showRejectModal && (
+        <ConfirmModal
+          open={showRejectModal}
+          title="Xác nhận từ chối?"
+          message={
+            <div>
+              <p>Bạn có chắc chắn muốn từ chối cập nhật POI này không?</p>
+              <textarea
+                className="w-full mt-3 p-2 border rounded text-gray-700"
+                placeholder="Nhập lý do từ chối..."
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                rows={4}
+              />
+            </div>
+          }
+          confirmText="Từ chối"
+          cancelText="Hủy bỏ"
+          onConfirm={handleConfirmReject}
+          onCancel={() => setShowRejectModal(false)}
+        />
+      )}
     </div>
   )
 }

@@ -1,59 +1,147 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Edit2, CheckCircle, XCircle } from "lucide-react"
+
 import POIManagementListComponent from "@/components/POIManagementListComponent"
+import ConfirmModal from "@/components/ConfirmModal"
+import { getAllPoiRequests, getAllPoiRequestsAll, reviewPoiRequest } from "@/api/poiRequestApi"
+import { getUsersApi } from "@/api/accountApi"
+import { getCategoriesApi } from "@/api/categoryApi"
+import { getPoiDetail } from "@/api/poiApi"
 
 export default function POIUpdateListPage() {
   const navigate = useNavigate()
+
   const [poiList, setPoiList] = useState([])
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    // TODO: Fetch danh sách POI cần cập nhật từ API
-    // const fetchUpdatePOIs = async () => {
-    //   try {
-    //     setLoading(true)
-    //     const res = await getUpdatePoiListApi()
-    //     setPoiList(res)
-    //   } catch (err) {
-    //     console.error("Load update POI list error:", err)
-    //   } finally {
-    //     setLoading(false)
-    //   }
-    // }
-    // fetchUpdatePOIs()
+  // Modal states
+  const [showApproveModal, setShowApproveModal] = useState(false)
+  const [showRejectModal, setShowRejectModal] = useState(false)
+  const [selectedPoiId, setSelectedPoiId] = useState(null)
+  const [rejectReason, setRejectReason] = useState("")
 
-    // Mock data
-    setPoiList([
-      {
-        id: 1,
-        name: "Nhà hàng Phở Quán",
-        category: "Ẩm thực",
-        changeCount: 5,
-        requestedAt: "2024-04-08",
-        requester: "Manager Hà Nội",
-        status: "pending",
-      },
-      {
-        id: 2,
-        name: "Bảo tàng Mỹ Thuật",
-        category: "Du lịch",
-        changeCount: 3,
-        requestedAt: "2024-04-07",
-        requester: "Manager TPHCM",
-        status: "pending",
-      },
-      {
-        id: 3,
-        name: "Khu vui chơi Nước",
-        category: "Giải trí",
-        changeCount: 8,
-        requestedAt: "2024-04-06",
-        requester: "Manager Đà Nẵng",
-        status: "pending",
-      },
-    ])
-    setLoading(false)
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+
+        const [requests, users, categories] = await Promise.all([
+          getAllPoiRequestsAll(),
+          getUsersApi(),
+          getCategoriesApi()
+        ])
+
+        // ================= FILTER UPDATE =================
+        const updateRequests = requests
+          .filter(r => r.actionType === "UPDATE")
+          .sort((a, b) => {
+            // PENDING trước, APPROVED/REJECTED sau
+            if (a.status === "PENDING" && b.status !== "PENDING") return -1
+            if (a.status !== "PENDING" && b.status === "PENDING") return 1
+            return 0
+          })
+
+        // ================= MAP USER =================
+        const userMap = {}
+        users.forEach(u => {
+          userMap[u.accountId] = u.fullName
+        })
+
+        // ================= MAP CATEGORY =================
+        const categoryMap = {}
+        categories.forEach(c => {
+          categoryMap[c.categoryId] = c.name
+        })
+
+        // ================= FETCH POI DETAIL =================
+        const mapped = await Promise.all(
+          updateRequests.map(async (r) => {
+            let poiDetail = null
+            let data = {}
+
+            try {
+              if (r.poiId) {
+                poiDetail = await getPoiDetail(r.poiId)
+              }
+
+              if (r.proposedData) {
+                data = typeof r.proposedData === 'string' 
+                  ? JSON.parse(r.proposedData)
+                  : r.proposedData
+              }
+            } catch (err) {
+              console.log("Error:", err)
+            }
+
+            // 🔥 LẤY TITLE TỪ DB
+            const title =
+              poiDetail?.contents?.find(c => c.isMaster)?.title ||
+              "Không có tên"
+
+            // 🔥 LẤY CATEGORY TỪ PROPOSED DATA RỒI MAPPING
+            let categoryName = "Không xác định"
+            const categoryIds = data.CategoryIds || data.categoryIds
+            if (categoryIds && categoryIds.length > 0) {
+              categoryName = categoryMap[categoryIds[0]] || "Không xác định"
+            }
+
+            // 🔥 TÍNH SỐ TRƯỜNG THAY ĐỔI
+            const oldPoi = {
+              name: poiDetail?.contents?.find(c => c.isMaster)?.title || "",
+              category: poiDetail?.categoryIds?.[0] || "",
+              description: poiDetail?.contents?.find(c => c.isMaster)?.description || "",
+              latitude: poiDetail?.latitude || "",
+              longitude: poiDetail?.longitude || "",
+              address: poiDetail?.contents?.find(c => c.isMaster)?.address || "",
+              priority: poiDetail?.priority || 2,
+              language: poiDetail?.contents?.map(c => c.language).join(", ") || "",
+              audio: poiDetail?.contents?.find(c => c.isMaster)?.audioFileName || "",
+              images: poiDetail?.gallery?.map(g => g.imageFileName).join(",") || "",
+            }
+
+            const newPoi = {
+              name: data.Title || "",
+              category: data.CategoryIds?.[0] || "",
+              description: data.Description || "",
+              latitude: data.Latitude?.toString() || "",
+              longitude: data.Longitude?.toString() || "",
+              address: data.Address || "",
+              priority: data.Priority || 2,
+              language: data.Language || "",
+              audio: data.AudioFileName || "",
+              images: data.ImageFileNames?.join(",") || "",
+            }
+
+            const changeCount = Object.keys(oldPoi).filter(
+              key => oldPoi[key] !== newPoi[key]
+            ).length
+
+            return {
+              id: r.requestId,
+              name: title,
+              category: categoryName,
+
+              changeCount: changeCount,
+
+              requestedAt: r.createdAt,
+
+              requester: userMap[r.accountId] || "Không xác định",
+
+              status: r.status === "PENDING" ? "pending" : r.status.toLowerCase(),
+            }
+          })
+        )
+
+        setPoiList(mapped)
+      } catch (err) {
+        console.error("UPDATE PAGE ERROR:", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
   }, [])
 
   const handleReview = (id) => {
@@ -61,61 +149,150 @@ export default function POIUpdateListPage() {
   }
 
   const handleApprove = (id) => {
-    // TODO: Gọi API phê duyệt cập nhật
-    setPoiList(poiList.map(poi => 
-      poi.id === id ? { ...poi, status: "approved" } : poi
-    ))
+    setSelectedPoiId(id)
+    setShowApproveModal(true)
+  }
+
+  const handleConfirmApprove = async () => {
+    try {
+      await reviewPoiRequest(selectedPoiId, { status: "APPROVED" })
+      setPoiList(prev =>
+        prev
+          .map(p =>
+            p.id === selectedPoiId
+              ? { ...p, status: "approved" }
+              : p
+          )
+          .sort((a, b) => {
+            // PENDING trước, APPROVED/REJECTED sau
+            if (a.status === "pending" && b.status !== "pending") return -1
+            if (a.status !== "pending" && b.status === "pending") return 1
+            return 0
+          })
+      )
+      setShowApproveModal(false)
+      setSelectedPoiId(null)
+    } catch (err) {
+      console.error("Approve error:", err)
+      alert("Phê duyệt thất bại")
+    }
   }
 
   const handleReject = (id) => {
-    // TODO: Gọi API từ chối cập nhật
-    setPoiList(poiList.map(poi => 
-      poi.id === id ? { ...poi, status: "rejected" } : poi
-    ))
+    setSelectedPoiId(id)
+    setRejectReason("")
+    setShowRejectModal(true)
+  }
+
+  const handleConfirmReject = async () => {
+    try {
+      await reviewPoiRequest(selectedPoiId, { 
+        status: "REJECTED",
+        rejectReason: rejectReason 
+      })
+      setPoiList(prev =>
+        prev
+          .map(p =>
+            p.id === selectedPoiId
+              ? { ...p, status: "rejected" }
+              : p
+          )
+          .sort((a, b) => {
+            // PENDING trước, APPROVED/REJECTED sau
+            if (a.status === "pending" && b.status !== "pending") return -1
+            if (a.status !== "pending" && b.status === "pending") return 1
+            return 0
+          })
+      )
+      setShowRejectModal(false)
+      setSelectedPoiId(null)
+      setRejectReason("")
+    } catch (err) {
+      console.error("Reject error:", err)
+      alert("Từ chối thất bại")
+    }
   }
 
   return (
-    <POIManagementListComponent
-      title="POI Cần Cập Nhật"
-      description="Xem xét yêu cầu sửa đổi và cải thiện dữ liệu"
-      type="update"
-      badgeColor="bg-amber-100"
-      badgeTextColor="text-amber-700"
-      hoverBg="hover:bg-amber-50/30"
-      poiList={poiList}
-      loading={loading}
-      statsLabel="chờ xử lý"
-      emptyMessage="Không có POI nào cần cập nhật"
-      renderExtraInfo={(poi) => (
-        <div className="bg-amber-50 px-3 py-1 inline-block rounded-full text-sm font-semibold text-amber-700">
-          📝 {poi.changeCount} thay đổi
-        </div>
+    <>
+      <POIManagementListComponent
+        title="POI Cần Cập Nhật"
+        description="Xem xét yêu cầu sửa đổi và cải thiện dữ liệu"
+        type="update"
+        badgeColor="bg-amber-100"
+        badgeTextColor="text-amber-700"
+        hoverBg="hover:bg-amber-50/30"
+        poiList={poiList}
+        loading={loading}
+        statsLabel="chờ xử lý"
+        emptyMessage="Không có POI nào cần cập nhật"
+        renderExtraInfo={(poi) => (
+          <div className="bg-amber-50 px-3 py-1 inline-block rounded-full text-sm font-semibold text-amber-700">
+            📝 {poi.changeCount} thay đổi
+          </div>
+        )}
+        renderActions={(poi) => (
+          <>
+            <button
+              onClick={() => handleReview(poi.id)}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition font-semibold"
+            >
+              <Edit2 size={18} />
+              Xem xét
+            </button>
+
+            <button
+              onClick={() => handleApprove(poi.id)}
+              className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition font-semibold"
+            >
+              <CheckCircle size={18} />
+              Chấp nhận
+            </button>
+
+            <button
+              onClick={() => handleReject(poi.id)}
+              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition font-semibold"
+            >
+              <XCircle size={18} />
+              Từ chối
+            </button>
+          </>
+        )}
+      />
+
+      {showApproveModal && (
+        <ConfirmModal
+          open={showApproveModal}
+          title="Xác nhận phê duyệt?"
+          message="Bạn có chắc chắn muốn phê duyệt cập nhật POI này không?"
+          confirmText="Phê duyệt"
+          cancelText="Hủy bỏ"
+          onConfirm={handleConfirmApprove}
+          onCancel={() => setShowApproveModal(false)}
+        />
       )}
-      renderActions={(poi) => (
-        <>
-          <button
-            onClick={() => handleReview(poi.id)}
-            className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition font-semibold"
-          >
-            <Edit2 size={18} />
-            Xem xét
-          </button>
-          <button
-            onClick={() => handleApprove(poi.id)}
-            className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition font-semibold"
-          >
-            <CheckCircle size={18} />
-            Chấp nhận
-          </button>
-          <button
-            onClick={() => handleReject(poi.id)}
-            className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition font-semibold"
-          >
-            <XCircle size={18} />
-            Từ chối
-          </button>
-        </>
+
+      {showRejectModal && (
+        <ConfirmModal
+          open={showRejectModal}
+          title="Xác nhận từ chối?"
+          message={
+            <div>
+              <p>Bạn có chắc chắn muốn từ chối cập nhật POI này không?</p>
+              <textarea
+                className="w-full mt-2 p-2 border rounded"
+                placeholder="Nhập lý do từ chối..."
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+              />
+            </div>
+          }
+          confirmText="Từ chối"
+          cancelText="Hủy bỏ"
+          onConfirm={handleConfirmReject}
+          onCancel={() => setShowRejectModal(false)}
+        />
       )}
-    />
+    </>
   )
 }

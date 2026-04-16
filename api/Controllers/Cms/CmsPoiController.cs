@@ -166,7 +166,8 @@ namespace Server.Controllers.Cms
                 ActionType: pr.ActionType,
                 Status: pr.Status,
                 CreatedAt: pr.CreatedAt,
-                RejectReason: pr.RejectReason
+                RejectReason: pr.RejectReason,
+                ProposedData: pr.ProposedData
             )).ToList();
 
             return Ok(result);
@@ -260,7 +261,8 @@ namespace Server.Controllers.Cms
                 pr.ActionType,
                 pr.Status,
                 pr.CreatedAt,
-                pr.RejectReason
+                pr.RejectReason,
+                pr.ProposedData
             )).ToList();
 
             return Ok(result);
@@ -286,6 +288,37 @@ namespace Server.Controllers.Cms
                 newCount    = stats.FirstOrDefault(x => x.ActionType == "CREATE")?.Count ?? 0,
                 updateCount = stats.FirstOrDefault(x => x.ActionType == "UPDATE")?.Count ?? 0,
                 deleteCount = stats.FirstOrDefault(x => x.ActionType == "DELETE")?.Count ?? 0
+            });
+        }
+
+        /// <summary>Admin phê duyệt hoặc từ chối POI request</summary>
+        [HttpPut("requests/{requestId}/review")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ReviewPoiRequest(string requestId, [FromBody] ReviewPoiRequestDto reviewData)
+        {
+            var request = await _db.PoiRequests.FirstOrDefaultAsync(r => r.RequestId == requestId);
+            if (request is null) return NotFound("Request not found");
+
+            if (reviewData.Approved)
+            {
+                request.Status = "APPROVED";
+                request.RejectReason = null;
+            }
+            else
+            {
+                request.Status = "REJECTED";
+                request.RejectReason = reviewData.RejectReason;
+            }
+
+            request.UpdatedAt = DateTime.UtcNow;
+            _db.PoiRequests.Update(request);
+            await _db.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = reviewData.Approved ? "Request approved successfully" : "Request rejected successfully",
+                requestId = request.RequestId,
+                status = request.Status
             });
         }
 

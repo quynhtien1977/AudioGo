@@ -685,13 +685,15 @@ export default function POIPage() {
 
                     <td className="p-4">
                       <div className="flex items-center gap-1">
-                          <NavLink
-                            to={`/pois/requests/${request.requestId}`}
-                            className="w-8 h-8 flex items-center justify-center rounded-full transition-colors text-pink-500 hover:text-pink-600"
-                            title="Xem chi tiết POI"
-                          >
-                            <List size={18} />
-                          </NavLink>
+                          {request.actionType !== "DELETE" && (
+                            <NavLink
+                              to={`/pois/requests/${request.requestId}`}
+                              className="w-8 h-8 flex items-center justify-center rounded-full transition-colors text-pink-500 hover:text-pink-600"
+                              title="Xem chi tiết POI"
+                            >
+                              <List size={18} />
+                            </NavLink>
+                          )}
                       </div>
                     </td>
                   </tr>
@@ -776,39 +778,6 @@ export default function POIPage() {
         />
       )}
       
-      { showApproveModal && (
-        <ConfirmModal
-          open={showApproveModal}
-          title="Xác nhận duyệt?"
-          message="Bạn có chắc chắn muốn duyệt POI này không?"
-          confirmText="Duyệt"
-          cancelText="Hủy bỏ"
-          onConfirm={handleConfirmApprove}
-          onCancel={() => setShowApproveModal(false)}
-        />
-      )}
-      
-      { showRejectModal && (
-        <ConfirmModal
-          open={showRejectModal}
-          title="Xác nhận từ chối?"
-          message={
-            <div>
-              <p>Bạn có chắc chắn muốn từ chối POI này không?</p>
-              <textarea
-                className="w-full mt-2 p-2 border rounded"
-                placeholder="Nhập lý do từ chối..."
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-              />
-            </div>
-          }
-          confirmText="Từ chối"
-          cancelText="Hủy bỏ"
-          onConfirm={handleConfirmReject}
-          onCancel={() => setShowRejectModal(false)}
-        />
-      )}
       
     </div>
   )
