@@ -4,7 +4,7 @@
            xmlns:mct="clr-namespace:CommunityToolkit.Maui.Views;assembly=CommunityToolkit.Maui"
            x:Class="AudioGo_Mobile.Views.CustomAlertPopup"
            Color="Transparent"
-           CanBeDismissed="True">
+           CanBeDismissedByTappingOutsideOfPopup="True">
 
     <Border Style="{StaticResource CardBorder}"
             WidthRequest="320"
