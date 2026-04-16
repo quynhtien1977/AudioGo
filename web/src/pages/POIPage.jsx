@@ -76,22 +76,10 @@ export default function POIPage() {
 
         if (!isMounted) return
 
-        // Fetch content for each POI with error handling
-        const contentsList = await Promise.allSettled(
-          filteredPOIs.map(p => getContentsByPOI(p.poiId))
-        )
-
-        if (!isMounted) return
-
-        // Map data with content
-        const mapped = filteredPOIs.map((p, index) => {
-          const contentResult = contentsList[index]
-          const contents = contentResult?.status === 'fulfilled' 
-            ? (contentResult.value || [])
-            : []
-          const masterContent =
-            contents.find(c => c.isMaster) || contents[0]
-          const title = masterContent?.title || "No name"
+        // Map data directly from POI list
+        const mapped = filteredPOIs.map((p) => {
+          // Name from DTO
+          const title = p.name || p.title || "No name"
 
           // Extract category
           let categoryName = "Unknown"
@@ -106,6 +94,9 @@ export default function POIPage() {
             categoryName = p.category?.name || p.category || "Unknown"
           }
 
+          // Thumbnail
+          const thumbnailUrl = p.logoUrl || null
+
           return {
             rank: p.poiId,
             name: title,
@@ -113,7 +104,10 @@ export default function POIPage() {
             lng: p.longitude,
             category: categoryName,
             priority: Number(p.priority),
-            isActive: p.isActive
+            isActive: p.isActive,
+            thumbnailUrl,
+            createdAt: p.createdAt,
+            updatedAt: p.updatedAt
           }
         })
 
@@ -441,10 +435,12 @@ export default function POIPage() {
           
           <thead className="bg-gray-50 text-gray-400">
             <tr>
+              <th className="p-4 text-left w-12">LOGO</th>
               <th className="p-4 text-left">TÊN</th>
               <th className="p-4 text-left">THỂ LOẠI</th>
               <th className="p-4 text-left">VỊ TRÍ</th>
               <th className="p-4 text-left">ĐỘ ƯU TIÊN</th>
+              <th className="p-4 text-left">NGÀY TẠO / CẬP NHẬT</th>
               <th className="p-4 text-left">THAO TÁC</th>
             </tr>
           </thead>
@@ -457,6 +453,21 @@ export default function POIPage() {
                       ? "opacity-40 grayscale bg-gray-50" 
                       : "hover:bg-gray-50"
                   }`}>
+
+                {/* THUMBNAIL */}
+                <td className="p-4">
+                  {poi.thumbnailUrl ? (
+                    <img
+                      src={poi.thumbnailUrl}
+                      alt={poi.name}
+                      className="w-10 h-10 rounded-xl object-cover border border-pink-100 shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-xl bg-pink-100 flex items-center justify-center text-pink-300 font-bold text-sm border border-pink-200">
+                      {poi.name?.charAt(0)?.toUpperCase() || "?"}
+                    </div>
+                  )}
+                </td>
 
                 <td className="p-4">
                   <p className="font-semibold">{poi.name}</p>
@@ -491,6 +502,27 @@ export default function POIPage() {
                       {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'][poi.priority - 1]}
                     </span>
                   )}
+                </td>
+
+                <td className="p-4">
+                  <div className="flex flex-col text-xs text-gray-500 gap-1">
+                    <span>
+                      <strong className="text-gray-700">Tạo:</strong>{" "}
+                      {poi.createdAt ? new Date(poi.createdAt).toLocaleDateString("vi-VN", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric"
+                      }) : "N/A"}
+                    </span>
+                    <span>
+                      <strong className="text-gray-700">Cập nhật:</strong>{" "}
+                      {poi.updatedAt ? new Date(poi.updatedAt).toLocaleDateString("vi-VN", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric"
+                      }) : "N/A"}
+                    </span>
+                  </div>
                 </td>
 
                 <td className="p-4">  
@@ -760,7 +792,7 @@ export default function POIPage() {
       {/* MAP */}
       <div className="bg-white p-6 rounded-2xl border">
         <h2 className="font-semibold mb-4">Bản đồ vị trí POI</h2>
-        <POIMap pois={pois} />
+        <POIMap pois={pois.filter(p => p.isActive)} />
       </div>
 
       {/* Modal Pop-up */}

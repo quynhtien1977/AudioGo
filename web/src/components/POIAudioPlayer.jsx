@@ -1,122 +1,15 @@
-// import { CloudUpload, Trash2, Play, Pause } from "lucide-react";
-// import { useRef, useState } from "react";
-
-// const POIAudioPlayer = ({ src, isEditing, onChange }) => {
-//   const fileInputRef = useRef(null);
-//   const [isPlaying, setIsPlaying] = useState(false);
-//   const audioRef = useRef(null);
-
-//   // Xử lý khi chọn file audio từ máy tính
-//   const handleFileChange = (e) => {
-//     const file = e.target.files[0];
-//     if (file && file.type.startsWith("audio/")) {
-//       const audioUrl = URL.createObjectURL(file);
-//       // Gửi URL tạm và tên file về component cha
-//       onChange("audio", audioUrl);
-//       // Bạn có thể lưu thêm file name vào state nếu cần
-//     }
-//   };
-
-//   const handleRemove = () => {
-//     if (window.confirm("Bạn có chắc chắn muốn xóa file âm thanh này không?")) {
-//       onChange("audio", "");
-//     }
-//   };
-
-//   const togglePlayPause = () => {
-//     if (!audioRef.current) return;
-//     if (isPlaying) {
-//       audioRef.current.pause();
-//     } else {
-//       audioRef.current.play();
-//     }
-//     setIsPlaying(!isPlaying);
-//   };
-
-//   return (
-//     <div className="relative bg-[#FFF5F7] p-8 rounded-[32px] border border-pink-50 shadow-sm">
-//       {/* Label tiêu đề góc phải */}
-//       <div className="absolute top-6 right-8">
-//         <span className="text-[10px] font-black text-pink-400 uppercase tracking-[0.2em]">
-//           File âm thanh
-//         </span>
-//       </div>
-
-//       <div className="flex items-center gap-6">
-//         {/* Nút Upload / Icon Trạng thái */}
-//         <div 
-//           onClick={() => isEditing && fileInputRef.current.click()}
-//           className={`w-20 h-20 rounded-full flex items-center justify-center shadow-inner transition-all 
-//             ${isEditing ? "cursor-pointer hover:scale-105 active:scale-95 bg-white" : "bg-pink-100"}`}
-//         >
-//           <div className="w-16 h-16 rounded-full bg-pink-200/30 flex items-center justify-center border-4 border-white">
-//             <CloudUpload className={`w-8 h-8 ${src ? "text-pink-500" : "text-pink-300"}`} />
-//           </div>
-//         </div>
-
-//         {/* Thông tin file & Progress Bar */}
-//         <div className="flex-1 space-y-2">
-//           <input 
-//             type="file" 
-//             ref={fileInputRef} 
-//             className="hidden" 
-//             accept="audio/*" 
-//             onChange={handleFileChange} 
-//           />
-          
-//           <h3 className="text-xl font-extrabold text-gray-700 tracking-tight">
-//             {src ? src.split("/").pop() : "Chưa có file âm thanh"}
-//           </h3>
-
-//           {/* Thanh Progress */}
-//           <div className="relative w-full h-3 bg-pink-100 rounded-full overflow-hidden">
-//             <div 
-//               className="absolute top-0 left-0 h-full bg-pink-400 rounded-full transition-all duration-500" 
-//               style={{ width: src ? "65%" : "0%" }}
-//             ></div>
-//           </div>
-
-//           {/* Metadata */}
-//           <div className="flex justify-between items-center">
-//             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-//               Format: MP3 • Thời lượng: 1:24
-//             </span>
-//             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider italic">
-//               Emily Rose (FR Voice)
-//             </span>
-//           </div>
-//         </div>
-
-//         {/* Nút Xóa (Thùng rác) */}
-//         {isEditing && src && (
-//           <button 
-//             onClick={handleRemove}
-//             className="ml-4 mt-5 w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm hover:bg-red-50 group transition-colors"
-//           >
-//             <Trash2 className="w-6 h-6 text-gray-400 group-hover:text-red-500 transition-colors" />
-//           </button>
-//         )}
-
-//       </div>
-
-//     </div>
-//   );
-// };
-
-// export default POIAudioPlayer;
-
-import { CloudUpload, Trash2, Play, Pause } from "lucide-react"
+import { CloudUpload, Trash2, Play, Pause, Loader2 } from "lucide-react"
 import { useRef, useState, useEffect } from "react"
+import { uploadAudio } from "@/api/mediaApi"
 
 const POIAudioPlayer = ({ src, isEditing, onChange }) => {
   const fileInputRef = useRef(null)
   const audioRef = useRef(null)
 
   const [isPlaying, setIsPlaying] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
 
-  // =========================
-  // RESET PLAY STATE WHEN SRC CHANGE
-  // =========================
+  // Reset play state khi src thay đổi
   useEffect(() => {
     if (!src && audioRef.current) {
       audioRef.current.pause()
@@ -127,11 +20,22 @@ const POIAudioPlayer = ({ src, isEditing, onChange }) => {
   // =========================
   // UPLOAD AUDIO FILE
   // =========================
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0]
-    if (file && file.type.startsWith("audio/")) {
-      const audioUrl = URL.createObjectURL(file)
-      onChange("audio", audioUrl)
+    if (!file || !file.type.startsWith("audio/")) return
+
+    // Reset input để có thể chọn lại cùng file
+    e.target.value = ""
+
+    try {
+      setIsUploading(true)
+      const url = await uploadAudio(file)
+      onChange("audio", url)
+    } catch (err) {
+      console.error("Upload audio thất bại:", err)
+      alert("Upload audio thất bại. Vui lòng thử lại.")
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -163,6 +67,17 @@ const POIAudioPlayer = ({ src, isEditing, onChange }) => {
     }
   }
 
+  // Lấy tên file từ URL (hiển thị thân thiện)
+  const getFileName = (url) => {
+    if (!url) return "Chưa có file âm thanh"
+    try {
+      const decoded = decodeURIComponent(url)
+      return decoded.split("/").pop().split("?")[0]
+    } catch {
+      return url.split("/").pop()
+    }
+  }
+
   return (
     <div className="relative bg-[#FFF5F7] p-8 rounded-[32px] border border-pink-50 shadow-sm">
 
@@ -184,8 +99,12 @@ const POIAudioPlayer = ({ src, isEditing, onChange }) => {
 
       <div className="flex items-center gap-6">
 
-        {/* UPLOAD / ICON */}
-        {src ? (
+        {/* NÚT UPLOAD / PLAY */}
+        {isUploading ? (
+          <div className="w-20 h-20 rounded-full flex items-center justify-center bg-pink-50 shadow-inner">
+            <Loader2 className="w-8 h-8 text-pink-400 animate-spin" />
+          </div>
+        ) : src ? (
           <button
             onClick={togglePlayPause}
             className="w-14 h-14 rounded-2xl flex items-center justify-center bg-white shadow-md hover:scale-105 active:scale-95 transition"
@@ -196,20 +115,20 @@ const POIAudioPlayer = ({ src, isEditing, onChange }) => {
               <Play className="w-6 h-6 text-pink-500" />
             )}
           </button>
-        ):(<div
-          onClick={() => isEditing && fileInputRef.current.click()}
-          className={`w-20 h-20 rounded-full flex items-center justify-center shadow-inner transition-all 
-            ${isEditing ? "cursor-pointer hover:scale-105 active:scale-95 bg-white" : "bg-pink-100"}`}
-        >
-          <div className="w-16 h-16 rounded-full bg-pink-200/30 flex items-center justify-center border-4 border-white">
-            <CloudUpload className={`w-8 h-8 ${src ? "text-pink-500" : "text-pink-300"}`} />
+        ) : (
+          <div
+            onClick={() => isEditing && fileInputRef.current.click()}
+            className={`w-20 h-20 rounded-full flex items-center justify-center shadow-inner transition-all
+              ${isEditing ? "cursor-pointer hover:scale-105 active:scale-95 bg-white" : "bg-pink-100"}`}
+          >
+            <div className="w-16 h-16 rounded-full bg-pink-200/30 flex items-center justify-center border-4 border-white">
+              <CloudUpload className="w-8 h-8 text-pink-300" />
+            </div>
           </div>
-        </div>)}
-        
+        )}
 
         {/* INFO */}
         <div className="flex-1 space-y-2">
-
           <input
             type="file"
             ref={fileInputRef}
@@ -218,34 +137,47 @@ const POIAudioPlayer = ({ src, isEditing, onChange }) => {
             onChange={handleFileChange}
           />
 
-          <h3 className="text-xl font-extrabold text-gray-700 tracking-tight">
-            {src ? src.split("/").pop() : "Chưa có file âm thanh"}
+          <h3 className="text-xl font-extrabold text-gray-700 tracking-tight truncate max-w-[280px]">
+            {isUploading ? "Đang tải lên..." : getFileName(src)}
           </h3>
 
-          {/* PROGRESS BAR (fake simple) */}
+          {/* PROGRESS BAR */}
           <div className="relative w-full h-3 bg-pink-100 rounded-full overflow-hidden">
-            <div
-              className="absolute top-0 left-0 h-full bg-pink-400 rounded-full transition-all duration-300"
-              style={{ width: src ? "60%" : "0%" }}
-            />
+            {isUploading ? (
+              <div className="absolute top-0 left-0 h-full bg-pink-300 rounded-full animate-pulse w-full" />
+            ) : (
+              <div
+                className="absolute top-0 left-0 h-full bg-pink-400 rounded-full transition-all duration-300"
+                style={{ width: src ? "60%" : "0%" }}
+              />
+            )}
           </div>
 
           <div className="flex justify-between items-center">
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-              Format: MP3
+              {src ? "Format: MP3/AAC" : "Chọn file âm thanh"}
             </span>
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider italic">
-              Audio Preview
+              {src ? "Azure Blob Storage" : "max 50MB"}
             </span>
           </div>
+
+          {/* Nút Upload thay thế nếu đã có audio */}
+          {isEditing && src && !isUploading && (
+            <button
+              onClick={() => fileInputRef.current.click()}
+              className="flex items-center gap-1 text-[10px] font-bold text-pink-400 hover:text-pink-600 transition-colors"
+            >
+              <CloudUpload className="w-3 h-3" /> Thay file khác
+            </button>
+          )}
         </div>
 
-
         {/* DELETE */}
-        {isEditing && src && (
+        {isEditing && src && !isUploading && (
           <button
             onClick={handleRemove}
-            className="ml-2 w-14 h-14 rounded-2xl flex items-center justify-center hover:bg-red-50 group transition"
+            className="ml-2 w-14 h-14 rounded-2xl flex items-center justify-center hover:bg-red-50 group transition shrink-0"
           >
             <Trash2 className="w-6 h-6 text-gray-400 group-hover:text-red-500" />
           </button>

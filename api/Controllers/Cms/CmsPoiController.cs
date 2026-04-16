@@ -71,6 +71,7 @@ namespace Server.Controllers.Cms
             var result = pois.Select(p => new PoiListDto
             {
                 PoiId = p.PoiId,
+                Name = p.Contents.FirstOrDefault(c => c.IsMaster)?.Title ?? "Chưa có tên",
                 AccountId = p.AccountId,
                 Latitude = p.Latitude,
                 Longitude = p.Longitude,
@@ -78,6 +79,8 @@ namespace Server.Controllers.Cms
                 Priority = p.Priority,
                 LogoUrl = p.LogoUrl,
                 IsActive = p.IsActive,
+                CreatedAt = p.CreatedAt,
+                UpdatedAt = p.UpdatedAt,
 
                 // thêm category
                 Category = categoryMap.GetValueOrDefault(p.PoiId, "Unknown")
