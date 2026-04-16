@@ -61,6 +61,9 @@ export default function Sidebar() {
               Tour
             </MenuItem>
             
+            <MenuItem to="/audio" icon={<Headphones size={18} />}>
+              Bản dịch & Audio
+            </MenuItem>
           </>
         )}
 
@@ -71,7 +74,7 @@ export default function Sidebar() {
               POIs
             </MenuItem>
 
-            <MenuItem to="/audio" icon={<Headphones size={18} />} isDisabled>
+            <MenuItem to="/audio" icon={<Headphones size={18} />}>
               Audio
             </MenuItem>
           </>

@@ -15,7 +15,7 @@ import LoginPage from "@/pages/LoginPage";
 import CategoryPage from "@/pages/CategoryPage";
 import POIDetailPage from "@/pages/POIDetailPage";
 import AddPOIPage from "@/pages/AddPOIPage";
-import AudioPage from "@/pages/AudioPage";
+import AudioContentPage from "@/pages/AudioContentPage";
 import ToursPage from "@/pages/ToursPage";
 import TourDetailPage from "@/pages/TourDetailPage";
 import AccessCodePage from "@/pages/AccessCodePage";
@@ -178,9 +178,9 @@ export default function App() {
         <Route
           path="/audio"
           element={
-            <ProtectedRoute roles={["Owner"]}>
+            <ProtectedRoute roles={["Admin", "Owner"]}>
               <MainLayout>
-                <AudioPage />
+                <AudioContentPage />
               </MainLayout>
             </ProtectedRoute>
           }

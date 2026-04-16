@@ -35,7 +35,7 @@ export default function AccessCodePage() {
     const fetchCodes = async () => {
         setLoading(true);
         try {
-            const res = await accessCodeApi.getAccessCodes(page, 50);
+            const res = await accessCodeApi.getAccessCodes(page, 6);
             if (res.data && res.data.data) {
                 setCodes(res.data.data);
                 setTotalPages(res.data.pagination.totalPages);
@@ -278,22 +278,43 @@ export default function AccessCodePage() {
                     {totalPages > 0 && (
                         <div className="flex justify-between px-6 py-4 text-sm text-gray-500 items-center bg-gray-50/50">
                             <p>
-                                Trang {page} trên tổng {totalPages}
+                                Hiển thị trang <span className="font-bold text-gray-800">{page}</span> / <span className="font-bold">{totalPages}</span>
                             </p>
 
-                            <div className="flex gap-2">
+                            <div className="flex gap-1 items-center">
                                 <button
                                     disabled={page === 1}
                                     onClick={() => setPage((p) => p - 1)}
-                                    className={`p-2 rounded-full ${page === 1 ? "text-gray-300" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
+                                    className={`p-2 rounded-full ${page === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
                                 >
                                     <ChevronLeft size={16} />
                                 </button>
                                 
+                                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                    .filter(i => i === 1 || i === totalPages || (i >= page - 1 && i <= page + 1))
+                                    .reduce((acc, curr, idx, arr) => {
+                                        if (idx > 0 && curr - arr[idx - 1] > 1) acc.push('...');
+                                        acc.push(curr);
+                                        return acc;
+                                    }, [])
+                                    .map((p, idx) => (
+                                        p === '...' ? (
+                                            <span key={`dots-${idx}`} className="px-2 text-gray-400">...</span>
+                                        ) : (
+                                            <button
+                                                key={p}
+                                                onClick={() => setPage(p)}
+                                                className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${page === p ? "bg-pink-500 text-white shadow-sm" : "hover:bg-pink-50 hover:text-pink-600"}`}
+                                            >
+                                                {p}
+                                            </button>
+                                        )
+                                    ))}
+
                                 <button
                                     disabled={page === totalPages}
                                     onClick={() => setPage((p) => p + 1)}
-                                    className={`p-2 rounded-full ${page === totalPages ? "text-gray-300" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
+                                    className={`p-2 rounded-full ${page === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
                                 >
                                     <ChevronRight size={16} />
                                 </button>
