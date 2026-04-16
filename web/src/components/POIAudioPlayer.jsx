@@ -8,6 +8,7 @@ const POIAudioPlayer = ({ src, isEditing, onChange }) => {
 
   const [isPlaying, setIsPlaying] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const [progress, setProgress] = useState(0)
 
   // Reset play state khi src thay đổi
   useEffect(() => {
@@ -67,6 +68,19 @@ const POIAudioPlayer = ({ src, isEditing, onChange }) => {
     }
   }
 
+  // =========================
+  // SEEK AUDIO
+  // =========================
+  const handleSeek = (e) => {
+    if (!audioRef.current || !src) return
+    const bounds = e.currentTarget.getBoundingClientRect()
+    const percent = (e.clientX - bounds.left) / bounds.width
+    if (audioRef.current.duration) {
+      audioRef.current.currentTime = percent * audioRef.current.duration
+      setProgress(percent * 100)
+    }
+  }
+
   // Lấy tên file từ URL (hiển thị thân thiện)
   const getFileName = (url) => {
     if (!url) return "Chưa có file âm thanh"
@@ -86,7 +100,15 @@ const POIAudioPlayer = ({ src, isEditing, onChange }) => {
         <audio
           ref={audioRef}
           src={src}
-          onEnded={() => setIsPlaying(false)}
+          onEnded={() => {
+            setIsPlaying(false)
+            setProgress(0)
+          }}
+          onTimeUpdate={() => {
+            if (audioRef.current && audioRef.current.duration) {
+              setProgress((audioRef.current.currentTime / audioRef.current.duration) * 100)
+            }
+          }}
         />
       )}
 
@@ -142,13 +164,16 @@ const POIAudioPlayer = ({ src, isEditing, onChange }) => {
           </h3>
 
           {/* PROGRESS BAR */}
-          <div className="relative w-full h-3 bg-pink-100 rounded-full overflow-hidden">
+          <div 
+            className={`relative w-full h-3 bg-pink-100 rounded-full overflow-hidden ${src ? 'cursor-pointer' : ''}`}
+            onClick={handleSeek}
+          >
             {isUploading ? (
               <div className="absolute top-0 left-0 h-full bg-pink-300 rounded-full animate-pulse w-full" />
             ) : (
               <div
                 className="absolute top-0 left-0 h-full bg-pink-400 rounded-full transition-all duration-300"
-                style={{ width: src ? "60%" : "0%" }}
+                style={{ width: src ? `${progress}%` : "0%" }}
               />
             )}
           </div>
