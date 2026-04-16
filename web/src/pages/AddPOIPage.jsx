@@ -2,11 +2,17 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Save, X, MapPin, Radio, LayoutGrid, Info } from "lucide-react";
 import { createPortal } from "react-dom";
+import toast from "react-hot-toast";
+import { useEffect } from "react";
 
 import POIMap from "@/components/POIMapPreview";
 import POIGallery from "@/components/POIGallery";
 import POIAudioPlayer from "@/components/POIAudioPlayer";
 import InfoCardOfAddPOI from "@/components/InfoCardOfAddPOI";
+import ConfirmModal from "@/components/ConfirmModal";
+
+import { createPoiRequest } from "@/api/poiRequestApi";
+import { getCategoriesApi } from "@/api/categoryApi";
 
 const AddPOIPage = () => {
   const navigate = useNavigate();
@@ -23,25 +29,84 @@ const AddPOIPage = () => {
   // State khởi tạo cho POI mới
   const [form, setForm] = useState({
     name: "",
-    category: "Restaurant",
+    category: "",
     lat: 10.7574, // Mặc định Vĩnh Khánh Q4
     lng: 106.7020,
     radius: 50,
-    language: "en", // Default language
+    languageCode: "en", // ✅ Sử dụng languageCode thay vì language
     images: [],
     audio: "",
     script: "",
   });
 
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [categories, setCategories] = useState([]);
+
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getCategoriesApi();
+        setCategories(data || []);
+      } catch (err) {
+        console.error("Error fetching categories:", err);
+      }
+    };
+    fetchCategories();
+  }, []);
+
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSave = async () => {
-    // Logic gọi API POST ở đây
-    console.log("Dữ liệu POI mới:", form);
-    alert("Đã thêm POI mới thành công!");
-    navigate("/pois");
+  const handleSave = () => {
+    // Validate required fields
+    if (!form.name.trim()) {
+      toast.error("Vui lòng nhập tên POI");
+      return;
+    }
+    if (form.images.length === 0) {
+      toast.error("Vui lòng thêm ít nhất một hình ảnh");
+      return;
+    }
+
+    // Show confirmation modal
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmCreate = async () => {
+    try {
+      // 根据分类名称查找对应的 categoryId
+      const selectedCategory = categories.find(cat => cat.name === form.category);
+      const categoryIds = selectedCategory ? [selectedCategory.categoryId] : [];
+
+      const payload = {
+        ActionType: "CREATE",
+        PoiId: null,  // ✅ New POI, poiId = null
+        Draft: {
+          Title: form.name,
+          Description: form.script || "",
+          Latitude: form.lat,
+          Longitude: form.lng,
+          ActivationRadius: form.radius || 50,
+          Priority: 1,
+          LogoUrl: form.images?.[0] || "",
+          GalleryImageUrls: form.images || [],
+          AudioUrl: form.audio || "",
+          CategoryIds: categoryIds,  // ✅ 保存为 categoryId 数组
+          LanguageCode: form.languageCode || "en",  // ✅ 保存语言代码
+        }
+      };
+
+      await createPoiRequest(payload);
+      toast.success("Tạo yêu cầu POI mới thành công! Admin sẽ xem xét.");
+
+      setShowConfirmModal(false);
+      setTimeout(() => navigate("/pois"), 1500);
+    } catch (err) {
+      console.error(err);
+      toast.error("Tạo yêu cầu thất bại!");
+    }
   };
 
   return (
@@ -108,7 +173,7 @@ const AddPOIPage = () => {
         {/* RIGHT COLUMN: Settings & Location */}
         <div className="col-span-4 space-y-8">
           {/* Basic Info Card */}
-          <InfoCardOfAddPOI form={form} handleChange={handleChange} contentApi={contentApi} />
+          <InfoCardOfAddPOI form={form} handleChange={handleChange} contentApi={contentApi} categories={categories} />
 
           {/* Location Card */}
           <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm space-y-4 overflow-hidden">
@@ -153,6 +218,18 @@ const AddPOIPage = () => {
           </div>
         </div>
       </div>
+
+      {showConfirmModal && (
+        <ConfirmModal
+          open={showConfirmModal}
+          title="Xác nhận tạo POI mới?"
+          message="POI mới sẽ được gửi đến Admin để phê duyệt. Bạn có chắc chắn muốn tiếp tục?"
+          confirmText="Tạo POI"
+          cancelText="Hủy bỏ"
+          onConfirm={handleConfirmCreate}
+          onCancel={() => setShowConfirmModal(false)}
+        />
+      )}
     </div>
   );
 };

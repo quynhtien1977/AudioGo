@@ -1,5 +1,22 @@
-const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role }) => {
+import { useState, useEffect } from "react"
+import { getCategoriesApi } from "@/api/categoryApi"
+
+const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role, getCategoryColor }) => {
   if (!poi) return null;
+
+  const [categories, setCategories] = useState([])
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getCategoriesApi()
+        setCategories(data || [])
+      } catch (err) {
+        console.error("Error fetching categories:", err)
+      }
+    }
+    fetchCategories()
+  }, [])
 
   // Helper để tạo style cho input đồng nhất
   const inputStyle = "w-full bg-transparent border-b border-pink-200 text-sm font-medium focus:border-pink-500 outline-none transition-colors pb-0.5";
@@ -17,21 +34,23 @@ const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role }) => {
           {isEditing ? (
             <div className="relative group">
               <select
-                value={form.category || poi.category || ""}
+                value={poi.category || ""}
                 onChange={(e) => handleChange("category", e.target.value)}
                 className={`appearance-none cursor-pointer ${inputStyle}`}
               >
-                <option value="Fine Dining">Fine Dining</option>
-                <option value="Casual Dining">Casual Dining</option>
-                <option value="Cafe">Cafe</option>
-                <option value="Street Food">Street Food</option>
+                <option value="">-- Chọn danh mục --</option>
+                {categories.map((cat) => (
+                  <option key={cat.categoryId} value={cat.name}>
+                    {cat.name}
+                  </option>
+                ))}
               </select>
               <div className="pointer-events-none absolute right-0 bottom-1 flex items-center text-pink-400">
                 <svg className="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
               </div>
             </div>
           ) : (
-            <span className="bg-pink-50 text-pink-600 px-2 py-0.5 rounded text-xs font-medium">
+            <span className={`px-2 py-0.5 rounded text-xs font-medium ${getCategoryColor ? getCategoryColor(poi.category) : "bg-pink-50 text-pink-600"}`}>
               {poi.category || "N/A"}
             </span>
           )}
@@ -42,7 +61,7 @@ const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role }) => {
           {isEditing ? (
             <div className="relative group">
       <select
-        value={form.languageCode || poi?.languageCode || ""}
+        value={poi.languageCode || ""}
         onChange={(e) => handleChange("languageCode", e.target.value)}
         className={`appearance-none cursor-pointer ${inputStyle}`}
       >
@@ -90,8 +109,8 @@ const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role }) => {
               <input 
                 type="number"
                 step="0.000001"
-                value={form.lat || poi.lat || ""} 
-                onChange={(e) => handleChange("lat", e.target.value)}
+                value={poi.lat || ""} 
+                onChange={(e) => handleChange("lat", parseFloat(e.target.value) || 0)}
                 className={inputStyle}
               />
             ) : (
@@ -104,8 +123,8 @@ const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role }) => {
               <input 
                 type="number" 
                 step="0.000001"
-                value={form.lng || poi.lng || ""} 
-                onChange={(e) => handleChange("lng", e.target.value)}
+                value={poi.lng || ""} 
+                onChange={(e) => handleChange("lng", parseFloat(e.target.value) || 0)}
                 className={inputStyle}
               />
             ) : (
@@ -146,7 +165,7 @@ const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role }) => {
           {isEditing ? (
             <div className="relative">
               <select
-                value={form.priority ?? poi.priority ?? 1}
+                value={poi.priority ?? 1}
                 onChange={(e) => handleChange("priority", Number(e.target.value))}
                 className={`appearance-none cursor-pointer ${inputStyle}`}
               >

@@ -2,34 +2,37 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { CheckCircle, AlertCircle, Trash2 } from "lucide-react"
 
+import { getPoiRequestStats } from "@/api/poiRequestApi"
+
 export default function POIManagementPage() {
   const navigate = useNavigate()
+
   const [stats, setStats] = useState({
     newCount: 0,
     updateCount: 0,
     deleteCount: 0,
   })
 
+  // ================= FETCH STATS =================
   useEffect(() => {
-    // TODO: Fetch thống kê từ API
-    // const fetchStats = async () => {
-    //   try {
-    //     const res = await getPoiStatsApi()
-    //     setStats(res)
-    //   } catch (err) {
-    //     console.error("Load POI stats error:", err)
-    //   }
-    // }
-    // fetchStats()
+    const fetchStats = async () => {
+      try {
+        const res = await getPoiRequestStats()
 
-    // Mock data cho demo
-    setStats({
-      newCount: 12,
-      updateCount: 8,
-      deleteCount: 3,
-    })
+        setStats({
+          newCount: res.newCount || 0,
+          updateCount: res.updateCount || 0,
+          deleteCount: res.deleteCount || 0,
+        })
+      } catch (err) {
+        console.error("FETCH STATS ERROR:", err)
+      }
+    }
+
+    fetchStats()
   }, [])
 
+  // 🔥 GIỮ NGUYÊN UI CŨ
   const managementCards = [
     {
       id: "new",
@@ -100,7 +103,6 @@ export default function POIManagementPage() {
               onClick={card.onClick}
               className={`${card.bgColor} rounded-2xl p-8 cursor-pointer transition-all hover:shadow-lg hover:scale-105 border-2 border-transparent hover:border-pink-300`}
             >
-              {/* CARD HEADER WITH ICON AND BADGE */}
               <div className="flex justify-between items-start mb-4">
                 <div className={`${card.iconColor} p-3 bg-white rounded-full`}>
                   <IconComponent size={24} />
@@ -110,17 +112,14 @@ export default function POIManagementPage() {
                 </span>
               </div>
 
-              {/* CARD TITLE */}
               <h2 className="text-xl font-bold text-gray-800 mb-2">
                 {card.title}
               </h2>
 
-              {/* CARD DESCRIPTION */}
               <p className="text-gray-700 text-sm mb-6 leading-relaxed">
                 {card.description}
               </p>
 
-              {/* CARD LINK */}
               <button
                 onClick={(e) => {
                   e.stopPropagation()

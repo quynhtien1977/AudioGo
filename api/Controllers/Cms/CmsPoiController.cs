@@ -86,6 +86,59 @@ namespace Server.Controllers.Cms
             return Ok(result);
         }
 
+         /// <summary>Chi tiết POI kèm tất cả content, gallery và category.</summary>
+        [HttpGet("{id}")]
+        public async Task<ActionResult> GetById(string id)
+        {
+            var poi = await _db.Pois.AsNoTracking()
+                .Include(p => p.Contents)
+                .Include(p => p.Gallery)
+                .FirstOrDefaultAsync(p => p.PoiId == id);
+
+            if (poi is null) return NotFound();
+
+            // Lấy category
+            var category = await (
+                from cp in _db.CategoryPois
+                join c in _db.Categories on cp.CategoryId equals c.CategoryId
+                where cp.PoiId == id
+                select c.Name
+            ).FirstOrDefaultAsync();
+
+            return Ok(new
+            {
+                poiId = poi.PoiId,
+                accountId = poi.AccountId,
+                latitude = poi.Latitude,
+                longitude = poi.Longitude,
+                activationRadius = poi.ActivationRadius,
+                priority = poi.Priority,
+                isActive = poi.IsActive,
+                logoUrl = poi.LogoUrl,
+                createdAt = poi.CreatedAt,
+                updatedAt = poi.UpdatedAt,
+                category = category ?? "Unknown",
+                contents = poi.Contents.Select(c => new
+                {
+                    contentId = c.ContentId,
+                    poiId = c.PoiId,
+                    languageCode = c.LanguageCode,
+                    title = c.Title,
+                    description = c.Description,
+                    audioUrl = c.AudioUrl,
+                    isMaster = c.IsMaster
+                }).ToList(),
+                gallery = poi.Gallery.OrderBy(g => g.SortOrder)
+                    .Select(g => new
+                    {
+                        imageId = g.ImageId,
+                        poiId = g.PoiId,
+                        imageUrl = g.ImageUrl,
+                        sortOrder = g.SortOrder
+                    }).ToList()
+            });
+        }
+        // ===== REQUEST APIs =====
         /// <summary>Danh sách yêu cầu POI của Owner hiện tại.</summary>
         [HttpGet("requests/my-requests")]
         public async Task<ActionResult<List<PoiRequestListDto>>> GetMyPoiRequests([FromQuery] string? status = null)
@@ -119,29 +172,123 @@ namespace Server.Controllers.Cms
             return Ok(result);
         }
 
-        /// <summary>Chi tiết POI kèm tất cả content và gallery.</summary>
-        [HttpGet("{id}")]
-        public async Task<ActionResult<PoiDetailDto>> GetById(string id)
+        /// <summary>Chi tiết một yêu cầu POI - lấy proposedData (JSON) và rejectReason.</summary>
+        [HttpGet("requests/{requestId}")]
+        public async Task<ActionResult> GetPoiRequestDetail(string requestId)
         {
-            var poi = await _db.Pois.AsNoTracking()
-                .Include(p => p.Contents)
-                .Include(p => p.Gallery)
-                .FirstOrDefaultAsync(p => p.PoiId == id);
+            var request = await _db.PoiRequests.AsNoTracking()
+                .FirstOrDefaultAsync(r => r.RequestId == requestId);
 
-            if (poi is null) return NotFound();
+            if (request is null) return NotFound();
 
-            return Ok(new PoiDetailDto(
-                poi.PoiId, poi.AccountId, poi.Latitude, poi.Longitude,
-                poi.ActivationRadius, poi.Priority, poi.IsActive, poi.LogoUrl,
-                poi.CreatedAt, poi.UpdatedAt,
-                poi.Contents.Select(c => new PoiContentDto(
-                    c.ContentId, c.PoiId, c.LanguageCode,
-                    c.Title, c.Description, c.AudioUrl, c.IsMaster)).ToList(),
-                poi.Gallery.OrderBy(g => g.SortOrder)
-                    .Select(g => new PoiGalleryDto(g.ImageId, g.PoiId, g.ImageUrl, g.SortOrder)).ToList()
-            ));
+            return Ok(new
+            {
+                requestId = request.RequestId,
+                poiId = request.PoiId,
+                actionType = request.ActionType,
+                proposedData = request.ProposedData,
+                rejectReason = request.RejectReason,
+                status = request.Status
+            });
+        }
+
+        /// <summary>
+        /// Owner gửi yêu cầu tạo / cập nhật / xoá POI
+        /// </summary>
+        [HttpPost("requests")]
+        public async Task<IActionResult> SubmitPoiRequest([FromBody] SubmitPoiRequestDto req)
+        {
+            var accountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(accountId))
+                return Unauthorized();
+
+            // validate
+            if (string.IsNullOrEmpty(req.ActionType))
+                return BadRequest("ActionType is required");
+
+            if (req.ActionType != "DELETE" && req.Draft is null)
+                return BadRequest("Draft is required for CREATE or UPDATE");
+
+            // 🔥 convert Draft -> JSON string để lưu DB
+            string? proposedData = req.Draft != null
+                ? System.Text.Json.JsonSerializer.Serialize(req.Draft)
+                : null;
+
+            var request = new PoiRequest
+            {
+                RequestId    = Guid.NewGuid().ToString(),
+                PoiId        = req.PoiId,
+                AccountId    = accountId,
+                ActionType   = req.ActionType.ToUpper(),
+                Status       = "PENDING",
+                ProposedData = proposedData,
+                RejectReason = null,
+                CreatedAt    = DateTime.UtcNow,
+                UpdatedAt    = DateTime.UtcNow
+            };
+
+            _db.PoiRequests.Add(request);
+            await _db.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Request submitted successfully",
+                requestId = request.RequestId
+            });
         }
         
+        /// <summary>Admin lấy danh sách request (có thể filter theo status)</summary>
+        [HttpGet("requests")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<List<PoiRequestListDto>>> GetAllPoiRequests([FromQuery] string? status = "PENDING")
+        {
+            var query = _db.PoiRequests.AsNoTracking();
+
+            if (!string.IsNullOrEmpty(status))
+            {
+                query = query.Where(x => x.Status == status);
+            }
+
+            var requests = await query
+                .OrderByDescending(x => x.CreatedAt)
+                .ToListAsync();
+
+            var result = requests.Select(pr => new PoiRequestListDto(
+                pr.RequestId,
+                pr.PoiId,
+                pr.AccountId,
+                pr.ActionType,
+                pr.Status,
+                pr.CreatedAt,
+                pr.RejectReason
+            )).ToList();
+
+            return Ok(result);
+        }
+
+        /// <summary>Thống kê request PENDING theo ActionType</summary>
+        [HttpGet("requests/stats")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetRequestStats()
+        {
+            var stats = await _db.PoiRequests
+                .Where(x => x.Status == "PENDING")
+                .GroupBy(x => x.ActionType)
+                .Select(g => new
+                {
+                    ActionType = g.Key,
+                    Count = g.Count()
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                newCount    = stats.FirstOrDefault(x => x.ActionType == "CREATE")?.Count ?? 0,
+                updateCount = stats.FirstOrDefault(x => x.ActionType == "UPDATE")?.Count ?? 0,
+                deleteCount = stats.FirstOrDefault(x => x.ActionType == "DELETE")?.Count ?? 0
+            });
+        }
+
         [HttpPost]
         public async Task<ActionResult<Poi>> Create([FromBody] PoiCreateRequest req)
         {
