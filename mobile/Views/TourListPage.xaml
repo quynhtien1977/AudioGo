@@ -13,7 +13,7 @@
                              BackgroundColor="{StaticResource Surface}"
                              Padding="20,52,20,16"
                              Spacing="4">
-            <Label Text="Tours" Style="{StaticResource HeadlineLabel}"/>
+            <Label Text="{Binding LabelTours}" Style="{StaticResource HeadlineLabel}"/>
             <Label Text="{Binding CountLabel}" Style="{StaticResource BodyLabel}"/>
         </VerticalStackLayout>
 
@@ -34,15 +34,15 @@
                                      HorizontalOptions="Center"
                                      Margin="0,60,0,0">
                     <Label Text="&#xe55b;" FontFamily="MaterialIcons" TextColor="{StaticResource Gray400}" FontSize="60" HorizontalOptions="Center"/>
-                    <Label Text="Chưa có tour nào"
+                    <Label Text="{Binding LabelEmptyTitle}"
                            Style="{StaticResource HeadlineLabel}"
                            HorizontalOptions="Center"/>
-                    <Label Text="Tạo tour đầu tiên của bạn để bắt đầu khám phá Phố Ẩm Thực Vĩnh Khánh"
+                    <Label Text="{Binding LabelEmptyDesc}"
                            Style="{StaticResource BodyLabel}"
                            HorizontalOptions="Center"
                            HorizontalTextAlignment="Center"
                            MaxLines="3"/>
-                    <Button Text="＋  Tạo Tour Mới"
+                    <Button Text="{Binding LabelCreateBtn}"
                             Style="{StaticResource PrimaryButton}"
                             HorizontalOptions="Center"
                             Clicked="OnCreateTourClicked"/>
@@ -82,7 +82,7 @@
                                         <VerticalStackLayout Spacing="4">
                                             <Grid ColumnDefinitions="*,Auto">
                                                 <Label Grid.Column="0"
-                                                       Text="Tiến độ"
+                                                       Text="{Binding LabelProgress}"
                                                        Style="{StaticResource CaptionLabel}"/>
                                                 <Label Grid.Column="1"
                                                        Text="{Binding ProgressText}"
@@ -95,25 +95,25 @@
                                         <Grid ColumnDefinitions="*,*,*">
                                             <VerticalStackLayout Grid.Column="0" Spacing="2" HorizontalOptions="Center">
                                                 <Label Text="{Binding PoiCount}" Style="{StaticResource SectionTitle}" HorizontalOptions="Center"/>
-                                                <Label Text="điểm" Style="{StaticResource CaptionLabel}" HorizontalOptions="Center"/>
+                                                <Label Text="{Binding LabelPoints}" Style="{StaticResource CaptionLabel}" HorizontalOptions="Center"/>
                                             </VerticalStackLayout>
                                             <BoxView Grid.Column="0" WidthRequest="1" HeightRequest="30"
                                                      Color="{StaticResource Gray200}"
                                                      HorizontalOptions="End" VerticalOptions="Center"/>
                                             <VerticalStackLayout Grid.Column="1" Spacing="2" HorizontalOptions="Center">
                                                 <Label Text="{Binding DurationText}" Style="{StaticResource SectionTitle}" HorizontalOptions="Center"/>
-                                                <Label Text="phút" Style="{StaticResource CaptionLabel}" HorizontalOptions="Center"/>
+                                                <Label Text="{Binding LabelMinutes}" Style="{StaticResource CaptionLabel}" HorizontalOptions="Center"/>
                                             </VerticalStackLayout>
                                             <BoxView Grid.Column="1" WidthRequest="1" HeightRequest="30"
                                                      Color="{StaticResource Gray200}"
                                                      HorizontalOptions="End" VerticalOptions="Center"/>
                                             <VerticalStackLayout Grid.Column="2" Spacing="2" HorizontalOptions="Center">
                                                 <Label Text="{Binding Language}" Style="{StaticResource SectionTitle}" HorizontalOptions="Center"/>
-                                                <Label Text="ngôn ngữ" Style="{StaticResource CaptionLabel}" HorizontalOptions="Center"/>
+                                                <Label Text="{Binding LabelLang}" Style="{StaticResource CaptionLabel}" HorizontalOptions="Center"/>
                                             </VerticalStackLayout>
                                         </Grid>
                                         <!-- Action button -->
-                                        <Button Text="▶  Continue Tour"
+                                        <Button Text="{Binding LabelContinue}"
                                                 Style="{StaticResource PrimaryButton}"
                                                 Padding="16,12" FontSize="14"
                                                 Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ContinueTourCommand}"

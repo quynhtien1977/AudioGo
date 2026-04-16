@@ -6,7 +6,7 @@
              x:Name="ThisPage"
              Shell.NavBarIsVisible="False"
              BackgroundColor="{StaticResource Background}"
-             Title="Chi tiết điểm">
+             Title="{Binding TitleLabel}">
 
     <ContentPage.Resources>
         <converters:BoolToMaxLinesConverter x:Key="BoolToMaxLinesConverter"/>
@@ -127,8 +127,8 @@
                                      BackgroundColor="{StaticResource Surface}"
                                      Spacing="0">
                     <Grid ColumnDefinitions="*,Auto" Padding="16,12,16,8">
-                        <Label Grid.Column="0" Text="Ảnh" Style="{StaticResource SectionTitle}"/>
-                        <Label Grid.Column="1" Text="Xem tất cả →"
+                        <Label Grid.Column="0" Text="{Binding ImageLabel}" Style="{StaticResource SectionTitle}"/>
+                        <Label Grid.Column="1" Text="{Binding ViewAllLabel}"
                                Style="{StaticResource PrimaryLabel}" VerticalOptions="Center">
                             <Label.GestureRecognizers>
                                 <TapGestureRecognizer Tapped="OnGalleryFullScreenTapped"/>
@@ -168,7 +168,7 @@
                         <HorizontalStackLayout Spacing="8">
                             <Label Text="&#xe310;" FontFamily="MaterialIcons" FontSize="20"
                                    TextColor="{StaticResource Primary}" VerticalOptions="Center"/>
-                            <Label Text="Thuyết minh âm thanh"
+                            <Label Text="{Binding AudioDetailLabel}"
                                    Style="{StaticResource SectionTitle}"
                                    VerticalOptions="Center"/>
                         </HorizontalStackLayout>
@@ -413,7 +413,7 @@
                 <Border Style="{StaticResource CardBorder}"
                         Margin="16,12,16,0" Padding="20">
                     <VerticalStackLayout Spacing="10">
-                        <Label Text="Giới thiệu" Style="{StaticResource SectionTitle}"/>
+                        <Label Text="{Binding IntroLabel}" Style="{StaticResource SectionTitle}"/>
                         <Label Text="{Binding Description}"
                                Style="{StaticResource BodyLabel}"
                                MaxLines="{Binding DescExpanded, Converter={StaticResource BoolToMaxLinesConverter}}"
@@ -453,7 +453,7 @@
                 <VerticalStackLayout Grid.Column="1"
                                      VerticalOptions="Center"
                                      MaximumWidthRequest="90">
-                    <Label Text="Tiếp theo" Style="{StaticResource CaptionLabel}"/>
+                    <Label Text="{Binding NextPoiLabel}" Style="{StaticResource CaptionLabel}"/>
                     <Label Text="{Binding NextPoiTitle}"
                            Style="{StaticResource BodyLabel}"
                            FontSize="12"

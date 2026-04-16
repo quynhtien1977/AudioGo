@@ -147,7 +147,9 @@ namespace AudioGo.ViewModels
         }
 
         public bool   HasGallery   => GalleryImages.Count > 0;
-        public string GalleryCount => GalleryImages.Count > 0 ? $"{GalleryImages.Count} ảnh" : "";
+        public string GalleryCount => GalleryImages.Count > 0
+            ? AudioGo.Helpers.AppStrings.Get("detail_gallery_count", GalleryImages.Count.ToString())
+            : "";
 
         // ── Next POI navigation ────────────────────────────────────
         private List<PoiEntity> _allPois = [];
@@ -155,7 +157,7 @@ namespace AudioGo.ViewModels
 
         public bool   HasNextPoi        => _currentIndex >= 0 && _currentIndex < _allPois.Count - 1;
         public string NextPoiTitle      => HasNextPoi ? _allPois[_currentIndex + 1].Title : string.Empty;
-        public string NextPoiButtonText => HasNextPoi ? "Điểm tiếp theo →" : "Đã đến điểm cuối";
+        public string NextPoiButtonText => HasNextPoi ? AudioGo.Helpers.AppStrings.Get("detail_next_button") : AudioGo.Helpers.AppStrings.Get("detail_next_end");
 
         public ICommand GoToNextPoiCommand { get; }
 
@@ -166,7 +168,15 @@ namespace AudioGo.ViewModels
             get => _descExpanded;
             set { SetProperty(ref _descExpanded, value); OnPropertyChanged(nameof(ExpandLabel)); }
         }
-        public string ExpandLabel => _descExpanded ? "Thu gọn ▲" : "Xem thêm ▼";
+        public string ExpandLabel => _descExpanded ? AudioGo.Helpers.AppStrings.Get("detail_collapse") : AudioGo.Helpers.AppStrings.Get("detail_expand");
+
+        // ── Computed AppStrings ────────────────────────────────────
+        public string TitleLabel        => AudioGo.Helpers.AppStrings.Get("detail_title");
+        public string ImageLabel        => AudioGo.Helpers.AppStrings.Get("detail_image");
+        public string ViewAllLabel      => AudioGo.Helpers.AppStrings.Get("detail_view_all");
+        public string AudioDetailLabel  => AudioGo.Helpers.AppStrings.Get("detail_audio");
+        public string IntroLabel        => AudioGo.Helpers.AppStrings.Get("detail_intro");
+        public string NextPoiLabel      => AudioGo.Helpers.AppStrings.Get("detail_next");
 
         // ── Audio state — play/pause (not stop) ───────────────────
         /// <summary>True while audio is actively playing (not paused).</summary>

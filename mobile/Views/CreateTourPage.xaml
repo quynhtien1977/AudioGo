@@ -24,7 +24,7 @@
                     <TapGestureRecognizer Tapped="OnCancelTapped"/>
                 </Border.GestureRecognizers>
             </Border>
-            <Label Grid.Column="1" Text="Tạo Tour Mới"
+            <Label Grid.Column="1" Text="{Binding LabelTitle}"
                    Style="{StaticResource TitleLabel}"
                    HorizontalOptions="Center" VerticalOptions="Center"/>
         </Grid>
@@ -35,9 +35,9 @@
 
                 <!-- ── Tên Tour ── -->
                 <VerticalStackLayout Spacing="8">
-                    <Label Text="Tên Tour *" Style="{StaticResource SectionTitle}"/>
+                    <Label Text="{Binding LabelName}" Style="{StaticResource SectionTitle}"/>
                     <Border Style="{StaticResource InputBorder}">
-                        <Entry Placeholder="VD: Tour Ẩm Thực Vĩnh Khánh"
+                        <Entry Placeholder="{Binding LabelNamePh}"
                                Text="{Binding TourName}"
                                FontSize="14"/>
                     </Border>
@@ -45,9 +45,9 @@
 
                 <!-- ── Mô tả ── -->
                 <VerticalStackLayout Spacing="8">
-                    <Label Text="Mô tả" Style="{StaticResource SectionTitle}"/>
+                    <Label Text="{Binding LabelDesc}" Style="{StaticResource SectionTitle}"/>
                     <Border Style="{StaticResource InputBorder}" Padding="14,8">
-                        <Editor Placeholder="Mô tả ngắn về hành trình..."
+                        <Editor Placeholder="{Binding LabelDescPh}"
                                 Text="{Binding Description}"
                                 HeightRequest="90"
                                 AutoSize="TextChanges"
@@ -57,7 +57,7 @@
 
                 <!-- ── Ngôn ngữ ── -->
                 <VerticalStackLayout Spacing="8">
-                    <Label Text="Ngôn ngữ thuyết minh" Style="{StaticResource SectionTitle}"/>
+                    <Label Text="{Binding LabelLang}" Style="{StaticResource SectionTitle}"/>
                     <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
                         <HorizontalStackLayout Spacing="8">
                             <Border Style="{StaticResource PillBorderActive}">
@@ -78,7 +78,7 @@
 
                 <!-- ── Danh mục ── -->
                 <VerticalStackLayout Spacing="8">
-                    <Label Text="Danh mục" Style="{StaticResource SectionTitle}"/>
+                    <Label Text="{Binding LabelCat}" Style="{StaticResource SectionTitle}"/>
                     <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
                         <HorizontalStackLayout Spacing="8">
                             <Border Style="{StaticResource PillBorderActive}">
@@ -104,7 +104,7 @@
                                Text="{Binding StopCountLabel}"
                                Style="{StaticResource SectionTitle}"/>
                         <Label Grid.Column="1"
-                               Text="Sắp xếp"
+                               Text="{Binding LabelSort}"
                                Style="{StaticResource PrimaryLabel}"
                                VerticalOptions="Center"/>
                     </Grid>
@@ -180,7 +180,7 @@
                                        HorizontalOptions="Center" VerticalOptions="Center"/>
                             </Border>
                             <Label Grid.Column="1"
-                                   Text="Thêm điểm dừng mới"
+                                   Text="{Binding LabelAddStop}"
                                    Style="{StaticResource PrimaryLabel}"
                                    FontSize="14"
                                    VerticalOptions="Center"/>
@@ -193,7 +193,7 @@
 
                 <!-- ── Route Map Preview ── -->
                 <VerticalStackLayout Spacing="12">
-                    <Label Text="Xem trước lộ trình" Style="{StaticResource SectionTitle}"/>
+                    <Label Text="{Binding LabelPreview}" Style="{StaticResource SectionTitle}"/>
                     <Border BackgroundColor="{StaticResource DarkSurface}"
                             StrokeShape="RoundRectangle 16" StrokeThickness="0"
                             HeightRequest="150">
@@ -214,7 +214,7 @@
             <Border.Shadow>
                 <Shadow Brush="Black" Offset="0,-2" Radius="10" Opacity="0.08"/>
             </Border.Shadow>
-            <Button Text="Lưu Tour"
+            <Button Text="{Binding LabelSave}"
                     ImageSource="{FontImage FontFamily=MaterialIcons, Glyph=&#xe161;, Color=White, Size=18}"
                     Style="{StaticResource PrimaryButton}"
                     HorizontalOptions="FillAndExpand"

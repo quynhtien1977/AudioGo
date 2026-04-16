@@ -1,4 +1,4 @@
-using AudioGo.ViewModels;
+﻿using AudioGo.ViewModels;
 using Microsoft.Maui.Controls.Maps;
 using Microsoft.Maui.Maps;
 using Shared;
@@ -169,6 +169,14 @@ public partial class MapPage : ContentPage
         {
             MainThread.BeginInvokeOnMainThread(RefreshGeofenceOverlays);
         }
+        else if (e.PropertyName == nameof(MapViewModel.TravelTimeLabel))
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                if (_vm.SelectedPoi is not null)
+                    BannerTime.Text = _vm.TravelTimeLabel;
+            });
+        }
     }
 
     private async void OnPoiBannerDetailClicked(object? sender, EventArgs e)
@@ -219,23 +227,11 @@ public partial class MapPage : ContentPage
 
         if (lang is not null)
         {
-            _main.CurrentLanguage = lang;
-            // Pins sẽ refresh sau khi ReloadPoisAsync hoàn tất
-            _main.PropertyChanged += OnPoisReloaded;
-        }
-    }
-
-    private void OnPoisReloaded(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName != nameof(MainViewModel.Pois)) return;
-        _main.PropertyChanged -= OnPoisReloaded;
-        MainThread.BeginInvokeOnMainThread(() =>
-        {
+            await _main.ChangeLanguageAsync(lang);
             _vm.LoadPois(_main.Pois);
             RefreshPins();
-        });
+        }
     }
-
     private void OnMiniPlayClicked(object? sender, EventArgs e)
     {
         _main.ToggleAudio();

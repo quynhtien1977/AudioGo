@@ -56,6 +56,11 @@ namespace AudioGo.ViewModels
 
         public ObservableCollection<TourStepVm> Steps { get; } = new();
 
+        // UI Strings
+        public string LabelContinue => AudioGo.Helpers.AppStrings.Get("tour_detail_continue");
+        public string LabelMap => AudioGo.Helpers.AppStrings.Get("tour_detail_map");
+        public string LabelStopList => AudioGo.Helpers.AppStrings.Get("tour_detail_stop_list");
+
         // ── Load ───────────────────────────────────────────────────
         public async Task LoadAsync(string tourId)
         {
@@ -71,7 +76,7 @@ namespace AudioGo.ViewModels
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Không tải được tour: {ex.Message}";
+                ErrorMessage = $"{AudioGo.Helpers.AppStrings.Get("tour_load_err")}: {ex.Message}";
                 LoadMockData(tourId);
             }
             finally

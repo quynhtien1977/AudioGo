@@ -38,7 +38,21 @@ namespace AudioGo.ViewModels
 
         // XAML aliases
         public ObservableCollection<PoiStepVm> SelectedStops => SelectedPois;
-        public string StopCountLabel => $"Điểm dừng ({SelectedPois.Count})";
+        public string StopCountLabel => AudioGo.Helpers.AppStrings.Get("create_tour_stop_count", SelectedPois.Count);
+
+        // Sub-UI labels
+        public string LabelTitle => AudioGo.Helpers.AppStrings.Get("create_tour_title");
+        public string LabelName => AudioGo.Helpers.AppStrings.Get("create_tour_name");
+        public string LabelNamePh => AudioGo.Helpers.AppStrings.Get("create_tour_name_placeholder");
+        public string LabelDesc => AudioGo.Helpers.AppStrings.Get("create_tour_desc");
+        public string LabelDescPh => AudioGo.Helpers.AppStrings.Get("create_tour_desc_placeholder");
+        public string LabelLang => AudioGo.Helpers.AppStrings.Get("create_tour_lang");
+        public string LabelCat => AudioGo.Helpers.AppStrings.Get("create_tour_cat");
+        public string LabelSort => AudioGo.Helpers.AppStrings.Get("create_tour_sort");
+        public string LabelAddStop => AudioGo.Helpers.AppStrings.Get("create_tour_add_stop");
+        public string LabelPreview => AudioGo.Helpers.AppStrings.Get("create_tour_preview");
+        public string LabelSave => AudioGo.Helpers.AppStrings.Get("create_tour_save");
+
         public bool CanSave => !string.IsNullOrWhiteSpace(_tourName);
 
         public System.Windows.Input.ICommand RemoveStopCommand => new Command<PoiStepVm>(stop =>

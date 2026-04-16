@@ -1,26 +1,30 @@
 using AudioGo.Data;
+using AudioGo.Helpers;
 using AudioGo.Models;
 using AudioGo.Services.Interfaces;
 using Shared;
 using Shared.DTOs;
+using System.Text.Json;
 
 namespace AudioGo.Services
 {
-    /// <summary>
-    /// Đồng bộ POI từ server về SQLite local.
-    /// Nếu offline, đọc từ cache. Nếu online, fetch → cache metadata → download audio.
-    /// 
-    /// Flow ngôn ngữ:
-    ///   1. Lấy system language device (caller truyền vào)
-    ///   2. Gửi request API với lang đó
-    ///   3. Backend lazy-generate (translate + TTS) nếu chưa có → trả AudioUrl
-    ///   4. SyncService download file .mp3 về LocalAudioPath
-    /// </summary>
     public class SyncService : IDisposable
     {
         private readonly IApiService _api;
         private readonly AppDatabase _db;
         private readonly IHttpClientFactory _httpFactory;
+        private DateTime _lastPolicyNoticeUtc = DateTime.MinValue;
+
+        private static readonly SemaphoreSlim GallerySemaphore = new(3, 3);
+
+        public event EventHandler<string>? SyncNotice;
+        public event EventHandler<string>? LanguageChanged;
+
+        public void NotifyLanguageChanged(string languageCode)
+        {
+            var normalized = LanguageHelper.NormalizeToSupported(languageCode);
+            MainThread.BeginInvokeOnMainThread(() => LanguageChanged?.Invoke(this, normalized));
+        }
 
         public SyncService(IApiService api, AppDatabase db, IHttpClientFactory httpFactory)
         {
@@ -28,52 +32,99 @@ namespace AudioGo.Services
             _db = db;
             _httpFactory = httpFactory;
 
-            // Khi mạng phục hồi → retry download các file còn thiếu
             Connectivity.ConnectivityChanged += OnConnectivityChanged;
         }
 
         private void OnConnectivityChanged(object? sender, ConnectivityChangedEventArgs e)
         {
-            if (e.NetworkAccess == NetworkAccess.Internet || e.NetworkAccess == NetworkAccess.ConstrainedInternet)
+            if (e.NetworkAccess != NetworkAccess.Internet &&
+                e.NetworkAccess != NetworkAccess.ConstrainedInternet)
             {
-                _ = Task.Run(() => RetryPendingDownloadsAsync());
+                return;
             }
+
+            if (CanDownloadAssetsNow())
+                _ = Task.Run(() => RetryPendingDownloadsAsync());
+            else
+                PublishNotice("Đang chờ wifi tải nền. Bạn có thể dùng dữ liệu di động trong cài đặt.");
         }
 
-        /// <summary>
-        /// Kẻt gọi khi app shutdown — hủy event subscription.
-        /// </summary>
         public void Dispose()
         {
             Connectivity.ConnectivityChanged -= OnConnectivityChanged;
         }
 
-        /// <summary>
-        /// Retry các file chưa download (LocalAudioPath / LocalLogoPath = null và URL có sẵn).
-        /// Được gọi tự động khi mạng phục hồi.
-        /// </summary>
+        public async Task<List<POI>?> SwitchLanguageAsync(string languageCode, CancellationToken ct = default)
+        {
+            var normalizedLang = LanguageHelper.NormalizeToSupported(languageCode);
+
+            if (!NetworkHelper.HasInternet())
+            {
+                PublishNotice("Khong co mang Internet. Vui long ket noi Wi-Fi de cap nhat ngon ngu.");
+                return null;
+            }
+
+            if (!IsWifiConnection())
+            {
+                PublishNotice("Can su dung Wi-Fi de cap nhat ngon ngu moi.");
+                return null;
+            }
+
+            List<POI> serverPois;
+            try
+            {
+                serverPois = await _api.GetPoisAsync(languageCode: normalizedLang, ct: ct);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[SyncService] SwitchLanguage fetch failed: {ex.Message}");
+                PublishNotice("Không thể cập nhật ngôn ngữ. Dữ liệu hiện tại được giữ nguyên.");
+                return null;
+            }
+
+            if (serverPois.Count == 0)
+            {
+                PublishNotice("Không có dữ liệu ngôn ngữ mới. Dữ liệu hiện tại được giữ nguyên.");
+                return null;
+            }
+
+            await ReplaceMetadataAsync(serverPois);
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await DownloadAllAssetsAsync(serverPois, CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[SyncService] SwitchLanguage background download error: {ex.Message}");
+                }
+            });
+
+            return (await _db.GetAllPoisAsync()).Select(MapToDto).ToList();
+        }
+
         public async Task RetryPendingDownloadsAsync(CancellationToken ct = default)
         {
             try
             {
+                if (!CanDownloadAssetsNow())
+                
+                {
+                    PublishNotice("Đang dùng dữ liệu di động, chỉ tải ngầm khi có Wifi.");
+                    return;
+                }
+
                 var allEntities = await _db.GetAllPoisAsync();
-                // Map về POI DTO để reuse download helpers
                 var pending = allEntities
+                    .Where(HasPendingAssets)
                     .Select(MapToDto)
-                    .Where(p => (!string.IsNullOrEmpty(p.AudioUrl) &&
-                                 (string.IsNullOrEmpty(p.LocalAudioPath) || !File.Exists(p.LocalAudioPath)))
-                             || (!string.IsNullOrEmpty(p.LogoUrl) &&
-                                 (string.IsNullOrEmpty(p.LocalLogoPath) || !File.Exists(p.LocalLogoPath))))
                     .ToList();
 
                 if (pending.Count == 0) return;
 
-                System.Diagnostics.Debug.WriteLine(
-                    $"[SyncService] Retrying downloads for {pending.Count} pending POIs");
-
-                await DownloadAudioFilesAsync(pending, ct);
-                await DownloadImageFilesAsync(pending, ct);
-                await DownloadGalleryFilesAsync(pending, ct);
+                await DownloadAllAssetsAsync(pending, ct);
             }
             catch (Exception ex)
             {
@@ -81,164 +132,124 @@ namespace AudioGo.Services
             }
         }
 
-        /// <summary>
-        /// Trả về POI list: cache-first (có cache → trả ngay + refresh nền);
-        /// nếu cache rỗng → đợi server 1 lần rồi mới trả.
-        /// </summary>
         public async Task<List<POI>> GetPoisAsync(string languageCode = "vi", CancellationToken ct = default)
         {
+            var normalizedLang = LanguageHelper.NormalizeToSupported(languageCode);
             var cached = (await _db.GetAllPoisAsync()).Select(MapToDto).ToList();
 
-            // ── CÓ CACHE: trả ngay, fetch server ngầm ──────────────────────────
             if (cached.Count > 0)
             {
-                if (!AudioGo.Helpers.NetworkHelper.HasInternet()) return cached;
-
-                // Background fetch — không block caller.
-                // CancellationToken.None: download KHÔNG bị cancel khi user navigate đi.
-                // Sequential Audio → Logo → Gallery: tránh tranh socket, ưu tiên audio trước.
-                _ = Task.Run(async () =>
+                if (NetworkHelper.HasInternet())
                 {
-                    try
+                    _ = Task.Run(async () =>
                     {
-                        var serverPois = await _api.GetPoisAsync(languageCode: languageCode, ct: ct);
-                        if (serverPois.Count > 0)
+                        try
                         {
-                            await CacheMetadataAsync(serverPois);
-                            // Sequential: Audio trước (ưu tiên cao) → Logo → Gallery
-                            await DownloadAudioFilesAsync(serverPois, CancellationToken.None);
-                            await DownloadImageFilesAsync(serverPois, CancellationToken.None);
-                            await DownloadGalleryFilesAsync(serverPois, CancellationToken.None);
+                            await RefreshFromServerAsync(normalizedLang, CancellationToken.None);
                         }
-                    }
-                    catch
-                    {
-                        // offline → cache đã được trả rồi, không cần làm gì thêm
-                    }
-                });
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[SyncService] Background refresh error: {ex.Message}");
+                        }
+                    });
+                }
 
                 return cached;
             }
 
-            // ── CACHE RỖNG (fresh install): chờ server 1 lần duy nhất ──────────
-            if (!AudioGo.Helpers.NetworkHelper.HasInternet()) return cached;
+            if (!NetworkHelper.HasInternet())
+                return cached;
 
-            System.Diagnostics.Debug.WriteLine("[SyncService] Cache empty — waiting for server (GetPoisAsync)");
             try
             {
-                var serverPois = await _api.GetPoisAsync(languageCode: languageCode, ct: ct);
-                if (serverPois.Count > 0)
-                {
-                    await CacheMetadataAsync(serverPois);
-                    // Sequential với CancellationToken.None — không bị cancel bởi navigation
-                    _ = Task.Run(async () =>
-                    {
-                        await DownloadAudioFilesAsync(serverPois, CancellationToken.None);
-                        await DownloadImageFilesAsync(serverPois, CancellationToken.None);
-                        await DownloadGalleryFilesAsync(serverPois, CancellationToken.None);
-                    });
-                    return (await _db.GetAllPoisAsync()).Select(MapToDto).ToList();
-                }
+                var serverPois = await _api.GetPoisAsync(languageCode: normalizedLang, ct: ct);
+                if (serverPois.Count == 0)
+                    return cached;
+
+                await ReplaceMetadataAsync(serverPois);
+
+                if (CanDownloadAssetsNow())
+                    _ = Task.Run(() => DownloadAllAssetsAsync(serverPois, CancellationToken.None));
+                else
+                    PublishNotice("Đã đồng bộ nội dung text. Audio/ảnh sẽ tải khi có Wi-Fi.");
+
+                return (await _db.GetAllPoisAsync()).Select(MapToDto).ToList();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"[SyncService] GetPoisAsync server fetch failed: {ex.Message}");
+                return cached;
             }
-
-            return cached; // empty list nếu offline và fresh install
         }
 
-        /// <summary>
-        /// Cache-first với live-refresh: trả cache ngay, fetch server nền,
-        /// khi server trả về data mới sẽ gọi <paramref name="onRefreshed"/> để UI tự update.
-        /// </summary>
         public async Task<List<POI>> GetPoisWithRefreshAsync(
             string languageCode,
             Func<List<POI>, Task> onRefreshed,
             Action<POI>? onSingleAudioReady = null,
             CancellationToken ct = default)
         {
-            // Bước 1: trả cache ngay
+            var normalizedLang = LanguageHelper.NormalizeToSupported(languageCode);
             var cached = (await _db.GetAllPoisAsync()).Select(MapToDto).ToList();
 
-            System.Diagnostics.Debug.WriteLine($"[SyncService] Cache loaded: {cached.Count} POIs");
-
-            // Bước 2a: Nếu CÓ cache → fetch server nền (không block caller)
-            // Download sequential + CancellationToken.None: không bị cancel khi user navigate.
             if (cached.Count > 0)
             {
-                if (!AudioGo.Helpers.NetworkHelper.HasInternet()) return cached;
-
-                _ = Task.Run(async () =>
+                if (NetworkHelper.HasInternet())
                 {
-                    try
+                    _ = Task.Run(async () =>
                     {
-                        var serverPois = await _api.GetPoisAsync(languageCode: languageCode, ct: ct);
-                        if (serverPois.Count > 0)
+                        try
                         {
-                            await CacheMetadataAsync(serverPois);
-
-                            // Sequential: Audio → Logo → Gallery
-                            await DownloadAudioFilesAsync(serverPois, CancellationToken.None, onSingleAudioReady);
-                            await DownloadImageFilesAsync(serverPois, CancellationToken.None);
-                            await DownloadGalleryFilesAsync(serverPois, CancellationToken.None);
-
-                            // Luôn reload từ SQLite sau khi download xong:
-                            // LocalAudioPath/LocalLogoPath/GalleryLocalPaths đã được
-                            // cập nhật trong DB, cần push lên RAM để UI dùng đúng.
-                            var fresh = (await _db.GetAllPoisAsync()).Select(MapToDto).ToList();
-                            System.Diagnostics.Debug.WriteLine(
-                                $"[SyncService] Assets downloaded → refreshing {fresh.Count} POIs in UI (LocalAudioPath + LocalLogoPath updated)");
+                            var fresh = await RefreshFromServerAsync(
+                                normalizedLang,
+                                CancellationToken.None,
+                                onSingleAudioReady);
                             await MainThread.InvokeOnMainThreadAsync(() => onRefreshed(fresh));
                         }
-                    }
-                    catch (Exception ex)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"[SyncService] Background refresh error: {ex.Message}");
-                        // offline → không refresh, cache đã được trả rồi
-                    }
-                });
-
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[SyncService] GetPoisWithRefreshAsync background error: {ex.Message}");
+                        }
+                    });
+                }
 
                 return cached;
             }
 
-            // Bước 2b: Cache rỗng (fresh install / data cleared) → phải đợi server
-            if (!AudioGo.Helpers.NetworkHelper.HasInternet()) return cached;
+            if (!NetworkHelper.HasInternet())
+                return cached;
 
-            System.Diagnostics.Debug.WriteLine("[SyncService] Cache empty — waiting for server (first run)");
             try
             {
-                var serverPois = await _api.GetPoisAsync(languageCode: languageCode, ct: ct);
-                if (serverPois.Count > 0)
+                var serverPois = await _api.GetPoisAsync(languageCode: normalizedLang, ct: ct);
+                if (serverPois.Count == 0)
+                    return cached;
+
+                await ReplaceMetadataAsync(serverPois);
+
+                if (CanDownloadAssetsNow())
                 {
-                    await CacheMetadataAsync(serverPois);
-                    // Sequential với CancellationToken.None — không bị cancel bởi navigation
                     _ = Task.Run(async () =>
                     {
-                        await DownloadAudioFilesAsync(serverPois, CancellationToken.None, onSingleAudioReady);
-                        await DownloadImageFilesAsync(serverPois, CancellationToken.None);
-                        await DownloadGalleryFilesAsync(serverPois, CancellationToken.None);
+                        await DownloadAllAssetsAsync(serverPois, CancellationToken.None, onSingleAudioReady);
                     });
-                    return (await _db.GetAllPoisAsync()).Select(MapToDto).ToList();
                 }
+                else
+                {
+                    PublishNotice("Đã đồng bộ nội dung text. Audio/ảnh sẽ tải khi có Wi-Fi.");
+                }
+
+                return (await _db.GetAllPoisAsync()).Select(MapToDto).ToList();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[SyncService] First-run server fetch failed: {ex.Message}");
-                // offline → trả list rỗng
+                System.Diagnostics.Debug.WriteLine($"[SyncService] GetPoisWithRefreshAsync first-run error: {ex.Message}");
+                return cached;
             }
-
-            return cached; // empty list
         }
 
-
-        /// <summary>
-        /// Lấy danh sách Categories: ưu tiên API, nếu offline thì extract từ các POI đã cache trong SQLite.
-        /// </summary>
         public async Task<List<CategoryDto>> GetCategoriesAsync(CancellationToken ct = default)
         {
-            if (AudioGo.Helpers.NetworkHelper.HasInternet())
+            if (NetworkHelper.HasInternet())
             {
                 try
                 {
@@ -247,104 +258,181 @@ namespace AudioGo.Services
                 }
                 catch
                 {
-                    // API không kết nối được
+                    // fallback to local cache
                 }
             }
 
-            // Fallback: extract từ SQLite cache
             var cachedPois = await _db.GetAllPoisAsync();
-            var offlineCategories = cachedPois
+            return cachedPois
                 .Where(p => !string.IsNullOrEmpty(p.CategoriesJson))
                 .SelectMany(p => SafeDeserializeList(p.CategoriesJson))
                 .Distinct()
                 .Select(cName => new CategoryDto("", cName, 0, DateTime.MinValue, DateTime.MinValue))
                 .ToList();
-
-            return offlineCategories;
         }
 
-        // ── Private Helpers ───────────────────────────────────────────────
-
-        /// <summary>
-        /// Lưu metadata POI xuống SQLite (không download audio).
-        /// Tối ưu: load tất cả existing records 1 lần (batch) thay vì N lần GetPoiAsync.
-        /// </summary>
-        private async Task CacheMetadataAsync(List<POI> pois)
+        private async Task<List<POI>> RefreshFromServerAsync(
+            string normalizedLang,
+            CancellationToken ct,
+            Action<POI>? onSingleAudioReady = null)
         {
-            // Batch load tất cả existing POIs 1 lần duy nhất → tra cứu bằng Dictionary O(1)
+            var serverPois = await _api.GetPoisAsync(languageCode: normalizedLang, ct: ct);
+            if (serverPois.Count == 0)
+                return (await _db.GetAllPoisAsync()).Select(MapToDto).ToList();
+
+            await ReplaceMetadataAsync(serverPois);
+
+            if (CanDownloadAssetsNow())
+            {
+                await DownloadAllAssetsAsync(serverPois, CancellationToken.None, onSingleAudioReady);
+            }
+            else
+            {
+                PublishNotice("Đang chờ Wi-Fi để tải âm thanh/ảnh. Bạn có thể bật dữ liệu di động nếu muốn tải ngay.");
+            }
+
+            return (await _db.GetAllPoisAsync()).Select(MapToDto).ToList();
+        }
+
+        private async Task ReplaceMetadataAsync(List<POI> pois)
+        {
             var allExisting = await _db.GetAllPoisAsync();
             var existingMap = allExisting.ToDictionary(e => e.PoiId);
+            var incomingIds = new HashSet<string>(pois.Select(p => p.PoiId));
 
             foreach (var poi in pois)
             {
                 var entity = MapToEntity(poi);
-                existingMap.TryGetValue(poi.PoiId, out var existing);
 
-                // Giữ lại LocalAudioPath cũ nếu file vẫn còn VÀ URL TƯƠNG ĐỒNG
-                if (existing is not null &&
-                    !string.IsNullOrEmpty(existing.LocalAudioPath) &&
-                    File.Exists(existing.LocalAudioPath))
+                if (existingMap.TryGetValue(poi.PoiId, out var existing))
                 {
-                    if (existing.AudioUrl == poi.AudioUrl)
-                    {
-                        entity.LocalAudioPath = existing.LocalAudioPath;
-                    }
-                    else
-                    {
-                        // URL thay đổi -> xoá file cũ đi để bắt buộc tải lại
-                        try { File.Delete(existing.LocalAudioPath); } catch { }
-                    }
-                }
-
-                // Giữ lại LocalLogoPath cũ nếu file vẫn còn VÀ URL TƯƠNG ĐỒNG
-                if (existing is not null &&
-                    !string.IsNullOrEmpty(existing.LocalLogoPath) &&
-                    File.Exists(existing.LocalLogoPath))
-                {
-                    if (existing.LogoUrl == poi.LogoUrl)
-                    {
-                        entity.LocalLogoPath = existing.LocalLogoPath;
-                    }
-                    else
-                    {
-                        try { File.Delete(existing.LocalLogoPath); } catch { }
-                    }
-                }
-
-                // Giữ lại GalleryLocalPathsJson cũ nếu có VÀ URL TƯƠNG ĐỒNG
-                if (existing is not null &&
-                    !string.IsNullOrEmpty(existing.GalleryLocalPathsJson))
-                {
-                    if (existing.GalleryUrlsJson == entity.GalleryUrlsJson)
-                    {
-                        entity.GalleryLocalPathsJson = existing.GalleryLocalPathsJson;
-                    }
-                    else
-                    {
-                        var oldPaths = SafeDeserializeList(existing.GalleryLocalPathsJson);
-                        foreach (var p in oldPaths)
-                        {
-                            if (File.Exists(p)) { try { File.Delete(p); } catch { } }
-                        }
-                    }
+                    entity.LocalAudioPath = PreserveAudioFile(existing, poi.AudioUrl);
+                    entity.LocalLogoPath = PreserveLogoFile(existing, poi.LogoUrl);
+                    entity.GalleryLocalPathsJson = PreserveGalleryFiles(existing, entity.GalleryUrlsJson);
                 }
 
                 await _db.SavePoiAsync(entity);
             }
+
+            foreach (var stale in allExisting.Where(e => !incomingIds.Contains(e.PoiId)))
+            {
+                DeletePoiMediaFiles(stale);
+                await _db.DeletePoiAsync(stale);
+            }
         }
 
-        /// <summary>
-        /// Download audio files từ AudioUrl về local storage.
-        /// Bỏ qua nếu file đã tồn tại (content-aware: so sánh URL để tái tải khi server thay đổi).
-        /// </summary>
+        private static string? PreserveAudioFile(PoiEntity existing, string? newAudioUrl)
+        {
+            if (string.IsNullOrEmpty(existing.LocalAudioPath) ||
+                !File.Exists(existing.LocalAudioPath))
+            {
+                return null;
+            }
+
+            if (string.Equals(existing.AudioUrl, newAudioUrl, StringComparison.OrdinalIgnoreCase))
+                return existing.LocalAudioPath;
+
+            TryDeleteFile(existing.LocalAudioPath);
+            return null;
+        }
+
+        private static string? PreserveLogoFile(PoiEntity existing, string? newLogoUrl)
+        {
+            if (string.IsNullOrEmpty(existing.LocalLogoPath) ||
+                !File.Exists(existing.LocalLogoPath))
+            {
+                return null;
+            }
+
+            if (string.Equals(existing.LogoUrl, newLogoUrl, StringComparison.OrdinalIgnoreCase))
+                return existing.LocalLogoPath;
+
+            TryDeleteFile(existing.LocalLogoPath);
+            return null;
+        }
+
+        private static string? PreserveGalleryFiles(PoiEntity existing, string newGalleryUrlsJson)
+        {
+            if (string.IsNullOrEmpty(existing.GalleryLocalPathsJson))
+                return null;
+
+            if (string.Equals(existing.GalleryUrlsJson, newGalleryUrlsJson, StringComparison.Ordinal))
+                return existing.GalleryLocalPathsJson;
+
+            DeleteGalleryFilesFromJson(existing.GalleryLocalPathsJson);
+            return null;
+        }
+
+        private static void DeletePoiMediaFiles(PoiEntity poi)
+        {
+            if (!string.IsNullOrEmpty(poi.LocalAudioPath))
+                TryDeleteFile(poi.LocalAudioPath);
+
+            if (!string.IsNullOrEmpty(poi.LocalLogoPath))
+                TryDeleteFile(poi.LocalLogoPath);
+
+            DeleteGalleryFilesFromJson(poi.GalleryLocalPathsJson);
+        }
+
+        private static void DeleteGalleryFilesFromJson(string? galleryLocalPathsJson)
+        {
+            foreach (var path in SafeDeserializeList(galleryLocalPathsJson))
+                TryDeleteFile(path);
+        }
+
+        private static void TryDeleteFile(string? path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return;
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
+                // best-effort cleanup only
+            }
+        }
+
+        private bool HasPendingAssets(PoiEntity e)
+        {
+            var missingAudio = !string.IsNullOrEmpty(e.AudioUrl) &&
+                               (string.IsNullOrEmpty(e.LocalAudioPath) || !File.Exists(e.LocalAudioPath));
+
+            var missingLogo = !string.IsNullOrEmpty(e.LogoUrl) &&
+                              (string.IsNullOrEmpty(e.LocalLogoPath) || !File.Exists(e.LocalLogoPath));
+
+            var missingGallery = HasMissingGalleryFiles(e);
+
+            return missingAudio || missingLogo || missingGallery;
+        }
+
+        private static bool HasMissingGalleryFiles(PoiEntity e)
+        {
+            var urls = SafeDeserializeList(e.GalleryUrlsJson);
+            if (urls.Count == 0) return false;
+
+            var locals = SafeDeserializeList(e.GalleryLocalPathsJson);
+            if (locals.Count != urls.Count) return true;
+
+            return locals.Any(path => !File.Exists(path));
+        }
+
+        private async Task DownloadAllAssetsAsync(
+            List<POI> pois,
+            CancellationToken ct,
+            Action<POI>? onSingleAudioReady = null)
+        {
+            await DownloadAudioFilesAsync(pois, ct, onSingleAudioReady);
+            await DownloadImageFilesAsync(pois, ct);
+            await DownloadGalleryFilesAsync(pois, ct);
+        }
+
         private async Task DownloadAudioFilesAsync(List<POI> pois, CancellationToken ct, Action<POI>? onSingleAudioReady = null)
         {
             var audioDir = Path.Combine(FileSystem.AppDataDirectory, "audio");
             Directory.CreateDirectory(audioDir);
 
-            // ── FIX: Tạo HttpClient 1 lần ngoài loop — tránh socket exhaustion ──
-            // CreateClient() bên trong loop tạo ra hàng chục HttpClient mới mỗi batch
-            // → cạn pool socket Android (default ~256 sockets).
             using var http = _httpFactory.CreateClient("downloader");
 
             foreach (var poi in pois)
@@ -356,55 +444,44 @@ namespace AudioGo.Services
                 {
                     var existing = await _db.GetPoiAsync(poi.PoiId);
 
-                    // Tạo tên file duy nhất từ PoiId + LanguageCode
-                    var fileName = $"{poi.PoiId}_{poi.LanguageCode}.mp3";
-                    var localPath = Path.Combine(audioDir, fileName);
-
-                    // Bỏ qua nếu file đã tồn tại và chưa thay đổi URL
-                    if (File.Exists(localPath) &&
-                        existing?.AudioUrl == poi.AudioUrl)
+                    if (existing is not null &&
+                        !string.IsNullOrEmpty(existing.LocalAudioPath) &&
+                        File.Exists(existing.LocalAudioPath) &&
+                        string.Equals(existing.AudioUrl, poi.AudioUrl, StringComparison.OrdinalIgnoreCase))
                     {
+                        poi.LocalAudioPath = existing.LocalAudioPath;
                         continue;
                     }
 
-                    // Download file — dùng client "downloader" (60s timeout) thay vì default 8s
+                    var fileName = $"{poi.PoiId}_{LanguageHelper.NormalizeToSupported(poi.LanguageCode)}.mp3";
+                    var localPath = Path.Combine(audioDir, fileName);
+
                     var bytes = await http.GetByteArrayAsync(poi.AudioUrl, ct);
                     await File.WriteAllBytesAsync(localPath, bytes, ct);
 
-                    // Cập nhật LocalAudioPath trong SQLite
                     if (existing is not null)
                     {
                         existing.LocalAudioPath = localPath;
                         existing.AudioUrl = poi.AudioUrl;
                         await _db.SavePoiAsync(existing);
-
-                        poi.LocalAudioPath = localPath;
-                        if (onSingleAudioReady != null)
-                        {
-                            MainThread.BeginInvokeOnMainThread(() => onSingleAudioReady(poi));
-                        }
                     }
 
-                    System.Diagnostics.Debug.WriteLine($"[SyncService] Audio downloaded: {poi.PoiId}");
+                    poi.LocalAudioPath = localPath;
+                    if (onSingleAudioReady is not null)
+                        MainThread.BeginInvokeOnMainThread(() => onSingleAudioReady(poi));
                 }
                 catch (Exception ex)
                 {
-                    // Log và tiếp tục — không để 1 POI lỗi chặn cả batch
-                    System.Diagnostics.Debug.WriteLine(
-                        $"[SyncService] Download audio failed for POI {poi.PoiId}: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"[SyncService] Download audio failed for {poi.PoiId}: {ex.Message}");
                 }
             }
         }
 
-        /// <summary>
-        /// Download image logo files từ LogoUrl về local storage để cache map pin offline.
-        /// </summary>
         private async Task DownloadImageFilesAsync(List<POI> pois, CancellationToken ct)
         {
             var imagesDir = Path.Combine(FileSystem.AppDataDirectory, "images");
             Directory.CreateDirectory(imagesDir);
 
-            // ── FIX: HttpClient 1 lần ngoài loop ──
             using var http = _httpFactory.CreateClient("downloader");
 
             foreach (var poi in pois)
@@ -416,27 +493,27 @@ namespace AudioGo.Services
                 {
                     var existing = await _db.GetPoiAsync(poi.PoiId);
 
-                    // Parse the extension from URL if possible, otherwise default to .png
+                    if (existing is not null &&
+                        !string.IsNullOrEmpty(existing.LocalLogoPath) &&
+                        File.Exists(existing.LocalLogoPath) &&
+                        string.Equals(existing.LogoUrl, poi.LogoUrl, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
                     string extension = ".png";
                     try
                     {
-                        var uri = new Uri(poi.LogoUrl);
-                        var ext = Path.GetExtension(uri.LocalPath);
+                        var ext = Path.GetExtension(new Uri(poi.LogoUrl).LocalPath);
                         if (!string.IsNullOrEmpty(ext)) extension = ext;
                     }
-                    catch (Exception ex)
+                    catch
                     {
-                        System.Diagnostics.Debug.WriteLine($"[SyncService] Error parsing logo url: {ex.Message}");
+                        // keep default extension
                     }
 
                     var fileName = $"{poi.PoiId}_logo{extension}";
                     var localPath = Path.Combine(imagesDir, fileName);
-
-                    if (File.Exists(localPath) &&
-                        existing?.LogoUrl == poi.LogoUrl)
-                    {
-                        continue;
-                    }
 
                     var bytes = await http.GetByteArrayAsync(poi.LogoUrl, ct);
                     await File.WriteAllBytesAsync(localPath, bytes, ct);
@@ -447,33 +524,21 @@ namespace AudioGo.Services
                         existing.LogoUrl = poi.LogoUrl;
                         await _db.SavePoiAsync(existing);
                     }
-
-                    System.Diagnostics.Debug.WriteLine($"[SyncService] Logo downloaded: {poi.PoiId}");
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine(
-                        $"[SyncService] Download logo failed for POI {poi.PoiId}: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"[SyncService] Download logo failed for {poi.PoiId}: {ex.Message}");
                 }
             }
         }
-        /// <summary>
-        /// Download gallery image files từ GalleryUrls về local storage để xem offline.
-        /// Lưu các path vào GalleryLocalPathsJson trong SQLite.
-        /// </summary>
-        // ── Giới hạn max 3 kết nối song song cho gallery để không chiếm socket ──
-        // Audio/Logo download sequential (1 kết nối) → ưu tiên cao hơn gallery.
-        private static readonly SemaphoreSlim _gallerySemaphore = new(3, 3);
 
         private async Task DownloadGalleryFilesAsync(List<POI> pois, CancellationToken ct)
         {
             var galleryDir = Path.Combine(FileSystem.AppDataDirectory, "gallery");
             Directory.CreateDirectory(galleryDir);
 
-            // ── FIX: HttpClient 1 lần ngoài loop, dùng chung cho cả batch ──
             using var http = _httpFactory.CreateClient("downloader");
 
-            // Tải gallery song song, mỗi POI 1 task — nhưng throttled bởi _gallerySemaphore
             var tasks = pois
                 .Where(p => p.GalleryUrls is { Count: > 0 })
                 .Select(poi => DownloadGalleryForPoiAsync(poi, galleryDir, http, ct))
@@ -482,114 +547,149 @@ namespace AudioGo.Services
             await Task.WhenAll(tasks);
         }
 
-        private async Task DownloadGalleryForPoiAsync(
-            POI poi, string galleryDir, HttpClient http, CancellationToken ct)
+        private async Task DownloadGalleryForPoiAsync(POI poi, string galleryDir, HttpClient http, CancellationToken ct)
         {
-            if (ct.IsCancellationRequested) return;
+            if (ct.IsCancellationRequested || poi.GalleryUrls is not { Count: > 0 })
+                return;
 
             try
             {
                 var existing = await _db.GetPoiAsync(poi.PoiId);
                 var localPaths = new List<string>();
-                bool anyNew = false;
 
-                for (int i = 0; i < poi.GalleryUrls!.Count; i++)
+                for (int i = 0; i < poi.GalleryUrls.Count; i++)
                 {
                     if (ct.IsCancellationRequested) break;
+
                     var url = poi.GalleryUrls[i];
-                    if (string.IsNullOrEmpty(url)) continue;
+                    if (string.IsNullOrWhiteSpace(url)) continue;
 
                     string extension = ".jpg";
                     try
                     {
                         var ext = Path.GetExtension(new Uri(url).LocalPath);
-                        if (!string.IsNullOrEmpty(ext) && ext != ".") extension = ext;
+                        if (!string.IsNullOrWhiteSpace(ext) && ext != ".") extension = ext;
                     }
-                    catch (Exception ex)
+                    catch
                     {
-                        System.Diagnostics.Debug.WriteLine($"[SyncService] Error parsing gallery url: {ex.Message}");
+                        // keep default extension
                     }
 
                     var fileName = $"{poi.PoiId}_gallery_{i}{extension}";
                     var localPath = Path.Combine(galleryDir, fileName);
                     localPaths.Add(localPath);
 
-                    if (File.Exists(localPath)) continue; // đã có, bỏ qua
+                    if (File.Exists(localPath)) continue;
 
-                    // Throttle: tối đa 3 kết nối gallery đồng thời
-                    await _gallerySemaphore.WaitAsync(ct);
+                    await GallerySemaphore.WaitAsync(ct);
                     try
                     {
                         var bytes = await http.GetByteArrayAsync(url, ct);
                         await File.WriteAllBytesAsync(localPath, bytes, ct);
-                        anyNew = true;
-                        System.Diagnostics.Debug.WriteLine(
-                            $"[SyncService] Gallery downloaded: {poi.PoiId}[{i}]");
                     }
                     finally
                     {
-                        _gallerySemaphore.Release();
+                        GallerySemaphore.Release();
                     }
                 }
 
-                if (anyNew && existing is not null)
+                if (existing is not null)
                 {
-                    existing.GalleryLocalPathsJson =
-                        System.Text.Json.JsonSerializer.Serialize(localPaths);
-                    await _db.SavePoiAsync(existing);
+                    var localJson = JsonSerializer.Serialize(localPaths);
+                    if (!string.Equals(existing.GalleryLocalPathsJson, localJson, StringComparison.Ordinal))
+                    {
+                        existing.GalleryLocalPathsJson = localJson;
+                        await _db.SavePoiAsync(existing);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(
-                    $"[SyncService] Download gallery failed for POI {poi.PoiId}: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[SyncService] Download gallery failed for {poi.PoiId}: {ex.Message}");
             }
         }
 
-        private static PoiEntity MapToEntity(POI dto) => new()
+        private static PoiEntity MapToEntity(POI dto)
         {
-            PoiId            = dto.PoiId,
-            Latitude         = dto.Latitude,
-            Longitude        = dto.Longitude,
-            ActivationRadius = dto.ActivationRadius,
-            Priority         = dto.Priority,
-            IsActive         = dto.IsActive,
-            LogoUrl          = dto.LogoUrl,         // nullable OK
-            LocalLogoPath    = dto.LocalLogoPath,
-            LanguageCode     = dto.LanguageCode ?? "vi",
-            Title            = dto.Title ?? string.Empty,
-            Description      = dto.Description ?? string.Empty,
-            AudioUrl         = dto.AudioUrl,         // nullable OK
-            LocalAudioPath   = dto.LocalAudioPath,   // nullable OK
-            // Serialise list to JSON for SQLite storage
-            CategoriesJson   = dto.Categories?.Count > 0
-                ? System.Text.Json.JsonSerializer.Serialize(dto.Categories)
-                : string.Empty,
-            GalleryUrlsJson  = dto.GalleryUrls?.Count > 0
-                ? System.Text.Json.JsonSerializer.Serialize(dto.GalleryUrls)
-                : string.Empty,
-            LastSyncedAt     = DateTime.UtcNow
-        };
+            var lang = LanguageHelper.NormalizeToSupported(dto.LanguageCode);
+            return new PoiEntity
+            {
+                PoiId = dto.PoiId,
+                Latitude = dto.Latitude,
+                Longitude = dto.Longitude,
+                ActivationRadius = dto.ActivationRadius,
+                Priority = dto.Priority,
+                IsActive = dto.IsActive,
+                LogoUrl = dto.LogoUrl,
+                LocalLogoPath = dto.LocalLogoPath,
+                LanguageCode = lang,
+                Title = dto.Title ?? string.Empty,
+                Description = dto.Description ?? string.Empty,
+                AudioUrl = dto.AudioUrl,
+                LocalAudioPath = dto.LocalAudioPath,
+                CategoriesJson = dto.Categories?.Count > 0
+                    ? JsonSerializer.Serialize(dto.Categories)
+                    : string.Empty,
+                GalleryUrlsJson = dto.GalleryUrls?.Count > 0
+                    ? JsonSerializer.Serialize(dto.GalleryUrls)
+                    : string.Empty,
+                LastSyncedAt = DateTime.UtcNow
+            };
+        }
 
         private static POI MapToDto(PoiEntity e) => new()
         {
-            PoiId           = e.PoiId,
-            Latitude        = e.Latitude,
-            Longitude       = e.Longitude,
-            ActivationRadius= e.ActivationRadius,
-            Priority        = e.Priority,
-            IsActive        = e.IsActive,
-            LogoUrl         = e.LogoUrl,           // nullable OK
-            LocalLogoPath   = e.LocalLogoPath,
-            LanguageCode    = e.LanguageCode ?? "vi",
-            Title           = e.Title ?? string.Empty,
-            Description     = e.Description ?? string.Empty,
-            AudioUrl        = e.AudioUrl,           // nullable OK
-            LocalAudioPath  = e.LocalAudioPath,     // nullable OK
-            // Deserialise comma-separated categories stored in SQLite (with fallback)
-            Categories      = SafeDeserializeList(e.CategoriesJson),
-            GalleryUrls     = SafeDeserializeList(e.GalleryUrlsJson),
+            PoiId = e.PoiId,
+            Latitude = e.Latitude,
+            Longitude = e.Longitude,
+            ActivationRadius = e.ActivationRadius,
+            Priority = e.Priority,
+            IsActive = e.IsActive,
+            LogoUrl = e.LogoUrl,
+            LocalLogoPath = e.LocalLogoPath,
+            LanguageCode = e.LanguageCode ?? "vi",
+            Title = e.Title ?? string.Empty,
+            Description = e.Description ?? string.Empty,
+            AudioUrl = e.AudioUrl,
+            LocalAudioPath = e.LocalAudioPath,
+            Categories = SafeDeserializeList(e.CategoriesJson),
+            GalleryUrls = SafeDeserializeList(e.GalleryUrlsJson),
         };
+
+        private void PublishNotice(string message)
+        {
+            var now = DateTime.UtcNow;
+            if ((now - _lastPolicyNoticeUtc) < TimeSpan.FromSeconds(20)) return;
+            _lastPolicyNoticeUtc = now;
+
+            System.Diagnostics.Debug.WriteLine($"[SyncService] Notice: {message}");
+            MainThread.BeginInvokeOnMainThread(() => 
+            {
+                SyncNotice?.Invoke(this, message);
+                CommunityToolkit.Maui.Alerts.Toast.Make(message, CommunityToolkit.Maui.Core.ToastDuration.Long, 14).Show();
+            });
+        }
+
+        private static bool IsWifiConnection()
+        {
+            try
+            {
+                var profiles = Connectivity.Current.ConnectionProfiles;
+                return profiles.Contains(ConnectionProfile.WiFi) ||
+                       profiles.Contains(ConnectionProfile.Ethernet);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private bool CanDownloadAssetsNow()
+        {
+            if (!NetworkHelper.HasInternet()) return false;
+            if (AppSettings.IsCellularDownloadsAllowed()) return true;
+            return IsWifiConnection();
+        }
 
         private static List<string> SafeDeserializeList(string? jsonOrCsv)
         {
@@ -597,14 +697,13 @@ namespace AudioGo.Services
             try
             {
                 if (jsonOrCsv.TrimStart().StartsWith("["))
-                    return System.Text.Json.JsonSerializer.Deserialize<List<string>>(jsonOrCsv) ?? new();
+                    return JsonSerializer.Deserialize<List<string>>(jsonOrCsv) ?? new();
             }
-            catch (Exception ex)
+            catch
             {
-                System.Diagnostics.Debug.WriteLine($"[SyncService] Error deserializing JSON list: {ex.Message}");
+                // fallback to CSV
             }
-            
-            // Fallback for old comma-separated data migration
+
             return jsonOrCsv.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
                             .Select(s => s.Trim())
                             .ToList();

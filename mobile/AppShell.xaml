@@ -13,6 +13,7 @@
     <!-- ── Bottom Tab Bar ── -->
     <TabBar>
         <ShellContent
+            x:Name="TabHome"
             Title="Trang chủ"
             ContentTemplate="{DataTemplate views:MainPage}"
             Route="Home">
@@ -26,6 +27,7 @@
         </ShellContent>
 
         <ShellContent
+            x:Name="TabMap"
             Title="Bản đồ"
             ContentTemplate="{DataTemplate views:MapPage}"
             Route="Map">
@@ -39,6 +41,7 @@
         </ShellContent>
 
         <ShellContent
+            x:Name="TabSearch"
             Title="Khám phá"
             ContentTemplate="{DataTemplate views:SearchPage}"
             Route="Search">
@@ -46,6 +49,20 @@
                 <FontImageSource
                     FontFamily="MaterialIcons"
                     Glyph="&#xe8b6;"
+                    Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource Primary}}"
+                    Size="26" />
+            </ShellContent.Icon>
+        </ShellContent>
+
+        <ShellContent
+            x:Name="TabSettings"
+            Title="Cài đặt"
+            ContentTemplate="{DataTemplate views:SettingsPage}"
+            Route="Settings">
+            <ShellContent.Icon>
+                <FontImageSource
+                    FontFamily="MaterialIcons"
+                    Glyph="&#xe8b8;"
                     Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource Primary}}"
                     Size="26" />
             </ShellContent.Icon>

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:maps="clr-namespace:Microsoft.Maui.Controls.Maps;assembly=Microsoft.Maui.Controls.Maps"
@@ -6,7 +6,7 @@
              x:Name="ThisPage"
              Shell.NavBarIsVisible="False"
              BackgroundColor="{StaticResource Background}"
-             Title="Trang chủ">
+             Title="{Binding HomePageTitle}">
 
     <Grid RowDefinitions="*,Auto">
 
@@ -19,18 +19,9 @@
                       ColumnDefinitions="*,Auto"
                       BackgroundColor="{StaticResource Surface}">
                     <VerticalStackLayout Grid.Column="0" Spacing="2">
-                        <Label Text="Khu phố Vĩnh Khánh" Style="{StaticResource HeadlineLabel}"/>
-                        <Label Text="Quận 4, TP. Hồ Chí Minh" Style="{StaticResource BodyLabel}"/>
+                        <Label Text="{Binding AreaName}" Style="{StaticResource HeadlineLabel}"/>
+                        <Label Text="{Binding AreaSubTitle}" Style="{StaticResource BodyLabel}"/>
                     </VerticalStackLayout>
-                    <!-- Nút thông báo -->
-                    <Border Grid.Column="1"
-                            BackgroundColor="{StaticResource Gray100}"
-                            StrokeShape="RoundRectangle 20"
-                            StrokeThickness="0"
-                            WidthRequest="40" HeightRequest="40"
-                            VerticalOptions="Center">
-                        <Label Text="&#xe7f4;" FontFamily="MaterialIcons" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center"/>
-                    </Border>
                 </Grid>
 
                 <VerticalStackLayout Padding="20,20,20,0" Spacing="24">
@@ -43,11 +34,11 @@
                             <!-- Overlay gradient -->
                             <Grid BackgroundColor="#CC16213E">
                                 <VerticalStackLayout Padding="20" VerticalOptions="End" Spacing="6">
-                                    <Label Text="🎧 Bắt đầu khám phá" FontSize="12"
+                                    <Label Text="{Binding HeroDiscoverLabel}" FontSize="12"
                                            TextColor="#AAAAAA"/>
-                                    <Label Text="Phố Ẩm Thực" FontSize="28"
+                                    <Label Text="{Binding HeroFoodStreetLabel}" FontSize="28"
                                            FontAttributes="Bold" TextColor="White"/>
-                                    <Label Text="Vĩnh Khánh" FontSize="28"
+                                    <Label Text="{Binding HeroVinhKhanhLabel}" FontSize="28"
                                            FontAttributes="Bold" TextColor="{StaticResource Primary}"/>
                                     <Label Style="{StaticResource BodyLabel}"
                                            TextColor="#CCCCCC" FontSize="12"
@@ -67,8 +58,8 @@
                     <!-- ── Điểm nổi bật gần bạn ── -->
                     <VerticalStackLayout Spacing="12">
                         <Grid ColumnDefinitions="*,Auto">
-                            <Label Grid.Column="0" Text="Điểm nổi bật gần bạn" Style="{StaticResource SectionTitle}"/>
-                            <Label Grid.Column="1" Text="Xem tất cả →"
+                            <Label Grid.Column="0" Text="{Binding NearbyTitle}" Style="{StaticResource SectionTitle}"/>
+                            <Label Grid.Column="1" Text="{Binding NearbyViewAll}"
                                    Style="{StaticResource PrimaryLabel}"
                                    VerticalOptions="Center">
                                 <Label.GestureRecognizers>
@@ -83,10 +74,10 @@
                                 Padding="24,20">
                             <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
                                 <Label Text="&#xe0c8;" FontFamily="MaterialIcons" FontSize="40" TextColor="{StaticResource Gray400}" HorizontalOptions="Center"/>
-                                <Label Text="Chưa tìm thấy điểm gần bạn"
+                                <Label Text="{Binding NearbyEmptyTitle}"
                                        Style="{StaticResource SectionTitle}"
                                        HorizontalOptions="Center"/>
-                                <Label Text="Đi dạo quanh phố Vĩnh Khánh để nghe thuyết minh tự động"
+                                <Label Text="{Binding NearbyEmptyDesc}"
                                        Style="{StaticResource BodyLabel}"
                                        HorizontalTextAlignment="Center"/>
                             </VerticalStackLayout>
@@ -188,7 +179,7 @@
                         <HorizontalStackLayout Spacing="4">
                             <Label Text="&#xe310;" FontFamily="MaterialIcons" FontSize="11"
                                    TextColor="{StaticResource Primary}" VerticalOptions="Center"/>
-                            <Label Text="Đang phát" Style="{StaticResource CaptionLabel}"/>
+                            <Label Text="{Binding MiniPlayerNowPlaying}" Style="{StaticResource CaptionLabel}"/>
                         </HorizontalStackLayout>
                     </VerticalStackLayout>
                     <!-- Play/Pause button (dynamic icon) -->
