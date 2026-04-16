@@ -18,6 +18,7 @@ import AddPOIPage from "@/pages/AddPOIPage";
 import AudioPage from "@/pages/AudioPage";
 import ToursPage from "@/pages/ToursPage";
 import TourDetailPage from "@/pages/TourDetailPage";
+import AccessCodePage from "@/pages/AccessCodePage";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 
@@ -204,6 +205,18 @@ export default function App() {
             <ProtectedRoute roles={["Admin"]}>
               <MainLayout>
                 <AccountsPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Access Codes (ADMIN only) */}
+        <Route
+          path="/access-codes"
+          element={
+            <ProtectedRoute roles={["Admin"]}>
+              <MainLayout>
+                <AccessCodePage />
               </MainLayout>
             </ProtectedRoute>
           }

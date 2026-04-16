@@ -7,7 +7,8 @@ import {
   Users,
   Map,
   Headphones,
-  BadgeCheck
+  BadgeCheck,
+  QrCode
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
@@ -42,6 +43,10 @@ export default function Sidebar() {
 
             <MenuItem to="/accounts" icon={<Users size={18} />}>
               Tài khoản
+            </MenuItem>
+
+            <MenuItem to="/access-codes" icon={<QrCode size={18} />}>
+              Mã Truy Cập
             </MenuItem>
             
             <MenuItem to="/categories" icon={<Layers size={18} />}>
