@@ -29,13 +29,37 @@ namespace Server.Repositories
             return await _db.LocationLogs.AsNoTracking()
                 .GroupBy(l => new
                 {
-                    Lat = Math.Round(l.Latitude,  3),
+                    Lat = Math.Round(l.Latitude, 3),
                     Lon = Math.Round(l.Longitude, 3)
                 })
                 .Select(g => new { g.Key.Lat, g.Key.Lon, Count = g.Count() })
                 .OrderByDescending(x => x.Count)
                 .Select(x => ValueTuple.Create(x.Lat, x.Lon, x.Count))
                 .ToListAsync();
+        }
+
+        /// <summary>Lấy tất cả location logs với pagination.</summary>
+        public async Task<(List<LocationLog> data, int totalCount)> GetAllAsync(int page = 1, int pageSize = 10, string? deviceId = null, DateTime? startDate = null, DateTime? endDate = null)
+        {
+            var query = _db.LocationLogs.AsNoTracking();
+
+            if (!string.IsNullOrEmpty(deviceId))
+                query = query.Where(l => l.DeviceId == deviceId);
+
+            if (startDate.HasValue)
+                query = query.Where(l => l.Timestamp >= startDate.Value);
+
+            if (endDate.HasValue)
+                query = query.Where(l => l.Timestamp <= endDate.Value);
+
+            var totalCount = await query.CountAsync();
+            var data = await query
+                .OrderByDescending(l => l.Timestamp)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (data, totalCount);
         }
     }
 }

@@ -525,7 +525,7 @@ export default function POIPage() {
         {/* PAGINATION */}
         <div className="flex justify-between items-center p-4 text-sm text-gray-500">
           <p>
-            Hiển thị {startIndex + 1} - {Math.min(endIndex, totalItems)} của {totalItems} POIs
+            Hiển thị {currentPOIs.length} / {totalItems} POI
           </p>
 
           <div className="flex items-center gap-2">
@@ -697,7 +697,7 @@ export default function POIPage() {
         {/* PAGINATION */}
         <div className="flex justify-between items-center p-4 text-sm text-gray-500">
           <p>
-            Hiển thị {requestsStartIndex + 1} - {Math.min(requestsEndIndex, poiRequests.length)} của {poiRequests.length} Requests
+            Hiển thị {currentRequests.length} / {poiRequests.length} yêu cầu
           </p>
 
           <div className="flex items-center gap-2">

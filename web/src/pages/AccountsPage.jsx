@@ -270,7 +270,7 @@ export default function AccountsPage() {
         {/* PAGINATION */}
         <div className="flex justify-between px-8 py-4 text-sm text-gray-500 items-center">
           <p>
-            {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, users.length)} / {users.length}
+            Hiển thị {paginatedUsers.length} / {users.length} tài khoản
           </p>
 
           <div className="flex gap-2">
