@@ -16,6 +16,9 @@ namespace Shared.DTOs
         string   Title,
         string   Description,
 
+        // ── Audio URL — đã upload lên Blob Storage ────────────────────────
+        string?  AudioUrl,
+
         // ── Danh mục — bảng CategoryPoi ─────────────────────────────────
         List<string> CategoryIds,
 
@@ -45,11 +48,13 @@ namespace Shared.DTOs
     public record PoiRequestListDto(
         string   RequestId,
         string?  PoiId,
+        
         string   AccountId,
         string   ActionType,
         string   Status,
         DateTime CreatedAt,
-        string?  RejectReason
+        string?  RejectReason,
+        string?  ProposedData
     );
 
     /// <summary>Chi tiết 1 yêu cầu (dùng trên màn hình Diff của Admin).</summary>

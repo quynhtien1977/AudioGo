@@ -169,7 +169,8 @@ namespace Server.Controllers.Cms
                 ActionType: pr.ActionType,
                 Status: pr.Status,
                 CreatedAt: pr.CreatedAt,
-                RejectReason: pr.RejectReason
+                RejectReason: pr.RejectReason,
+                ProposedData: pr.ProposedData
             )).ToList();
 
             return Ok(result);
@@ -263,7 +264,8 @@ namespace Server.Controllers.Cms
                 pr.ActionType,
                 pr.Status,
                 pr.CreatedAt,
-                pr.RejectReason
+                pr.RejectReason,
+                pr.ProposedData
             )).ToList();
 
             return Ok(result);

@@ -2,11 +2,12 @@ import apiClient from "./apiClient"
 
 // Upload ảnh lên Azure Blob Storage
 // Trả về URL thật của ảnh trên Azure
-export const uploadImage = async (file) => {
+export const uploadImage = async (file, folder = "") => {
   const form = new FormData()
   form.append("file", file)
 
-  const res = await apiClient.post("/cms/upload/image", form, {
+  const url = folder ? `/cms/upload/image?folder=${encodeURIComponent(folder)}` : `/cms/upload/image`
+  const res = await apiClient.post(url, form, {
     headers: { "Content-Type": "multipart/form-data" },
   })
 

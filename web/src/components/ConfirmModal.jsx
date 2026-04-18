@@ -8,7 +8,8 @@ const ConfirmModal = ({
   confirmText = "Xác nhận",
   cancelText = "Hủy",
   onConfirm,
-  onCancel
+  onCancel,
+  isLoading = false
 }) => {
   if (!open) return null
 
@@ -20,7 +21,7 @@ const ConfirmModal = ({
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-bold text-gray-800">{title}</h2>
-          { onCancel && (
+          { onCancel && !isLoading && (
             <button onClick={onCancel}>
                 <X className="w-5 h-5 text-gray-400 hover:text-gray-600" />
             </button>
@@ -36,10 +37,11 @@ const ConfirmModal = ({
         {/* Actions */}
         <div className="flex justify-end gap-3">
 
-            { onCancel && (
+            { onCancel && !isLoading && (
                 <button
                     onClick={onCancel}
-                    className="px-4 py-2 rounded-lg border hover:bg-gray-100"
+                    className="px-4 py-2 rounded-lg border hover:bg-gray-100 disabled:opacity-50"
+                    disabled={isLoading}
                 >
                     {cancelText}
                 </button>
@@ -48,9 +50,10 @@ const ConfirmModal = ({
 
           <button
             onClick={onConfirm}
-            className="px-4 py-2 rounded-lg bg-pink-500 text-white hover:bg-pink-600"
+            disabled={isLoading}
+            className="px-4 py-2 rounded-lg bg-pink-500 text-white hover:bg-pink-600 disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            {confirmText}
+            {isLoading ? "Đang xử lý..." : confirmText}
           </button>
         </div>
 
