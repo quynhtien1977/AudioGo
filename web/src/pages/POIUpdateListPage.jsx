@@ -137,7 +137,7 @@ export default function POIUpdateListPage() {
       } catch (err) {
         console.error("UPDATE PAGE ERROR:", err)
       } finally {
-        setLoading(false)
+    setLoading(false)
       }
     }
 
@@ -215,50 +215,50 @@ export default function POIUpdateListPage() {
 
   return (
     <>
-      <POIManagementListComponent
-        title="POI Cần Cập Nhật"
-        description="Xem xét yêu cầu sửa đổi và cải thiện dữ liệu"
-        type="update"
-        badgeColor="bg-amber-100"
-        badgeTextColor="text-amber-700"
-        hoverBg="hover:bg-amber-50/30"
-        poiList={poiList}
-        loading={loading}
-        statsLabel="chờ xử lý"
-        emptyMessage="Không có POI nào cần cập nhật"
-        renderExtraInfo={(poi) => (
-          <div className="bg-amber-50 px-3 py-1 inline-block rounded-full text-sm font-semibold text-amber-700">
-            📝 {poi.changeCount} thay đổi
-          </div>
-        )}
-        renderActions={(poi) => (
-          <>
-            <button
-              onClick={() => handleReview(poi.id)}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition font-semibold"
-            >
-              <Edit2 size={18} />
-              Xem xét
-            </button>
+    <POIManagementListComponent
+      title="POI Cần Cập Nhật"
+      description="Xem xét yêu cầu sửa đổi và cải thiện dữ liệu"
+      type="update"
+      badgeColor="bg-amber-100"
+      badgeTextColor="text-amber-700"
+      hoverBg="hover:bg-amber-50/30"
+      poiList={poiList}
+      loading={loading}
+      statsLabel="chờ xử lý"
+      emptyMessage="Không có POI nào cần cập nhật"
+      renderExtraInfo={(poi) => (
+        <div className="bg-amber-50 px-3 py-1 inline-block rounded-full text-sm font-semibold text-amber-700">
+          📝 {poi.changeCount} thay đổi
+        </div>
+      )}
+      renderActions={(poi) => (
+        <>
+          <button
+            onClick={() => handleReview(poi.id)}
+            className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition font-semibold"
+          >
+            <Edit2 size={18} />
+            Xem xét
+          </button>
 
-            <button
-              onClick={() => handleApprove(poi.id)}
-              className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition font-semibold"
-            >
-              <CheckCircle size={18} />
-              Chấp nhận
-            </button>
+          <button
+            onClick={() => handleApprove(poi.id)}
+            className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition font-semibold"
+          >
+            <CheckCircle size={18} />
+            Chấp nhận
+          </button>
 
-            <button
-              onClick={() => handleReject(poi.id)}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition font-semibold"
-            >
-              <XCircle size={18} />
-              Từ chối
-            </button>
-          </>
-        )}
-      />
+          <button
+            onClick={() => handleReject(poi.id)}
+            className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition font-semibold"
+          >
+            <XCircle size={18} />
+            Từ chối
+          </button>
+        </>
+      )}
+    />
 
       {showApproveModal && (
         <ConfirmModal

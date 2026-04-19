@@ -77,7 +77,7 @@ export default function POIUpdateDetailPage() {
             : request.proposedData
         }
         console.log("Proposed Data:", proposedData)
-        
+
         // Format old POI data (from database)
         const oldPoiFormatted = {
           id: poiDetail.poiId,
@@ -135,7 +135,7 @@ export default function POIUpdateDetailPage() {
       
       setShowApproveModal(false)
       alert("Cập nhật đã được phê duyệt")
-      navigate("/poi/management/updates")
+    navigate("/poi/management/updates")
     } catch (err) {
       console.error("Approve error:", err)
       alert("Lỗi khi phê duyệt: " + err.message)
@@ -156,8 +156,8 @@ export default function POIUpdateDetailPage() {
       
       setShowRejectModal(false)
       setRejectReason("")
-      alert("Cập nhật đã bị từ chối")
-      navigate("/poi/management/updates")
+    alert("Cập nhật đã bị từ chối")
+    navigate("/poi/management/updates")
     } catch (err) {
       console.error("Reject error:", err)
       alert("Lỗi khi từ chối: " + err.message)
@@ -172,7 +172,7 @@ export default function POIUpdateDetailPage() {
       })
       
       alert("Yêu cầu sửa lại đã được gửi")
-      navigate("/poi/management/updates")
+    navigate("/poi/management/updates")
     } catch (err) {
       console.error("Request changes error:", err)
       alert("Lỗi: " + err.message)

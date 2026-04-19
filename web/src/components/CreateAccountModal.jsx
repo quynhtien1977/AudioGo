@@ -16,6 +16,7 @@
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  // ✅ FIX: password = username + phone
   const generatePassword = (username, phone) => {
     if (!username || !phone) return "";
     return `${username}${phone}`;
@@ -25,6 +26,7 @@
     setForm((prev) => {
       const updatedForm = { ...prev, [key]: value };
 
+      // ✅ FIX logic generate password
       if (key === "username" || key === "phone") {
         updatedForm.password = generatePassword(
           updatedForm.username,
@@ -45,6 +47,7 @@
     try {
       setLoading(true);
 
+      // ✅ FIX: mapping đúng DTO backend
       const payload = {
         username: form.username,
         password: form.password,

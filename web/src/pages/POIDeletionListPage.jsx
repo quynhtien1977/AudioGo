@@ -10,7 +10,7 @@ import { getPoiDetail } from "@/api/poiApi"
 export default function POIDeletionListPage() {
   const [poiList, setPoiList] = useState([])
   const [loading, setLoading] = useState(false)
-  
+
   // Modal states
   const [showApproveModal, setShowApproveModal] = useState(false)
   const [showRejectModal, setShowRejectModal] = useState(false)
@@ -86,7 +86,7 @@ export default function POIDeletionListPage() {
       } catch (err) {
         console.error("DELETE PAGE ERROR:", err)
       } finally {
-        setLoading(false)
+    setLoading(false)
       }
     }
 
@@ -160,37 +160,37 @@ export default function POIDeletionListPage() {
 
   return (
     <>
-      <POIManagementListComponent
-        title="POI Cần Xóa"
+    <POIManagementListComponent
+      title="POI Cần Xóa"
         description="Xử lý yêu cầu loại bỏ các điểm tham quan"
-        type="deletion"
-        badgeColor="bg-red-100"
-        badgeTextColor="text-red-700"
-        hoverBg="hover:bg-red-50/30"
-        poiList={poiList}
-        loading={loading}
-        statsLabel="chờ xử lý"
-        emptyMessage="Không có POI nào cần xóa"
+      type="deletion"
+      badgeColor="bg-red-100"
+      badgeTextColor="text-red-700"
+      hoverBg="hover:bg-red-50/30"
+      poiList={poiList}
+      loading={loading}
+      statsLabel="chờ xử lý"
+      emptyMessage="Không có POI nào cần xóa"
 
-        renderActions={(poi) => (
-          <>
-            <button
-              onClick={() => handleApprove(poi.id)}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition font-semibold"
-            >
-              <Trash2 size={18} />
-              Xóa
-            </button>
+      renderActions={(poi) => (
+        <>
+          <button
+            onClick={() => handleApprove(poi.id)}
+            className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition font-semibold"
+          >
+            <Trash2 size={18} />
+            Xóa
+          </button>
 
-            <button
-              onClick={() => handleReject(poi.id)}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition font-semibold"
-            >
-              <XCircle size={18} />
-              Từ chối
-            </button>
-          </>
-        )}
+          <button
+            onClick={() => handleReject(poi.id)}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition font-semibold"
+          >
+            <XCircle size={18} />
+            Từ chối
+          </button>
+        </>
+      )}
 
         warningNote="⚠️ Hành động xóa không thể hoàn tác. Kiểm tra kỹ trước khi duyệt."
       />

@@ -1,4 +1,5 @@
-import { ArrowLeft, ChartBarStacked, Calendar1, User } from "lucide-react"
+import { ArrowLeft, ChartBarStacked, Calendar1, User, ChevronLeft, ChevronRight } from "lucide-react"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 // Helper function để sort POI list theo status
@@ -59,6 +60,20 @@ export default function POIManagementListComponent({
   // Count pending items
   const pendingCount = sortedPoiList.filter(poi => poi.status === "pending").length
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 4
+  const totalPages = Math.ceil(sortedPoiList.length / itemsPerPage)
+  
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const currentItems = sortedPoiList.slice(startIndex, startIndex + itemsPerPage)
+
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page)
+    }
+  }
+
   return (
     <div className="p-6">
       {/* HEADER */}
@@ -101,8 +116,8 @@ export default function POIManagementListComponent({
             {emptyMessage}
           </div>
         ) : (
-          <div className="divide-y">
-            {sortedPoiList.map((poi) => (
+          <div className="divide-y relative">
+            {currentItems.map((poi) => (
               <div
                 key={poi.id}
                 className={`p-6 ${hoverBg} transition ${
@@ -149,6 +164,54 @@ export default function POIManagementListComponent({
                 </div>
               </div>
             ))}
+            
+            {/* PAGINATION */}
+            {totalPages > 0 && (
+              <div className="flex justify-between items-center px-6 py-4 text-sm text-gray-500 bg-gray-50/50 border-t">
+                <p>
+                  Hiển thị trang <span className="font-bold text-gray-800">{currentPage}</span> / <span className="font-bold">{totalPages}</span>
+                </p>
+
+                <div className="flex gap-1 items-center">
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => goToPage(currentPage - 1)}
+                    className={`p-2 rounded-full ${currentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(i => i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1))
+                    .reduce((acc, curr, idx, arr) => {
+                      if (idx > 0 && curr - arr[idx - 1] > 1) acc.push('...');
+                      acc.push(curr);
+                      return acc;
+                    }, [])
+                    .map((p, idx) => (
+                      p === '...' ? (
+                        <span key={`dots-${idx}`} className="px-2 text-gray-400">...</span>
+                      ) : (
+                        <button
+                          key={p}
+                          onClick={() => goToPage(p)}
+                          className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === p ? "bg-pink-500 text-white shadow-sm" : "hover:bg-pink-50 hover:text-pink-600"}`}
+                        >
+                          {p}
+                        </button>
+                      )
+                    ))}
+
+                  <button
+                    disabled={currentPage === totalPages}
+                    onClick={() => goToPage(currentPage + 1)}
+                    className={`p-2 rounded-full ${currentPage === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

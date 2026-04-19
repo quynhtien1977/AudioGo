@@ -88,9 +88,13 @@ const POIDetailPage = () => {
             lng: Number(data.Longitude) || 0,
             priority: Number(data.Priority) || 1,
 
-            images: data.GalleryImageUrls?.length
-              ? data.GalleryImageUrls
-              : ["https://placehold.co/600x400?text=POI"],
+            images: (() => {
+              let urls = data.GalleryImageUrls || []
+              if (data.LogoUrl) {
+                urls = [data.LogoUrl, ...urls.filter(u => u !== data.LogoUrl)]
+              }
+              return urls.length ? urls : ["https://placehold.co/600x400?text=POI"]
+            })(),
 
             ActivityRadius: Number(data.ActivationRadius) || 100,
           }
@@ -118,9 +122,13 @@ const POIDetailPage = () => {
             lng: poiDetail.longitude,
             priority: Number(poiDetail.priority) || 1,
 
-            images: poiDetail.gallery?.length
-              ? poiDetail.gallery.map(g => g.imageUrl)
-              : ["https://placehold.co/600x400?text=POI"],
+            images: (() => {
+              let urls = poiDetail.gallery?.map(g => g.imageUrl) || []
+              if (poiDetail.logoUrl) {
+                urls = [poiDetail.logoUrl, ...urls.filter(u => u !== poiDetail.logoUrl)]
+              }
+              return urls.length ? urls : ["https://placehold.co/600x400?text=POI"]
+            })(),
 
             ActivityRadius: poiDetail.activationRadius ?? 100,
           }
@@ -157,12 +165,12 @@ const POIDetailPage = () => {
         return
       }
 
-      // map name → id
+      // 🔥 map name → id
       const selectedCategory = categories.find(
         c => c.name === form.category
       )
 
-      const poiId = form.poiId || id  // Ưu tiên form.poiId (từ PoiRequest), fallback về id (từ URL)
+      const poiId = form.poiId || id  // ✅ Ưu tiên form.poiId (từ PoiRequest), fallback về id (từ URL)
 
       const payload = {
         ActionType: "UPDATE",

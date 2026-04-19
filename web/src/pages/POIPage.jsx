@@ -77,22 +77,10 @@ export default function POIPage() {
 
         if (!isMounted) return
 
-        // Fetch content for each POI with error handling
-        const contentsList = await Promise.allSettled(
-          filteredPOIs.map(p => getContentsByPOI(p.poiId))
-        )
-
-        if (!isMounted) return
-
-        // Map data with content
-        const mapped = filteredPOIs.map((p, index) => {
-          const contentResult = contentsList[index]
-          const contents = contentResult?.status === 'fulfilled' 
-            ? (contentResult.value || [])
-            : []
-          const masterContent =
-            contents.find(c => c.isMaster) || contents[0]
-          const title = masterContent?.title || "No name"
+        // Map data directly from POI list
+        const mapped = filteredPOIs.map((p) => {
+          // Name from DTO
+          const title = p.name || p.title || "No name"
 
           // Extract category
           let categoryName = "Unknown"
@@ -107,6 +95,9 @@ export default function POIPage() {
             categoryName = p.category?.name || p.category || "Unknown"
           }
 
+          // Thumbnail
+          const thumbnailUrl = p.logoUrl || null
+
           return {
             rank: p.poiId,
             name: title,
@@ -114,7 +105,10 @@ export default function POIPage() {
             lng: p.longitude,
             category: categoryName,
             priority: Number(p.priority),
-            isActive: p.isActive
+            isActive: p.isActive,
+            thumbnailUrl,
+            createdAt: p.createdAt,
+            updatedAt: p.updatedAt
           }
         })
 
@@ -433,10 +427,12 @@ export default function POIPage() {
           
           <thead className="bg-gray-50 text-gray-400">
             <tr>
+              <th className="p-4 text-left w-12">LOGO</th>
               <th className="p-4 text-left">TÊN</th>
               <th className="p-4 text-left">THỂ LOẠI</th>
               <th className="p-4 text-left">VỊ TRÍ</th>
               <th className="p-4 text-left">ĐỘ ƯU TIÊN</th>
+              <th className="p-4 text-left">NGÀY TẠO / CẬP NHẬT</th>
               <th className="p-4 text-left">THAO TÁC</th>
             </tr>
           </thead>
@@ -449,6 +445,21 @@ export default function POIPage() {
                       ? "opacity-40 grayscale bg-gray-50" 
                       : "hover:bg-gray-50"
                   }`}>
+
+                {/* THUMBNAIL */}
+                <td className="p-4">
+                  {poi.thumbnailUrl ? (
+                    <img
+                      src={poi.thumbnailUrl}
+                      alt={poi.name}
+                      className="w-10 h-10 rounded-xl object-cover border border-pink-100 shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-xl bg-pink-100 flex items-center justify-center text-pink-300 font-bold text-sm border border-pink-200">
+                      {poi.name?.charAt(0)?.toUpperCase() || "?"}
+                    </div>
+                  )}
+                </td>
 
                 <td className="p-4">
                   <p className="font-semibold">{poi.name}</p>
@@ -483,6 +494,27 @@ export default function POIPage() {
                       {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'][poi.priority - 1]}
                     </span>
                   )}
+                </td>
+
+                <td className="p-4">
+                  <div className="flex flex-col text-xs text-gray-500 gap-1">
+                    <span>
+                      <strong className="text-gray-700">Tạo:</strong>{" "}
+                      {poi.createdAt ? new Date(poi.createdAt).toLocaleDateString("vi-VN", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric"
+                      }) : "N/A"}
+                    </span>
+                    <span>
+                      <strong className="text-gray-700">Cập nhật:</strong>{" "}
+                      {poi.updatedAt ? new Date(poi.updatedAt).toLocaleDateString("vi-VN", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric"
+                      }) : "N/A"}
+                    </span>
+                  </div>
                 </td>
 
                 <td className="p-4">  
@@ -523,44 +555,52 @@ export default function POIPage() {
         </table>
 
         {/* PAGINATION */}
-        <div className="flex justify-between items-center p-4 text-sm text-gray-500">
-          <p>
-            Hiển thị {startIndex + 1} - {Math.min(endIndex, totalItems)} của {totalItems} POIs
-          </p>
+        {totalPages > 0 && (
+          <div className="flex justify-between items-center px-6 py-4 text-sm text-gray-500 bg-gray-50/50">
+            <p>
+              Hiển thị trang <span className="font-bold text-gray-800">{currentPage}</span> / <span className="font-bold">{totalPages}</span>
+            </p>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => goToPage(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="p-2 border rounded-lg hover:bg-pink-500 hover:text-white disabled:opacity-50"
-            >
-              <ChevronLeft size={14} />
-            </button>
-
-            {[...Array(totalPages)].map((_, i) => (
+            <div className="flex gap-1 items-center">
               <button
-                key={i}
-                onClick={() => goToPage(i + 1)}
-                className={`px-3 py-1 rounded-lg ${
-                  currentPage === i + 1
-                    ? "bg-pink-500 text-white"
-                    : "border hover:bg-pink-500 hover:text-white"
-                }`}
+                disabled={currentPage === 1}
+                onClick={() => goToPage(currentPage - 1)}
+                className={`p-2 rounded-full ${currentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
               >
-                {i + 1}
+                <ChevronLeft size={16} />
               </button>
-            ))}
 
-            <button
-              onClick={() => goToPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="p-2 border rounded-lg hover:bg-pink-500 hover:text-white disabled:opacity-50"
-            >
-              <ChevronRight size={14} />
-            </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(i => i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1))
+                .reduce((acc, curr, idx, arr) => {
+                  if (idx > 0 && curr - arr[idx - 1] > 1) acc.push('...');
+                  acc.push(curr);
+                  return acc;
+                }, [])
+                .map((p, idx) => (
+                  p === '...' ? (
+                    <span key={`dots-${idx}`} className="px-2 text-gray-400">...</span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => goToPage(p)}
+                      className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === p ? "bg-pink-500 text-white shadow-sm" : "hover:bg-pink-50 hover:text-pink-600"}`}
+                    >
+                      {p}
+                    </button>
+                  )
+                ))}
+
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => goToPage(currentPage + 1)}
+                className={`p-2 rounded-full ${currentPage === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
           </div>
-
-        </div>
+        )}
 
       </div>
       
@@ -695,44 +735,52 @@ export default function POIPage() {
           </tbody>
         </table>
         {/* PAGINATION */}
-        <div className="flex justify-between items-center p-4 text-sm text-gray-500">
-          <p>
-            Hiển thị {requestsStartIndex + 1} - {Math.min(requestsEndIndex, poiRequests.length)} của {poiRequests.length} Requests
-          </p>
+        {requestsTotalPages > 0 && (
+          <div className="flex justify-between items-center px-6 py-4 text-sm text-gray-500 bg-gray-50/50">
+            <p>
+              Hiển thị trang <span className="font-bold text-gray-800">{requestsCurrentPage}</span> / <span className="font-bold">{requestsTotalPages}</span>
+            </p>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => goToRequestsPage(requestsCurrentPage - 1)}
-              disabled={requestsCurrentPage === 1}
-              className="p-2 border rounded-lg hover:bg-pink-500 hover:text-white disabled:opacity-50"
-            >
-              <ChevronLeft size={14} />
-            </button>
-
-            {[...Array(requestsTotalPages)].map((_, i) => (
+            <div className="flex gap-1 items-center">
               <button
-                key={i}
-                onClick={() => goToRequestsPage(i + 1)}
-                className={`px-3 py-1 rounded-lg ${
-                  requestsCurrentPage === i + 1
-                    ? "bg-pink-500 text-white"
-                    : "border hover:bg-pink-500 hover:text-white"
-                }`}
+                disabled={requestsCurrentPage === 1}
+                onClick={() => goToRequestsPage(requestsCurrentPage - 1)}
+                className={`p-2 rounded-full ${requestsCurrentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
               >
-                {i + 1}
+                <ChevronLeft size={16} />
               </button>
-            ))}
 
-            <button
-              onClick={() => goToRequestsPage(requestsCurrentPage + 1)}
-              disabled={requestsCurrentPage === requestsTotalPages}
-              className="p-2 border rounded-lg hover:bg-pink-500 hover:text-white disabled:opacity-50"
-            >
-              <ChevronRight size={14} />
-            </button>
+              {Array.from({ length: requestsTotalPages }, (_, i) => i + 1)
+                .filter(i => i === 1 || i === requestsTotalPages || (i >= requestsCurrentPage - 1 && i <= requestsCurrentPage + 1))
+                .reduce((acc, curr, idx, arr) => {
+                  if (idx > 0 && curr - arr[idx - 1] > 1) acc.push('...');
+                  acc.push(curr);
+                  return acc;
+                }, [])
+                .map((p, idx) => (
+                  p === '...' ? (
+                    <span key={`requests-dots-${idx}`} className="px-2 text-gray-400">...</span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => goToRequestsPage(p)}
+                      className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${requestsCurrentPage === p ? "bg-pink-500 text-white shadow-sm" : "hover:bg-pink-50 hover:text-pink-600"}`}
+                    >
+                      {p}
+                    </button>
+                  )
+                ))}
+
+              <button
+                disabled={requestsCurrentPage === requestsTotalPages}
+                onClick={() => goToRequestsPage(requestsCurrentPage + 1)}
+                className={`p-2 rounded-full ${requestsCurrentPage === requestsTotalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
           </div>
-
-        </div>
+        )}
       </div>)}
 
       <div className="flex justify-end items-center mb-6">
@@ -754,7 +802,7 @@ export default function POIPage() {
       {/* MAP */}
       <div className="bg-white p-6 rounded-2xl border">
         <h2 className="font-semibold mb-4">Bản đồ vị trí POI</h2>
-        <POIMap pois={pois} />
+        <POIMap pois={pois.filter(p => p.isActive)} />
       </div>
 
       {/* Modal Pop-up */}
