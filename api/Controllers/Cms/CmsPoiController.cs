@@ -294,6 +294,37 @@ namespace Server.Controllers.Cms
             });
         }
 
+        /// <summary>Admin phê duyệt hoặc từ chối POI request</summary>
+        [HttpPut("requests/{requestId}/review")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ReviewPoiRequest(string requestId, [FromBody] ReviewPoiRequestDto reviewData)
+        {
+            var request = await _db.PoiRequests.FirstOrDefaultAsync(r => r.RequestId == requestId);
+            if (request is null) return NotFound("Request not found");
+
+            if (reviewData.Approved)
+            {
+                request.Status = "APPROVED";
+                request.RejectReason = null;
+            }
+            else
+            {
+                request.Status = "REJECTED";
+                request.RejectReason = reviewData.RejectReason;
+            }
+
+            request.UpdatedAt = DateTime.UtcNow;
+            _db.PoiRequests.Update(request);
+            await _db.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = reviewData.Approved ? "Request approved successfully" : "Request rejected successfully",
+                requestId = request.RequestId,
+                status = request.Status
+            });
+        }
+
         [HttpPost]
         public async Task<ActionResult<Poi>> Create([FromBody] PoiCreateRequest req)
         {

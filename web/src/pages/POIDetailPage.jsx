@@ -212,8 +212,25 @@ const POIDetailPage = () => {
     switch (category) {
       case "Di tích lịch sử":
         return "bg-blue-100 text-blue-500"
+
       case "Ẩm thực":
         return "bg-pink-100 text-pink-500"
+
+      case "Hải sản & Ốc":
+        return "bg-cyan-100 text-cyan-500"
+
+      case "Cà phê & Giải khát":
+        return "bg-orange-100 text-orange-500"
+
+      case "Chùa & Tôn giáo":
+        return "bg-purple-100 text-purple-500"
+
+      case "Giải trí":
+        return "bg-green-100 text-green-500"
+
+      case "Mua sắm":
+        return "bg-yellow-100 text-yellow-600"
+
       default:
         return "bg-gray-100 text-gray-500"
     }

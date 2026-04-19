@@ -1,78 +1,174 @@
 import { useEffect, useState } from "react"
 import { CheckCircle, XCircle, Edit2 } from "lucide-react"
+import { useNavigate } from "react-router-dom"
+
 import POIManagementListComponent from "@/components/POIManagementListComponent"
+import ConfirmModal from "@/components/ConfirmModal"
+import { getAllPoiRequests, getAllPoiRequestsAll, reviewPoiRequest } from "@/api/poiRequestApi"
+import { getUsersApi } from "@/api/accountApi"
+import { getCategoriesApi } from "@/api/categoryApi"
 
 export default function POINewListPage() {
+  const navigate = useNavigate()
+
   const [poiList, setPoiList] = useState([])
   const [loading, setLoading] = useState(false)
 
+  // Modal states
+  const [showApproveModal, setShowApproveModal] = useState(false)
+  const [showRejectModal, setShowRejectModal] = useState(false)
+  const [selectedPoiId, setSelectedPoiId] = useState(null)
+  const [rejectReason, setRejectReason] = useState("")
+
   useEffect(() => {
-    // TODO: Fetch danh sách POI mới từ API
-    // const fetchNewPOIs = async () => {
-    //   try {
-    //     setLoading(true)
-    //     const res = await getNewPoiListApi()
-    //     setPoiList(res)
-    //   } catch (err) {
-    //     console.error("Load new POI list error:", err)
-    //   } finally {
-    //     setLoading(false)
-    //   }
-    // }
-    // fetchNewPOIs()
+    const fetchData = async () => {
+      try {
+        setLoading(true)
 
-    // Mock data
-    setPoiList([
-      {
-        id: 1,
-        name: "Nhà hàng Hoa Anh Đào",
-        category: "Ẩm thực",
-        createdAt: "2024-04-10",
-        status: "pending",
-        requester: "Manager Hà Nội",
-        
-      },
-      {
-        id: 2,
-        name: "Bảo tàng Lịch sử Thành phố",
-        category: "Du lịch",
-        createdAt: "2024-04-09",
-        status: "pending",
-        requester: "Manager Hà Nội",
+        const [requests, users, categories] = await Promise.all([
+          getAllPoiRequestsAll(),
+          getUsersApi(),
+          getCategoriesApi()
+        ])
 
-      },
-      {
-        id: 3,
-        name: "Công viên Tây Hồ",
-        category: "Giải trí",
-        createdAt: "2024-04-08",
-        status: "pending",
-        requester: "Manager Hà Nội",
+        // ================= MAP USER =================
+        const userMap = {}
+        users.forEach(u => {
+          userMap[u.accountId] = u.fullName
+        })
 
-      },
-    ])
+        // ================= MAP CATEGORY =================
+        const categoryMap = {}
+        categories.forEach(c => {
+          categoryMap[c.categoryId] = c.name
+        })
+
+        // ================= MAP DATA =================
+        const mapped = requests
+          .filter(r => r.actionType === "CREATE")
+          .sort((a, b) => {
+            // PENDING trước, APPROVED/REJECTED sau
+            if (a.status === "PENDING" && b.status !== "PENDING") return -1
+            if (a.status !== "PENDING" && b.status === "PENDING") return 1
+            return 0
+          })
+          .map(r => {
+            let data = {}
+
+            try {
+              data = JSON.parse(r.proposedData)
+            } catch {
+              console.log("❌ Parse lỗi:", r.proposedData)
+            }
+
+            // 🔥 FIX CASE (QUAN TRỌNG NHẤT)
+            const title = data.Title || data.title
+            const categoryIds = data.CategoryIds || data.categoryIds
+
+            return {
+              id: r.requestId,
+
+              name: title || "Không có tên",
+
+              category:
+                categoryIds && categoryIds.length > 0
+                  ? categoryMap[categoryIds[0]] || "Không xác định"
+                  : "Không xác định",
+
+              createdAt: r.createdAt,
+              requestedAt: r.createdAt,
+
+              requester:
+                userMap[r.accountId] || "Không xác định",
+
+              status: r.status === "PENDING" ? "pending" : r.status.toLowerCase(),
+            }
+          })
+
+        console.log("✅ FINAL DATA:", mapped)
+
+        setPoiList(mapped)
+      } catch (err) {
+        console.error("❌ Load POI ERROR:", err)
+      } finally {
     setLoading(false)
+      }
+    }
+
+    fetchData()
   }, [])
 
   const handleReview = (id) => {
-    navigate("/pois/" + id)
+    navigate(`/pois/requests/${id}`)
   }
 
   const handleApprove = (id) => {
-    // TODO: Gọi API phê duyệt
-    setPoiList(poiList.map(poi => 
-      poi.id === id ? { ...poi, status: "approved" } : poi
-    ))
+    setSelectedPoiId(id)
+    setShowApproveModal(true)
+  }
+
+  const handleConfirmApprove = async () => {
+    try {
+      await reviewPoiRequest(selectedPoiId, { status: "APPROVED" })
+      setPoiList(prev =>
+        prev
+          .map(p =>
+            p.id === selectedPoiId
+              ? { ...p, status: "approved" }
+              : p
+          )
+          .sort((a, b) => {
+            // PENDING trước, APPROVED/REJECTED sau
+            if (a.status === "pending" && b.status !== "pending") return -1
+            if (a.status !== "pending" && b.status === "pending") return 1
+            return 0
+          })
+      )
+      setShowApproveModal(false)
+      setSelectedPoiId(null)
+    } catch (err) {
+      console.error("Approve error:", err)
+      alert("Phê duyệt thất bại")
+    }
   }
 
   const handleReject = (id) => {
-    // TODO: Gọi API từ chối
-    setPoiList(poiList.map(poi => 
-      poi.id === id ? { ...poi, status: "rejected" } : poi
-    ))
+    setSelectedPoiId(id)
+    setRejectReason("")
+    setShowRejectModal(true)
+  }
+
+  const handleConfirmReject = async () => {
+    try {
+      await reviewPoiRequest(selectedPoiId, { 
+        status: "REJECTED",
+        rejectReason: rejectReason 
+      })
+      setPoiList(prev =>
+        prev
+          .map(p =>
+            p.id === selectedPoiId
+              ? { ...p, status: "rejected" }
+              : p
+          )
+          .sort((a, b) => {
+            // PENDING trước, APPROVED/REJECTED sau
+            if (a.status === "pending" && b.status !== "pending") return -1
+            if (a.status !== "pending" && b.status === "pending") return 1
+            return 0
+          })
+      )
+      setShowRejectModal(false)
+      setSelectedPoiId(null)
+      setRejectReason("")
+    } catch (err) {
+      console.error("Reject error:", err)
+      alert("Từ chối thất bại")
+    }
   }
 
   return (
+    <>
     <POIManagementListComponent
       title="POI Mới Tạo"
       description="Xem và phê duyệt các địa điểm được thêm gần đây"
@@ -93,6 +189,7 @@ export default function POINewListPage() {
             <Edit2 size={18} />
             Xem chi tiết
           </button>
+
           <button
             onClick={() => handleApprove(poi.id)}
             className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition font-semibold"
@@ -100,6 +197,7 @@ export default function POINewListPage() {
             <CheckCircle size={18} />
             Chấp nhận
           </button>
+
           <button
             onClick={() => handleReject(poi.id)}
             className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition font-semibold"
@@ -110,5 +208,40 @@ export default function POINewListPage() {
         </>
       )}
     />
+
+      {showApproveModal && (
+        <ConfirmModal
+          open={showApproveModal}
+          title="Xác nhận phê duyệt?"
+          message="Bạn có chắc chắn muốn phê duyệt POI mới này không?"
+          confirmText="Phê duyệt"
+          cancelText="Hủy bỏ"
+          onConfirm={handleConfirmApprove}
+          onCancel={() => setShowApproveModal(false)}
+        />
+      )}
+
+      {showRejectModal && (
+        <ConfirmModal
+          open={showRejectModal}
+          title="Xác nhận từ chối?"
+          message={
+            <div>
+              <p>Bạn có chắc chắn muốn từ chối POI mới này không?</p>
+              <textarea
+                className="w-full mt-2 p-2 border rounded"
+                placeholder="Nhập lý do từ chối..."
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+              />
+            </div>
+          }
+          confirmText="Từ chối"
+          cancelText="Hủy bỏ"
+          onConfirm={handleConfirmReject}
+          onCancel={() => setShowRejectModal(false)}
+        />
+      )}
+    </>
   )
 }
