@@ -96,8 +96,9 @@ export default function POIUpdateListPage() {
               address: poiDetail?.contents?.find(c => c.isMaster)?.address || "",
               priority: poiDetail?.priority || 2,
               language: poiDetail?.contents?.map(c => c.language).join(", ") || "",
-              audio: poiDetail?.contents?.find(c => c.isMaster)?.audioFileName || "",
-              images: poiDetail?.gallery?.map(g => g.imageFileName).join(",") || "",
+              // Bug #4: dùng audioUrl và imageUrl (Azure URL)
+              audio: poiDetail?.contents?.find(c => c.isMaster)?.audioUrl?.trim() || "",
+              images: poiDetail?.gallery?.map(g => g.imageUrl).join(",") || "",
             }
 
             const newPoi = {
@@ -107,10 +108,11 @@ export default function POIUpdateListPage() {
               latitude: data.Latitude?.toString() || "",
               longitude: data.Longitude?.toString() || "",
               address: data.Address || "",
-              priority: data.Priority || 2,
+              priority: data.Priority ?? 2,
               language: data.Language || "",
-              audio: data.AudioFileName || "",
-              images: data.ImageFileNames?.join(",") || "",
+              // Bug #4: AudioUrl từ proposedData
+              audio: data.AudioUrl?.trim() ?? "",
+              images: data.GalleryImageUrls?.join(",") || "",
             }
 
             const changeCount = Object.keys(oldPoi).filter(

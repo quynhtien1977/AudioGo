@@ -44,40 +44,29 @@ export default function POIDeletionListPage() {
           userMap[u.accountId] = u.fullName
         })
 
-        // ================= FETCH POI DETAIL =================
-        const mapped = await Promise.all(
-          deleteRequests.map(async (r) => {
-            let poiDetail = null
-
+        // ================= MAP REQUESTS =================
+        // Dùng r.poiName đã được server resolve (từ ProposedData hoặc live DB)
+        // Không gọi getPoiDetail() vì POI có thể chưa được duyệt hoặc đã bị xóa
+        const mapped = deleteRequests.map((r) => {
+          // Ưu tiên: poiName từ API → parse proposedData → fallback
+          let name = r.poiName || "N/A"
+          if (name === "N/A" && r.proposedData) {
             try {
-              if (r.poiId) {
-                poiDetail = await getPoiDetail(r.poiId)
-              }
-            } catch (err) {
-              console.log("Fetch POI error:", err)
-            }
-
-            // 🔥 NAME từ DB
-            const title =
-              poiDetail?.contents?.find(c => c.isMaster)?.title ||
-              "Không có tên"
-
-            // 🔥 CATEGORY từ DB
-            const category = poiDetail?.category || "Không xác định"
+              const parsed = JSON.parse(r.proposedData)
+              name = parsed?.Title || parsed?.title || parsed?.name || "N/A"
+            } catch {}
+          }
 
             return {
               id: r.requestId,
-              name: title,
-              category: category,
-
-              // 🔥 LÝ DO XOÁ (nếu có)
+            name,
+            category: r.category || "—",
               reason: r.rejectReason || "Không có lý do",
 
               requestedAt: r.createdAt,
 
               requester: userMap[r.accountId] || "Không xác định",
-
-              status: r.status === "PENDING" ? "pending" : r.status.toLowerCase(),
+            status: r.status === "PENDING" ? "pending" : r.status?.toLowerCase(),
             }
           })
         )
