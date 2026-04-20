@@ -1,14 +1,28 @@
 import { CloudUpload, Trash2, Play, Pause, Loader2 } from "lucide-react"
 import { useRef, useState, useEffect } from "react"
+import toast from "react-hot-toast"
 import { uploadAudio } from "@/api/mediaApi"
+import ConfirmModal from "@/components/ConfirmModal"
 
-const POIAudioPlayer = ({ src, isEditing, onChange }) => {
+/**
+ * POIAudioPlayer
+ * Props:
+ *  - src: string              — URL audio hiện tại (cloud hoặc blob URL)
+ *  - isEditing: boolean
+ *  - onChange(key, value)     — callback cập nhật "audio" lên parent
+ *  - uploadOnSelect?: boolean — true = upload ngay khi chọn (default: true)
+ *                               false = preview local, parent tự upload khi submit
+ *  - onPendingFile?(file)     — callback trả File object khi uploadOnSelect=false
+ */
+const POIAudioPlayer = ({ src, isEditing, onChange, uploadOnSelect = true, onPendingFile }) => {
   const fileInputRef = useRef(null)
   const audioRef = useRef(null)
 
   const [isPlaying, setIsPlaying] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [progress, setProgress] = useState(0)
+  // Bug #7: thay window.confirm → state nội bộ mini confirm
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   // Reset play state khi src thay đổi
   useEffect(() => {
@@ -19,14 +33,21 @@ const POIAudioPlayer = ({ src, isEditing, onChange }) => {
   }, [src])
 
   // =========================
-  // UPLOAD AUDIO FILE
+  // UPLOAD / SELECT AUDIO FILE
   // =========================
   const handleFileChange = async (e) => {
     const file = e.target.files[0]
     if (!file || !file.type.startsWith("audio/")) return
 
-    // Reset input để có thể chọn lại cùng file
     e.target.value = ""
+
+    if (!uploadOnSelect) {
+      // Bug #2: preview local, không upload Azure ngay
+      const blobUrl = URL.createObjectURL(file)
+      onChange("audio", blobUrl)
+      onPendingFile?.(file)
+      return
+    }
 
     try {
       setIsUploading(true)
@@ -34,23 +55,23 @@ const POIAudioPlayer = ({ src, isEditing, onChange }) => {
       onChange("audio", url)
     } catch (err) {
       console.error("Upload audio thất bại:", err)
-      alert("Upload audio thất bại. Vui lòng thử lại.")
+      toast.error("Upload audio thất bại. Vui lòng thử lại.")
     } finally {
       setIsUploading(false)
     }
   }
 
   // =========================
-  // DELETE AUDIO
+  // DELETE AUDIO — Bug #7: thay window.confirm
   // =========================
-  const handleRemove = () => {
-    if (window.confirm("Bạn có chắc chắn muốn xóa file âm thanh này không?")) {
-      if (audioRef.current) {
-        audioRef.current.pause()
-      }
-      setIsPlaying(false)
-      onChange("audio", "")
+  const handleRemoveConfirmed = () => {
+    if (audioRef.current) {
+      audioRef.current.pause()
     }
+    setIsPlaying(false)
+    setShowDeleteConfirm(false)
+    onChange("audio", "")
+    onPendingFile?.(null)
   }
 
   // =========================
@@ -81,9 +102,9 @@ const POIAudioPlayer = ({ src, isEditing, onChange }) => {
     }
   }
 
-  // Lấy tên file từ URL (hiển thị thân thiện)
   const getFileName = (url) => {
     if (!url) return "Chưa có file âm thanh"
+    if (url.startsWith("blob:")) return "File âm thanh mới (chưa lưu)"
     try {
       const decoded = decodeURIComponent(url)
       return decoded.split("/").pop().split("?")[0]
@@ -93,6 +114,7 @@ const POIAudioPlayer = ({ src, isEditing, onChange }) => {
   }
 
   return (
+    <>
     <div className="relative bg-[#FFF5F7] p-8 rounded-[32px] border border-pink-50 shadow-sm">
 
       {/* AUDIO TAG HIDDEN */}
@@ -105,7 +127,7 @@ const POIAudioPlayer = ({ src, isEditing, onChange }) => {
             setProgress(0)
           }}
           onTimeUpdate={() => {
-            if (audioRef.current && audioRef.current.duration) {
+            if (audioRef.current?.duration) {
               setProgress((audioRef.current.currentTime / audioRef.current.duration) * 100)
             }
           }}
@@ -139,7 +161,7 @@ const POIAudioPlayer = ({ src, isEditing, onChange }) => {
           </button>
         ) : (
           <div
-            onClick={() => isEditing && fileInputRef.current.click()}
+            onClick={() => isEditing && fileInputRef.current?.click()}
             className={`w-20 h-20 rounded-full flex items-center justify-center shadow-inner transition-all
               ${isEditing ? "cursor-pointer hover:scale-105 active:scale-95 bg-white" : "bg-pink-100"}`}
           >
@@ -164,8 +186,8 @@ const POIAudioPlayer = ({ src, isEditing, onChange }) => {
           </h3>
 
           {/* PROGRESS BAR */}
-          <div 
-            className={`relative w-full h-3 bg-pink-100 rounded-full overflow-hidden ${src ? 'cursor-pointer' : ''}`}
+          <div
+            className={`relative w-full h-3 bg-pink-100 rounded-full overflow-hidden ${src ? "cursor-pointer" : ""}`}
             onClick={handleSeek}
           >
             {isUploading ? (
@@ -183,14 +205,13 @@ const POIAudioPlayer = ({ src, isEditing, onChange }) => {
               {src ? "Format: MP3/AAC" : "Chọn file âm thanh"}
             </span>
             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider italic">
-              {src ? "Azure Blob Storage" : "max 50MB"}
+              {src ? (src.startsWith("blob:") ? "Local preview" : "Azure Blob Storage") : "max 50MB"}
             </span>
           </div>
 
-          {/* Nút Upload thay thế nếu đã có audio */}
           {isEditing && src && !isUploading && (
             <button
-              onClick={() => fileInputRef.current.click()}
+              onClick={() => fileInputRef.current?.click()}
               className="flex items-center gap-1 text-[10px] font-bold text-pink-400 hover:text-pink-600 transition-colors"
             >
               <CloudUpload className="w-3 h-3" /> Thay file khác
@@ -198,10 +219,10 @@ const POIAudioPlayer = ({ src, isEditing, onChange }) => {
           )}
         </div>
 
-        {/* DELETE */}
+        {/* DELETE BUTTON */}
         {isEditing && src && !isUploading && (
           <button
-            onClick={handleRemove}
+            onClick={() => setShowDeleteConfirm(true)}
             className="ml-2 w-14 h-14 rounded-2xl flex items-center justify-center hover:bg-red-50 group transition shrink-0"
           >
             <Trash2 className="w-6 h-6 text-gray-400 group-hover:text-red-500" />
@@ -209,6 +230,18 @@ const POIAudioPlayer = ({ src, isEditing, onChange }) => {
         )}
       </div>
     </div>
+
+    {/* CONFIRM MODAL xóa audio */}
+    <ConfirmModal
+      open={showDeleteConfirm}
+      title="Xóa audio?"
+      message="Bạn có chắc chắn muốn xóa file âm thanh này không? Hành động này không thể hoàn tác."
+      confirmText="Xóa"
+      cancelText="Hủy"
+      onConfirm={handleRemoveConfirmed}
+      onCancel={() => setShowDeleteConfirm(false)}
+    />
+  </>
   )
 }
 
