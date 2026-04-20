@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Edit2, CheckCircle, XCircle } from "lucide-react"
+import toast from "react-hot-toast"
 
 import POIManagementListComponent from "@/components/POIManagementListComponent"
 import ConfirmModal from "@/components/ConfirmModal"
@@ -174,9 +175,10 @@ export default function POIUpdateListPage() {
       )
       setShowApproveModal(false)
       setSelectedPoiId(null)
+      toast.success("Đã phê duyệt cập nhật POI")
     } catch (err) {
       console.error("Approve error:", err)
-      alert("Phê duyệt thất bại")
+      toast.error("Phê duyệt thất bại: " + (err.message || ""))
     }
   }
 
@@ -209,9 +211,10 @@ export default function POIUpdateListPage() {
       setShowRejectModal(false)
       setSelectedPoiId(null)
       setRejectReason("")
+      toast.success("Đã từ chối cập nhật POI")
     } catch (err) {
       console.error("Reject error:", err)
-      alert("Từ chối thất bại")
+      toast.error("Từ chối thất bại: " + (err.message || ""))
     }
   }
 

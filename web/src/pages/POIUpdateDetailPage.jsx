@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { ArrowLeft, MessageSquare, X, Check, MapPin, Zap, Layers, FileText, Volume2, Globe } from "lucide-react"
+import { ArrowLeft, X, Check, MapPin, Zap, Layers, FileText, Volume2, Globe } from "lucide-react"
+import toast from "react-hot-toast"
 import { getPoiDetail } from "@/api/poiApi"
 import { getPoiRequestDetail, reviewPoiRequest } from "@/api/poiRequestApi"
 import { getCategoriesApi } from "@/api/categoryApi"
@@ -77,6 +78,7 @@ export default function POIUpdateDetailPage() {
   const [newPoi, setNewPoi] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [categoryMap, setCategoryMap] = useState({}) // id → name
   
   // Modal states
   const [showApproveModal, setShowApproveModal] = useState(false)
@@ -87,7 +89,7 @@ export default function POIUpdateDetailPage() {
     const fetchPoiDetail = async () => {
       try {
         setLoading(true)
-        
+
         // Fetch tất cả cùng lúc
         const [request, categoriesRaw] = await Promise.all([
           getPoiRequestDetail(requestId),
@@ -101,15 +103,15 @@ export default function POIUpdateDetailPage() {
           catMap[c.categoryId] = c.name
         })
         setCategoryMap(catMap)
-        
+
         // Fetch POI detail (current data)
         const poiDetail = await getPoiDetail(request.poiId)
         console.log("POI Detail:", poiDetail)
-        
+
         // Parse proposed data
         let proposedData = {}
         if (request.proposedData) {
-          proposedData = typeof request.proposedData === 'string' 
+          proposedData = typeof request.proposedData === 'string'
             ? JSON.parse(request.proposedData)
             : request.proposedData
         }
@@ -140,7 +142,7 @@ export default function POIUpdateDetailPage() {
             return gallery
           })(),
         }
-        
+
         // ── NEW: lấy từ proposedData ─────────────────────────────────────
         const newCategoryId = proposedData.CategoryIds?.[0] ?? oldCategoryId
         // LanguageCode từ proposedData — AddPOI & Update đều gửi LanguageCode
@@ -161,7 +163,7 @@ export default function POIUpdateDetailPage() {
             : oldPoiFormatted.audio,
           images: proposedData.GalleryImageUrls ?? oldPoiFormatted.images,
         }
-        
+
         setOldPoi(oldPoiFormatted)
         setNewPoi(newPoiFormatted)
       } catch (err) {
@@ -171,7 +173,7 @@ export default function POIUpdateDetailPage() {
         setLoading(false)
       }
     }
-    
+
     if (requestId) {
       fetchPoiDetail()
     }
@@ -185,11 +187,11 @@ export default function POIUpdateDetailPage() {
     try {
       await reviewPoiRequest(requestId, { approved: true })
       setShowApproveModal(false)
-      alert("Cập nhật đã được phê duyệt")
-    navigate("/poi/management/updates")
+      toast.success("Cập nhật đã được phê duyệt")  // Bug #7
+      navigate("/poi/management/updates")
     } catch (err) {
       console.error("Approve error:", err)
-      alert("Lỗi khi phê duyệt: " + err.message)
+      toast.error("Lỗi khi phê duyệt: " + err.message)  // Bug #7
     }
   }
 
@@ -204,14 +206,13 @@ export default function POIUpdateDetailPage() {
         approved: false,
         rejectReason: rejectReason
       })
-      
       setShowRejectModal(false)
       setRejectReason("")
-    alert("Cập nhật đã bị từ chối")
-    navigate("/poi/management/updates")
+      toast.success("Cập nhật đã bị từ chối")  // Bug #7
+      navigate("/poi/management/updates")
     } catch (err) {
       console.error("Reject error:", err)
-      alert("Lỗi khi từ chối: " + err.message)
+      toast.error("Lỗi khi từ chối: " + err.message)  // Bug #7
     }
   }
 
@@ -221,12 +222,11 @@ export default function POIUpdateDetailPage() {
         approved: false,
         rejectReason: "Yêu cầu sửa lại"
       })
-      
-      alert("Yêu cầu sửa lại đã được gửi")
-    navigate("/poi/management/updates")
+      toast.success("Yêu cầu sửa lại đã được gửi")  // Bug #7
+      navigate("/poi/management/updates")
     } catch (err) {
       console.error("Request changes error:", err)
-      alert("Lỗi: " + err.message)
+      toast.error("Lỗi: " + err.message)  // Bug #7
     }
   }
 
@@ -477,8 +477,8 @@ export default function POIUpdateDetailPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                        File audio
-                      </label>
+                          File audio
+                        </label>
                         {/* Bug #4: hiện label diff */}
                         {getAudioDiffLabel(oldPoi.audio, newPoi.audio) && (
                           <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-200 text-amber-800 uppercase">
@@ -535,7 +535,7 @@ export default function POIUpdateDetailPage() {
                         {isImgChanged && (
                           <span className="absolute top-1 right-1 bg-green-500 text-white text-[9px] font-bold px-1 rounded">Mới</span>
                         )}
-                    </div>
+                      </div>
                     )
                   }) : (
                     <p className="text-sm text-gray-400 italic">Chưa có hình ảnh</p>

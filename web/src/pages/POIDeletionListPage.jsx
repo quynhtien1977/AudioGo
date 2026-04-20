@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react"
 import { CheckCircle, XCircle, Trash2 } from "lucide-react"
+import toast from "react-hot-toast"
 
 import POIManagementListComponent from "@/components/POIManagementListComponent"
 import ConfirmModal from "@/components/ConfirmModal"
 import { getAllPoiRequests, getAllPoiRequestsAll, reviewPoiRequest } from "@/api/poiRequestApi"
 import { getUsersApi } from "@/api/accountApi"
-import { getPoiDetail } from "@/api/poiApi"
 
 export default function POIDeletionListPage() {
   const [poiList, setPoiList] = useState([])
@@ -57,19 +57,16 @@ export default function POIDeletionListPage() {
             } catch {}
           }
 
-            return {
-              id: r.requestId,
+          return {
+            id: r.requestId,
             name,
             category: r.category || "—",
-              reason: r.rejectReason || "Không có lý do",
-
-              requestedAt: r.createdAt,
-
-              requester: userMap[r.accountId] || "Không xác định",
+            reason: r.rejectReason || "Không có lý do",
+            requestedAt: r.createdAt,
+            requester: userMap[r.accountId] || "Không xác định",
             status: r.status === "PENDING" ? "pending" : r.status?.toLowerCase(),
-            }
-          })
-        )
+          }
+        })
 
         setPoiList(mapped)
       } catch (err) {
@@ -106,9 +103,10 @@ export default function POIDeletionListPage() {
       )
       setShowApproveModal(false)
       setSelectedPoiId(null)
+      toast.success("Đã duyệt yêu cầu xóa POI")
     } catch (err) {
       console.error("Approve error:", err)
-      alert("Xóa thất bại")
+      toast.error("Xóa thất bại: " + (err.message || ""))
     }
   }
 
@@ -141,9 +139,10 @@ export default function POIDeletionListPage() {
       setShowRejectModal(false)
       setSelectedPoiId(null)
       setRejectReason("")
+      toast.success("Đã từ chối yêu cầu xóa POI")
     } catch (err) {
       console.error("Reject error:", err)
-      alert("Từ chối thất bại")
+      toast.error("Từ chối thất bại: " + (err.message || ""))
     }
   }
 
