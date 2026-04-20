@@ -100,7 +100,7 @@ export default function POIDeletionListPage() {
 
   const handleConfirmApprove = async () => {
     try {
-      await reviewPoiRequest(selectedPoiId, { status: "APPROVED" })
+      await reviewPoiRequest(selectedPoiId, { approved: true })
       setPoiList(prev =>
         prev
           .map(p =>
@@ -132,7 +132,7 @@ export default function POIDeletionListPage() {
   const handleConfirmReject = async () => {
     try {
       await reviewPoiRequest(selectedPoiId, { 
-        status: "REJECTED",
+        approved: false,
         rejectReason: rejectReason 
       })
       setPoiList(prev =>

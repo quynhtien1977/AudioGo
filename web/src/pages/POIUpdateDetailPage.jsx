@@ -130,7 +130,7 @@ export default function POIUpdateDetailPage() {
   const handleConfirmApprove = async () => {
     try {
       await reviewPoiRequest(requestId, {
-        status: "APPROVED"
+        approved: true
       })
       
       setShowApproveModal(false)
@@ -150,7 +150,7 @@ export default function POIUpdateDetailPage() {
   const handleConfirmReject = async () => {
     try {
       await reviewPoiRequest(requestId, {
-        status: "REJECTED",
+        approved: false,
         rejectReason: rejectReason
       })
       

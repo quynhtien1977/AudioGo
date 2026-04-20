@@ -109,7 +109,7 @@ export default function POINewListPage() {
 
   const handleConfirmApprove = async () => {
     try {
-      await reviewPoiRequest(selectedPoiId, { status: "APPROVED" })
+      await reviewPoiRequest(selectedPoiId, { approved: true })
       setPoiList(prev =>
         prev
           .map(p =>
@@ -141,7 +141,7 @@ export default function POINewListPage() {
   const handleConfirmReject = async () => {
     try {
       await reviewPoiRequest(selectedPoiId, { 
-        status: "REJECTED",
+        approved: false,
         rejectReason: rejectReason 
       })
       setPoiList(prev =>

@@ -31,6 +31,7 @@ const AddPOIPage = () => {
   });
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [categories, setCategories] = useState([]);
 
   // Fetch categories from API
@@ -79,7 +80,9 @@ const AddPOIPage = () => {
   };
 
   const handleConfirmCreate = async () => {
+    if (isSubmitting) return;
     try {
+      setIsSubmitting(true);
       const selectedCategory = categories.find(cat => cat.name === form.category);
       const categoryIds = selectedCategory ? [selectedCategory.categoryId] : [];
 
@@ -109,6 +112,8 @@ const AddPOIPage = () => {
     } catch (err) {
       console.error(err);
       toast.error("Tạo yêu cầu thất bại!");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -130,9 +135,10 @@ const AddPOIPage = () => {
           </button>
           <button
             onClick={handleSave}
-            className="px-8 py-3 bg-pink-500 text-white rounded-2xl font-bold shadow-lg shadow-pink-200 hover:bg-pink-600 transition-all flex items-center gap-2 uppercase text-[10px] tracking-widest"
+            disabled={isSubmitting}
+            className="px-8 py-3 bg-pink-500 text-white rounded-2xl font-bold shadow-lg shadow-pink-200 hover:bg-pink-600 transition-all flex items-center gap-2 uppercase text-[10px] tracking-widest disabled:opacity-60"
           >
-            <Save size={16} /> Lưu thông tin
+            <Save size={16} /> {isSubmitting ? "Đang gửi..." : "Lưu thông tin"}
           </button>
         </div>
       </div>

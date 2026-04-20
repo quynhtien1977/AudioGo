@@ -34,15 +34,15 @@ const POIGallery = ({ images, isEditing, onChange }) => {
     try {
       setUploadingIndex(index);
 
-      const url = await uploadImage(file);
+      const url = await uploadImage(file, "pois");
 
       const currentImages = Array.isArray(images) ? [...images] : [];
 
-      if (index === 0) {
-        // Thay ảnh bìa
-        currentImages[0] = url;
+      if (index >= 0 && index < currentImages.length) {
+        // Thay ảnh tại đúng slot (cover hoặc sub)
+        currentImages[index] = url;
       } else {
-        // Thêm ảnh mới vào cuối (nếu chưa đủ)
+        // Thêm ảnh mới vào cuối (slot trống)
         if (currentImages.length < MAX_IMAGES) {
           currentImages.push(url);
         }
@@ -64,9 +64,9 @@ const POIGallery = ({ images, isEditing, onChange }) => {
     onChange("images", currentImages);
   };
 
-  // Thêm ảnh phụ mới (khi click ADD slot)
+  // Thêm ảnh phụ mới (khi click ADD slot) — index = length (ngoài mảng = push mới)
   const handleAddPhoto = async (e) => {
-    await handleFileChange(e, -1); // index -1 = thêm mới
+    await handleFileChange(e, images?.length ?? 0); // index ngoài mảng = push mới
   };
 
   // Render 1 slot ảnh phụ bên phải

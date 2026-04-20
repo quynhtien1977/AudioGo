@@ -61,6 +61,8 @@ builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>();
 builder.Services.AddSingleton<ITranslationService, TranslationService>();
 builder.Services.AddSingleton<ITtsService, TtsService>();
 builder.Services.AddScoped<IContentPipelineService, ContentPipelineService>();
+builder.Services.AddScoped<ICmsPoiService, CmsPoiService>();
+builder.Services.AddScoped<IPoiRequestService, PoiRequestService>();
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddHttpContextAccessor();
 

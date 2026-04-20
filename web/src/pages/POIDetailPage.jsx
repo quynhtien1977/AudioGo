@@ -32,6 +32,7 @@ const POIDetailPage = () => {
 
   const [isEditing, setIsEditing] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [rejectReason, setRejectReason] = useState("")
   const [requestStatus, setRequestStatus] = useState("")
@@ -158,7 +159,9 @@ const POIDetailPage = () => {
 
   // ================= SAVE =================
   const handleConfirmSave = async () => {
+    if (isSubmitting) return
     try {
+      setIsSubmitting(true)
       if (!categories.length) return
       if (!form.poiId && !id) {
         alert("Lỗi: Không tìm thấy POI ID")
@@ -197,14 +200,16 @@ const POIDetailPage = () => {
 
       await createPoiRequest(payload)
 
-      alert("Gửi yêu cầu thành công!")
+      alert("Đã gửi yêu cầu cập nhật thành công!")
 
       setIsEditing(false)
       setShowConfirm(false)
 
     } catch (err) {
       console.error(err)
-      alert("Gửi thất bại!")
+      alert("Đã gửi yêu cầu thất bại!")
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -276,9 +281,11 @@ const POIDetailPage = () => {
             <>
               <button
                 onClick={() => setShowConfirm(true)}
-                className="px-4 py-2 bg-pink-500 text-white rounded-lg"
+                disabled={isSubmitting}
+                className="px-4 py-2 bg-pink-500 text-white rounded-lg disabled:opacity-60 flex items-center gap-2"
               >
-                Lưu
+                {isSubmitting ? <span className="animate-spin">&#9696;</span> : null}
+                {isSubmitting ? "Đang gửi..." : "Lưu"}
               </button>
 
               <button

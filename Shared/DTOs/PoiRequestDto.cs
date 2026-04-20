@@ -48,7 +48,7 @@ namespace Shared.DTOs
     public record PoiRequestListDto(
         string   RequestId,
         string?  PoiId,
-        
+        string?  PoiName, 
         string   AccountId,
         string   ActionType,
         string   Status,
