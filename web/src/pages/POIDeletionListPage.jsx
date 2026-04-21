@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react"
 import { CheckCircle, XCircle, Trash2 } from "lucide-react"
+import toast from "react-hot-toast"
 
 import POIManagementListComponent from "@/components/POIManagementListComponent"
 import ConfirmModal from "@/components/ConfirmModal"
 import { getAllPoiRequests, getAllPoiRequestsAll, reviewPoiRequest } from "@/api/poiRequestApi"
 import { getUsersApi } from "@/api/accountApi"
-import { getPoiDetail } from "@/api/poiApi"
 
 export default function POIDeletionListPage() {
   const [poiList, setPoiList] = useState([])
@@ -44,43 +44,29 @@ export default function POIDeletionListPage() {
           userMap[u.accountId] = u.fullName
         })
 
-        // ================= FETCH POI DETAIL =================
-        const mapped = await Promise.all(
-          deleteRequests.map(async (r) => {
-            let poiDetail = null
-
+        // ================= MAP REQUESTS =================
+        // Dùng r.poiName đã được server resolve (từ ProposedData hoặc live DB)
+        // Không gọi getPoiDetail() vì POI có thể chưa được duyệt hoặc đã bị xóa
+        const mapped = deleteRequests.map((r) => {
+          // Ưu tiên: poiName từ API → parse proposedData → fallback
+          let name = r.poiName || "N/A"
+          if (name === "N/A" && r.proposedData) {
             try {
-              if (r.poiId) {
-                poiDetail = await getPoiDetail(r.poiId)
-              }
-            } catch (err) {
-              console.log("Fetch POI error:", err)
-            }
+              const parsed = JSON.parse(r.proposedData)
+              name = parsed?.Title || parsed?.title || parsed?.name || "N/A"
+            } catch {}
+          }
 
-            // 🔥 NAME từ DB
-            const title =
-              poiDetail?.contents?.find(c => c.isMaster)?.title ||
-              "Không có tên"
-
-            // 🔥 CATEGORY từ DB
-            const category = poiDetail?.category || "Không xác định"
-
-            return {
-              id: r.requestId,
-              name: title,
-              category: category,
-
-              // 🔥 LÝ DO XOÁ (nếu có)
-              reason: r.rejectReason || "Không có lý do",
-
-              requestedAt: r.createdAt,
-
-              requester: userMap[r.accountId] || "Không xác định",
-
-              status: r.status === "PENDING" ? "pending" : r.status.toLowerCase(),
-            }
-          })
-        )
+          return {
+            id: r.requestId,
+            name,
+            category: r.category || "—",
+            reason: r.rejectReason || "Không có lý do",
+            requestedAt: r.createdAt,
+            requester: userMap[r.accountId] || "Không xác định",
+            status: r.status === "PENDING" ? "pending" : r.status?.toLowerCase(),
+          }
+        })
 
         setPoiList(mapped)
       } catch (err) {
@@ -117,9 +103,10 @@ export default function POIDeletionListPage() {
       )
       setShowApproveModal(false)
       setSelectedPoiId(null)
+      toast.success("Đã duyệt yêu cầu xóa POI")
     } catch (err) {
       console.error("Approve error:", err)
-      alert("Xóa thất bại")
+      toast.error("Xóa thất bại: " + (err.message || ""))
     }
   }
 
@@ -152,9 +139,10 @@ export default function POIDeletionListPage() {
       setShowRejectModal(false)
       setSelectedPoiId(null)
       setRejectReason("")
+      toast.success("Đã từ chối yêu cầu xóa POI")
     } catch (err) {
       console.error("Reject error:", err)
-      alert("Từ chối thất bại")
+      toast.error("Từ chối thất bại: " + (err.message || ""))
     }
   }
 

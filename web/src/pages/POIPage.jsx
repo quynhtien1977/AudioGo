@@ -20,6 +20,7 @@ import Card from "@/components/Card"
 import Filter from "@/components/Filter"
 import StatusBadge from "@/components/StatusBadge"
 import ConfirmModal from "@/components/ConfirmModal"
+import { getPriorityColor, getPriorityInfo } from "@/components/PriorityBadge"
 
 import { getAllPOIs, updatePOI, deletePOI } from "@/api/poiApi"
 import { getContentsByPOI } from "@/api/contentApi"
@@ -259,15 +260,6 @@ export default function POIPage() {
     }
   }
 
-  const getPriorityColor = (value) => {
-    switch (value) {
-      case 4: return "bg-red-100 text-red-500"
-      case 3: return "bg-yellow-100 text-yellow-600"
-      case 2: return "bg-gray-200 text-gray-600"
-      case 1: return "bg-gray-100 text-gray-400"
-      default: return ""
-    }
-  }
 
   const handleHiddenPOI = async (id) => {
     try {
@@ -325,6 +317,7 @@ export default function POIPage() {
       const payload = {
         ActionType: "DELETE",
         PoiId: selectedPoiId,
+        // Draft = null: backend tự resolve tên POI từ DB và lưu vào ProposedData
         Draft: null
       }
 
@@ -491,7 +484,7 @@ export default function POIPage() {
                     </select>
                   ) : (
                     <span className={`px-2 py-1 rounded text-xs font-semibold ${getPriorityColor(poi.priority)}`}>
-                      {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'][poi.priority - 1]}
+                      {getPriorityInfo(poi.priority).label}
                     </span>
                   )}
                 </td>

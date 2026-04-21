@@ -1,9 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Save, X, MapPin, Radio, LayoutGrid, Info } from "lucide-react";
-import { createPortal } from "react-dom";
+import { Save, X, MapPin, Radio, LayoutGrid, Info, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
-import { useEffect } from "react";
 
 import POIMap from "@/components/POIMapPreview";
 import POIGallery from "@/components/POIGallery";
@@ -11,19 +9,19 @@ import POIAudioPlayer from "@/components/POIAudioPlayer";
 import InfoCardOfAddPOI from "@/components/InfoCardOfAddPOI";
 import ConfirmModal from "@/components/ConfirmModal";
 
+import { uploadImage, uploadAudio } from "@/api/mediaApi";
 import { createPoiRequest } from "@/api/poiRequestApi";
 import { getCategoriesApi } from "@/api/categoryApi";
 
 const AddPOIPage = () => {
   const navigate = useNavigate();
 
-  // State khởi tạo cho POI mới
   const [form, setForm] = useState({
     name: "",
     category: "",
-    lat: 10.7574, // Mặc định Vĩnh Khánh Q4
+    lat: 10.7574,
     lng: 106.7020,
-    radius: 50, // Hardcode 50m
+    radius: 50,
     languageCode: "en",
     images: [],
     audio: "",
@@ -34,7 +32,10 @@ const AddPOIPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categories, setCategories] = useState([]);
 
-  // Fetch categories from API
+  // Bug #2: lưu File objects chưa upload
+  const pendingImageFiles = useRef([]); // File[] tương ứng với images[]
+  const pendingAudioFile  = useRef(null); // File | null
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -51,44 +52,81 @@ const AddPOIPage = () => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  // Bug #2: nhận danh sách File objects từ POIGallery
+  const handlePendingImageFiles = (files) => {
+    pendingImageFiles.current = files || [];
+  };
+
+  // Bug #2: nhận File object từ POIAudioPlayer
+  const handlePendingAudioFile = (file) => {
+    pendingAudioFile.current = file || null;
+  };
+
   const handleSave = () => {
-    // Validate required fields
     if (!form.name.trim()) {
       toast.error("Vui lòng nhập tên POI");
       return;
     }
-
     if (!form.category.trim()) {
       toast.error("Vui lòng chọn danh mục");
       return;
     }
-
+    // Ràng buộc: phải có ít nhất 1 ảnh logo VÀ 1 ảnh gallery
     if (form.images.length === 0) {
-      toast.error("Vui lòng thêm ít nhất một hình ảnh");
+      toast.error("Vui lòng thêm ảnh logo (ảnh đầu tiên)");
       return;
     }
-
+    if (form.images.length < 2) {
+      toast.error("Vui lòng thêm ít nhất 1 ảnh gallery (ngoài ảnh logo)");
+      return;
+    }
     if (!form.script.trim()) {
       toast.error("Vui lòng nhập nội dung script");
       return;
     }
-
-    // Audio is optional - no validation needed
-
-    // Show confirmation modal
     setShowConfirmModal(true);
+
   };
 
   const handleConfirmCreate = async () => {
     if (isSubmitting) return;
     try {
       setIsSubmitting(true);
-      const selectedCategory = categories.find(cat => cat.name === form.category);
-      const categoryIds = selectedCategory ? [selectedCategory.categoryId] : [];
 
+      // ===== Bug #2: Upload pending files lên Azure trước khi submit =====
+      let finalImages = [...(form.images || [])];
+      let finalAudio  = form.audio || "";
+
+      // Upload từng ảnh pending (blob URL → Azure URL)
+      for (let i = 0; i < finalImages.length; i++) {
+        if (finalImages[i].startsWith("blob:") && pendingImageFiles.current[i]) {
+          try {
+            const url = await uploadImage(pendingImageFiles.current[i], "pois");
+            finalImages[i] = url;
+          } catch {
+            toast.error(`Lỗi upload ảnh ${i + 1}. Vui lòng thử lại.`);
+            setIsSubmitting(false);
+            return;
+          }
+        }
+      }
+
+      // Upload audio pending nếu có
+      if (finalAudio.startsWith("blob:") && pendingAudioFile.current) {
+        try {
+          finalAudio = await uploadAudio(pendingAudioFile.current);
+        } catch {
+          toast.error("Lỗi upload audio. Vui lòng thử lại.");
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // Build payload và gửi request
+      const selectedCategory = categories.find(cat => cat.name === form.category);
       const payload = {
         ActionType: "CREATE",
-        PoiId: null,  
+        PoiId: null,
         Draft: {
           Title: form.name,
           Description: form.script || "",
@@ -96,17 +134,16 @@ const AddPOIPage = () => {
           Longitude: form.lng,
           ActivationRadius: form.radius || 50,
           Priority: 1,
-          LogoUrl: form.images?.[0] || "",
-          GalleryImageUrls: form.images || [],
-          AudioUrl: form.audio || "",
-          CategoryIds: categoryIds,  
-          LanguageCode: form.languageCode || "en",  
+          LogoUrl: finalImages[0] || "",
+          GalleryImageUrls: finalImages,
+          AudioUrl: finalAudio,
+          CategoryIds: selectedCategory ? [selectedCategory.categoryId] : [],
+          LanguageCode: form.languageCode || "en",
         }
       };
 
       await createPoiRequest(payload);
       toast.success("Tạo yêu cầu POI mới thành công! Admin sẽ xem xét.");
-
       setShowConfirmModal(false);
       setTimeout(() => navigate("/pois"), 1500);
     } catch (err) {
@@ -119,7 +156,7 @@ const AddPOIPage = () => {
 
   return (
     <div className="p-8 bg-pink-50/20 min-h-screen space-y-8 animate-in fade-in duration-500">
-      {/* HEADER SECTION */}
+      {/* HEADER */}
       <div className="flex justify-between items-center">
         <div>
           <nav className="text-[10px] font-black text-pink-400 uppercase tracking-[0.2em] mb-2"></nav>
@@ -144,27 +181,38 @@ const AddPOIPage = () => {
       </div>
 
       <div className="grid grid-cols-12 gap-8">
-        {/* LEFT COLUMN: Media & Content */}
+        {/* LEFT */}
         <div className="col-span-8 space-y-8">
-          {/* Gallery Upload */}
           <section className="space-y-4">
             <div className="flex items-center gap-3">
               <LayoutGrid size={20} className="text-pink-500" />
               <h2 className="text-lg font-bold text-gray-700">Hình ảnh không gian</h2>
             </div>
-            <POIGallery images={form.images} isEditing={true} onChange={handleChange} />
+            {/* Bug #2: uploadOnSelect=false, chỉ upload khi submit */}
+            <POIGallery
+              images={form.images}
+              isEditing={true}
+              onChange={handleChange}
+              uploadOnSelect={false}
+              onPendingFiles={handlePendingImageFiles}
+            />
           </section>
 
-          {/* Audio Manager */}
           <section className="space-y-4">
             <div className="flex items-center gap-3">
               <Radio size={20} className="text-pink-500" />
               <h2 className="text-lg font-bold text-gray-700">Tệp âm thanh thuyết minh</h2>
             </div>
-            <POIAudioPlayer src={form.audio} isEditing={true} onChange={handleChange} />
+            {/* Bug #2: uploadOnSelect=false */}
+            <POIAudioPlayer
+              src={form.audio}
+              isEditing={true}
+              onChange={handleChange}
+              uploadOnSelect={false}
+              onPendingFile={handlePendingAudioFile}
+            />
           </section>
 
-          {/* Script Content */}
           <section className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-gray-50 pb-4">
               <h2 className="text-lg font-bold text-gray-700">Nội dung Script</h2>
@@ -179,12 +227,10 @@ const AddPOIPage = () => {
           </section>
         </div>
 
-        {/* RIGHT COLUMN: Settings & Location */}
+        {/* RIGHT */}
         <div className="col-span-4 space-y-8">
-          {/* Basic Info Card */}
           <InfoCardOfAddPOI form={form} handleChange={handleChange} categories={categories} />
 
-          {/* Location Card */}
           <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm space-y-4 overflow-hidden">
             <div className="flex items-center justify-between">
               <h3 className="text-[10px] font-black text-pink-500 uppercase tracking-widest">Vị trí thực tế</h3>
@@ -194,7 +240,6 @@ const AddPOIPage = () => {
                 <span>{form.lng.toFixed(4)}</span>
               </div>
             </div>
-
             <div className="rounded-2xl overflow-hidden h-[250px] border border-gray-50 relative group">
               <POIMap
                 lat={form.lat}
@@ -209,13 +254,11 @@ const AddPOIPage = () => {
                 <MapPin size={14} className="text-pink-500" />
               </div>
             </div>
-
             <p className="text-[9px] text-gray-400 italic text-center">
               * Nhấp trực tiếp lên bản đồ để lấy tọa độ chính xác
             </p>
           </div>
 
-          {/* Hint Card */}
           <div className="bg-pink-500 p-6 rounded-[32px] text-white space-y-2 shadow-lg shadow-pink-100">
             <div className="flex items-center gap-2">
               <Info size={16} />
@@ -228,6 +271,19 @@ const AddPOIPage = () => {
         </div>
       </div>
 
+      {/* LOADING OVERLAY khi đang upload files */}
+      {isSubmitting && (
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl p-8 flex flex-col items-center gap-4 shadow-2xl">
+            <Loader2 className="w-12 h-12 text-pink-500 animate-spin" />
+            <p className="text-gray-700 font-bold text-base">Đang tải lên server...</p>
+            <p className="text-gray-400 text-xs text-center max-w-[220px]">
+              Vui lòng không đóng trang. Đang xử lý ảnh và audio.
+            </p>
+          </div>
+        </div>
+      )}
+
       {showConfirmModal && (
         <ConfirmModal
           open={showConfirmModal}
@@ -235,8 +291,9 @@ const AddPOIPage = () => {
           message="POI mới sẽ được gửi đến Admin để phê duyệt. Bạn có chắc chắn muốn tiếp tục?"
           confirmText="Tạo POI"
           cancelText="Hủy bỏ"
+          isLoading={isSubmitting}
           onConfirm={handleConfirmCreate}
-          onCancel={() => setShowConfirmModal(false)}
+          onCancel={() => !isSubmitting && setShowConfirmModal(false)}
         />
       )}
     </div>

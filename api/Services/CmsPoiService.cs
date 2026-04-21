@@ -62,12 +62,13 @@ namespace Server.Services
 
             if (poi is null) return null;
 
-            var category = await (
+            // Lấy cả tên category lẫn danh sách categoryId để frontend diff đúng
+            var categoryRows = await (
                 from cp in _db.CategoryPois
                 join c in _db.Categories on cp.CategoryId equals c.CategoryId
                 where cp.PoiId == poiId
-                select c.Name
-            ).FirstOrDefaultAsync();
+                select new { c.CategoryId, c.Name }
+            ).ToListAsync();
 
             return new
             {
@@ -81,7 +82,10 @@ namespace Server.Services
                 logoUrl = poi.LogoUrl,
                 createdAt = poi.CreatedAt,
                 updatedAt = poi.UpdatedAt,
-                category = category ?? "Unknown",
+                // Giữ tên đầu tiên để compat với các nơi dùng category (string)
+                category = categoryRows.FirstOrDefault()?.Name ?? "Unknown",
+                // Mảng ID để frontend có thể so sánh với proposedData.CategoryIds
+                categoryIds = categoryRows.Select(r => r.CategoryId).ToList(),
                 contents = poi.Contents.Select(c => new
                 {
                     contentId = c.ContentId,

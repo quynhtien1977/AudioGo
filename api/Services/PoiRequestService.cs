@@ -38,7 +38,7 @@ namespace Server.Services
 
             var poiIds = requests.Where(r => r.PoiId != null).Select(r => r.PoiId).Distinct().ToList();
             var poiNames = await _db.PoiContents
-                .Where(c => poiIds.Contains(c.PoiId) && c.LanguageCode == "vi")
+                .Where(c => poiIds.Contains(c.PoiId) && c.IsMaster)
                 .ToDictionaryAsync(c => c.PoiId, c => c.Title);
 
             var result = requests.Select(pr => {
@@ -101,9 +101,22 @@ namespace Server.Services
             if (req.ActionType != "DELETE" && req.Draft is null)
                 throw new ArgumentException("Draft is required for CREATE or UPDATE");
 
-            string? proposedData = req.Draft != null
-                ? JsonSerializer.Serialize(req.Draft)
-                : null;
+            string? proposedData = null;
+            if (req.Draft != null)
+            {
+                proposedData = JsonSerializer.Serialize(req.Draft);
+            }
+            else if (req.ActionType?.ToUpper() == "DELETE" && !string.IsNullOrEmpty(req.PoiId))
+            {
+                // Bug #3: lưu tên POI vào ProposedData để hiển thị sau khi POI bị xóa vật lý
+                var poiName = await _db.PoiContents
+                    .AsNoTracking()
+                    .Where(c => c.PoiId == req.PoiId && c.IsMaster)
+                    .Select(c => c.Title)
+                    .FirstOrDefaultAsync();
+
+                proposedData = JsonSerializer.Serialize(new { Title = poiName ?? "N/A" });
+            }
 
             var request = new PoiRequest
             {
@@ -139,7 +152,7 @@ namespace Server.Services
 
             var poiIds = requests.Where(r => r.PoiId != null).Select(r => r.PoiId).Distinct().ToList();
             var poiNames = await _db.PoiContents
-                .Where(c => poiIds.Contains(c.PoiId) && c.LanguageCode == "vi")
+                .Where(c => poiIds.Contains(c.PoiId) && c.IsMaster)
                 .ToDictionaryAsync(c => c.PoiId, c => c.Title);
 
             var result = requests.Select(pr => {
@@ -209,15 +222,40 @@ namespace Server.Services
 
                 try
                 {
+                    // ===== DELETE =====
                     if (request.ActionType == "DELETE" && request.PoiId != null)
                     {
-                        var poi = await _db.Pois.FindAsync(request.PoiId);
-                        if (poi != null)
+                        var targetPoiId = request.PoiId;
+
+                        // Soft delete: chỉ set IsActive = false, không xóa record
+                        var poi = await _db.Pois.FirstOrDefaultAsync(p => p.PoiId == targetPoiId);
+                        if (poi == null)
                         {
-                            await _pois.DeleteAsync(poi.PoiId);
+                            return new ReviewPoiResult
+                            {
+                                Success = false,
+                                Message = "Không tìm thấy POI để vô hiệu hóa",
+                                Detail = $"PoiId={targetPoiId} không tồn tại trong database"
+                            };
                         }
+
+                        poi.IsActive = false;
+                        poi.UpdatedAt = DateTime.UtcNow;
+                        request.UpdatedAt = DateTime.UtcNow;
+
+                        await _db.SaveChangesAsync();
+
+                        return new ReviewPoiResult
+                        {
+                            Success = true,
+                            Message = "Request DELETE approved – POI đã bị vô hiệu hóa",
+                            RequestId = requestId,
+                            Status = "APPROVED"
+                        };
                     }
-                    else if (request.ProposedData != null)
+
+                    // ===== CREATE / UPDATE =====
+                    if (request.ProposedData != null)
                     {
                         var draft = JsonSerializer.Deserialize<PoiDraftDto>(request.ProposedData, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                         if (draft != null)
@@ -255,18 +293,14 @@ namespace Server.Services
                                 if (draft.CategoryIds != null)
                                 {
                                     foreach (var catId in draft.CategoryIds)
-                                    {
                                         _db.CategoryPois.Add(new CategoryPoi { CategoryId = catId, PoiId = targetPoiId });
-                                    }
                                 }
 
                                 if (draft.GalleryImageUrls != null)
                                 {
                                     var order = 0;
                                     foreach (var img in draft.GalleryImageUrls.Skip(1))
-                                    {
                                         _db.PoiGalleries.Add(new PoiGallery { ImageId = Guid.NewGuid().ToString(), PoiId = targetPoiId, ImageUrl = img, SortOrder = order++ });
-                                    }
                                 }
 
                                 request.PoiId = targetPoiId;
@@ -283,33 +317,37 @@ namespace Server.Services
                                     if (!string.IsNullOrEmpty(draft.LogoUrl)) poi.LogoUrl = draft.LogoUrl;
                                     poi.UpdatedAt = DateTime.UtcNow;
 
-                                    var masterContent = await _db.PoiContents.FirstOrDefaultAsync(c => c.PoiId == targetPoiId && c.LanguageCode == "vi");
+                                    // Update master content – dùng IsMaster thay vì filter LanguageCode
+                                    var masterContent = await _db.PoiContents
+                                        .FirstOrDefaultAsync(c => c.PoiId == request.PoiId && c.IsMaster);
                                     if (masterContent != null)
                                     {
-                                        masterContent.Title = draft.Title ?? string.Empty;
-                                        masterContent.Description = draft.Description ?? string.Empty;
-                                        if (!string.IsNullOrEmpty(draft.AudioUrl))
-                                            masterContent.AudioUrl = draft.AudioUrl;
+                                        masterContent.Title = draft.Title ?? masterContent.Title;
+                                        masterContent.Description = draft.Description ?? masterContent.Description;
+                                        // AudioUrl: null = giữ nguyên; "" = xóa audio; có URL = cập nhật
+                                        if (draft.AudioUrl is not null)
+                                            masterContent.AudioUrl = string.IsNullOrEmpty(draft.AudioUrl) ? null : draft.AudioUrl;
                                     }
-                                    
-                                    var existingCats = _db.CategoryPois.Where(c => c.PoiId == targetPoiId);
+
+                                    var existingCats = _db.CategoryPois.Where(c => c.PoiId == request.PoiId);
                                     _db.CategoryPois.RemoveRange(existingCats);
                                     if (draft.CategoryIds != null)
                                     {
                                         foreach (var catId in draft.CategoryIds)
-                                            _db.CategoryPois.Add(new CategoryPoi { CategoryId = catId, PoiId = targetPoiId });
+                                            _db.CategoryPois.Add(new CategoryPoi { CategoryId = catId, PoiId = request.PoiId });
                                     }
 
-                                    var existingGallery = _db.PoiGalleries.Where(g => g.PoiId == targetPoiId);
+                                    var existingGallery = _db.PoiGalleries.Where(g => g.PoiId == request.PoiId);
                                     _db.PoiGalleries.RemoveRange(existingGallery);
                                     if (draft.GalleryImageUrls != null)
                                     {
                                         var order = 0;
                                         foreach (var img in draft.GalleryImageUrls.Skip(1))
-                                            _db.PoiGalleries.Add(new PoiGallery { ImageId = Guid.NewGuid().ToString(), PoiId = targetPoiId, ImageUrl = img, SortOrder = order++ });
+                                            _db.PoiGalleries.Add(new PoiGallery { ImageId = Guid.NewGuid().ToString(), PoiId = request.PoiId, ImageUrl = img, SortOrder = order++ });
                                     }
                                 }
                             }
+
                             await _db.SaveChangesAsync();
 
                             var localPoiId = targetPoiId;
@@ -335,13 +373,10 @@ namespace Server.Services
                                 {
                                     try
                                     {
-                                        var content = await pipeline.EnsureContentAsync(poi, lang);
+                                        await pipeline.EnsureContentAsync(poi, lang);
                                         await dbContext.Entry(poi).Collection(p => p.Contents).LoadAsync();
                                     }
-                                    catch (Exception ex)
-                                    {
-                                        _ = ex;
-                                    }
+                                    catch { }
                                 }
                             });
                         }

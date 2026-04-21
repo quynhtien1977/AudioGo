@@ -1,6 +1,7 @@
-import { useParams, useLocation } from "react-router-dom"
-import { useEffect, useState } from "react"
+import { useParams, useLocation, useNavigate } from "react-router-dom"
+import { useEffect, useRef, useState } from "react"
 import { PencilLine, CornerDownLeft } from "lucide-react"
+import toast from "react-hot-toast"
 
 import POIGallery from "@/components/POIGallery"
 import POIAudioPlayer from "@/components/POIAudioPlayer"
@@ -12,6 +13,7 @@ import ConfirmModal from "@/components/ConfirmModal"
 import { getPoiDetail } from "@/api/poiApi"
 import { getPoiRequestDetail, createPoiRequest } from "@/api/poiRequestApi"
 import { getCategoriesApi } from "@/api/categoryApi"
+import { uploadImage, uploadAudio } from "@/api/mediaApi"
 
 import useAuth from "@/hooks/useAuth"
 
@@ -21,6 +23,7 @@ const POIDetailPage = () => {
 
   const { id } = useParams()
   const location = useLocation()
+  const navigate = useNavigate()  // Bug #6
 
   const isRequest = location.pathname.includes("/pois/requests")
 
@@ -36,6 +39,10 @@ const POIDetailPage = () => {
 
   const [rejectReason, setRejectReason] = useState("")
   const [requestStatus, setRequestStatus] = useState("")
+
+  // Bug #2: lưu pending files chưa upload
+  const pendingImageFiles = useRef([])
+  const pendingAudioFile  = useRef(null)
 
   // ================= FETCH CATEGORY =================
   useEffect(() => {
@@ -66,29 +73,23 @@ const POIDetailPage = () => {
             console.error("Parse proposedData failed", e)
           }
 
-          // 🔥 map categoryId → name
           let categoryName = "Unknown"
           if (data.CategoryIds?.length > 0) {
-            const found = categories.find(
-              c => c.categoryId === data.CategoryIds[0]
-            )
+            const found = categories.find(c => c.categoryId === data.CategoryIds[0])
             if (found) categoryName = found.name
           }
 
           mapped = {
             id: res.requestId,
-            poiId: res.poiId,  // ✅ Lưu poiId thực từ PoiRequest
+            poiId: res.poiId,
             name: data.Title || "Unknown POI",
             description: data.Description || "",
             audio: data.AudioUrl || "",
-
             languageCode: "vi",
             category: categoryName,
-
             lat: Number(data.Latitude) || 0,
             lng: Number(data.Longitude) || 0,
             priority: Number(data.Priority) || 1,
-
             images: (() => {
               let urls = data.GalleryImageUrls || []
               if (data.LogoUrl) {
@@ -96,7 +97,6 @@ const POIDetailPage = () => {
               }
               return urls.length ? urls : ["https://placehold.co/600x400?text=POI"]
             })(),
-
             ActivityRadius: Number(data.ActivationRadius) || 100,
           }
 
@@ -105,24 +105,19 @@ const POIDetailPage = () => {
 
         } else {
           const poiDetail = await getPoiDetail(id)
-
-          const master =
-            poiDetail.contents?.find(c => c.isMaster) ||
-            poiDetail.contents?.[0]
+          const master = poiDetail.contents?.find(c => c.isMaster) || poiDetail.contents?.[0]
 
           mapped = {
             id: poiDetail.poiId,
-            poiId: poiDetail.poiId,  // ✅ Lưu poiId rõ ràng
+            poiId: poiDetail.poiId,
             name: master?.title || "Unknown POI",
             description: master?.description || "",
             audio: master?.audioUrl || "",
             languageCode: master?.languageCode || "vi",
-
             category: poiDetail.category || "Unknown",
             lat: poiDetail.latitude,
             lng: poiDetail.longitude,
             priority: Number(poiDetail.priority) || 1,
-
             images: (() => {
               let urls = poiDetail.gallery?.map(g => g.imageUrl) || []
               if (poiDetail.logoUrl) {
@@ -130,7 +125,6 @@ const POIDetailPage = () => {
               }
               return urls.length ? urls : ["https://placehold.co/600x400?text=POI"]
             })(),
-
             ActivityRadius: poiDetail.activationRadius ?? 100,
           }
         }
@@ -157,6 +151,14 @@ const POIDetailPage = () => {
     setForm(prev => ({ ...prev, [key]: value }))
   }
 
+  // Bug #2: callbacks nhận pending files
+  const handlePendingImageFiles = (files) => {
+    pendingImageFiles.current = files || []
+  }
+  const handlePendingAudioFile = (file) => {
+    pendingAudioFile.current = file || null
+  }
+
   // ================= SAVE =================
   const handleConfirmSave = async () => {
     if (isSubmitting) return
@@ -164,16 +166,50 @@ const POIDetailPage = () => {
       setIsSubmitting(true)
       if (!categories.length) return
       if (!form.poiId && !id) {
-        alert("Lỗi: Không tìm thấy POI ID")
+        toast.error("Lỗi: Không tìm thấy POI ID")  // Bug #7
         return
       }
 
-      // 🔥 map name → id
-      const selectedCategory = categories.find(
-        c => c.name === form.category
-      )
+      // Ràng buộc: phải có ít nhất 1 logo VÀ 1 ảnh gallery
+      if (!form.images || form.images.length === 0) {
+        toast.error("Vui lòng thêm ảnh logo (ảnh đầu tiên)")
+        setIsSubmitting(false)
+        return
+      }
+      if (form.images.length < 2) {
+        toast.error("Vui lòng thêm ít nhất 1 ảnh gallery (ngoài ảnh logo)")
+        setIsSubmitting(false)
+        return
+      }
 
-      const poiId = form.poiId || id  // ✅ Ưu tiên form.poiId (từ PoiRequest), fallback về id (từ URL)
+      // Bug #2: Upload pending files lên Azure trước khi submit
+      let finalImages = [...(form.images || [])]
+      let finalAudio  = form.audio || ""
+
+      for (let i = 0; i < finalImages.length; i++) {
+        if (finalImages[i].startsWith("blob:") && pendingImageFiles.current[i]) {
+          try {
+            finalImages[i] = await uploadImage(pendingImageFiles.current[i], "pois")
+          } catch {
+            toast.error(`Lỗi upload ảnh ${i + 1}. Vui lòng thử lại.`)
+            setIsSubmitting(false)
+            return
+          }
+        }
+      }
+
+      if (finalAudio.startsWith("blob:") && pendingAudioFile.current) {
+        try {
+          finalAudio = await uploadAudio(pendingAudioFile.current)
+        } catch {
+          toast.error("Lỗi upload audio. Vui lòng thử lại.")
+          setIsSubmitting(false)
+          return
+        }
+      }
+
+      const selectedCategory = categories.find(c => c.name === form.category)
+      const poiId = form.poiId || id
 
       const payload = {
         ActionType: "UPDATE",
@@ -183,31 +219,28 @@ const POIDetailPage = () => {
           Longitude: form.lng,
           ActivationRadius: form.ActivityRadius || 100,
           Priority: form.priority || 1,
-          LogoUrl: form.images?.[0] || "",
-
+          LogoUrl: finalImages[0] || "",
           Title: form.name,
           Description: form.description,
-
-          CategoryIds: selectedCategory
-            ? [selectedCategory.categoryId]
-            : [],
-
-          GalleryImageUrls: form.images || [],
-
-          AudioUrl: form.audio || ""
+          CategoryIds: selectedCategory ? [selectedCategory.categoryId] : [],
+          GalleryImageUrls: finalImages,
+          // Bug #4: "" = xóa audio, URL = có audio; backend sẽ phân biệt null vs ""
+          AudioUrl: finalAudio,
+          // Ngôn ngữ master content owner đang dùng
+          LanguageCode: form.languageCode || "vi",
         }
       }
 
       await createPoiRequest(payload)
-
-      alert("Đã gửi yêu cầu cập nhật thành công!")
+      toast.success("Đã gửi yêu cầu cập nhật thành công!")  // Bug #7
 
       setIsEditing(false)
       setShowConfirm(false)
+      navigate("/pois")  // Bug #6: tự navigate về danh sách sau khi submit
 
     } catch (err) {
       console.error(err)
-      alert("Đã gửi yêu cầu thất bại!")
+      toast.error("Gửi yêu cầu thất bại!")  // Bug #7
     } finally {
       setIsSubmitting(false)
     }
@@ -215,29 +248,14 @@ const POIDetailPage = () => {
 
   const getCategoryColor = (category) => {
     switch (category) {
-      case "Di tích lịch sử":
-        return "bg-blue-100 text-blue-500"
-
-      case "Ẩm thực":
-        return "bg-pink-100 text-pink-500"
-
-      case "Hải sản & Ốc":
-        return "bg-cyan-100 text-cyan-500"
-
-      case "Cà phê & Giải khát":
-        return "bg-orange-100 text-orange-500"
-
-      case "Chùa & Tôn giáo":
-        return "bg-purple-100 text-purple-500"
-
-      case "Giải trí":
-        return "bg-green-100 text-green-500"
-
-      case "Mua sắm":
-        return "bg-yellow-100 text-yellow-600"
-
-      default:
-        return "bg-gray-100 text-gray-500"
+      case "Di tích lịch sử":    return "bg-blue-100 text-blue-500"
+      case "Ẩm thực":            return "bg-pink-100 text-pink-500"
+      case "Hải sản & Ốc":       return "bg-cyan-100 text-cyan-500"
+      case "Cà phê & Giải khát": return "bg-orange-100 text-orange-500"
+      case "Chùa & Tôn giáo":    return "bg-purple-100 text-purple-500"
+      case "Giải trí":           return "bg-green-100 text-green-500"
+      case "Mua sắm":            return "bg-yellow-100 text-yellow-600"
+      default:                   return "bg-gray-100 text-gray-500"
     }
   }
 
@@ -310,9 +328,26 @@ const POIDetailPage = () => {
       <div className="grid grid-cols-12 gap-6">
 
         <div className="col-span-8 space-y-6">
-          <POIGallery images={form.images} isEditing={isEditing} onChange={handleChange} />
-          <POIAudioPlayer src={form.audio} isEditing={isEditing} onChange={handleChange} />
-          <POIScript value={form.description} onChange={(val) => handleChange("description", val)} isEditing={isEditing} />
+          {/* Bug #2: uploadOnSelect=false khi đang edit */}
+          <POIGallery
+            images={form.images}
+            isEditing={isEditing}
+            onChange={handleChange}
+            uploadOnSelect={!isEditing}
+            onPendingFiles={handlePendingImageFiles}
+          />
+          <POIAudioPlayer
+            src={form.audio}
+            isEditing={isEditing}
+            onChange={handleChange}
+            uploadOnSelect={!isEditing}
+            onPendingFile={handlePendingAudioFile}
+          />
+          <POIScript
+            value={form.description}
+            onChange={(val) => handleChange("description", val)}
+            isEditing={isEditing}
+          />
         </div>
 
         <div className="col-span-4 space-y-6">

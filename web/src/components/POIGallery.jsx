@@ -1,5 +1,6 @@
 import { Camera, X, Loader2 } from "lucide-react";
 import { useRef, useState } from "react";
+import toast from "react-hot-toast";
 import { uploadImage } from "@/api/mediaApi";
 
 // Giới hạn tối đa 4 ảnh: 1 main + 3 sub
@@ -11,19 +12,40 @@ const FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1504674900247-0877df9cc836",
 ];
 
-const POIGallery = ({ images, isEditing, onChange }) => {
+/**
+ * POIGallery
+ * Props:
+ *  - images: string[]          — danh sách URL ảnh (cloud hoặc blob URL preview)
+ *  - isEditing: boolean
+ *  - onChange(key, value)      — callback cập nhật images lên parent
+ *  - uploadOnSelect?: boolean  — true = upload ngay lên Azure khi chọn file (default: true)
+ *                                false = chỉ preview local, parent tự upload khi submit
+ *  - onPendingFiles?(files)    — callback trả File[] cho parent khi uploadOnSelect=false
+ */
+const POIGallery = ({
+  images,
+  isEditing,
+  onChange,
+  uploadOnSelect = true,
+  onPendingFiles,
+}) => {
   const coverInputRef = useRef(null);
-  const addPhotoInputRef = useRef(null);
+  // Bug #1 fix: mỗi slot ADD có ref riêng, tránh conflict khi re-render
   const subInputRefs = [useRef(null), useRef(null), useRef(null)];
+  const addInputRefs  = [useRef(null), useRef(null), useRef(null)];
 
-  const [uploadingIndex, setUploadingIndex] = useState(null); // index đang upload, null = không upload
+  const [uploadingIndex, setUploadingIndex] = useState(null);
+  // Lưu pending files (khi uploadOnSelect=false)
+  const [pendingFiles, setPendingFiles] = useState({});
 
   const mainImage = images?.[0] || FALLBACK_IMAGES[0];
   const sub1 = images?.[1] || (isEditing ? null : FALLBACK_IMAGES[1]);
   const sub2 = images?.[2] || null;
   const sub3 = images?.[3] || null;
 
-  // Upload ảnh lên Azure, trả về URL thật
+  // ============================================================
+  // Core: xử lý file được chọn tại slot index
+  // ============================================================
   const handleFileChange = async (e, index) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -31,27 +53,40 @@ const POIGallery = ({ images, isEditing, onChange }) => {
     // Reset input để có thể chọn lại cùng file
     e.target.value = "";
 
-    try {
-      setUploadingIndex(index);
-
-      const url = await uploadImage(file, "pois");
-
+    if (!uploadOnSelect) {
+      // Bug #2: Chỉ preview local, lưu File object
+      const blobUrl = URL.createObjectURL(file);
       const currentImages = Array.isArray(images) ? [...images] : [];
 
       if (index >= 0 && index < currentImages.length) {
-        // Thay ảnh tại đúng slot (cover hoặc sub)
+        currentImages[index] = blobUrl;
+      } else if (currentImages.length < MAX_IMAGES) {
+        currentImages.push(blobUrl);
+      }
+
+      const newPending = { ...pendingFiles, [index >= currentImages.length - 1 ? currentImages.length - 1 : index]: file };
+      setPendingFiles(newPending);
+      onChange("images", currentImages);
+      onPendingFiles?.(Object.values(newPending));
+      return;
+    }
+
+    // Upload ngay lên Azure
+    try {
+      setUploadingIndex(index);
+      const url = await uploadImage(file, "pois");
+      const currentImages = Array.isArray(images) ? [...images] : [];
+
+      if (index >= 0 && index < currentImages.length) {
         currentImages[index] = url;
-      } else {
-        // Thêm ảnh mới vào cuối (slot trống)
-        if (currentImages.length < MAX_IMAGES) {
-          currentImages.push(url);
-        }
+      } else if (currentImages.length < MAX_IMAGES) {
+        currentImages.push(url);
       }
 
       onChange("images", currentImages);
     } catch (err) {
       console.error("Upload ảnh thất bại:", err);
-      alert("Upload ảnh thất bại. Vui lòng thử lại.");
+      toast.error("Upload ảnh thất bại. Vui lòng thử lại.");
     } finally {
       setUploadingIndex(null);
     }
@@ -62,18 +97,18 @@ const POIGallery = ({ images, isEditing, onChange }) => {
     const currentImages = Array.isArray(images) ? [...images] : [];
     currentImages.splice(index, 1);
     onChange("images", currentImages);
-  };
 
-  // Thêm ảnh phụ mới (khi click ADD slot) — index = length (ngoài mảng = push mới)
-  const handleAddPhoto = async (e) => {
-    await handleFileChange(e, images?.length ?? 0); // index ngoài mảng = push mới
+    // Xóa pending file tương ứng nếu có
+    if (!uploadOnSelect) {
+      const newPending = { ...pendingFiles };
+      delete newPending[index];
+      setPendingFiles(newPending);
+      onPendingFiles?.(Object.values(newPending));
+    }
   };
 
   // Render 1 slot ảnh phụ bên phải
   const renderSubSlot = (subImage, slotIndex, uiIndex) => {
-    // slotIndex = 1/2/3 trong mảng images
-    // uiIndex = 0/1/2 thứ tự hiển thị
-
     const isUploading = uploadingIndex === slotIndex;
 
     if (isUploading) {
@@ -103,6 +138,7 @@ const POIGallery = ({ images, isEditing, onChange }) => {
           )}
           {isEditing && (
             <>
+              {/* Bug #1 fix: dùng subInputRefs[uiIndex] riêng từng slot */}
               <input
                 type="file"
                 ref={subInputRefs[uiIndex]}
@@ -111,7 +147,7 @@ const POIGallery = ({ images, isEditing, onChange }) => {
                 onChange={(e) => handleFileChange(e, slotIndex)}
               />
               <button
-                onClick={() => subInputRefs[uiIndex].current.click()}
+                onClick={() => subInputRefs[uiIndex].current?.click()}
                 className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white/90 px-3 py-1 rounded-xl shadow text-[10px] font-bold text-pink-500 uppercase tracking-wider opacity-0 group-hover:opacity-100 transition"
               >
                 <Camera className="w-3 h-3" /> Đổi
@@ -126,15 +162,16 @@ const POIGallery = ({ images, isEditing, onChange }) => {
     if (isEditing && (images?.length || 0) < MAX_IMAGES) {
       return (
         <div className="relative group overflow-hidden rounded-3xl">
+          {/* Bug #1 fix: mỗi slot ADD có ref riêng addInputRefs[uiIndex] */}
           <input
             type="file"
-            ref={addPhotoInputRef}
+            ref={addInputRefs[uiIndex]}
             className="hidden"
             accept="image/*"
-            onChange={handleAddPhoto}
+            onChange={(e) => handleFileChange(e, images?.length ?? 0)}
           />
           <div
-            onClick={() => addPhotoInputRef.current.click()}
+            onClick={() => addInputRefs[uiIndex].current?.click()}
             className="w-full h-full border-2 border-dashed border-pink-200 bg-pink-50/50 flex flex-col items-center justify-center gap-2 hover:bg-pink-100 hover:border-pink-300 transition-all duration-300 cursor-pointer active:scale-95"
           >
             <div className="bg-white p-3 rounded-2xl shadow-sm text-pink-400">
@@ -185,7 +222,7 @@ const POIGallery = ({ images, isEditing, onChange }) => {
 
         {isEditing && (
           <button
-            onClick={() => coverInputRef.current.click()}
+            onClick={() => coverInputRef.current?.click()}
             className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/90 backdrop-blur-sm px-5 py-2.5 rounded-xl shadow-lg hover:bg-white transition-all active:scale-95"
           >
             <Camera className="w-4 h-4 text-pink-500" />
