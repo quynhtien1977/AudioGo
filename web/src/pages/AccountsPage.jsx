@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useContext } from "react"
 import { ChevronLeft, ChevronRight, Trash, Lock, Unlock } from "lucide-react"
 import toast from "react-hot-toast"
 
@@ -10,6 +10,7 @@ import {
 
 import CreateAccountModal from "@/components/CreateAccountModal"
 import ConfirmModal from "@/components/ConfirmModal"
+import { SearchContext } from "@/context/SearchContext"
 
 const roleStyle = (role) => {
   if (role === "Admin") return "bg-pink-100 text-pink-500"
@@ -27,7 +28,9 @@ const formatDate = (dateString) => {
 const safe = (value) => value || "Unknown"
 
 export default function AccountsPage() {
+  const { searchFilter } = useContext(SearchContext)
   const [users, setUsers] = useState([])
+  const [filteredUsers, setFilteredUsers] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [showRoleChangeModal, setShowRoleChangeModal] = useState(false)
@@ -51,6 +54,22 @@ export default function AccountsPage() {
 
     fetchData()
   }, [])
+
+  // SEARCH FILTERING EFFECT
+  useEffect(() => {
+    if (searchFilter?.pageType === "account" && searchFilter?.query) {
+      const searchTerm = searchFilter.query.toLowerCase()
+      const filtered = users.filter(
+        (acc) =>
+          acc.username?.toLowerCase().includes(searchTerm) ||
+          acc.email?.toLowerCase().includes(searchTerm)
+      )
+      setFilteredUsers(filtered)
+      setCurrentPage(1) // Reset to first page
+    } else {
+      setFilteredUsers(users)
+    }
+  }, [searchFilter, users])
 
   // CREATE
   const handleAddUser = (user) => {
@@ -144,9 +163,10 @@ export default function AccountsPage() {
     );
   }, []);
 
-  const totalPages = Math.ceil(users.length / pageSize)
+  const displayData = filteredUsers.length > 0 ? filteredUsers : users
+  const totalPages = Math.ceil(displayData.length / pageSize)
 
-  const paginatedUsers = users.slice(
+  const paginatedUsers = displayData.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   )

@@ -1,10 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { Headphones, Play, Pause, RefreshCw, Search, ChevronDown, ChevronUp, Languages, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { audioContentApi } from "../api/audioContentApi";
+import { SearchContext } from "@/context/SearchContext";
 
 export default function AudioContentPage() {
+    const { searchFilter } = useContext(SearchContext);
     const [audioContents, setAudioContents] = useState([]);
+    const [filteredAudioContents, setFilteredAudioContents] = useState([]);
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -36,6 +39,22 @@ export default function AudioContentPage() {
             setLoading(false);
         }
     };
+
+    // SEARCH FILTERING EFFECT
+    useEffect(() => {
+        if (searchFilter?.pageType === "audio" && searchFilter?.query) {
+            const searchTerm = searchFilter.query.toLowerCase();
+            const filtered = audioContents.filter(
+                (item) =>
+                    item.poiName?.toLowerCase().includes(searchTerm) ||
+                    item.description?.toLowerCase().includes(searchTerm)
+            );
+            setFilteredAudioContents(filtered);
+            setPage(1); // Reset to first page
+        } else {
+            setFilteredAudioContents(audioContents);
+        }
+    }, [searchFilter, audioContents]);
 
     const togglePlay = (id, url) => {
         if (playingId === id) {
@@ -120,7 +139,7 @@ export default function AudioContentPage() {
             <div className="w-full bg-white rounded-2xl border overflow-hidden shadow-sm">
                 <div className="flex justify-between items-center p-6 border-b">
                     <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                        <Headphones className="w-5 h-5 text-gray-500" /> Bản ghi gốc ({audioContents.length})
+                        <Headphones className="w-5 h-5 text-gray-500" /> Bản ghi gốc ({filteredAudioContents.length})
                     </h2>
                 </div>
 
@@ -137,10 +156,10 @@ export default function AudioContentPage() {
                         </div>
 
                         {/* LOAD / EMPTY */}
-                        {loading && audioContents.length === 0 && (
+                        {loading && filteredAudioContents.length === 0 && (
                             <div className="p-10 text-center text-gray-400">Đang tải dữ liệu...</div>
                         )}
-                        {!loading && audioContents.length === 0 && (
+                        {!loading && filteredAudioContents.length === 0 && (
                             <div className="p-10 text-center text-gray-400 flex flex-col items-center">
                                 <Search className="w-10 h-10 text-gray-200 mb-2" />
                                 Chưa có nội dung âm thanh nào.
@@ -148,7 +167,7 @@ export default function AudioContentPage() {
                         )}
 
                         {/* LIST */}
-                        {audioContents.length > 0 && audioContents.map(c => {
+                        {filteredAudioContents.length > 0 && filteredAudioContents.map(c => {
                             const isExpanded = expandedRows[c.contentId];
                             return (
                                 <div key={c.contentId} className="flex flex-col">

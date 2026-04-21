@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   Plus, Search, MapPin, Calendar, ShieldCheck,
@@ -7,6 +7,8 @@ import {
 
 import ConfirmModal from "@/components/ConfirmModal";
 import Card from "@/components/Card";
+import { getAllToursApi } from "@/api/tourApi";
+import { SearchContext } from "@/context/SearchContext";
 
 const initialTours = [
   {
@@ -32,10 +34,13 @@ const initialTours = [
 ];
 
 const ToursPage = () => {
-  const [tours, setTours] = useState(initialTours);
+  const navigate = useNavigate();
+  const { searchFilter } = useContext(SearchContext);
+  const [tours, setTours] = useState([]);
+  const [filteredTours, setFilteredTours] = useState([]);
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef(null);
 
   // State cho Tour mới
@@ -45,6 +50,39 @@ const ToursPage = () => {
     thumbnail: "",
     totalTime: ""
   });
+
+  // Fetch tours from API
+  useEffect(() => {
+    const fetchTours = async () => {
+      try {
+        setIsLoading(true);
+        const data = await getAllToursApi();
+        setTours(data || []);
+      } catch (err) {
+        console.error("Error loading tours:", err);
+        setTours([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTours();
+  }, []);
+
+  // SEARCH FILTERING EFFECT
+  useEffect(() => {
+    if (searchFilter?.pageType === "tour" && searchFilter?.query) {
+      const searchTerm = searchFilter.query.toLowerCase();
+      const filtered = tours.filter(
+        (tour) =>
+          tour.name?.toLowerCase().includes(searchTerm) ||
+          tour.description?.toLowerCase().includes(searchTerm)
+      );
+      setFilteredTours(filtered);
+    } else {
+      setFilteredTours(tours);
+    }
+  }, [searchFilter, tours]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -126,7 +164,7 @@ const ToursPage = () => {
 
       {/* GRID LIST */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {tours.map((tour) => (
+        {filteredTours.map((tour) => (
           <div key={tour.id} className={`bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden group hover:shadow-xl transition-all ${tour.isHidden ? 'opacity-60' : ''}`}>
             <div className="relative h-48 w-full overflow-hidden">
               <img src={tour.thumbnail || "https://via.placeholder.com/400x200?text=No+Image"} alt={tour.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />

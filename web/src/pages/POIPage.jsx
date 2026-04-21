@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useContext } from "react"
 import { NavLink } from "react-router-dom"
 import toast from "react-hot-toast"
 import {
@@ -26,16 +26,19 @@ import { getAllPOIs, updatePOI, deletePOI } from "@/api/poiApi"
 import { getContentsByPOI } from "@/api/contentApi"
 import { getMyPoiRequests, getPoiRequestDetail, createPoiRequest } from "@/api/poiRequestApi"
 
-import useAuth from "@/hooks/useAuth";
+import useAuth from "@/hooks/useAuth"
+import { SearchContext } from "@/context/SearchContext"
 
 
 export default function POIPage() {
 
   const { user } = useAuth();
+  const { searchFilter } = useContext(SearchContext)
   const role = user?.role;
   const accountId = user?.accountId;
 
   const [pois, setPois] = useState([])
+  const [filteredPois, setFilteredPois] = useState([])
   const [poiRequests, setPoiRequests] = useState([])
   const [poiRequestDetails, setPoiRequestDetails] = useState({})
   const [isLoading, setIsLoading] = useState(false)
@@ -189,14 +192,31 @@ export default function POIPage() {
     }
   }, [role, accountId])
 
+  // SEARCH FILTERING EFFECT
+  useEffect(() => {
+    if (searchFilter?.pageType === "poi" && searchFilter?.query) {
+      const searchTerm = searchFilter.query.toLowerCase()
+      const filtered = pois.filter(
+        (poi) =>
+          poi.name?.toLowerCase().includes(searchTerm) ||
+          poi.category?.toLowerCase().includes(searchTerm)
+      )
+      setFilteredPois(filtered)
+      setCurrentPage(1) // Reset to first page
+    } else {
+      setFilteredPois(pois)
+    }
+  }, [searchFilter, pois])
+
   // PAGINATION LOGIC
-  const totalItems = pois.length
+  const displayData = filteredPois.length > 0 ? filteredPois : pois
+  const totalItems = displayData.length
   const totalPages = Math.ceil(totalItems / itemsPerPage)
 
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
 
-  const currentPOIs = pois.slice(startIndex, endIndex)
+  const currentPOIs = displayData.slice(startIndex, endIndex)
 
   const goToPage = (page) => {
     if (page >= 1 && page <= totalPages) {
