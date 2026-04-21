@@ -15,10 +15,11 @@ import LoginPage from "@/pages/LoginPage";
 import CategoryPage from "@/pages/CategoryPage";
 import POIDetailPage from "@/pages/POIDetailPage";
 import AddPOIPage from "@/pages/AddPOIPage";
-import AudioPage from "@/pages/AudioPage";
+import AudioContentPage from "@/pages/AudioContentPage";
 import ToursPage from "@/pages/ToursPage";
 import TourDetailPage from "@/pages/TourDetailPage";
 import DeviceTrackingPage from "@/pages/DeviceTrackingPage";
+import AccessCodePage from "@/pages/AccessCodePage";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 
@@ -178,9 +179,9 @@ export default function App() {
         <Route
           path="/audio"
           element={
-            <ProtectedRoute roles={["Owner"]}>
+            <ProtectedRoute roles={["Admin", "Owner"]}>
               <MainLayout>
-                <AudioPage />
+                <AudioContentPage />
               </MainLayout>
             </ProtectedRoute>
           }
@@ -205,6 +206,18 @@ export default function App() {
             <ProtectedRoute roles={["Admin"]}>
               <MainLayout>
                 <AccountsPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Access Codes (ADMIN only) */}
+        <Route
+          path="/access-codes"
+          element={
+            <ProtectedRoute roles={["Admin"]}>
+              <MainLayout>
+                <AccessCodePage />
               </MainLayout>
             </ProtectedRoute>
           }

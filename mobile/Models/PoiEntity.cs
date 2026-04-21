@@ -11,7 +11,7 @@ namespace AudioGo.Models
     public class PoiEntity
     {
         // ── Poi table ──────────────────────────────────────────────
-        [PrimaryKey]
+        [PrimaryKey, NotNull]
         public string PoiId { get; set; } = string.Empty;
 
         public double Latitude { get; set; }

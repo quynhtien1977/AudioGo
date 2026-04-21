@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { CheckCircle, XCircle, Edit2 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import toast from "react-hot-toast"
 
 import POIManagementListComponent from "@/components/POIManagementListComponent"
 import ConfirmModal from "@/components/ConfirmModal"
@@ -91,7 +92,7 @@ export default function POINewListPage() {
       } catch (err) {
         console.error("❌ Load POI ERROR:", err)
       } finally {
-        setLoading(false)
+    setLoading(false)
       }
     }
 
@@ -109,7 +110,7 @@ export default function POINewListPage() {
 
   const handleConfirmApprove = async () => {
     try {
-      await reviewPoiRequest(selectedPoiId, { status: "APPROVED" })
+      await reviewPoiRequest(selectedPoiId, { approved: true })
       setPoiList(prev =>
         prev
           .map(p =>
@@ -126,9 +127,10 @@ export default function POINewListPage() {
       )
       setShowApproveModal(false)
       setSelectedPoiId(null)
+      toast.success("Đã phê duyệt POI mới")
     } catch (err) {
       console.error("Approve error:", err)
-      alert("Phê duyệt thất bại")
+      toast.error("Phê duyệt thất bại: " + (err.message || ""))
     }
   }
 
@@ -141,7 +143,7 @@ export default function POINewListPage() {
   const handleConfirmReject = async () => {
     try {
       await reviewPoiRequest(selectedPoiId, { 
-        status: "REJECTED",
+        approved: false,
         rejectReason: rejectReason 
       })
       setPoiList(prev =>
@@ -161,53 +163,54 @@ export default function POINewListPage() {
       setShowRejectModal(false)
       setSelectedPoiId(null)
       setRejectReason("")
+      toast.success("Đã từ chối POI mới")
     } catch (err) {
       console.error("Reject error:", err)
-      alert("Từ chối thất bại")
+      toast.error("Từ chối thất bại: " + (err.message || ""))
     }
   }
 
   return (
     <>
-      <POIManagementListComponent
-        title="POI Mới Tạo"
-        description="Xem và phê duyệt các địa điểm được thêm gần đây"
-        type="new"
-        badgeColor="bg-blue-100"
-        badgeTextColor="text-blue-700"
-        hoverBg="hover:bg-blue-50/30"
-        poiList={poiList}
-        loading={loading}
-        statsLabel="chờ phê duyệt"
-        emptyMessage="Không có POI nào chờ phê duyệt"
-        renderActions={(poi) => (
-          <>
-            <button
-              onClick={() => handleReview(poi.id)}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition font-semibold"
-            >
-              <Edit2 size={18} />
-              Xem chi tiết
-            </button>
+    <POIManagementListComponent
+      title="POI Mới Tạo"
+      description="Xem và phê duyệt các địa điểm được thêm gần đây"
+      type="new"
+      badgeColor="bg-blue-100"
+      badgeTextColor="text-blue-700"
+      hoverBg="hover:bg-blue-50/30"
+      poiList={poiList}
+      loading={loading}
+      statsLabel="chờ phê duyệt"
+      emptyMessage="Không có POI nào chờ phê duyệt"
+      renderActions={(poi) => (
+        <>
+          <button
+            onClick={() => handleReview(poi.id)}
+            className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition font-semibold"
+          >
+            <Edit2 size={18} />
+            Xem chi tiết
+          </button>
 
-            <button
-              onClick={() => handleApprove(poi.id)}
-              className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition font-semibold"
-            >
-              <CheckCircle size={18} />
-              Chấp nhận
-            </button>
+          <button
+            onClick={() => handleApprove(poi.id)}
+            className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition font-semibold"
+          >
+            <CheckCircle size={18} />
+            Chấp nhận
+          </button>
 
-            <button
-              onClick={() => handleReject(poi.id)}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition font-semibold"
-            >
-              <XCircle size={18} />
-              Từ chối
-            </button>
-          </>
-        )}
-      />
+          <button
+            onClick={() => handleReject(poi.id)}
+            className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition font-semibold"
+          >
+            <XCircle size={18} />
+            Từ chối
+          </button>
+        </>
+      )}
+    />
 
       {showApproveModal && (
         <ConfirmModal

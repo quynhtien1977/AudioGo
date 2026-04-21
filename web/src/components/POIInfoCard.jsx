@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { getCategoriesApi } from "@/api/categoryApi"
+import { getPriorityColor, getPriorityInfo } from "@/components/PriorityBadge"
 
 const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role, getCategoryColor }) => {
   if (!poi) return null;
@@ -142,23 +143,6 @@ const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role, getCategor
           <p className="text-sm font-bold text-gray-700 italic">{poi.ActivityRadius || 50} M</p>
         </div>
         {/* Priority */}
-        {/* <div className="flex-1 min-h-[45px]">
-          <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Độ ưu tiên</p>
-          <span
-            className={`px-2 py-1 rounded-full text-xs font-semibold ${
-              poi.priority === "CRITICAL"
-                ? "bg-red-100 text-red-500"
-                : poi.priority === "HIGH"
-                ? "bg-yellow-100 text-yellow-600"
-                : poi.priority === "MEDIUM"
-                ? "bg-gray-200 text-gray-600"
-                : "bg-gray-100 text-gray-400"
-            }`}
-          >
-            {poi.priority}
-          </span>
-        </div> */}
-        {/* Priority */}
         <div className="flex-1 min-h-[45px]">
           <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Độ ưu tiên</p>
 
@@ -183,19 +167,9 @@ const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role, getCategor
             </div>
           ) : (
             <span
-              className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                (poi.priority === 4 || poi.priority === "CRITICAL")
-                  ? "bg-red-100 text-red-500"
-                  : (poi.priority === 3 || poi.priority === "HIGH")
-                  ? "bg-yellow-100 text-yellow-600"
-                  : (poi.priority === 2 || poi.priority === "MEDIUM")
-                  ? "bg-gray-200 text-gray-600"
-                  : "bg-gray-100 text-gray-400"
-              }`}
+              className={`px-2 py-1 rounded-full text-xs font-semibold ${getPriorityColor(poi.priority)}`}
             >
-              {typeof poi.priority === "number"
-                ? ["LOW", "MEDIUM", "HIGH", "CRITICAL"][poi.priority - 1]
-                : poi.priority}
+              {getPriorityInfo(poi.priority).label}
             </span>
           )}
         </div>

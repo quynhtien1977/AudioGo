@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Edit2, CheckCircle, XCircle } from "lucide-react"
+import toast from "react-hot-toast"
 
 import POIManagementListComponent from "@/components/POIManagementListComponent"
 import ConfirmModal from "@/components/ConfirmModal"
@@ -96,8 +97,9 @@ export default function POIUpdateListPage() {
               address: poiDetail?.contents?.find(c => c.isMaster)?.address || "",
               priority: poiDetail?.priority || 2,
               language: poiDetail?.contents?.map(c => c.language).join(", ") || "",
-              audio: poiDetail?.contents?.find(c => c.isMaster)?.audioFileName || "",
-              images: poiDetail?.gallery?.map(g => g.imageFileName).join(",") || "",
+              // Bug #4: dùng audioUrl và imageUrl (Azure URL)
+              audio: poiDetail?.contents?.find(c => c.isMaster)?.audioUrl?.trim() || "",
+              images: poiDetail?.gallery?.map(g => g.imageUrl).join(",") || "",
             }
 
             const newPoi = {
@@ -107,10 +109,11 @@ export default function POIUpdateListPage() {
               latitude: data.Latitude?.toString() || "",
               longitude: data.Longitude?.toString() || "",
               address: data.Address || "",
-              priority: data.Priority || 2,
+              priority: data.Priority ?? 2,
               language: data.Language || "",
-              audio: data.AudioFileName || "",
-              images: data.ImageFileNames?.join(",") || "",
+              // Bug #4: AudioUrl từ proposedData
+              audio: data.AudioUrl?.trim() ?? "",
+              images: data.GalleryImageUrls?.join(",") || "",
             }
 
             const changeCount = Object.keys(oldPoi).filter(
@@ -137,7 +140,7 @@ export default function POIUpdateListPage() {
       } catch (err) {
         console.error("UPDATE PAGE ERROR:", err)
       } finally {
-        setLoading(false)
+    setLoading(false)
       }
     }
 
@@ -155,7 +158,7 @@ export default function POIUpdateListPage() {
 
   const handleConfirmApprove = async () => {
     try {
-      await reviewPoiRequest(selectedPoiId, { status: "APPROVED" })
+      await reviewPoiRequest(selectedPoiId, { approved: true })
       setPoiList(prev =>
         prev
           .map(p =>
@@ -172,9 +175,10 @@ export default function POIUpdateListPage() {
       )
       setShowApproveModal(false)
       setSelectedPoiId(null)
+      toast.success("Đã phê duyệt cập nhật POI")
     } catch (err) {
       console.error("Approve error:", err)
-      alert("Phê duyệt thất bại")
+      toast.error("Phê duyệt thất bại: " + (err.message || ""))
     }
   }
 
@@ -187,7 +191,7 @@ export default function POIUpdateListPage() {
   const handleConfirmReject = async () => {
     try {
       await reviewPoiRequest(selectedPoiId, { 
-        status: "REJECTED",
+        approved: false,
         rejectReason: rejectReason 
       })
       setPoiList(prev =>
@@ -207,58 +211,59 @@ export default function POIUpdateListPage() {
       setShowRejectModal(false)
       setSelectedPoiId(null)
       setRejectReason("")
+      toast.success("Đã từ chối cập nhật POI")
     } catch (err) {
       console.error("Reject error:", err)
-      alert("Từ chối thất bại")
+      toast.error("Từ chối thất bại: " + (err.message || ""))
     }
   }
 
   return (
     <>
-      <POIManagementListComponent
-        title="POI Cần Cập Nhật"
-        description="Xem xét yêu cầu sửa đổi và cải thiện dữ liệu"
-        type="update"
-        badgeColor="bg-amber-100"
-        badgeTextColor="text-amber-700"
-        hoverBg="hover:bg-amber-50/30"
-        poiList={poiList}
-        loading={loading}
-        statsLabel="chờ xử lý"
-        emptyMessage="Không có POI nào cần cập nhật"
-        renderExtraInfo={(poi) => (
-          <div className="bg-amber-50 px-3 py-1 inline-block rounded-full text-sm font-semibold text-amber-700">
-            📝 {poi.changeCount} thay đổi
-          </div>
-        )}
-        renderActions={(poi) => (
-          <>
-            <button
-              onClick={() => handleReview(poi.id)}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition font-semibold"
-            >
-              <Edit2 size={18} />
-              Xem xét
-            </button>
+    <POIManagementListComponent
+      title="POI Cần Cập Nhật"
+      description="Xem xét yêu cầu sửa đổi và cải thiện dữ liệu"
+      type="update"
+      badgeColor="bg-amber-100"
+      badgeTextColor="text-amber-700"
+      hoverBg="hover:bg-amber-50/30"
+      poiList={poiList}
+      loading={loading}
+      statsLabel="chờ xử lý"
+      emptyMessage="Không có POI nào cần cập nhật"
+      renderExtraInfo={(poi) => (
+        <div className="bg-amber-50 px-3 py-1 inline-block rounded-full text-sm font-semibold text-amber-700">
+          📝 {poi.changeCount} thay đổi
+        </div>
+      )}
+      renderActions={(poi) => (
+        <>
+          <button
+            onClick={() => handleReview(poi.id)}
+            className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition font-semibold"
+          >
+            <Edit2 size={18} />
+            Xem xét
+          </button>
 
-            <button
-              onClick={() => handleApprove(poi.id)}
-              className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition font-semibold"
-            >
-              <CheckCircle size={18} />
-              Chấp nhận
-            </button>
+          <button
+            onClick={() => handleApprove(poi.id)}
+            className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition font-semibold"
+          >
+            <CheckCircle size={18} />
+            Chấp nhận
+          </button>
 
-            <button
-              onClick={() => handleReject(poi.id)}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition font-semibold"
-            >
-              <XCircle size={18} />
-              Từ chối
-            </button>
-          </>
-        )}
-      />
+          <button
+            onClick={() => handleReject(poi.id)}
+            className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition font-semibold"
+          >
+            <XCircle size={18} />
+            Từ chối
+          </button>
+        </>
+      )}
+    />
 
       {showApproveModal && (
         <ConfirmModal

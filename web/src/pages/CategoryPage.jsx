@@ -154,33 +154,45 @@ export default function CategoryPage() {
         <div className="flex justify-between px-8 py-4 text-sm text-gray-500 items-center">
           <p>Hiển thị {paginatedData.length} / {categories.length} danh mục</p>
 
-          <div className="flex gap-2">
-            <button
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => p - 1)}
-              className={`p-2 rounded-full ${currentPage === 1 ? "text-gray-300" : "text-gray-500 hover:text-pink-500 transition"}`}
-            >
-              <ChevronLeft size={14} />
-            </button>
-
-            {Array.from({ length: totalPages }).map((_, i) => (
+            <div className="flex gap-1 items-center">
               <button
-                key={i}
-                onClick={() => setCurrentPage(i + 1)}
-                className={`px-3 py-1 rounded-lg ${currentPage === i + 1 ? "bg-pink-500 text-white font-bold" : "text-gray-500 hover:bg-gray-100 transition"}`}
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+                className={`p-2 rounded-full ${currentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
               >
-                {i + 1}</button>
-            ))}
+                <ChevronLeft size={16} />
+              </button>
 
-            <button
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => p + 1)}
-              className={`p-2 rounded-full ${currentPage === totalPages ? "text-gray-300" : "text-gray-500 hover:text-pink-500 transition"}`}
-            >
-              <ChevronRight size={14} />
-            </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(i => i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1))
+                .reduce((acc, curr, idx, arr) => {
+                  if (idx > 0 && curr - arr[idx - 1] > 1) acc.push('...');
+                  acc.push(curr);
+                  return acc;
+                }, [])
+                .map((p, idx) => (
+                  p === '...' ? (
+                    <span key={`dots-${idx}`} className="px-2 text-gray-400">...</span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => setCurrentPage(p)}
+                      className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === p ? "bg-pink-500 text-white shadow-sm" : "hover:bg-pink-50 hover:text-pink-600"}`}
+                    >
+                      {p}
+                    </button>
+                  )
+                ))}
+
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className={`p-2 rounded-full ${currentPage === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
           </div>
-        </div>
       </div>
 
       {/* MODALS */}

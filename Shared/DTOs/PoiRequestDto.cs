@@ -16,6 +16,9 @@ namespace Shared.DTOs
         string   Title,
         string   Description,
 
+        // ── Audio URL — đã upload lên Blob Storage ────────────────────────
+        string?  AudioUrl,
+
         // ── Danh mục — bảng CategoryPoi ─────────────────────────────────
         List<string> CategoryIds,
 
@@ -45,6 +48,7 @@ namespace Shared.DTOs
     public record PoiRequestListDto(
         string   RequestId,
         string?  PoiId,
+        string?  PoiName, 
         string   AccountId,
         string   ActionType,
         string   Status,
