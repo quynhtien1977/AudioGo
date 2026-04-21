@@ -1,5 +1,6 @@
   import { useState } from "react";
   import { Eye as EyeIcon, EyeOff as EyeOffIcon } from "lucide-react";
+  import toast from "react-hot-toast";
   import { createUserApi } from "@/api/accountApi";
 
   export default function CreateAccountModal({ onClose, onCreated }) {
@@ -39,7 +40,7 @@
 
   const handleSubmit = async () => {
     if (!form.name || !form.email || !form.role || !form.username || !form.phone) {
-      alert("Please fill all fields");
+      toast.error("Vui lòng điền tất cả các trường");
       return;
     }
 
@@ -51,18 +52,19 @@
         username: form.username,
         password: form.password,
         role: form.role,
-        fullName: form.name,          // FIX
+        fullName: form.name,          
         email: form.email,
-        phoneNumber: form.phone,      // FIX
+        phoneNumber: form.phone,     
       };
 
       const res = await createUserApi(payload);
 
+      toast.success("Tạo tài khoản thành công!");
       onCreated(res);
       onClose();
     } catch (err) {
       console.error(err);
-      alert("Error creating account");
+      toast.error("Lỗi khi tạo tài khoản");
     } finally {
       setLoading(false);
     }

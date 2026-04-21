@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { NavLink } from "react-router-dom"
+import toast from "react-hot-toast"
 import {
   ChevronLeft,
   ChevronRight,
@@ -10,7 +11,8 @@ import {
   List,
   CircleX,
   Trash,
-  Plus
+  Plus,
+  SquareMenu
 } from "lucide-react"
 
 import POIMap from "@/components/POIMap"
@@ -18,10 +20,11 @@ import Card from "@/components/Card"
 import Filter from "@/components/Filter"
 import StatusBadge from "@/components/StatusBadge"
 import ConfirmModal from "@/components/ConfirmModal"
+import { getPriorityColor, getPriorityInfo } from "@/components/PriorityBadge"
 
 import { getAllPOIs, updatePOI, deletePOI } from "@/api/poiApi"
 import { getContentsByPOI } from "@/api/contentApi"
-import { getMyPoiRequests } from "@/api/poiRequestApi"
+import { getMyPoiRequests, getPoiRequestDetail, createPoiRequest } from "@/api/poiRequestApi"
 
 import useAuth from "@/hooks/useAuth";
 
@@ -34,12 +37,17 @@ export default function POIPage() {
 
   const [pois, setPois] = useState([])
   const [poiRequests, setPoiRequests] = useState([])
+  const [poiRequestDetails, setPoiRequestDetails] = useState({})
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
 
   // PAGINATION STATE
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 4
+
+  // PAGINATION STATE FOR REQUESTS
+  const [requestsCurrentPage, setRequestsCurrentPage] = useState(1)
+  const requestsPerPage = 4
 
   // Fetch POIs data
   useEffect(() => {
@@ -70,22 +78,10 @@ export default function POIPage() {
 
         if (!isMounted) return
 
-        // Fetch content for each POI with error handling
-        const contentsList = await Promise.allSettled(
-          filteredPOIs.map(p => getContentsByPOI(p.poiId))
-        )
-
-        if (!isMounted) return
-
-        // Map data with content
-        const mapped = filteredPOIs.map((p, index) => {
-          const contentResult = contentsList[index]
-          const contents = contentResult?.status === 'fulfilled' 
-            ? (contentResult.value || [])
-            : []
-          const masterContent =
-            contents.find(c => c.isMaster) || contents[0]
-          const title = masterContent?.title || "No name"
+        // Map data directly from POI list
+        const mapped = filteredPOIs.map((p) => {
+          // Name from DTO
+          const title = p.name || p.title || "No name"
 
           // Extract category
           let categoryName = "Unknown"
@@ -100,6 +96,9 @@ export default function POIPage() {
             categoryName = p.category?.name || p.category || "Unknown"
           }
 
+          // Thumbnail
+          const thumbnailUrl = p.logoUrl || null
+
           return {
             rank: p.poiId,
             name: title,
@@ -107,7 +106,10 @@ export default function POIPage() {
             lng: p.longitude,
             category: categoryName,
             priority: Number(p.priority),
-            isActive: p.isActive
+            isActive: p.isActive,
+            thumbnailUrl,
+            createdAt: p.createdAt,
+            updatedAt: p.updatedAt
           }
         })
 
@@ -140,6 +142,7 @@ export default function POIPage() {
   useEffect(() => {
     if (role !== "Owner" || !accountId) {
       setPoiRequests([])
+      setPoiRequestDetails({})
       return
     }
 
@@ -149,8 +152,26 @@ export default function POIPage() {
     const fetchPoiRequests = async () => {
       try {
         const requests = await getMyPoiRequests()
-        if (isMounted) {
-          setPoiRequests(requests || [])
+        if (isMounted && requests) {
+          setPoiRequests(requests)
+
+          // Fetch details for each request
+          const detailsMap = {}
+          const detailsPromises = requests.map(async (request) => {
+            try {
+              const detail = await getPoiRequestDetail(request.requestId)
+              if (isMounted) {
+                detailsMap[request.requestId] = detail
+              }
+            } catch (err) {
+              console.error(`Error fetching detail for request ${request.requestId}:`, err)
+            }
+          })
+
+          await Promise.all(detailsPromises)
+          if (isMounted) {
+            setPoiRequestDetails(detailsMap)
+          }
         }
       } catch (err) {
         if (isMounted && err.name !== 'AbortError') {
@@ -183,6 +204,19 @@ export default function POIPage() {
     }
   }
 
+  // PAGINATION LOGIC FOR REQUESTS
+  const requestsTotalPages = Math.ceil(poiRequests.length / requestsPerPage)
+  const requestsStartIndex = (requestsCurrentPage - 1) * requestsPerPage
+  const requestsEndIndex = requestsStartIndex + requestsPerPage
+
+  const currentRequests = poiRequests.slice(requestsStartIndex, requestsEndIndex)
+
+  const goToRequestsPage = (page) => {
+    if (page >= 1 && page <= requestsTotalPages) {
+      setRequestsCurrentPage(page)
+    }
+  }
+
   const getCategoryColor = (category) => {
     switch (category) {
       case "Di tích lịch sử":
@@ -211,35 +245,7 @@ export default function POIPage() {
     }
   }
 
-    // xử lý duyệt POI
-  const handleApprove = async (id) => {
-    try {
-      await updatePOI(id, { status: "APPROVED" })
-
-      setPois(prev =>
-        prev.map(p =>
-          p.rank === id ? { ...p, status: "APPROVED" } : p
-        )
-      )
-    } catch (err) {
-      console.error(err)
-    }
-  }
-
-  const handleReject = async (id) => {
-    try {
-      await updatePOI(id, { status: "REJECTED" })
-
-      setPois(prev =>
-        prev.map(p =>
-          p.rank === id ? { ...p, status: "REJECTED" } : p
-        )
-      )
-    } catch (err) {
-      console.error(err)
-    }
-  }
-
+  // HANDLERS SET PRIORITY
   const handleSetPriority = async (id, newPriority) => {
     try {
       await updatePOI(id, { priority: newPriority })
@@ -254,15 +260,6 @@ export default function POIPage() {
     }
   }
 
-  const getPriorityColor = (value) => {
-    switch (value) {
-      case 4: return "bg-red-100 text-red-500"
-      case 3: return "bg-yellow-100 text-yellow-600"
-      case 2: return "bg-gray-200 text-gray-600"
-      case 1: return "bg-gray-100 text-gray-400"
-      default: return ""
-    }
-  }
 
   const handleHiddenPOI = async (id) => {
     try {
@@ -273,7 +270,7 @@ export default function POIPage() {
         return
       }
 
-      const newIsActive = !poi.isActive // ✅ boolean
+      const newIsActive = !poi.isActive 
 
       await updatePOI(id, {
         isActive: newIsActive
@@ -301,23 +298,54 @@ export default function POIPage() {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedPoiId, setSelectedPoiId] = useState(null);
+  const [showHideModal, setShowHideModal] = useState(false);
+  const [selectedHidePoiId, setSelectedHidePoiId] = useState(null);
 
   const openDeleteConfirm = (id) => {
       setSelectedPoiId(id);
       setShowDeleteModal(true);
   };
 
+  const openHideConfirm = (id) => {
+    setSelectedHidePoiId(id);
+    setShowHideModal(true);
+  };
+
 
   const handleConfirmDelete = async () => {
     try {
-      await deletePOI(selectedPoiId)
+      const payload = {
+        ActionType: "DELETE",
+        PoiId: selectedPoiId,
+        // Draft = null: backend tự resolve tên POI từ DB và lưu vào ProposedData
+        Draft: null
+      }
 
-      setPois(prev => prev.filter(p => p.rank !== selectedPoiId))
+      await createPoiRequest(payload)
+      toast.success("Gửi yêu cầu xóa thành công! Admin sẽ xem xét.")
+      
+      // Refresh danh sách request
+      const requests = await getMyPoiRequests()
+      setPoiRequests(requests || [])
     } catch (err) {
       console.error(err)
+      toast.error("Gửi yêu cầu thất bại!")
     }
 
     setShowDeleteModal(false)
+  }
+
+  const handleConfirmHide = async () => {
+    try {
+      await handleHiddenPOI(selectedHidePoiId)
+      const poi = pois.find(p => p.rank === selectedHidePoiId)
+      const message = !poi?.isActive ? "Đã hiện POI" : "Đã ẩn POI"
+      toast.success(message)
+    } catch (err) {
+      console.error(err)
+      toast.error("Thao tác thất bại!")
+    }
+    setShowHideModal(false)
   }
 
   const [showApproveModal, setShowApproveModal] = useState(false);
@@ -374,7 +402,7 @@ export default function POIPage() {
       </div>
 
       {/* FILTER */}
-      <div className="flex justify-between items-center bg-white p-4 rounded-2xl border">
+      {/* <div className="flex justify-between items-center bg-white p-4 rounded-2xl border">
         <div className="flex gap-3">
           <Filter label="Tất cả" active={true} />
           <Filter label="Thể loại: Đồ ăn & Nước uống" />
@@ -384,7 +412,7 @@ export default function POIPage() {
         <div className="text-sm text-gray-500">
           Sắp bởi: <span className="font-semibold text-gray-700">Lần cập nhật mới nhất</span>
         </div>
-      </div>
+      </div> */}
 
       {/* TABLE */}
       <div className="bg-white rounded-2xl border overflow-hidden">
@@ -392,10 +420,12 @@ export default function POIPage() {
           
           <thead className="bg-gray-50 text-gray-400">
             <tr>
+              <th className="p-4 text-left w-12">LOGO</th>
               <th className="p-4 text-left">TÊN</th>
               <th className="p-4 text-left">THỂ LOẠI</th>
               <th className="p-4 text-left">VỊ TRÍ</th>
               <th className="p-4 text-left">ĐỘ ƯU TIÊN</th>
+              <th className="p-4 text-left">NGÀY TẠO / CẬP NHẬT</th>
               <th className="p-4 text-left">THAO TÁC</th>
             </tr>
           </thead>
@@ -408,6 +438,21 @@ export default function POIPage() {
                       ? "opacity-40 grayscale bg-gray-50" 
                       : "hover:bg-gray-50"
                   }`}>
+
+                {/* THUMBNAIL */}
+                <td className="p-4">
+                  {poi.thumbnailUrl ? (
+                    <img
+                      src={poi.thumbnailUrl}
+                      alt={poi.name}
+                      className="w-10 h-10 rounded-xl object-cover border border-pink-100 shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-xl bg-pink-100 flex items-center justify-center text-pink-300 font-bold text-sm border border-pink-200">
+                      {poi.name?.charAt(0)?.toUpperCase() || "?"}
+                    </div>
+                  )}
+                </td>
 
                 <td className="p-4">
                   <p className="font-semibold">{poi.name}</p>
@@ -439,16 +484,37 @@ export default function POIPage() {
                     </select>
                   ) : (
                     <span className={`px-2 py-1 rounded text-xs font-semibold ${getPriorityColor(poi.priority)}`}>
-                      {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'][poi.priority - 1]}
+                      {getPriorityInfo(poi.priority).label}
                     </span>
                   )}
+                </td>
+
+                <td className="p-4">
+                  <div className="flex flex-col text-xs text-gray-500 gap-1">
+                    <span>
+                      <strong className="text-gray-700">Tạo:</strong>{" "}
+                      {poi.createdAt ? new Date(poi.createdAt).toLocaleDateString("vi-VN", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric"
+                      }) : "N/A"}
+                    </span>
+                    <span>
+                      <strong className="text-gray-700">Cập nhật:</strong>{" "}
+                      {poi.updatedAt ? new Date(poi.updatedAt).toLocaleDateString("vi-VN", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric"
+                      }) : "N/A"}
+                    </span>
+                  </div>
                 </td>
 
                 <td className="p-4">  
                   <div className="flex items-center gap-1">
                     {role === "Admin" && (
                       <button
-                          onClick={() => handleHiddenPOI(poi.rank)}
+                          onClick={() => openHideConfirm(poi.rank)}
                           className={`w-8 h-8 flex items-center justify-end rounded-full transition-colors text-pink-500`}
                           title={!poi.isActive ? "Hiện POI" : "Ẩn POI"}
                       >
@@ -482,50 +548,58 @@ export default function POIPage() {
         </table>
 
         {/* PAGINATION */}
-        <div className="flex justify-between items-center p-4 text-sm text-gray-500">
-          <p>
-            Hiển thị {startIndex + 1} - {Math.min(endIndex, totalItems)} của {totalItems} POIs
-          </p>
+        {totalPages > 0 && (
+          <div className="flex justify-between items-center px-6 py-4 text-sm text-gray-500 bg-gray-50/50">
+            <p>
+              Hiển thị trang <span className="font-bold text-gray-800">{currentPage}</span> / <span className="font-bold">{totalPages}</span>
+            </p>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => goToPage(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="p-2 border rounded-lg hover:bg-pink-500 hover:text-white disabled:opacity-50"
-            >
-              <ChevronLeft size={14} />
-            </button>
-
-            {[...Array(totalPages)].map((_, i) => (
+            <div className="flex gap-1 items-center">
               <button
-                key={i}
-                onClick={() => goToPage(i + 1)}
-                className={`px-3 py-1 rounded-lg ${
-                  currentPage === i + 1
-                    ? "bg-pink-500 text-white"
-                    : "border hover:bg-pink-500 hover:text-white"
-                }`}
+                disabled={currentPage === 1}
+                onClick={() => goToPage(currentPage - 1)}
+                className={`p-2 rounded-full ${currentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
               >
-                {i + 1}
+                <ChevronLeft size={16} />
               </button>
-            ))}
 
-            <button
-              onClick={() => goToPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="p-2 border rounded-lg hover:bg-pink-500 hover:text-white disabled:opacity-50"
-            >
-              <ChevronRight size={14} />
-            </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(i => i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1))
+                .reduce((acc, curr, idx, arr) => {
+                  if (idx > 0 && curr - arr[idx - 1] > 1) acc.push('...');
+                  acc.push(curr);
+                  return acc;
+                }, [])
+                .map((p, idx) => (
+                  p === '...' ? (
+                    <span key={`dots-${idx}`} className="px-2 text-gray-400">...</span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => goToPage(p)}
+                      className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === p ? "bg-pink-500 text-white shadow-sm" : "hover:bg-pink-50 hover:text-pink-600"}`}
+                    >
+                      {p}
+                    </button>
+                  )
+                ))}
+
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => goToPage(currentPage + 1)}
+                className={`p-2 rounded-full ${currentPage === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
           </div>
-
-        </div>
+        )}
 
       </div>
       
       {role === "Owner" && (<div className="bg-white rounded-2xl border overflow-hidden">
         <div className="p-4 border-b">
-          <h2 className="text-lg font-semibold">DANH SÁCH YÊU CẦU (POI REQUEST)</h2>
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-pink-400"><SquareMenu size={18} /> DANH SÁCH YÊU CẦU</h2>
         </div>
         <table className="w-full text-sm">
           
@@ -548,13 +622,14 @@ export default function POIPage() {
                 </td>
               </tr>
             ) : (
-              poiRequests.map((request) => {
+              currentRequests.map((request) => {
                 let title = "N/A"
                 try {
-                  if (request.proposedData) {
-                    const data = typeof request.proposedData === 'string' 
-                      ? JSON.parse(request.proposedData) 
-                      : request.proposedData
+                  const detail = poiRequestDetails[request.requestId]
+                  if (detail && detail.proposedData) {
+                    const data = typeof detail.proposedData === 'string' 
+                      ? JSON.parse(detail.proposedData) 
+                      : detail.proposedData
                     title = data.title || data.Title || "N/A"
                   }
                 } catch (e) {
@@ -593,8 +668,8 @@ export default function POIPage() {
                     year: 'numeric',
                     month: '2-digit',
                     day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit'
+                    // hour: '2-digit',
+                    // minute: '2-digit'
                   })
                 }
 
@@ -602,9 +677,7 @@ export default function POIPage() {
                   <tr key={request.requestId} className="border-t hover:bg-gray-50 transition-all">
                     <td className="p-4">
                       <p className="font-semibold">{title}</p>
-                      {request.poiId && (
-                        <p className="text-xs text-gray-400">{request.poiId}</p>
-                      )}
+                      
                     </td>
 
                     <td className="p-4">
@@ -637,13 +710,15 @@ export default function POIPage() {
 
                     <td className="p-4">
                       <div className="flex items-center gap-1">
-                          <NavLink
-                            to={`/pois/${request.requestId}`}
-                            className="w-8 h-8 flex items-center justify-center rounded-full transition-colors text-pink-500 hover:text-pink-600"
-                            title="Xem chi tiết POI"
-                          >
-                            <List size={18} />
-                          </NavLink>
+                          {request.actionType !== "DELETE" && (
+                            <NavLink
+                              to={`/pois/requests/${request.requestId}`}
+                              className="w-8 h-8 flex items-center justify-center rounded-full transition-colors text-pink-500 hover:text-pink-600"
+                              title="Xem chi tiết POI"
+                            >
+                              <List size={18} />
+                            </NavLink>
+                          )}
                       </div>
                     </td>
                   </tr>
@@ -652,6 +727,53 @@ export default function POIPage() {
             )}
           </tbody>
         </table>
+        {/* PAGINATION */}
+        {requestsTotalPages > 0 && (
+          <div className="flex justify-between items-center px-6 py-4 text-sm text-gray-500 bg-gray-50/50">
+            <p>
+              Hiển thị trang <span className="font-bold text-gray-800">{requestsCurrentPage}</span> / <span className="font-bold">{requestsTotalPages}</span>
+            </p>
+
+            <div className="flex gap-1 items-center">
+              <button
+                disabled={requestsCurrentPage === 1}
+                onClick={() => goToRequestsPage(requestsCurrentPage - 1)}
+                className={`p-2 rounded-full ${requestsCurrentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              {Array.from({ length: requestsTotalPages }, (_, i) => i + 1)
+                .filter(i => i === 1 || i === requestsTotalPages || (i >= requestsCurrentPage - 1 && i <= requestsCurrentPage + 1))
+                .reduce((acc, curr, idx, arr) => {
+                  if (idx > 0 && curr - arr[idx - 1] > 1) acc.push('...');
+                  acc.push(curr);
+                  return acc;
+                }, [])
+                .map((p, idx) => (
+                  p === '...' ? (
+                    <span key={`requests-dots-${idx}`} className="px-2 text-gray-400">...</span>
+                  ) : (
+                    <button
+                      key={p}
+                      onClick={() => goToRequestsPage(p)}
+                      className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${requestsCurrentPage === p ? "bg-pink-500 text-white shadow-sm" : "hover:bg-pink-50 hover:text-pink-600"}`}
+                    >
+                      {p}
+                    </button>
+                  )
+                ))}
+
+              <button
+                disabled={requestsCurrentPage === requestsTotalPages}
+                onClick={() => goToRequestsPage(requestsCurrentPage + 1)}
+                className={`p-2 rounded-full ${requestsCurrentPage === requestsTotalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>)}
 
       <div className="flex justify-end items-center mb-6">
@@ -673,7 +795,7 @@ export default function POIPage() {
       {/* MAP */}
       <div className="bg-white p-6 rounded-2xl border">
         <h2 className="font-semibold mb-4">Bản đồ vị trí POI</h2>
-        <POIMap pois={pois} />
+        <POIMap pois={pois.filter(p => p.isActive)} />
       </div>
 
       {/* Modal Pop-up */}
@@ -688,40 +810,19 @@ export default function POIPage() {
           onCancel={() => setShowDeleteModal(false)}
         />
       )}
-      
-      { showApproveModal && (
+
+      { showHideModal && (
         <ConfirmModal
-          open={showApproveModal}
-          title="Xác nhận duyệt?"
-          message="Bạn có chắc chắn muốn duyệt POI này không?"
-          confirmText="Duyệt"
+          open={showHideModal}
+          title={pois.find(p => p.rank === selectedHidePoiId)?.isActive ? "Xác nhận ẩn POI?" : "Xác nhận hiện POI?"}
+          message={pois.find(p => p.rank === selectedHidePoiId)?.isActive ? "Bạn có chắc chắn muốn ẩn POI này?" : "Bạn có chắc chắn muốn hiện POI này?"}
+          confirmText={pois.find(p => p.rank === selectedHidePoiId)?.isActive ? "Ẩn" : "Hiện"}
           cancelText="Hủy bỏ"
-          onConfirm={handleConfirmApprove}
-          onCancel={() => setShowApproveModal(false)}
+          onConfirm={handleConfirmHide}
+          onCancel={() => setShowHideModal(false)}
         />
       )}
       
-      { showRejectModal && (
-        <ConfirmModal
-          open={showRejectModal}
-          title="Xác nhận từ chối?"
-          message={
-            <div>
-              <p>Bạn có chắc chắn muốn từ chối POI này không?</p>
-              <textarea
-                className="w-full mt-2 p-2 border rounded"
-                placeholder="Nhập lý do từ chối..."
-                value={rejectReason}
-                onChange={(e) => setRejectReason(e.target.value)}
-              />
-            </div>
-          }
-          confirmText="Từ chối"
-          cancelText="Hủy bỏ"
-          onConfirm={handleConfirmReject}
-          onCancel={() => setShowRejectModal(false)}
-        />
-      )}
       
     </div>
   )

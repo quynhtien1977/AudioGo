@@ -74,7 +74,6 @@ public static class MauiProgram
         builder.Services.AddTransient<PoiDetailViewModel>();
         builder.Services.AddTransient<SettingsViewModel>();
         builder.Services.AddTransient<SearchViewModel>();
-        builder.Services.AddTransient<TourDetailViewModel>();
         builder.Services.AddTransient<WelcomeQrScanViewModel>();
 
         // ── Views ─────────────────────────────────────────────────
@@ -83,11 +82,9 @@ public static class MauiProgram
         builder.Services.AddSingleton<AppShell>();
         builder.Services.AddSingleton<MainPage>();
         builder.Services.AddSingleton<MapPage>();
-        builder.Services.AddTransient<TourListPage>();
         builder.Services.AddTransient<PoiDetailPage>();
         builder.Services.AddTransient<SettingsPage>();
         builder.Services.AddTransient<SearchPage>();
-        builder.Services.AddTransient<TourDetailPage>();
         builder.Services.AddTransient<WelcomePage>();
         builder.Services.AddTransient<WelcomeQrScanPage>();
 

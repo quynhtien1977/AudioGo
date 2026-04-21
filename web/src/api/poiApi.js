@@ -15,6 +15,16 @@ export const getAllPOIs = async () => {
   return res.data
 }
 
+// GET POI DETAIL BY ID
+export const getPoiDetail = async (id) => {
+  const res = await axios.get(`${API_URL}/cms/pois/${id}`, {
+    headers: {
+      Authorization: `Bearer ${getToken()}`
+    }
+  })
+  return res.data
+}
+
 // UPDATE POI
 export const updatePOI = async (id, data) => {
   const res = await axios.put(`${API_URL}/cms/pois/${id}`, data, {

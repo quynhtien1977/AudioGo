@@ -1,12 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Server.Data;
 using Server.Models;
 using Server.Repositories.Interfaces;
 using Shared.DTOs;
 using System.Security.Claims;
+using Server.Services.Interfaces;
 
 namespace Server.Controllers.Cms
 {
@@ -17,74 +16,34 @@ namespace Server.Controllers.Cms
     public class CmsPoiController : ControllerBase
     {
         private readonly IPoiRepository _pois;
-        private readonly AppDbContext _db;
+        private readonly ICmsPoiService _cmsPoiService;
+        private readonly IPoiRequestService _poiRequestService;
 
-        public CmsPoiController(IPoiRepository pois, AppDbContext db)
+        public CmsPoiController(IPoiRepository pois, ICmsPoiService cmsPoiService, IPoiRequestService poiRequestService)
         {
             _pois = pois;
-            _db   = db;
+            _cmsPoiService = cmsPoiService;
+            _poiRequestService = poiRequestService;
         }
 
         /// <summary>Danh sách tất cả POI (CMS - không filter status published, có thể filter theo isActive).</summary>
-
-        // [HttpGet]
-        // public async Task<ActionResult<List<PoiListDto>>> GetAll([FromQuery] string? status = null)
-        // {
-        //     var pois = await _pois.GetAllForCmsAsync(status);
-
-        //     var result = pois.Select(p => new PoiListDto
-        //     {
-        //         PoiId = p.PoiId,
-        //         Latitude = p.Latitude,
-        //         Longitude = p.Longitude,
-        //         ActivationRadius = p.ActivationRadius,
-        //         Priority = p.Priority,
-        //         Status = p.Status,
-        //         LogoUrl = p.LogoUrl,
-        //         IsActive = p.IsActive,
-        //     }).ToList();
-
-        //     return Ok(result);
-        // }
-
-        // api đã fix để lấy category name
         [HttpGet]
         public async Task<ActionResult<List<PoiListDto>>> GetAll([FromQuery] bool? isActive = null)
         {
-            var pois = await _pois.GetAllForCmsAsync(isActive);
-
-            var poiIds = pois.Select(p => p.PoiId).ToList();
-
-            // JOIN lấy category
-            var categoryMap = await (
-                from cp in _db.CategoryPois
-                join c in _db.Categories on cp.CategoryId equals c.CategoryId
-                where poiIds.Contains(cp.PoiId)
-                group c by cp.PoiId into g
-                select new
-                {
-                    PoiId = g.Key,
-                    Category = g.Select(x => x.Name).FirstOrDefault()
-                }
-            ).ToDictionaryAsync(x => x.PoiId, x => x.Category);
-
-            var result = pois.Select(p => new PoiListDto
-            {
-                PoiId = p.PoiId,
-                AccountId = p.AccountId,
-                Latitude = p.Latitude,
-                Longitude = p.Longitude,
-                ActivationRadius = p.ActivationRadius,
-                Priority = p.Priority,
-                LogoUrl = p.LogoUrl,
-                IsActive = p.IsActive,
-
-                // thêm category
-                Category = categoryMap.GetValueOrDefault(p.PoiId, "Unknown")
-            }).ToList();
-
+            var result = await _cmsPoiService.GetAllForCmsAsync(isActive);
             return Ok(result);
         }
+
+         /// <summary>Chi tiết POI kèm tất cả content, gallery và category.</summary>
+        [HttpGet("{id}")]
+        public async Task<ActionResult> GetById(string id)
+        {
+            var poiDetail = await _cmsPoiService.GetPoiDetailForCmsAsync(id);
+            if (poiDetail == null) return NotFound();
+            return Ok(poiDetail);
+        }
+
+        // ===== REQUEST APIs =====
 
         /// <summary>Danh sách yêu cầu POI của Owner hiện tại.</summary>
         [HttpGet("requests/my-requests")]
@@ -93,55 +52,78 @@ namespace Server.Controllers.Cms
             var accountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(accountId)) return Unauthorized();
 
-            var query = _db.PoiRequests
-                .Where(pr => pr.AccountId == accountId)
-                .AsNoTracking();
-
-            if (!string.IsNullOrEmpty(status))
-            {
-                query = query.Where(pr => pr.Status == status);
-            }
-
-            var requests = await query
-                .OrderByDescending(pr => pr.CreatedAt)
-                .ToListAsync();
-
-            var result = requests.Select(pr => new PoiRequestListDto(
-                RequestId: pr.RequestId,
-                PoiId: pr.PoiId,
-                AccountId: pr.AccountId,
-                ActionType: pr.ActionType,
-                Status: pr.Status,
-                CreatedAt: pr.CreatedAt,
-                RejectReason: pr.RejectReason
-            )).ToList();
-
+            var result = await _poiRequestService.GetMyPoiRequestsAsync(accountId, status);
             return Ok(result);
         }
 
-        /// <summary>Chi tiết POI kèm tất cả content và gallery.</summary>
-        [HttpGet("{id}")]
-        public async Task<ActionResult<PoiDetailDto>> GetById(string id)
+        /// <summary>Chi tiết một yêu cầu POI - lấy proposedData (JSON) và rejectReason.</summary>
+        [HttpGet("requests/{requestId}")]
+        public async Task<ActionResult> GetPoiRequestDetail(string requestId)
         {
-            var poi = await _db.Pois.AsNoTracking()
-                .Include(p => p.Contents)
-                .Include(p => p.Gallery)
-                .FirstOrDefaultAsync(p => p.PoiId == id);
+            var request = await _poiRequestService.GetPoiRequestDetailAsync(requestId);
+            if (request == null) return NotFound();
+            return Ok(request);
+        }
 
-            if (poi is null) return NotFound();
+        /// <summary>
+        /// Owner gửi yêu cầu tạo / cập nhật / xoá POI
+        /// </summary>
+        [HttpPost("requests")]
+        public async Task<IActionResult> SubmitPoiRequest([FromBody] SubmitPoiRequestDto req)
+        {
+            var accountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(accountId))
+                return Unauthorized();
 
-            return Ok(new PoiDetailDto(
-                poi.PoiId, poi.AccountId, poi.Latitude, poi.Longitude,
-                poi.ActivationRadius, poi.Priority, poi.IsActive, poi.LogoUrl,
-                poi.CreatedAt, poi.UpdatedAt,
-                poi.Contents.Select(c => new PoiContentDto(
-                    c.ContentId, c.PoiId, c.LanguageCode,
-                    c.Title, c.Description, c.AudioUrl, c.IsMaster)).ToList(),
-                poi.Gallery.OrderBy(g => g.SortOrder)
-                    .Select(g => new PoiGalleryDto(g.ImageId, g.PoiId, g.ImageUrl, g.SortOrder)).ToList()
-            ));
+            if (string.IsNullOrEmpty(req.ActionType))
+                return BadRequest("ActionType is required");
+
+            if (req.ActionType != "DELETE" && req.Draft is null)
+                return BadRequest("Draft is required for CREATE or UPDATE");
+
+            var result = await _poiRequestService.SubmitPoiRequestAsync(accountId, req);
+            return Ok(new { message = "Request submitted successfully", requestId = result });
         }
         
+        /// <summary>Admin lấy danh sách request (có thể filter theo status)</summary>
+        [HttpGet("requests")]
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<List<PoiRequestListDto>>> GetAllPoiRequests([FromQuery] string? status = "PENDING")
+        {
+            var result = await _poiRequestService.GetAllPoiRequestsAsync(status);
+            return Ok(result);
+        }
+
+        /// <summary>Thống kê request PENDING theo ActionType</summary>
+        [HttpGet("requests/stats")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetRequestStats()
+        {
+            var result = await _poiRequestService.GetRequestStatsAsync();
+            return Ok(result);
+        }
+
+        /// <summary>Admin phê duyệt hoặc từ chối POI request</summary>
+        [HttpPut("requests/{requestId}/review")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ReviewPoiRequest(string requestId, [FromBody] ReviewPoiRequestDto reviewData)
+        {
+            var result = await _poiRequestService.ReviewPoiRequestAsync(requestId, reviewData);
+            
+            if (result.NotFound) 
+                return NotFound(result.Message);
+                
+            if (!result.Success) 
+                return StatusCode(500, new { error = result.Message, detail = result.Detail });
+
+            return Ok(new
+            {
+                message = result.Message,
+                requestId = result.RequestId,
+                status = result.Status
+            });
+        }
+
         [HttpPost]
         public async Task<ActionResult<Poi>> Create([FromBody] PoiCreateRequest req)
         {

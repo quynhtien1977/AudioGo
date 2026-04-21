@@ -1,13 +1,9 @@
 import { MapPin, Plus, Minus } from "lucide-react";
 
-const InfoCardOfAddPOI = ({ form, handleChange, contentApi }) => {
+const InfoCardOfAddPOI = ({ form, handleChange, categories = [] }) => {
 
   const adjustValue = (key, amount) => {
     handleChange(key, (parseFloat(form[key]) || 0) + amount);
-  };
-
-  const getLanguageName = (code) => {
-    return contentApi.languages[code] || code;
   };
 
   return (
@@ -43,10 +39,12 @@ const InfoCardOfAddPOI = ({ form, handleChange, contentApi }) => {
             onChange={(e) => handleChange("category", e.target.value)}
             className="w-full bg-transparent border-b-2 border-pink-100 py-2 outline-none focus:border-pink-500 transition-all font-medium text-gray-600"
           >
-            <option value="Restaurant">Restaurant</option>
-            <option value="Cafe">Cafe</option>
-            <option value="Museum">Museum</option>
-            <option value="Street Food">Street Food</option>
+            <option value="">-- Chọn danh mục --</option>
+            {categories.map((cat) => (
+              <option key={cat.categoryId} value={cat.name}>
+                {cat.name}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -67,13 +65,13 @@ const InfoCardOfAddPOI = ({ form, handleChange, contentApi }) => {
             </option>
 
             {[
-              { code: "en", label: "English" },
-              { code: "fr", label: "French" },
-              { code: "ja", label: "Japanese" },
-              { code: "ko", label: "Korean" },
-              { code: "th", label: "Thai" },
-              { code: "vi", label: "Vietnamese" },
-              { code: "zh-Hans", label: "Chinese (Simplified)" },
+              { code: "en", label: "Tiếng Anh" },
+              { code: "fr", label: "Tiếng Pháp" },
+              { code: "ja", label: "Tiếng Nhật" },
+              { code: "ko", label: "Tiếng Hàn" },
+              { code: "th", label: "Tiếng Thái" },
+              { code: "vi", label: "Tiếng Việt" },
+              { code: "zh-Hans", label: "Tiếng Trung (Giản thể)" },
             ].map((lang) => (
               <option key={lang.code} value={lang.code}>
                 {lang.label}
@@ -85,18 +83,13 @@ const InfoCardOfAddPOI = ({ form, handleChange, contentApi }) => {
         {/* RADIUS */}
         <div className="pt-2">
           <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">
-            Bán kính kích hoạt (M)
+            Bán kính kích hoạt
           </label>
-          <div className="flex items-center gap-4">
-            <input 
-              type="range"
-              value={form.radius}
-              className="flex-1 accent-pink-500"
-            />
-            <span className="text-xl font-black text-pink-500">
-              {form.radius}
-              <small className="text-[10px] ml-1">M</small>
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-bold text-pink-500">
+              50 <small className="text-sm">M</small>
             </span>
+            <span className="text-xs text-gray-400 italic">(mặc định)</span>
           </div>
         </div>
 

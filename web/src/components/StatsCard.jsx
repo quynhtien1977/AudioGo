@@ -5,17 +5,9 @@ export default function StatsCard({ title, value, icon }) {
       {/* Left */}
       <div>
         <p className="text-gray-400 text-sm">{title}</p>
-
         <div className="flex items-center gap-3 mt-2">
           <h2 className="text-2xl font-bold">{value}</h2>
-          {/* <span className="text-green-500 text-sm bg-green-100 px-2 py-1 rounded">
-            {percent}
-          </span> */}
         </div>
-
-        {/* <p className="text-xs text-gray-400 mt-2">
-          vs last 30 days
-        </p> */}
       </div>
 
       {/* Right Icon */}

@@ -16,6 +16,9 @@ namespace Shared.DTOs
         string   Title,
         string   Description,
 
+        // ── Audio URL — đã upload lên Blob Storage ────────────────────────
+        string?  AudioUrl,
+
         // ── Danh mục — bảng CategoryPoi ─────────────────────────────────
         List<string> CategoryIds,
 
@@ -31,6 +34,7 @@ namespace Shared.DTOs
     /// <summary>Chủ quán gửi khi muốn tạo, sửa, hoặc xoá POI.</summary>
     public record SubmitPoiRequestDto(
         string        ActionType,   // CREATE | UPDATE | DELETE
+        string?       PoiId, 
         PoiDraftDto?  Draft         // NULL nếu ActionType = DELETE
     );
 
@@ -44,11 +48,13 @@ namespace Shared.DTOs
     public record PoiRequestListDto(
         string   RequestId,
         string?  PoiId,
+        string?  PoiName, 
         string   AccountId,
         string   ActionType,
         string   Status,
         DateTime CreatedAt,
-        string?  RejectReason
+        string?  RejectReason,
+        string?  ProposedData
     );
 
     /// <summary>Chi tiết 1 yêu cầu (dùng trên màn hình Diff của Admin).</summary>

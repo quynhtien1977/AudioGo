@@ -13,53 +13,78 @@ export default function DashboardPage() {
   const [pois, setPois] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [chartData, setChartData] = useState([])
+  const [userRole, setUserRole] = useState(null)
+  const [userId, setUserId] = useState(null)
 
+  // Get current user info
+  useEffect(() => {
+    try {
+      const userStr = localStorage.getItem("user") || sessionStorage.getItem("user")
+      if (userStr) {
+        const user = JSON.parse(userStr)
+        setUserRole(user.role)
+        setUserId(user.accountId)
+      }
+    } catch (err) {
+      console.error("Error reading user info:", err)
+    }
+  }, [])
 
 useEffect(() => {
+  if (!userRole || !userId) return
+
   const fetchData = async () => {
     try {
       const [topPoisRes, allPoisRes, statsRes] = await Promise.all([
         getTopPOIs(10),
         getAllPOIs(),
-        getListenStats()      //đợi có data fix lại lấy 5 ngày
+        getListenStats()
       ])
 
       if (!Array.isArray(topPoisRes)) {
         throw new Error("getTopPOIs did not return an array")
       }
 
+      // Filter POIs based on role
+      let filteredPois = allPoisRes
+      if (userRole === "Owner") {
+        filteredPois = allPoisRes.filter(p => p.accountId === userId)
+      }
+
       // map poiId -> full info
       const poiMap = {}
-      allPoisRes.forEach(p => {
-        poiMap[p.poiId] = p   // ✅ FIX CHÍNH
+      filteredPois.forEach(p => {
+        poiMap[p.poiId] = p
       })
 
-      // merge top POIs
-      const merged = topPoisRes.map((tp, index) => {
-        const poi = poiMap[tp.poiId]
+      // merge top POIs (filtered by role)
+      const merged = topPoisRes
+        .filter(tp => poiMap[tp.poiId]) // Only include POIs that match filtered list
+        .map((tp, index) => {
+          const poi = poiMap[tp.poiId]
 
-        return {
-          rank: index + 1,
-          name: tp.title || "Unknown",
-          listens: tp.listenCount || 0,
-          lat: poi?.latitude ?? "N/A",   // ✅ FIX
-          lng: poi?.longitude ?? "N/A",  // ✅ FIX
-          category: tp.category || "Unknown"
-        }
-      })
+          return {
+            rank: index + 1,
+            name: tp.title || "Unknown",
+            listens: tp.listenCount || 0,
+            lat: poi?.latitude ?? "N/A",
+            lng: poi?.longitude ?? "N/A",
+            category: tp.category || "Unknown"
+          }
+        })
 
+      // Calculate stats based on filtered POIs
+      const totalListens = merged.reduce((sum, p) => sum + p.listens, 0)
 
-      // ✅ stats chuẩn từ backend
       setStats({
         pois: {
-          total: allPoisRes.length,
+          total: filteredPois.length,
         },
         audio: {
-          total: statsRes.totalListens, // 🔥 FIX CHÍNH
+          total: totalListens,
         }
       })
 
-      // setChartData(chart)
       setChartData(statsRes.dailyListens || [])
       setPois(merged)
 
@@ -69,7 +94,7 @@ useEffect(() => {
   }
 
   fetchData()
-}, [])
+}, [userRole, userId])
 
   if (!stats) {
     return <div className="p-6">Loading dashboard...</div>

@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 
 import MainLayout from "@/layouts/MainLayout";
 
@@ -14,15 +15,43 @@ import LoginPage from "@/pages/LoginPage";
 import CategoryPage from "@/pages/CategoryPage";
 import POIDetailPage from "@/pages/POIDetailPage";
 import AddPOIPage from "@/pages/AddPOIPage";
-import AudioPage from "@/pages/AudioPage";
+import AudioContentPage from "@/pages/AudioContentPage";
 import ToursPage from "@/pages/ToursPage";
 import TourDetailPage from "@/pages/TourDetailPage";
+import DeviceTrackingPage from "@/pages/DeviceTrackingPage";
+import AccessCodePage from "@/pages/AccessCodePage";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function App() {
   return (
     <BrowserRouter>
+      <Toaster
+        position="top-right"
+        reverseOrder={false}
+        gutter={8}
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#fff',
+            color: '#000',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          },
+          success: {
+            style: {
+              background: '#10b981',
+              color: '#fff',
+            },
+          },
+          error: {
+            style: {
+              background: '#ef4444',
+              color: '#fff',
+            },
+          },
+        }}
+      />
       <Routes>
         {/* Login */}
         <Route path="/" element={<LoginPage />} />
@@ -66,6 +95,18 @@ export default function App() {
         {/* POI Detail */}
         <Route
           path="/pois/:id"
+          element={
+            <ProtectedRoute roles={["Admin", "Owner"]}>
+              <MainLayout>
+                <POIDetailPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* POI REQUEST Detail */}
+        <Route
+          path="/pois/requests/:id"
           element={
             <ProtectedRoute roles={["Admin", "Owner"]}>
               <MainLayout>
@@ -138,9 +179,9 @@ export default function App() {
         <Route
           path="/audio"
           element={
-            <ProtectedRoute roles={["Owner"]}>
+            <ProtectedRoute roles={["Admin", "Owner"]}>
               <MainLayout>
-                <AudioPage />
+                <AudioContentPage />
               </MainLayout>
             </ProtectedRoute>
           }
@@ -170,6 +211,18 @@ export default function App() {
           }
         />
 
+        {/* Access Codes (ADMIN only) */}
+        <Route
+          path="/access-codes"
+          element={
+            <ProtectedRoute roles={["Admin"]}>
+              <MainLayout>
+                <AccessCodePage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/tours"
           element={
@@ -187,6 +240,17 @@ export default function App() {
             <ProtectedRoute roles={["Admin"]}>
               <MainLayout>
                 <TourDetailPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+        path="/tracking"
+          element={
+            <ProtectedRoute roles={["Admin"]}>
+              <MainLayout>
+                <DeviceTrackingPage />
               </MainLayout>
             </ProtectedRoute>
           }

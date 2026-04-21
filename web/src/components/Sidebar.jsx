@@ -7,7 +7,9 @@ import {
   Users,
   Map,
   Headphones,
-  BadgeCheck
+  BadgeCheck,
+  QrCode,
+  Smartphone
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
@@ -43,6 +45,10 @@ export default function Sidebar() {
             <MenuItem to="/accounts" icon={<Users size={18} />}>
               Tài khoản
             </MenuItem>
+
+            <MenuItem to="/access-codes" icon={<QrCode size={18} />}>
+              Mã Truy Cập
+            </MenuItem>
             
             <MenuItem to="/categories" icon={<Layers size={18} />}>
               Danh mục
@@ -55,7 +61,17 @@ export default function Sidebar() {
             <MenuItem to="/tours" icon={<RouteIcon size={18} />} isDisabled>
               Tour
             </MenuItem>
+
+            <MenuItem to="/analytics" icon={<BarChart size={18} />} isDisabled>
+              Phân tích
+            </MenuItem>
             
+            <MenuItem to="/tracking" icon={<Smartphone size={18} />}>
+              Quản lý thiết bị
+            </MenuItem>
+            <MenuItem to="/audio" icon={<Headphones size={18} />}>
+              Bản dịch & Audio
+            </MenuItem>
           </>
         )}
 
@@ -66,17 +82,8 @@ export default function Sidebar() {
               POIs
             </MenuItem>
 
-            <MenuItem to="/audio" icon={<Headphones size={18} />} isDisabled>
+            <MenuItem to="/audio" icon={<Headphones size={18} />}>
               Audio
-            </MenuItem>
-          </>
-        )}
-
-        {/* DISABLED */}
-        {role === "Admin" && (
-          <>
-            <MenuItem to="/analytics" icon={<BarChart size={18} />} isDisabled>
-              Phân tích
             </MenuItem>
           </>
         )}
