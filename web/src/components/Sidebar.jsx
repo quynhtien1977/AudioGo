@@ -60,7 +60,13 @@ export default function Sidebar() {
             <MenuItem to="/tours" icon={<RouteIcon size={18} />} isDisabled>
               Tour
             </MenuItem>
+
+            <MenuItem to="/analytics" icon={<BarChart size={18} />} isDisabled>
+              Phân tích
+            </MenuItem>
             
+            <MenuItem to="/tracking" icon={<BarChart size={18} />}>
+              Quản lý thiết bị
             <MenuItem to="/audio" icon={<Headphones size={18} />}>
               Bản dịch & Audio
             </MenuItem>
@@ -76,15 +82,6 @@ export default function Sidebar() {
 
             <MenuItem to="/audio" icon={<Headphones size={18} />}>
               Audio
-            </MenuItem>
-          </>
-        )}
-
-        {/* DISABLED */}
-        {role === "Admin" && (
-          <>
-            <MenuItem to="/analytics" icon={<BarChart size={18} />} isDisabled>
-              Phân tích
             </MenuItem>
           </>
         )}
