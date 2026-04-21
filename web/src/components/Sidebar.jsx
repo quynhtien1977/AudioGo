@@ -8,7 +8,8 @@ import {
   Map,
   Headphones,
   BadgeCheck,
-  QrCode
+  QrCode,
+  Smartphone
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
@@ -65,8 +66,9 @@ export default function Sidebar() {
               Phân tích
             </MenuItem>
             
-            <MenuItem to="/tracking" icon={<BarChart size={18} />}>
+            <MenuItem to="/tracking" icon={<Smartphone size={18} />}>
               Quản lý thiết bị
+            </MenuItem>
             <MenuItem to="/audio" icon={<Headphones size={18} />}>
               Bản dịch & Audio
             </MenuItem>
