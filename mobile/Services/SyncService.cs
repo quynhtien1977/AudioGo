@@ -20,11 +20,18 @@ namespace AudioGo.Services
 
         public event EventHandler<string>? SyncNotice;
         public event EventHandler<string>? LanguageChanged;
+        /// <summary>Fired sau mỗi ApplyDeltaAsync thành công có thay đổi — SearchViewModel lắng nghe để re-query.</summary>
+        public event EventHandler? PoisUpdated;
 
         public void NotifyLanguageChanged(string languageCode)
         {
             var normalized = LanguageHelper.NormalizeToSupported(languageCode);
             MainThread.BeginInvokeOnMainThread(() => LanguageChanged?.Invoke(this, normalized));
+        }
+
+        public void NotifyPoisUpdated()
+        {
+            MainThread.BeginInvokeOnMainThread(() => PoisUpdated?.Invoke(this, EventArgs.Empty));
         }
 
         public SyncService(IApiService api, AppDatabase db, IHttpClientFactory httpFactory, IGeofenceService geofence)

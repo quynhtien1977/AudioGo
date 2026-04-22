@@ -313,7 +313,7 @@ namespace AudioGo.ViewModels
                     try
                     {
                         var updated = await _sync.ApplyDeltaAsync(CurrentLanguage, ct);
-                        if (updated is not null && updated.Count >= 0)
+                        if (updated is not null && updated.Count > 0)
                         {
                             // Có thay đổi → cập nhật UI trên main thread
                             await MainThread.InvokeOnMainThreadAsync(async () =>
@@ -322,6 +322,8 @@ namespace AudioGo.ViewModels
                                 await _geofence.StartMonitoringAsync(Pois);
                                 StatusMessage = AppStrings.Get("status_tracking", Pois.Count.ToString());
                             });
+                            // Thông báo SearchViewModel để re-query (tránh hiển thị POI bị ẩn)
+                            _sync.NotifyPoisUpdated();
                         }
                     }
                     catch (Exception ex)

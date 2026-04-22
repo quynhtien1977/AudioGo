@@ -67,6 +67,17 @@ namespace Server.Repositories
                 .FirstOrDefaultAsync(p => p.PoiId == poiId && p.IsActive);
 
         /// <summary>
+        /// Tìm POI theo ID cho CMS — không filter IsActive (có thể lấy POI bị ẩn).
+        /// </summary>
+        public Task<Poi?> GetByIdForCmsAsync(string poiId) =>
+            _db.Pois.AsNoTracking()
+                .Include(p => p.Contents)
+                .Include(p => p.Gallery)
+                .Include(p => p.CategoryPois)
+                    .ThenInclude(cp => cp.Category)
+                .FirstOrDefaultAsync(p => p.PoiId == poiId);
+
+        /// <summary>
         /// Haversine filter: lấy POI trong bán kính (metres) từ toạ độ cho trước.
         /// Chỉ trả về POI có IsActive = true.
         /// </summary>

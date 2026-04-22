@@ -147,7 +147,8 @@ namespace Server.Controllers.Cms
         [HttpPut("{id}")]
         public async Task<ActionResult<Poi>> Update(string id, [FromBody] PoiUpdateRequest req)
         {
-            var existing = await _pois.GetByIdAsync(id);
+            // Dùng GetByIdForCmsAsync để tìm POI bao gồm cả inactive (GetByIdAsync chỉ trả active)
+            var existing = await _pois.GetByIdForCmsAsync(id);
             if (existing is null) return NotFound();
 
             if (req.Latitude.HasValue)         existing.Latitude         = req.Latitude.Value;

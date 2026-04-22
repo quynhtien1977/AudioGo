@@ -1,4 +1,4 @@
-﻿using AudioGo.Services.Interfaces;
+using AudioGo.Services.Interfaces;
 using AudioGo.Helpers;
 using AudioGo_Mobile.Views;
 using AudioGo.Services;
@@ -108,6 +108,15 @@ namespace AudioGo.ViewModels
             _ = LoadCategoriesAsync();
 
             _sync.LanguageChanged += OnLanguageChanged;
+            // Khi delta sync cập nhật POI (ẩn/xóa) → re-query để SearchPage không giữ POI cũ
+            _sync.PoisUpdated += OnPoisUpdated;
+        }
+
+        private void OnPoisUpdated(object? sender, EventArgs e)
+        {
+            // Chỉ re-query nếu đang hiển thị kết quả (tránh flicker khi ShowWelcome)
+            if (!ShowWelcome)
+                _ = SearchAsync(Query);
         }
 
         private void OnLanguageChanged(object? sender, string e)
