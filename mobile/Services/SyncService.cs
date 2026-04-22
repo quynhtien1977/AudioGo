@@ -13,6 +13,7 @@ namespace AudioGo.Services
         private readonly IApiService _api;
         private readonly AppDatabase _db;
         private readonly IHttpClientFactory _httpFactory;
+        private readonly IGeofenceService _geofence;
         private DateTime _lastPolicyNoticeUtc = DateTime.MinValue;
 
         private static readonly SemaphoreSlim GallerySemaphore = new(3, 3);
@@ -26,11 +27,12 @@ namespace AudioGo.Services
             MainThread.BeginInvokeOnMainThread(() => LanguageChanged?.Invoke(this, normalized));
         }
 
-        public SyncService(IApiService api, AppDatabase db, IHttpClientFactory httpFactory)
+        public SyncService(IApiService api, AppDatabase db, IHttpClientFactory httpFactory, IGeofenceService geofence)
         {
             _api = api;
             _db = db;
             _httpFactory = httpFactory;
+            _geofence = geofence;
 
             Connectivity.ConnectivityChanged += OnConnectivityChanged;
         }
@@ -82,11 +84,10 @@ namespace AudioGo.Services
                 return null;
             }
 
+            // Lưu ý: serverPois.Count == 0 là tín hiệu hợp lệ (server không có POI active nào).
+            // Không return sớm — phải gọi ReplaceMetadataAsync để xóa stale POI khỏi local.
             if (serverPois.Count == 0)
-            {
-                PublishNotice("Không có dữ liệu ngôn ngữ mới. Dữ liệu hiện tại được giữ nguyên.");
-                return null;
-            }
+                PublishNotice("Server không có POI nào. Dữ liệu cũ sẽ được dọn dẹp.");
 
             await ReplaceMetadataAsync(serverPois);
 
@@ -277,8 +278,8 @@ namespace AudioGo.Services
             Action<POI>? onSingleAudioReady = null)
         {
             var serverPois = await _api.GetPoisAsync(languageCode: normalizedLang, ct: ct);
-            if (serverPois.Count == 0)
-                return (await _db.GetAllPoisAsync()).Select(MapToDto).ToList();
+            // Không bỏ qua khi server trả rỗng:
+            // server trả [] = không còn POI active → phải xóa stale local qua ReplaceMetadataAsync.
 
             await ReplaceMetadataAsync(serverPois);
 
@@ -318,6 +319,7 @@ namespace AudioGo.Services
             {
                 DeletePoiMediaFiles(stale);
                 await _db.DeletePoiAsync(stale);
+                await _geofence.RemovePoiAsync(stale.PoiId);  // notify GeofenceService
             }
         }
 

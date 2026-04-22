@@ -54,13 +54,17 @@ namespace Server.Repositories
             return pois;
         }
 
+        /// <summary>
+        /// Trả về POI theo ID. Chỉ trả về POI đang active (IsActive = true).
+        /// Trả null nếu không tìm thấy hoặc POI đã bị ẩn/xóa bởi admin.
+        /// </summary>
         public Task<Poi?> GetByIdAsync(string poiId) =>
             _db.Pois.AsNoTracking()
                 .Include(p => p.Contents)
                 .Include(p => p.Gallery)
                 .Include(p => p.CategoryPois)
                     .ThenInclude(cp => cp.Category)
-                .FirstOrDefaultAsync(p => p.PoiId == poiId);
+                .FirstOrDefaultAsync(p => p.PoiId == poiId && p.IsActive);
 
         /// <summary>
         /// Haversine filter: lấy POI trong bán kính (metres) từ toạ độ cho trước.
