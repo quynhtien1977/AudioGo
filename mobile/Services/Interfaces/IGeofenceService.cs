@@ -1,4 +1,4 @@
-﻿using Shared;
+using Shared;
 
 namespace AudioGo.Services.Interfaces
 {
@@ -12,5 +12,11 @@ namespace AudioGo.Services.Interfaces
 
         /// <summary>Call this from the GPS location callback.</summary>
         void OnLocationUpdated(double latitude, double longitude);
+
+        /// <summary>
+        /// Xóa một POI khỏi danh sách giám sát (gọi khi POI bị admin ẩn/xóa).
+        /// Cũng xóa cooldown timer của POI đó.
+        /// </summary>
+        Task RemovePoiAsync(string poiId);
     }
 }

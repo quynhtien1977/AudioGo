@@ -4,7 +4,7 @@ using Server.Models;
 using Server.Repositories.Interfaces;
 using Server.Services.Interfaces;
 using Shared;
-
+using Shared.DTOs;
 namespace Server.Controllers.Mobile
 {
     [ApiController]
@@ -65,7 +65,34 @@ namespace Server.Controllers.Mobile
             return poi is null ? NotFound() : Ok(await ToDtoAsync(poi, lang));
         }
 
-        // ── Private ────────────────────────────────────────────────────────
+        // GET /api/mobile/pois/delta?since=2026-04-22T10:00:00Z&lang=vi
+        // Mobile gọi mỗi 5-10 phút khi ứng dụng ở foreground để nhận delta thay đổi.
+        [HttpGet("delta")]
+        public async Task<ActionResult<PoiDeltaDto>> GetDelta(
+            [FromQuery] string? since,
+            [FromQuery] string lang = "vi")
+        {
+            // Nếu không có since hoặc parse lỗi → trả kết quả rỗng (mobile sẽ fallback full-sync)
+            if (string.IsNullOrWhiteSpace(since) ||
+                !DateTime.TryParse(since, null,
+                    System.Globalization.DateTimeStyles.RoundtripKind, out var sinceUtc))
+            {
+                return Ok(new PoiDeltaDto(
+                    Array.Empty<POI>(),
+                    Array.Empty<string>(),
+                    DateTime.UtcNow));
+            }
+
+            var (updatedPois, deletedIds) = await _repo.GetDeltaAsync(sinceUtc);
+
+            var updatedDtos = new List<POI>(updatedPois.Count);
+            foreach (var p in updatedPois)
+                updatedDtos.Add(await ToDtoAsync(p, lang));
+
+            return Ok(new PoiDeltaDto(updatedDtos, deletedIds, DateTime.UtcNow));
+        }
+
+
 
         private async Task<POI> ToDtoAsync(Poi p, string lang)
         {

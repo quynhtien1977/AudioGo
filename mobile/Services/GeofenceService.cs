@@ -25,6 +25,13 @@ namespace AudioGo.Services
             return Task.CompletedTask;
         }
 
+        public Task RemovePoiAsync(string poiId)
+        {
+            _pois.RemoveAll(p => p.PoiId == poiId);
+            _lastTriggered.TryRemove(poiId, out _);
+            return Task.CompletedTask;
+        }
+
         public void OnLocationUpdated(double latitude, double longitude)
         {
             // Lọc ra tất cả các POI mà user đang đứng bên trong (thoả mãn bán kính và thời gian cooldown)

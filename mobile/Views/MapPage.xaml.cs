@@ -1,4 +1,4 @@
-﻿using AudioGo.ViewModels;
+using AudioGo.ViewModels;
 using Microsoft.Maui.Controls.Maps;
 using Microsoft.Maui.Maps;
 using Shared;
@@ -140,6 +140,17 @@ public partial class MapPage : ContentPage
 
     private void OnMainPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(MainViewModel.Pois))
+        {
+            // Delta sync đã cập nhật danh sách POI → reload map pins + geofence circles
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                _vm.LoadPois(_main.Pois);
+                RefreshPins();
+            });
+            return;
+        }
+
         if (e.PropertyName != nameof(MainViewModel.ActivePoi)) return;
 
         MainThread.BeginInvokeOnMainThread(() =>
