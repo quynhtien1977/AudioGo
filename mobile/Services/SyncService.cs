@@ -272,6 +272,69 @@ namespace AudioGo.Services
                 .ToList();
         }
 
+        /// <summary>
+        /// Delta polling: gọi server để lấy thay đổi kể từ lần sync cuối.
+        /// - Upsert các POI Updated vào SQLite (giữ file local nếu URL không đổi).
+        /// - Xóa cục bộ các POI trong DeletedIds (xóa file media + geofence).
+        /// - Trả về danh sách POI mới nhất từ SQLite (để ViewModel cập nhật UI).
+        /// - Trả null nếu không có internet hoặc server lỗi (caller bỏ qua).
+        /// </summary>
+        public async Task<List<POI>?> ApplyDeltaAsync(string languageCode, CancellationToken ct = default)
+        {
+            if (!NetworkHelper.HasInternet())
+                return null;
+
+            var normalizedLang = LanguageHelper.NormalizeToSupported(languageCode);
+            var lastSyncAt = AppSettings.GetLastSyncAt();          // DateTime UTC
+
+            var delta = await _api.GetDeltaAsync(lastSyncAt, normalizedLang, ct);
+            if (delta is null) return null;                         // network / server error
+
+            bool hasChanges = delta.Updated.Count > 0 || delta.DeletedIds.Count > 0;
+
+            if (hasChanges)
+            {
+                var allExisting = await _db.GetAllPoisAsync();
+                var existingMap = allExisting.ToDictionary(e => e.PoiId);
+
+                // ── Upsert updated POIs ─────────────────────────────────
+                foreach (var poi in delta.Updated)
+                {
+                    var entity = MapToEntity(poi);
+                    if (existingMap.TryGetValue(poi.PoiId, out var existing))
+                    {
+                        entity.LocalAudioPath   = PreserveAudioFile(existing, poi.AudioUrl);
+                        entity.LocalLogoPath    = PreserveLogoFile(existing, poi.LogoUrl);
+                        entity.GalleryLocalPathsJson = PreserveGalleryFiles(existing, entity.GalleryUrlsJson);
+                    }
+                    await _db.SavePoiAsync(entity);
+                }
+
+                // ── Delete removed POIs ─────────────────────────────────
+                foreach (var poiId in delta.DeletedIds)
+                {
+                    if (existingMap.TryGetValue(poiId, out var stale))
+                    {
+                        DeletePoiMediaFiles(stale);
+                        await _db.DeletePoiAsync(stale);
+                    }
+                    await _geofence.RemovePoiAsync(poiId);
+                }
+
+                // ── Kick off asset downloads for updated POIs ───────────
+                if (delta.Updated.Count > 0 && CanDownloadAssetsNow())
+                    _ = Task.Run(() => DownloadAllAssetsAsync(delta.Updated.ToList(), CancellationToken.None));
+            }
+
+            // Luôn cập nhật lastSyncAt bằng ServerNow của server (kể cả khi delta rỗng)
+            AppSettings.SetLastSyncAt(delta.ServerNow);
+
+            if (!hasChanges) return null;   // không có gì thay đổi → caller không cần refresh UI
+
+            return (await _db.GetAllPoisAsync()).Select(MapToDto).ToList();
+        }
+
+
         private async Task<List<POI>> RefreshFromServerAsync(
             string normalizedLang,
             CancellationToken ct,

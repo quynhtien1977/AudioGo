@@ -82,4 +82,18 @@ namespace Shared.DTOs
     public record TourCreateRequest(string Name, string Description);
 
     public record TourUpdateRequest(string? Name, string? Description);
+
+    // ── Delta Sync ──────────────────────────────────────────────────────
+    /// <summary>
+    /// Response từ GET /api/mobile/pois/delta?since=&amp;lang=
+    /// Mobile áp dụng upsert cho Updated và delete cho DeletedIds.
+    /// </summary>
+    public record PoiDeltaDto(
+        /// <summary>POI mới hoặc đã thay đổi kể từ `since`.</summary>
+        IReadOnlyList<Shared.POI> Updated,
+        /// <summary>Danh sách PoiId bị ẩn / xóa kể từ `since`.</summary>
+        IReadOnlyList<string> DeletedIds,
+        /// <summary>Thời điểm server snapshot này (UTC). Mobile lưu lại làm lastSyncAt kế tiếp.</summary>
+        DateTime ServerNow
+    );
 }

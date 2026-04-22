@@ -117,6 +117,31 @@ namespace Server.Repositories
             return await query.OrderByDescending(p => p.CreatedAt).ToListAsync();
         }
 
+        /// <summary>
+        /// Delta sync: chỉ trả về POI có UpdatedAt > since.
+        /// - Updated  = IsActive = true  (mobile upsert)
+        /// - Deleted  = IsActive = false (mobile xóa cục bộ)
+        /// Nếu UpdatedAt null, dùng CreatedAt để fallback.
+        /// </summary>
+        public async Task<(List<Poi> Updated, List<string> DeletedIds)> GetDeltaAsync(DateTime since)
+        {
+            // Chuẩn hóa sang UTC để so sánh nhất quán
+            var sinceUtc = since.Kind == DateTimeKind.Utc ? since : since.ToUniversalTime();
+
+            var changed = await _db.Pois.AsNoTracking()
+                .Include(p => p.Contents)
+                .Include(p => p.Gallery)
+                .Include(p => p.CategoryPois)
+                    .ThenInclude(cp => cp.Category)
+                .Where(p => (p.UpdatedAt ?? p.CreatedAt) > sinceUtc)
+                .ToListAsync();
+
+            var updated    = changed.Where(p =>  p.IsActive).ToList();
+            var deletedIds = changed.Where(p => !p.IsActive).Select(p => p.PoiId).ToList();
+
+            return (updated, deletedIds);
+        }
+
 
         public async Task<Poi> CreateAsync(Poi poi)
         {

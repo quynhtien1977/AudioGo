@@ -27,4 +27,25 @@ public static class AppSettings
 
     public static void SetCellularDownloadsAllowed(bool allowed)
         => Preferences.Default.Set(AllowCellularDownloadsKey, allowed);
+
+    // ── Delta Sync timestamp ─────────────────────────────────────────────
+    private const string LastSyncAtKey = "LastSyncAt";
+
+    /// <summary>
+    /// Trả về UTC timestamp của lần đồng bộ delta cuối cùng.
+    /// DateTime.MinValue nếu chưa từng sync (→ server sẽ trả toàn bộ changed rows).
+    /// </summary>
+    public static DateTime GetLastSyncAt()
+    {
+        var raw = Preferences.Default.Get(LastSyncAtKey, string.Empty);
+        if (string.IsNullOrEmpty(raw)) return DateTime.MinValue;
+        if (DateTime.TryParse(raw, null,
+                System.Globalization.DateTimeStyles.RoundtripKind, out var dt))
+            return dt;
+        return DateTime.MinValue;
+    }
+
+    /// <summary>Lưu timestamp UTC sau mỗi lần delta polling thành công.</summary>
+    public static void SetLastSyncAt(DateTime utcNow)
+        => Preferences.Default.Set(LastSyncAtKey, utcNow.ToUniversalTime().ToString("O"));
 }

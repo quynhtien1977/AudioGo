@@ -12,6 +12,13 @@ namespace Server.Repositories.Interfaces
         Task<List<Poi>> GetNearbyAsync(double lat, double lon, double radiusMeters);
         /// <summary>Trả về tất cả POI (dùng cho CMS), có thể filter theo IsActive.</summary>
         Task<List<Poi>> GetAllForCmsAsync(bool? isActive = null);
+
+        /// <summary>
+        /// Delta sync: trả về (updated, deletedIds) kể từ <paramref name="since"/> (UTC).
+        /// updated  = POI có UpdatedAt > since VÀ IsActive = true
+        /// deleted  = POI có UpdatedAt > since VÀ IsActive = false → trả về PoiId để mobile xóa cục bộ
+        /// </summary>
+        Task<(List<Poi> Updated, List<string> DeletedIds)> GetDeltaAsync(DateTime since);
         Task<Poi> CreateAsync(Poi poi);
         Task<Poi?> UpdateAsync(Poi poi);
         Task<bool> DeleteAsync(string poiId);

@@ -15,6 +15,10 @@ namespace AudioGo.ViewModels
         private readonly IAudioService _audio;
         private readonly ILocationService _location;
 
+        // ── Delta polling ────────────────────────────────────────────
+        private CancellationTokenSource? _deltaCts;
+        private static readonly TimeSpan DeltaPollInterval = TimeSpan.FromMinutes(1);
+
         // ── Location state ──────────────────────────────────────────
         private (double Lat, double Lon)? _userLocation;
         private const double NearbyDisplayRadiusM = 50.0; // "điểm gần bạn" display radius (separate from geofence ActivationRadius)
@@ -187,6 +191,9 @@ namespace AudioGo.ViewModels
             {
                 IsLoading = false;
             }
+
+            // Sau khi init xong, bắt đầu vòng lặp delta polling 5 phút
+            StartDeltaPolling();
         }
 
                 public async Task ChangeLanguageAsync(string languageCode)
@@ -275,9 +282,55 @@ namespace AudioGo.ViewModels
 
         public async Task StopAsync()
         {
+            StopDeltaPolling();
             await _geofence.StopMonitoringAsync();
             await _location.StopAsync();
             await _audio.StopAsync();
+        }
+
+        // ── Delta polling helpers ────────────────────────────────────
+        private void StartDeltaPolling()
+        {
+            StopDeltaPolling();                         // safety: cancel previous
+            _deltaCts = new CancellationTokenSource();
+            _ = Task.Run(() => DeltaPollLoopAsync(_deltaCts.Token));
+        }
+
+        private void StopDeltaPolling()
+        {
+            _deltaCts?.Cancel();
+            _deltaCts?.Dispose();
+            _deltaCts = null;
+        }
+
+        private async Task DeltaPollLoopAsync(CancellationToken ct)
+        {
+            try
+            {
+                using var timer = new PeriodicTimer(DeltaPollInterval);
+                while (await timer.WaitForNextTickAsync(ct))
+                {
+                    try
+                    {
+                        var updated = await _sync.ApplyDeltaAsync(CurrentLanguage, ct);
+                        if (updated is not null && updated.Count >= 0)
+                        {
+                            // Có thay đổi → cập nhật UI trên main thread
+                            await MainThread.InvokeOnMainThreadAsync(async () =>
+                            {
+                                Pois = updated;
+                                await _geofence.StartMonitoringAsync(Pois);
+                                StatusMessage = AppStrings.Get("status_tracking", Pois.Count.ToString());
+                            });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[DeltaPoll] tick error: {ex.Message}");
+                    }
+                }
+            }
+            catch (OperationCanceledException) { /* expected on StopAsync */ }
         }
 
         public async Task SetCellularDownloadsAsync(bool allowed)
