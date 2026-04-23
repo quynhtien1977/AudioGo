@@ -45,16 +45,17 @@ namespace Server.Controllers.Cms
             var now = DateTime.UtcNow;
             var onlineThreshold = now.AddMinutes(-5);
 
-            var query = _context.LocationLogs
-                                .AsNoTracking();
+            var logs = _context.LocationLogs.AsNoTracking();
 
-            // 🔥 GROUP theo device → lấy log mới nhất
-            var latestPerDevice = query
-                .GroupBy(x => x.DeviceId)
-                .Select(g => g
-                    .OrderByDescending(x => x.Timestamp)
-                    .First()
-                );
+            // ✅ EF Core-compatible: correlated NOT EXISTS subquery
+            // Lấy record mới nhất per device: giữ lại row L nếu không có row nào
+            // của cùng DeviceId có Timestamp lớn hơn.
+            var latestPerDevice = logs.Where(l =>
+                !logs.Any(other =>
+                    other.DeviceId  == l.DeviceId &&
+                    other.Timestamp >  l.Timestamp
+                )
+            );
 
             var totalCount = await latestPerDevice.CountAsync();
 
@@ -65,21 +66,15 @@ namespace Server.Controllers.Cms
                 .Select(x => new
                 {
                     locationId = x.LocationId,
-                    deviceId = x.DeviceId,
-                    latitude = x.Latitude,
-                    longitude = x.Longitude,
-                    timestamp = x.Timestamp,
-
-                    // 🔥 tính luôn trạng thái online tại BE
-                    isOnline = x.Timestamp >= onlineThreshold
+                    deviceId   = x.DeviceId,
+                    latitude   = x.Latitude,
+                    longitude  = x.Longitude,
+                    timestamp  = x.Timestamp,
+                    isOnline   = x.Timestamp >= onlineThreshold
                 })
                 .ToListAsync();
 
-            return Ok(new
-            {
-                data,
-                totalCount
-            });
+            return Ok(new { data, totalCount });
         }
 
         // ================================

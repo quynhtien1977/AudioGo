@@ -53,21 +53,26 @@ export default function DeviceTrackingPage() {
   // 🔥 SIGNALR CONNECTION & REALTIME MONITORING
   // =========================
   useEffect(() => {
+    // ✅ Helper: lấy snapshot onlineNow từ hub (dùng cả khi connect + reconnect)
+    const fetchSnapshot = async () => {
+      try {
+        const snapshot = await signalRService.connection?.invoke("GetActiveDevices")
+        if (snapshot?.onlineNow !== undefined) {
+          setOnlineNow(snapshot.onlineNow)
+        }
+      } catch (err) {
+        console.warn("⚠️ GetActiveDevices failed:", err.message)
+      }
+    }
+
     // ✅ CONNECT SIGNALR
     const initSignalR = async () => {
       try {
         await signalRService.connect()
         setSignalRStatus("connected")
 
-        // ⚡ Lấy snapshot ngay khi kết nối thành công
-        try {
-          const snapshot = await signalRService.connection.invoke("GetActiveDevices")
-          if (snapshot?.onlineNow !== undefined) {
-            setOnlineNow(snapshot.onlineNow)
-          }
-        } catch (snapshotErr) {
-          console.warn("GetActiveDevices snapshot failed:", snapshotErr.message)
-        }
+        // ⚡ Lấy snapshot ngay khi kết nối thành công lần đầu
+        await fetchSnapshot()
 
         // 🟢 SUBSCRIBE: DEVICE ONLINE
         const unsubscribeOnline = signalRService.subscribe(
@@ -117,10 +122,12 @@ export default function DeviceTrackingPage() {
             // ⚡ Cập nhật count từ server
             if (device.onlineNow !== undefined) setOnlineNow(device.onlineNow)
 
+            // ✅ Chỉ set isActive=false — KHÔNG thay timestamp
+            // Timestamp = thời điểm gửi location lần cuối, không phải lúc disconnect
             setData((prevData) =>
               prevData.map((d) =>
                 d.deviceId === device.deviceId
-                  ? { ...d, timestamp: new Date().toISOString(), isActive: false }
+                  ? { ...d, isActive: false }
                   : d
               )
             )
@@ -131,7 +138,6 @@ export default function DeviceTrackingPage() {
         const unsubscribeLocationUpdate = signalRService.subscribe(
           "onLocationUpdated",
           (location) => {
-            // ❌ IGNORE IF NO VALID DEVICE ID
             if (!location?.deviceId || location.deviceId.trim() === "") {
               console.log("⏭️ Ignored LocationUpdated: Empty deviceId")
               return
@@ -139,7 +145,6 @@ export default function DeviceTrackingPage() {
 
             console.log("📍 Location Update Event:", location)
             
-            // UPDATE TABLE - Cập nhật vị trí device realtime
             setData((prevData) =>
               prevData.map((d) =>
                 d.deviceId === location.deviceId
@@ -155,12 +160,18 @@ export default function DeviceTrackingPage() {
           }
         )
 
-        // SUBSCRIBE: CONNECTION STATUS
+        // ✅ SUBSCRIBE: CONNECTION STATUS
+        // — Khi reconnect thành công, re-fetch snapshot để cập nhật onlineNow
         const unsubscribeStatus = signalRService.subscribe(
           "onConnectionStatusChanged",
-          (status) => {
-            console.log(`📡 SignalR Status: ${status} (waiting for mobile device connections)`)
+          async (status) => {
+            console.log(`📡 SignalR Status: ${status}`)
             setSignalRStatus(status)
+
+            // ⚡ Sau khi reconnect → lấy lại onlineNow (trạng thái có thể thay đổi khi mất kết nối)
+            if (status === "connected") {
+              await fetchSnapshot()
+            }
           }
         )
 

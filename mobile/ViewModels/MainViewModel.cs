@@ -14,6 +14,7 @@ namespace AudioGo.ViewModels
         private readonly IGeofenceService _geofence;
         private readonly IAudioService _audio;
         private readonly ILocationService _location;
+        private readonly ISignalRService _signalR;
 
         // ── Location state ──────────────────────────────────────────
         private (double Lat, double Lon)? _userLocation;
@@ -130,12 +131,14 @@ namespace AudioGo.ViewModels
         public bool IsAudioPlaying => _audio.IsPlaying;
 
         public MainViewModel(SyncService sync, IGeofenceService geofence,
-                             IAudioService audio, ILocationService location)
+                             IAudioService audio, ILocationService location,
+                             ISignalRService signalR)
         {
             _sync = sync;
             _geofence = geofence;
             _audio = audio;
             _location = location;
+            _signalR = signalR;
 
             _geofence.PoiTriggered += OnPoiTriggered;
             _location.LocationUpdated += OnLocationUpdated;
@@ -173,6 +176,11 @@ namespace AudioGo.ViewModels
                 Pois = await _sync.GetPoisAsync(CurrentLanguage);
                 await _geofence.StartMonitoringAsync(Pois);
                 await _location.StartAsync();
+
+                // Kết nối SignalR sau khi location service đã chạy
+                // JWT đã có trong SecureStorage từ bước QR scan
+                _ = _signalR.StartAsync();
+
                 StatusMessage = AppStrings.Get("status_tracking", Pois.Count.ToString());
             }
             catch (Exception ex)
@@ -278,6 +286,7 @@ namespace AudioGo.ViewModels
             await _geofence.StopMonitoringAsync();
             await _location.StopAsync();
             await _audio.StopAsync();
+            await _signalR.StopAsync();
         }
 
         public async Task SetCellularDownloadsAsync(bool allowed)
@@ -371,6 +380,9 @@ namespace AudioGo.ViewModels
             _geofence.OnLocationUpdated(loc.Lat, loc.Lon);
             // Refresh nearby list whenever GPS position changes
             UpdateNearbyPois();
+
+            // Gửi GPS lên Hub (fire-and-forget, fail-safe)
+            _ = _signalR.SendLocationAsync(loc.Lat, loc.Lon);
         }
 
         private async void OnPoiTriggered(object? sender, POI poi)

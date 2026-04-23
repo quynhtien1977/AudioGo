@@ -96,11 +96,12 @@ var app = builder.Build();
 
 app.MapOpenApi();           // /openapi/v1.json — dùng cho React generate TS types
 app.UseStaticFiles();       // serve /uploads/... cho audio + image
-app.UseCors("WebCmsPolicy"); // ✅ CORS MUST BE BEFORE UseRouting
-app.UseRouting();           // ✅ REQUIRED FOR SIGNALR
+app.UseRouting();           // ✅ UseRouting PHẢI trước UseCors khi dùng [EnableCors]
+app.UseCors("WebCmsPolicy"); // ✅ CORS sau UseRouting, trước UseAuthentication
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-app.MapHub<DeviceHub>("/deviceHub"); // ✅ MAP SIGNALR HUB
+app.MapHub<DeviceHub>("/deviceHub")     // ✅ MAP SIGNALR HUB
+   .RequireCors("WebCmsPolicy");         // ✅ HUB CẦN EXPLICIT CORS — [Authorize] không đủ
 
 app.Run();

@@ -30,29 +30,42 @@ namespace Server.Hubs
         // ─────────────────────────────────────────────────────────────────
         public override async Task OnConnectedAsync()
         {
-            // DeviceId lấy từ claim sub/nameidentifier — do JWT mobile set khi QR login
-            // Web admin sẽ không có claim này → deviceId rỗng
-            var deviceId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                        ?? Context.User?.FindFirst("sub")?.Value
-                        ?? "";
-
             var connectionId = Context.ConnectionId;
 
-            if (string.IsNullOrWhiteSpace(deviceId))
+            // ✅ Phân biệt Web Admin vs Mobile Device bằng ROLE claim
+            // — Web admin JWT: Role = "Admin" hoặc "Manager", NameIdentifier = AccountId (GUID)
+            // — Mobile JWT: Role = "GuestApp" (hoặc không có), NameIdentifier = DeviceId
+            // Trước đây dùng NameIdentifier rỗng để phân biệt, nhưng web admin cũng có
+            // NameIdentifier = AccountId → bị nhầm là mobile device!
+            var role = Context.User?.FindFirst(ClaimTypes.Role)?.Value ?? "";
+            var isWebAdmin = role is "Admin" or "Manager";
+
+            if (isWebAdmin)
             {
                 // ── Web admin connection ──────────────────────────────────
                 _presence.MarkOnline(connectionId, ""); // web = empty deviceId
                 await Groups.AddToGroupAsync(connectionId, "admin_dashboard");
-                _logger.LogInformation("🖥️  Web admin joined admin_dashboard: {ConnId}", connectionId);
+                _logger.LogInformation("🖥️  Web admin joined admin_dashboard: {ConnId} | Role: {Role}",
+                    connectionId, role);
             }
             else
             {
                 // ── Mobile device connection ──────────────────────────────
+                var deviceId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                            ?? Context.User?.FindFirst("sub")?.Value
+                            ?? "";
+
+                if (string.IsNullOrWhiteSpace(deviceId))
+                {
+                    _logger.LogWarning("⚠️  Unknown connection (no deviceId, no admin role): {ConnId}", connectionId);
+                    Context.Abort();
+                    return;
+                }
+
                 _presence.MarkOnline(connectionId, deviceId);
 
                 var allOnline = _presence.GetOnlineDeviceIds();
 
-                // Gửi sự kiện DeviceOnline tới admin dashboard (không broadcast all)
                 await Clients.Group("admin_dashboard").SendAsync("DeviceOnline", new
                 {
                     deviceId,

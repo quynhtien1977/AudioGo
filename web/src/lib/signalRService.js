@@ -1,6 +1,10 @@
 import * as signalR from "@microsoft/signalr"
 
-const SIGNALR_URL = `${import.meta.env.VITE_API_URL ?? "http://localhost:5086"}/deviceHub`
+// ⚠️ Hub mount tại /deviceHub — KHÔNG dùng VITE_API_URL vì nó có /api suffix
+// VITE_API_URL = http://localhost:5086/api  →  base = http://localhost:5086
+const _apiBase = import.meta.env.VITE_API_URL ?? "http://localhost:5086"
+const _hubBase = _apiBase.replace(/\/api$/, "") // strip trailing /api nếu có
+const SIGNALR_URL = `${_hubBase}/deviceHub`
 
 class SignalRService {
   constructor() {
@@ -58,8 +62,9 @@ class SignalRService {
       this.connection = new signalR.HubConnectionBuilder()
         .withUrl(SIGNALR_URL, {
           accessTokenFactory: () => token,
-          skipNegotiation: true,
-          transport: signalR.HttpTransportType.WebSockets,
+          // ❌ KHÔNG dùng skipNegotiation=true với browser — cần negotiate để truyền token
+          // skipNegotiation: true,
+          // transport: signalR.HttpTransportType.WebSockets,
         })
         .withAutomaticReconnect([1000, 3000, 5000, 10000])
         .withHubProtocol(new signalR.JsonHubProtocol())

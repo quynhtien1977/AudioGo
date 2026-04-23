@@ -67,6 +67,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IGeofenceService, GeofenceService>();
         builder.Services.AddSingleton<IAudioService, AudioService>();
         builder.Services.AddSingleton<ILocationService, LocationService>();
+        builder.Services.AddSingleton<ISignalRService, SignalRService>();
 
         // ── ViewModels ────────────────────────────────────────────
         builder.Services.AddSingleton<MainViewModel>();
