@@ -15,6 +15,7 @@ namespace AudioGo.ViewModels
         private readonly IAudioService _audio;
         private readonly ILocationService _location;
         private readonly ISignalRService _signalR;
+        private readonly IApiService _api;
 
         // ── Delta polling ────────────────────────────────────────────
         private CancellationTokenSource? _deltaCts;
@@ -136,24 +137,34 @@ namespace AudioGo.ViewModels
 
         public MainViewModel(SyncService sync, IGeofenceService geofence,
                              IAudioService audio, ILocationService location,
-                             ISignalRService signalR)
+                             ISignalRService signalR, IApiService api)
         {
             _sync = sync;
             _geofence = geofence;
             _audio = audio;
             _location = location;
             _signalR = signalR;
+            _api = api;
 
             _geofence.PoiTriggered += OnPoiTriggered;
             _location.LocationUpdated += OnLocationUpdated;
             _sync.LanguageChanged += OnLanguageChanged;
 
             // Keep mini-player icon in sync regardless of who stops the audio
-            _audio.PlaybackStateChanged += (_, _) =>
+            _audio.PlaybackStateChanged += (_, e) =>
             {
                 OnPropertyChanged(nameof(IsAudioPlaying));
                 OnPropertyChanged(nameof(IsAudioPaused));
                 OnPropertyChanged(nameof(MiniPlayerPlayIcon));
+
+                // 🔴 Ghi lịch sử nghe khi audio kết thúc tự nhiên
+                if (e.PlaybackEnded && _activePoi is { } poi)
+                {
+                    var durationSec = (int)Math.Round(e.DurationSeconds > 0
+                        ? e.DurationSeconds
+                        : _audio.CurrentPositionSeconds);
+                    _ = PostListenHistoryFireAndForgetAsync(poi.PoiId, durationSec);
+                }
             };
 
             PlayPoiCommand = new Command<POI>(async poi =>
@@ -460,6 +471,25 @@ namespace AudioGo.ViewModels
             if (nearbyPoi is not null)
             {
                 nearbyPoi.LocalAudioPath = updatedPoi.LocalAudioPath;
+            }
+        }
+
+        /// <summary>
+        /// Fire-and-forget: ghi lịch sử nghe lên server sau khi audio kết thúc.
+        /// Không throw — nếu offline thì bỏ qua (non-critical).
+        /// </summary>
+        private async Task PostListenHistoryFireAndForgetAsync(string poiId, int durationSec)
+        {
+            try
+            {
+                var deviceId = await SecureStorage.GetAsync("AppDeviceId") ?? "unknown";
+                await _api.PostListenHistoryAsync(poiId, deviceId, durationSec);
+                System.Diagnostics.Debug.WriteLine($"[ListenHistory] Logged: poi={poiId}, duration={durationSec}s");
+            }
+            catch (Exception ex)
+            {
+                // Không làm crash app — offline/network failure là bình thường
+                System.Diagnostics.Debug.WriteLine($"[ListenHistory] Failed to log: {ex.Message}");
             }
         }
     }

@@ -18,6 +18,12 @@ namespace Server.Repositories
             return entry;
         }
 
+        public async Task CreateBatchAsync(IEnumerable<ListenHistory> entries)
+        {
+            _db.ListenHistories.AddRange(entries);
+            await _db.SaveChangesAsync();
+        }
+
         public Task<List<ListenHistory>> GetByPoiAsync(string poiId, int limit = 100) =>
             _db.ListenHistories.AsNoTracking()
                 .Where(lh => lh.PoiId == poiId)
@@ -56,7 +62,8 @@ namespace Server.Repositories
                 .Select(g => new DailyListenDto
                 {
                     Date = g.Key,
-                    Count = g.Count()
+                    Count = g.Count(),
+                    TotalDuration = g.Sum(x => x.ListenDuration)
                 })
                 .OrderBy(x => x.Date)
                 .ToListAsync();

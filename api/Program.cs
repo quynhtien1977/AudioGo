@@ -84,6 +84,9 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddSingleton<ILocationQueue, LocationQueue>();
 builder.Services.AddHostedService<LocationQueueHostedService>();
 
+builder.Services.AddSingleton<IListenHistoryQueue, ListenHistoryQueue>();
+builder.Services.AddHostedService<ListenHistoryHostedService>();
+
 builder.Services.AddSingleton<IContentPipelineQueue, ContentPipelineQueue>();
 builder.Services.AddHostedService<ContentPipelineHostedService>();
 builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>();
