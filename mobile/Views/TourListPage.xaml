@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="AudioGo_Mobile.Views.TourListPage"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{StaticResource Background}"
+             Title="Tour">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- ── Header ── -->
+        <VerticalStackLayout Grid.Row="0"
+                             BackgroundColor="{StaticResource Surface}"
+                             Padding="20,52,20,16"
+                             Spacing="4">
+            <Label Text="{Binding LabelTours}" Style="{StaticResource HeadlineLabel}"/>
+            <Label Text="{Binding CountLabel}" Style="{StaticResource BodyLabel}"/>
+        </VerticalStackLayout>
+
+        <!-- ── Tour List ── -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="16" Spacing="0">
+
+                <!-- Loading -->
+                <ActivityIndicator IsRunning="{Binding IsLoading}"
+                                   IsVisible="{Binding IsLoading}"
+                                   Color="{StaticResource Primary}"
+                                   HorizontalOptions="Center"
+                                   Margin="0,30,0,0"/>
+
+                <!-- Empty state -->
+                <VerticalStackLayout IsVisible="{Binding IsEmpty}"
+                                     Spacing="16"
+                                     HorizontalOptions="Center"
+                                     Margin="0,60,0,0">
+                    <Label Text="&#xe55b;" FontFamily="MaterialIcons" TextColor="{StaticResource Gray400}" FontSize="60" HorizontalOptions="Center"/>
+                    <Label Text="{Binding LabelEmptyTitle}"
+                           Style="{StaticResource HeadlineLabel}"
+                           HorizontalOptions="Center"/>
+                    <Label Text="{Binding LabelEmptyDesc}"
+                           Style="{StaticResource BodyLabel}"
+                           HorizontalOptions="Center"
+                           HorizontalTextAlignment="Center"
+                           MaxLines="3"/>
+                    <Button Text="{Binding LabelCreateBtn}"
+                            Style="{StaticResource PrimaryButton}"
+                            HorizontalOptions="Center"
+                            Clicked="OnCreateTourClicked"/>
+                </VerticalStackLayout>
+
+                <!-- Tour cards -->
+                <CollectionView ItemsSource="{Binding Tours}"
+                                IsVisible="{Binding HasTours}"
+                                SelectionMode="None">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource CardBorder}"
+                                    Margin="0,0,0,12" Padding="0">
+                                <Grid RowDefinitions="Auto,*">
+                                    <!-- Thumbnail / map placeholder -->
+                                    <Border Grid.Row="0"
+                                            BackgroundColor="{StaticResource DarkSurface}"
+                                            StrokeShape="RoundRectangle 0"
+                                            StrokeThickness="0"
+                                            HeightRequest="130">
+                                        <Grid>
+                                            <!-- Fallback icon -->
+                                            <Label Text="&#xe55b;" FontFamily="MaterialIcons"
+                                                   TextColor="{StaticResource Gray400}" FontSize="48"
+                                                   HorizontalOptions="Center" VerticalOptions="Center"/>
+                                            <!-- Thumbnail image (shown when URL set) -->
+                                            <Image Source="{Binding ThumbnailUrl}"
+                                                   Aspect="AspectFill"
+                                                   IsVisible="{Binding ThumbnailUrl, Converter={StaticResource IsNotNullConverter}}"/>
+                                        </Grid>
+                                    </Border>
+                                    <!-- Info section -->
+                                    <VerticalStackLayout Grid.Row="1" Padding="14" Spacing="10">
+                                        <Label Text="{Binding Name}"
+                                               Style="{StaticResource TitleLabel}"/>
+                                        <!-- Progress bar -->
+                                        <VerticalStackLayout Spacing="4">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <Label Grid.Column="0"
+                                                       Text="{Binding LabelProgress}"
+                                                       Style="{StaticResource CaptionLabel}"/>
+                                                <Label Grid.Column="1"
+                                                       Text="{Binding ProgressText}"
+                                                       Style="{StaticResource PrimaryLabel}"/>
+                                            </Grid>
+                                            <ProgressBar Progress="{Binding ProgressRatio}"
+                                                         HeightRequest="6"/>
+                                        </VerticalStackLayout>
+                                        <!-- Stats row -->
+                                        <Grid ColumnDefinitions="*,*,*">
+                                            <VerticalStackLayout Grid.Column="0" Spacing="2" HorizontalOptions="Center">
+                                                <Label Text="{Binding PoiCount}" Style="{StaticResource SectionTitle}" HorizontalOptions="Center"/>
+                                                <Label Text="{Binding LabelPoints}" Style="{StaticResource CaptionLabel}" HorizontalOptions="Center"/>
+                                            </VerticalStackLayout>
+                                            <BoxView Grid.Column="0" WidthRequest="1" HeightRequest="30"
+                                                     Color="{StaticResource Gray200}"
+                                                     HorizontalOptions="End" VerticalOptions="Center"/>
+                                            <VerticalStackLayout Grid.Column="1" Spacing="2" HorizontalOptions="Center">
+                                                <Label Text="{Binding DurationText}" Style="{StaticResource SectionTitle}" HorizontalOptions="Center"/>
+                                                <Label Text="{Binding LabelMinutes}" Style="{StaticResource CaptionLabel}" HorizontalOptions="Center"/>
+                                            </VerticalStackLayout>
+                                            <BoxView Grid.Column="1" WidthRequest="1" HeightRequest="30"
+                                                     Color="{StaticResource Gray200}"
+                                                     HorizontalOptions="End" VerticalOptions="Center"/>
+                                            <VerticalStackLayout Grid.Column="2" Spacing="2" HorizontalOptions="Center">
+                                                <Label Text="{Binding Language}" Style="{StaticResource SectionTitle}" HorizontalOptions="Center"/>
+                                                <Label Text="{Binding LabelLang}" Style="{StaticResource CaptionLabel}" HorizontalOptions="Center"/>
+                                            </VerticalStackLayout>
+                                        </Grid>
+                                        <!-- Action button -->
+                                        <Button Text="{Binding LabelContinue}"
+                                                Style="{StaticResource PrimaryButton}"
+                                                Padding="16,12" FontSize="14"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ContinueTourCommand}"
+                                                CommandParameter="{Binding .}"/>
+                                    </VerticalStackLayout>
+                                </Grid>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.OpenTourCommand}"
+                                                          CommandParameter="{Binding .}"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <BoxView HeightRequest="80" Color="Transparent"/>
+            </VerticalStackLayout>
+        </ScrollView>
+
+    </Grid>
+</ContentPage>

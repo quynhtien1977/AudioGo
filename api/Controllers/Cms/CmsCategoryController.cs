@@ -18,7 +18,7 @@ namespace Server.Controllers.Cms
         public async Task<ActionResult<List<CategoryDto>>> GetAll()
         {
             var cats = await _repo.GetAllAsync();
-            return Ok(cats.Select(c => new CategoryDto(c.CategoryId, c.Name, c.CreatedAt)));
+            return Ok(cats.Select(ToDto));
         }
 
         [HttpGet("{id}")]
@@ -26,7 +26,7 @@ namespace Server.Controllers.Cms
         {
             var cat = await _repo.GetByIdAsync(id);
             if (cat is null) return NotFound();
-            return Ok(new CategoryDto(cat.CategoryId, cat.Name, cat.CreatedAt));
+            return Ok(ToDto(cat));
         }
 
         [HttpPost]
@@ -39,16 +39,19 @@ namespace Server.Controllers.Cms
             };
             var created = await _repo.CreateAsync(cat);
             return CreatedAtAction(nameof(GetById), new { id = created.CategoryId },
-                new CategoryDto(created.CategoryId, created.Name, created.CreatedAt));
+                ToDto(created));
         }
 
         [HttpPut("{id}")]
         public async Task<ActionResult<CategoryDto>> Update(
             string id, [FromBody] CategoryCreateRequest req)
         {
-            var updated = await _repo.UpdateAsync(new Category { CategoryId = id, Name = req.Name });
-            if (updated is null) return NotFound();
-            return Ok(new CategoryDto(updated.CategoryId, updated.Name, updated.CreatedAt));
+            var existing = await _repo.GetByIdAsync(id);
+            if (existing is null) return NotFound();
+
+            existing.Name = req.Name;
+            var updated = await _repo.UpdateAsync(existing);
+            return Ok(ToDto(updated!));
         }
 
         [HttpDelete("{id}")]
@@ -57,6 +60,9 @@ namespace Server.Controllers.Cms
             var ok = await _repo.DeleteAsync(id);
             return ok ? NoContent() : NotFound();
         }
+
+        private static CategoryDto ToDto(Category c) =>
+            new(c.CategoryId, c.Name, c.CategoryPois?.Count ?? 0, c.CreatedAt, c.UpdatedAt ?? default);
 
         /// <summary>Gán một POI vào category.</summary>
         [HttpPost("{id}/pois")]

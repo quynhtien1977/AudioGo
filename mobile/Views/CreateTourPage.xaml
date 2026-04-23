@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="AudioGo_Mobile.Views.CreateTourPage"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{StaticResource Background}"
+             Title="Tạo Tour Mới">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- ── Header ── -->
+        <Grid Grid.Row="0"
+              BackgroundColor="{StaticResource Surface}"
+              Padding="20,52,20,16"
+              ColumnDefinitions="Auto,*,Auto">
+            <!-- Cancel -->
+            <Border Grid.Column="0"
+                    BackgroundColor="{StaticResource Gray100}"
+                    StrokeShape="RoundRectangle 20" StrokeThickness="0"
+                    WidthRequest="40" HeightRequest="40">
+                <Label Text="&#xe5cd;" FontFamily="MaterialIcons" FontSize="20"
+                       HorizontalOptions="Center" VerticalOptions="Center"/>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnCancelTapped"/>
+                </Border.GestureRecognizers>
+            </Border>
+            <Label Grid.Column="1" Text="{Binding LabelTitle}"
+                   Style="{StaticResource TitleLabel}"
+                   HorizontalOptions="Center" VerticalOptions="Center"/>
+        </Grid>
+
+        <!-- ── Form ── -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20" Spacing="20">
+
+                <!-- ── Tên Tour ── -->
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="{Binding LabelName}" Style="{StaticResource SectionTitle}"/>
+                    <Border Style="{StaticResource InputBorder}">
+                        <Entry Placeholder="{Binding LabelNamePh}"
+                               Text="{Binding TourName}"
+                               FontSize="14"/>
+                    </Border>
+                </VerticalStackLayout>
+
+                <!-- ── Mô tả ── -->
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="{Binding LabelDesc}" Style="{StaticResource SectionTitle}"/>
+                    <Border Style="{StaticResource InputBorder}" Padding="14,8">
+                        <Editor Placeholder="{Binding LabelDescPh}"
+                                Text="{Binding Description}"
+                                HeightRequest="90"
+                                AutoSize="TextChanges"
+                                FontSize="14"/>
+                    </Border>
+                </VerticalStackLayout>
+
+                <!-- ── Ngôn ngữ ── -->
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="{Binding LabelLang}" Style="{StaticResource SectionTitle}"/>
+                    <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                        <HorizontalStackLayout Spacing="8">
+                            <Border Style="{StaticResource PillBorderActive}">
+                                <Label Text="🇻🇳 Tiếng Việt" TextColor="White" FontSize="13" FontAttributes="Bold"/>
+                            </Border>
+                            <Border Style="{StaticResource PillBorder}">
+                                <Label Text="🇺🇸 English" TextColor="{StaticResource TextSecondary}" FontSize="13"/>
+                            </Border>
+                            <Border Style="{StaticResource PillBorder}">
+                                <Label Text="🇰🇷 한국어" TextColor="{StaticResource TextSecondary}" FontSize="13"/>
+                            </Border>
+                            <Border Style="{StaticResource PillBorder}">
+                                <Label Text="🇯🇵 日本語" TextColor="{StaticResource TextSecondary}" FontSize="13"/>
+                            </Border>
+                        </HorizontalStackLayout>
+                    </ScrollView>
+                </VerticalStackLayout>
+
+                <!-- ── Danh mục ── -->
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="{Binding LabelCat}" Style="{StaticResource SectionTitle}"/>
+                    <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                        <HorizontalStackLayout Spacing="8">
+                            <Border Style="{StaticResource PillBorderActive}">
+                                <Label Text="🍽️ Ẩm thực" TextColor="White" FontSize="13" FontAttributes="Bold"/>
+                            </Border>
+                            <Border Style="{StaticResource PillBorder}">
+                                <Label Text="🏛️ Di tích" TextColor="{StaticResource TextSecondary}" FontSize="13"/>
+                            </Border>
+                            <Border Style="{StaticResource PillBorder}">
+                                <Label Text="🛍️ Mua sắm" TextColor="{StaticResource TextSecondary}" FontSize="13"/>
+                            </Border>
+                            <Border Style="{StaticResource PillBorder}">
+                                <Label Text="🌳 Văn hóa" TextColor="{StaticResource TextSecondary}" FontSize="13"/>
+                            </Border>
+                        </HorizontalStackLayout>
+                    </ScrollView>
+                </VerticalStackLayout>
+
+                <!-- ── Điểm dừng đã chọn ── -->
+                <VerticalStackLayout Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0"
+                               Text="{Binding StopCountLabel}"
+                               Style="{StaticResource SectionTitle}"/>
+                        <Label Grid.Column="1"
+                               Text="{Binding LabelSort}"
+                               Style="{StaticResource PrimaryLabel}"
+                               VerticalOptions="Center"/>
+                    </Grid>
+
+                    <!-- Stop list -->
+                    <CollectionView ItemsSource="{Binding SelectedStops}"
+                                    SelectionMode="None">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource CardBorder}"
+                                        Padding="12" Margin="0,0,0,8">
+                                    <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="10">
+                                        <!-- Drag handle -->
+                                        <Label Grid.Column="0" Text="&#xe25d;" FontFamily="MaterialIcons"
+                                               FontSize="20" TextColor="{StaticResource Gray400}"
+                                               VerticalOptions="Center"/>
+                                        <!-- Info -->
+                                        <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                            <Label Text="{Binding Title}"
+                                                   Style="{StaticResource SectionTitle}" FontSize="14"/>
+                                            <Label Text="{Binding CategoryLabel}"
+                                                   Style="{StaticResource CaptionLabel}"/>
+                                        </VerticalStackLayout>
+                                        <!-- Stop number -->
+                                        <Border Grid.Column="2"
+                                                BackgroundColor="{StaticResource PrimaryLight}"
+                                                StrokeShape="RoundRectangle 12"
+                                                StrokeThickness="0"
+                                                WidthRequest="28" HeightRequest="28"
+                                                VerticalOptions="Center">
+                                            <Label Text="{Binding StopIndex}"
+                                                   TextColor="{StaticResource Primary}"
+                                                   FontSize="12" FontAttributes="Bold"
+                                                   HorizontalOptions="Center"
+                                                   VerticalOptions="Center"/>
+                                        </Border>
+                                        <!-- Delete -->
+                                        <Border Grid.Column="3"
+                                                BackgroundColor="{StaticResource Gray100}"
+                                                StrokeShape="RoundRectangle 14"
+                                                StrokeThickness="0"
+                                                WidthRequest="28" HeightRequest="28"
+                                                VerticalOptions="Center">
+                                            <Label Text="&#xe5cd;" FontFamily="MaterialIcons" FontSize="14"
+                                                   TextColor="{StaticResource TextSecondary}"
+                                                   HorizontalOptions="Center"
+                                                   VerticalOptions="Center"/>
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.RemoveStopCommand}"
+                                                                      CommandParameter="{Binding .}"/>
+                                            </Border.GestureRecognizers>
+                                        </Border>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+
+                    <!-- Add stop button (dashed) -->
+                    <Border BackgroundColor="Transparent"
+                            Stroke="{StaticResource Gray300}"
+                            StrokeShape="RoundRectangle 16"
+                            StrokeThickness="1.5"
+                            Padding="16,14">
+                        <!-- Dashed effect via BoxView trick -->
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10" HorizontalOptions="Center">
+                            <Border Grid.Column="0"
+                                    BackgroundColor="{StaticResource Primary}"
+                                    StrokeShape="RoundRectangle 10"
+                                    StrokeThickness="0"
+                                    WidthRequest="24" HeightRequest="24">
+                                <Label Text="+" TextColor="White" FontSize="16" FontAttributes="Bold"
+                                       HorizontalOptions="Center" VerticalOptions="Center"/>
+                            </Border>
+                            <Label Grid.Column="1"
+                                   Text="{Binding LabelAddStop}"
+                                   Style="{StaticResource PrimaryLabel}"
+                                   FontSize="14"
+                                   VerticalOptions="Center"/>
+                        </Grid>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnAddStopTapped"/>
+                        </Border.GestureRecognizers>
+                    </Border>
+                </VerticalStackLayout>
+
+                <!-- ── Route Map Preview ── -->
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="{Binding LabelPreview}" Style="{StaticResource SectionTitle}"/>
+                    <Border BackgroundColor="{StaticResource DarkSurface}"
+                            StrokeShape="RoundRectangle 16" StrokeThickness="0"
+                            HeightRequest="150">
+                        <Label Text="&#xe55b;" FontFamily="MaterialIcons" TextColor="{StaticResource Gray400}" FontSize="60"
+                               HorizontalOptions="Center" VerticalOptions="Center"/>
+                    </Border>
+                </VerticalStackLayout>
+
+                <BoxView HeightRequest="16" Color="Transparent"/>
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- ── Save button ── -->
+        <Border Grid.Row="2"
+                BackgroundColor="{StaticResource Surface}"
+                StrokeShape="RoundRectangle 0" StrokeThickness="0"
+                Padding="20,14">
+            <Border.Shadow>
+                <Shadow Brush="Black" Offset="0,-2" Radius="10" Opacity="0.08"/>
+            </Border.Shadow>
+            <Button Text="{Binding LabelSave}"
+                    ImageSource="{FontImage FontFamily=MaterialIcons, Glyph=&#xe161;, Color=White, Size=18}"
+                    Style="{StaticResource PrimaryButton}"
+                    HorizontalOptions="FillAndExpand"
+                    IsEnabled="{Binding CanSave}"
+                    Clicked="OnSaveClicked"/>
+        </Border>
+
+    </Grid>
+</ContentPage>

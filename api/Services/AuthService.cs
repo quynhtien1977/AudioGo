@@ -28,7 +28,12 @@ namespace Server.Services
             if (account is null || !BCrypt.Net.BCrypt.Verify(req.Password, account.PasswordHash))
                 return null;
 
-            return new LoginResponse(GenerateToken(account), account.Role,
+            if (account.IsLocked == true)
+            {
+                throw new Exception("Tài khoản của bạn đã bị khóa");
+            }
+
+            return new LoginResponse(GenerateToken(account), account.Role, account.AccountId,
                 DateTime.UtcNow.AddMinutes(GetExpiryMinutes()));
         }
 

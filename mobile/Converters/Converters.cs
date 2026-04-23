@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 
 namespace AudioGo.Converters
 {
@@ -41,4 +41,28 @@ namespace AudioGo.Converters
         public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
             => value is bool b && !b;
     }
+
+    /// <summary>
+    /// Returns <c>int.MaxValue</c> when true (expanded), <c>4</c> when false (collapsed).
+    /// Used for description expand/collapse MaxLines binding.
+    /// </summary>
+    public class BoolToMaxLinesConverter : IValueConverter
+    {
+        public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+            => value is bool b && b ? int.MaxValue : 3;
+
+        public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+            => throw new NotImplementedException();
+    }
+
+    /// <summary>Alias for IsNotEmptyConverter — returns true when string is not null/empty.</summary>
+    public class StringNotEmptyConverter : IValueConverter
+    {
+        public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+            => value is string s && !string.IsNullOrEmpty(s);
+
+        public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+            => throw new NotImplementedException();
+    }
 }
+

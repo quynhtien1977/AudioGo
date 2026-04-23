@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="AudioGo_Mobile.Views.TourDetailPage"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{StaticResource Background}"
+             Title="Tour Detail">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- ── Header: Map Preview + progress overlay ── -->
+        <Grid Grid.Row="0" HeightRequest="220">
+            <!-- Map background image (mock preview) -->
+            <Image Source="{Binding ThumbnailUrl, TargetNullValue='tour_mock1.jpg', FallbackValue='tour_mock1.jpg'}"
+                   Aspect="AspectFill" />
+
+            <!-- Back & share overlay -->
+            <Grid Padding="16,52,16,16" VerticalOptions="Start"
+                  ColumnDefinitions="Auto,*,Auto">
+                <Border Grid.Column="0"
+                        BackgroundColor="{StaticResource SemiTransparentLight}"
+                        StrokeShape="RoundRectangle 20"
+                        StrokeThickness="0"
+                        WidthRequest="40" HeightRequest="40">
+                    <Label Text="&#xe5c4;" FontFamily="MaterialIcons" FontSize="20"
+                           HorizontalOptions="Center" VerticalOptions="Center"/>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnBackTapped"/>
+                    </Border.GestureRecognizers>
+                </Border>
+                <Border Grid.Column="2"
+                        BackgroundColor="{StaticResource SemiTransparentLight}"
+                        StrokeShape="RoundRectangle 20"
+                        StrokeThickness="0"
+                        WidthRequest="40" HeightRequest="40">
+                    <Label Text="&#xe5d3;" FontFamily="MaterialIcons" FontSize="20"
+                           HorizontalOptions="Center" VerticalOptions="Center"/>
+                </Border>
+            </Grid>
+
+            <!-- Progress card overlay at bottom of map -->
+            <Border BackgroundColor="{StaticResource SemiTransparentDark}"
+                    StrokeShape="RoundRectangle 16"
+                    StrokeThickness="0"
+                    Padding="14,10"
+                    Margin="16"
+                    VerticalOptions="End">
+                <Grid ColumnDefinitions="*,Auto">
+                    <VerticalStackLayout Grid.Column="0" Spacing="4">
+                        <Label Text="{Binding ProgressText}"
+                               TextColor="White" FontSize="14" FontAttributes="Bold"/>
+                        <ProgressBar Progress="{Binding ProgressRatio}" HeightRequest="4"/>
+                    </VerticalStackLayout>
+                    <Label Grid.Column="1"
+                           Text="{Binding TotalDuration}"
+                           TextColor="#AAAAAA" FontSize="12"
+                           VerticalOptions="Center" Margin="10,0,0,0"/>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ── Scrollable Content ── -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20" Spacing="20">
+
+                <!-- Title & actions -->
+                <Label Text="{Binding TourName}"
+                       Style="{StaticResource HeadlineLabel}"/>
+
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <Button Grid.Column="0"
+                            Text="{Binding LabelContinue}"
+                            Style="{StaticResource PrimaryButton}"
+                            Clicked="OnContinueClicked"/>
+                    <Button Grid.Column="1"
+                            Text="{Binding LabelMap}"
+                            ImageSource="{FontImage FontFamily=MaterialIcons, Glyph=&#xe55b;, Color={StaticResource Primary}}"
+                            Style="{StaticResource OutlineButton}"
+                            Padding="14,12"
+                            Clicked="OnMapClicked"/>
+                </Grid>
+
+                <!-- POI Stops List -->
+                <Label Text="{Binding LabelStopList}" Style="{StaticResource SectionTitle}"/>
+
+                <CollectionView ItemsSource="{Binding Stops}"
+                                SelectionMode="None">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid ColumnDefinitions="Auto,Auto,*"
+                                  ColumnSpacing="0"
+                                  Margin="0,0,0,0">
+
+                                <!-- Timeline connector -->
+                                <VerticalStackLayout Grid.Column="0"
+                                                     HorizontalOptions="Center"
+                                                     WidthRequest="20">
+                                    <!-- Status circle -->
+                                    <Border StrokeShape="RoundRectangle 12"
+                                            StrokeThickness="0"
+                                            WidthRequest="24" HeightRequest="24"
+                                            HorizontalOptions="Center"
+                                            BackgroundColor="{Binding StatusColor}">
+                                        <Label Text="{Binding StatusIcon}"
+                                               FontSize="12"
+                                               HorizontalOptions="Center"
+                                               VerticalOptions="Center"/>
+                                    </Border>
+                                    <!-- Vertical line -->
+                                    <BoxView WidthRequest="2"
+                                             HeightRequest="50"
+                                             HorizontalOptions="Center"
+                                             Color="{StaticResource Gray200}"
+                                             IsVisible="{Binding IsNotLast}"/>
+                                </VerticalStackLayout>
+
+                                <!-- Stop number -->
+                                <Label Grid.Column="1" Text="{Binding StopNumber}"
+                                       Style="{StaticResource CaptionLabel}"
+                                       VerticalOptions="Start"
+                                       Margin="4,4,8,0"
+                                       TextColor="{Binding StatusColor}"/>
+
+                                <!-- Stop card -->
+                                <Border Grid.Column="2"
+                                        Style="{StaticResource CardBorder}"
+                                        Padding="12"
+                                        Margin="0,0,0,8"
+                                        BackgroundColor="{Binding CardBgColor}">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                        <VerticalStackLayout Grid.Column="0" Spacing="3">
+                                            <Label Text="{Binding Title}"
+                                                   Style="{StaticResource SectionTitle}"
+                                                   FontSize="14"/>
+                                            <Label Text="{Binding Description}"
+                                                   Style="{StaticResource CaptionLabel}"
+                                                   MaxLines="2"
+                                                   LineBreakMode="TailTruncation"/>
+                                            <Label Text="{Binding DurationLabel}"
+                                                   Style="{StaticResource PrimaryLabel}"
+                                                   FontSize="12"/>
+                                        </VerticalStackLayout>
+                                        <!-- Play/status icon -->
+                                        <Border Grid.Column="1"
+                                                BackgroundColor="{Binding PlayBgColor}"
+                                                StrokeShape="RoundRectangle 18"
+                                                StrokeThickness="0"
+                                                WidthRequest="36" HeightRequest="36"
+                                                VerticalOptions="Center">
+                                            <Label Text="{Binding PlayIcon}"
+                                                   FontSize="16"
+                                                   TextColor="{Binding PlayIconColor}"
+                                                   HorizontalOptions="Center"
+                                                   VerticalOptions="Center"/>
+                                        </Border>
+                                    </Grid>
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.OpenStopCommand}"
+                                                              CommandParameter="{Binding .}"/>
+                                    </Border.GestureRecognizers>
+                                </Border>
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <BoxView HeightRequest="20" Color="Transparent"/>
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- ── Mini Audio Player ── -->
+        <Border Grid.Row="2"
+                Style="{StaticResource MiniPlayerBar}"
+                Padding="14,10"
+                Margin="12,0,12,12"
+                IsVisible="{Binding IsAudioActive}">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="12">
+                <Border Grid.Column="0"
+                        BackgroundColor="{StaticResource PrimaryLight}"
+                        StrokeShape="RoundRectangle 10"
+                        StrokeThickness="0"
+                        WidthRequest="44" HeightRequest="44">
+                    <Label Text="&#xe310;" FontFamily="MaterialIcons" FontSize="24" TextColor="{StaticResource Primary}"
+                           HorizontalOptions="Center" VerticalOptions="Center"/>
+                </Border>
+                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
+                    <Label Text="{Binding CurrentStopTitle}"
+                           Style="{StaticResource SectionTitle}" FontSize="14"
+                           LineBreakMode="TailTruncation"/>
+                    <Label Text="{Binding AudioTimeDisplay}"
+                           Style="{StaticResource CaptionLabel}"/>
+                </VerticalStackLayout>
+                <Border Grid.Column="2"
+                        BackgroundColor="{StaticResource Gray100}"
+                        StrokeShape="RoundRectangle 18"
+                        StrokeThickness="0"
+                        WidthRequest="36" HeightRequest="36">
+                    <Label Text="{Binding PlayPauseIcon}" FontSize="16"
+                           HorizontalOptions="Center" VerticalOptions="Center"/>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnPlayPauseTapped"/>
+                    </Border.GestureRecognizers>
+                </Border>
+                <Border Grid.Column="3"
+                        BackgroundColor="{StaticResource Primary}"
+                        StrokeShape="RoundRectangle 18"
+                        StrokeThickness="0"
+                        WidthRequest="36" HeightRequest="36">
+                    <Label Text="&#xe044;" FontFamily="MaterialIcons" FontSize="20" TextColor="White"
+                           HorizontalOptions="Center" VerticalOptions="Center"/>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnNextStopTapped"/>
+                    </Border.GestureRecognizers>
+                </Border>
+            </Grid>
+        </Border>
+
+    </Grid>
+</ContentPage>

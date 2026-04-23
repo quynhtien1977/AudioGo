@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="AudioGo_Mobile.Views.GalleryFullScreenPage"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="Black"
+             Title="Gallery">
+
+    <Grid RowDefinitions="*,Auto">
+
+        <!-- ── Swipeable image CarouselView ── -->
+        <CarouselView x:Name="GalleryCarousel"
+                      Grid.Row="0"
+                      Loop="False"
+                      HorizontalScrollBarVisibility="Never">
+            <CarouselView.ItemTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <Image Source="{Binding .}"
+                               Aspect="AspectFit"
+                               VerticalOptions="Center"
+                               HorizontalOptions="Center"/>
+                    </Grid>
+                </DataTemplate>
+            </CarouselView.ItemTemplate>
+        </CarouselView>
+
+        <!-- ── Close button (top-left) ── -->
+        <Border Grid.Row="0"
+                HorizontalOptions="Start"
+                VerticalOptions="Start"
+                Margin="16,52,0,0"
+                BackgroundColor="#80000000"
+                StrokeShape="RoundRectangle 20"
+                StrokeThickness="0"
+                WidthRequest="40" HeightRequest="40">
+            <Label Text="&#xe5cd;" FontFamily="MaterialIcons"
+                   TextColor="White"
+                   FontSize="20"
+                   HorizontalOptions="Center"
+                   VerticalOptions="Center"/>
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnClose"/>
+            </Border.GestureRecognizers>
+        </Border>
+
+        <!-- ── Counter chip (top-right) ── -->
+        <Border Grid.Row="0"
+                x:Name="CounterBadge"
+                HorizontalOptions="End"
+                VerticalOptions="Start"
+                Margin="0,52,16,0"
+                BackgroundColor="#80000000"
+                StrokeShape="RoundRectangle 14"
+                StrokeThickness="0"
+                Padding="12,6">
+            <Label x:Name="CounterLabel"
+                   TextColor="White"
+                   FontFamily="InterMedium"
+                   FontSize="13"/>
+        </Border>
+
+        <!-- ── Dot indicators ── -->
+        <IndicatorView x:Name="GalleryIndicator"
+                       Grid.Row="1"
+                       IndicatorColor="#60FFFFFF"
+                       SelectedIndicatorColor="White"
+                       HorizontalOptions="Center"
+                       Margin="0,8,0,24"/>
+    </Grid>
+</ContentPage>

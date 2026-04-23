@@ -10,15 +10,24 @@ namespace Server.Repositories
         private readonly AppDbContext _db;
         public TourRepository(AppDbContext db) => _db = db;
 
+        /// <summary>List tours - cần Poi.LogoUrl để tính ThumbnailUrl.</summary>
         public Task<List<Tour>> GetAllAsync() =>
             _db.Tours.AsNoTracking()
-                .Include(t => t.TourPois)
+                .Include(t => t.TourPois.OrderBy(tp => tp.StepOrder))
+                    .ThenInclude(tp => tp.Poi)
+                .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
 
+        /// <summary>Tour detail - cần Poi.Contents và Poi.CategoryPois để build TourStepDto.</summary>
         public Task<Tour?> GetByIdAsync(string tourId) =>
             _db.Tours.AsNoTracking()
-                .Include(t => t.TourPois)
+                .Include(t => t.TourPois.OrderBy(tp => tp.StepOrder))
                     .ThenInclude(tp => tp.Poi)
+                        .ThenInclude(p => p!.Contents)
+                .Include(t => t.TourPois.OrderBy(tp => tp.StepOrder))
+                    .ThenInclude(tp => tp.Poi)
+                        .ThenInclude(p => p!.CategoryPois)
+                            .ThenInclude(cp => cp.Category)
                 .FirstOrDefaultAsync(t => t.TourId == tourId);
 
         public async Task<Tour> CreateAsync(Tour tour)
@@ -34,6 +43,7 @@ namespace Server.Repositories
             if (existing is null) return null;
             existing.Name = tour.Name;
             existing.Description = tour.Description;
+            existing.ThumbnailUrl = tour.ThumbnailUrl;
             existing.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
             return existing;

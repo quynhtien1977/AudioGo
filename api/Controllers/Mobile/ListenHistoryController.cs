@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Server.Models;
-using Server.Repositories.Interfaces;
+using Server.Queues;
 using Shared.DTOs;
 
 namespace Server.Controllers.Mobile
@@ -9,8 +9,8 @@ namespace Server.Controllers.Mobile
     [Route("api/mobile/listen-history")]
     public class ListenHistoryController : ControllerBase
     {
-        private readonly IListenHistoryRepository _repo;
-        public ListenHistoryController(IListenHistoryRepository repo) => _repo = repo;
+        private readonly IListenHistoryQueue _queue;
+        public ListenHistoryController(IListenHistoryQueue queue) => _queue = queue;
 
         /// <summary>Mobile ghi nhận sự kiện nghe xong 1 POI.</summary>
         [HttpPost]
@@ -26,14 +26,16 @@ namespace Server.Controllers.Mobile
                 Timestamp      = DateTime.UtcNow
             };
 
-            await _repo.CreateAsync(entry);
+            await _queue.QueueListenHistoryAsync(entry);
 
-            return Ok(new ListenHistoryResponse(
-                entry.HistoryId,
-                entry.DeviceId,
-                entry.PoiId,
-                entry.Timestamp,
-                entry.ListenDuration));
+            return Accepted(new ListenHistoryResponse
+            {
+                HistoryId      = entry.HistoryId,
+                DeviceId       = entry.DeviceId,
+                PoiId          = entry.PoiId,
+                Timestamp      = entry.Timestamp,
+                ListenDuration = entry.ListenDuration
+            });
         }
     }
 }

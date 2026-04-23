@@ -1,13 +1,15 @@
 namespace Shared.DTOs
 {
-    public record LocationLogBatchRequest(
-        string DeviceId,
-        IReadOnlyList<LocationPoint> Points
-    );
+    public class LocationLogBatchRequest
+    {
+        public string DeviceId { get; set; } = string.Empty;
+        public List<LocationPoint> Points { get; set; } = new();
+    }
 
-    public record LocationPoint(
-        double Latitude,
-        double Longitude,
-        DateTime Timestamp
-    );
+    public class LocationPoint
+    {
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+        public DateTime Timestamp { get; set; }
+    }
 }

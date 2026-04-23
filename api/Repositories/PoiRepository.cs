@@ -12,34 +12,95 @@ namespace Server.Repositories
 
         public Task<List<Poi>> GetAllAsync() =>
             _db.Pois.AsNoTracking()
+                .Where(p => p.IsActive)
                 .Include(p => p.Contents)
+                .Include(p => p.Gallery)
+                .Include(p => p.CategoryPois)
+                    .ThenInclude(cp => cp.Category)
+                .OrderBy(p => p.Priority)
                 .ToListAsync();
 
+        /// <summary>
+        /// Tìm kiếm POI theo từ khóa (title) và/hoặc tên category.
+        /// Case-insensitive, chỉ trả về POI active/published.
+        /// </summary>
+        public async Task<List<Poi>> SearchAsync(string? query, string? category)
+        {
+            var q = _db.Pois.AsNoTracking()
+                .Where(p => p.IsActive)
+                .Include(p => p.Contents)
+                .Include(p => p.Gallery)
+                .Include(p => p.CategoryPois)
+                    .ThenInclude(cp => cp.Category)
+                .AsQueryable();
+
+            // Filter theo category name
+            if (!string.IsNullOrWhiteSpace(category))
+                q = q.Where(p => p.CategoryPois
+                    .Any(cp => cp.Category != null &&
+                               cp.Category.Name.ToLower().Contains(category.ToLower())));
+
+            var pois = await q.OrderBy(p => p.Priority).ToListAsync();
+
+            // Filter theo title trong contents (sau khi load — EF không support full-text trên nvarchar(max) tốt)
+            if (!string.IsNullOrWhiteSpace(query))
+            {
+                var lower = query.ToLower();
+                pois = pois.Where(p => p.Contents.Any(c =>
+                    c.Title.ToLower().Contains(lower)
+                )).ToList();
+            }
+
+            return pois;
+        }
+
+        /// <summary>
+        /// Trả về POI theo ID. Chỉ trả về POI đang active (IsActive = true).
+        /// Trả null nếu không tìm thấy hoặc POI đã bị ẩn/xóa bởi admin.
+        /// </summary>
         public Task<Poi?> GetByIdAsync(string poiId) =>
             _db.Pois.AsNoTracking()
                 .Include(p => p.Contents)
+                .Include(p => p.Gallery)
+                .Include(p => p.CategoryPois)
+                    .ThenInclude(cp => cp.Category)
+                .FirstOrDefaultAsync(p => p.PoiId == poiId && p.IsActive);
+
+        /// <summary>
+        /// Tìm POI theo ID cho CMS — không filter IsActive (có thể lấy POI bị ẩn).
+        /// </summary>
+        public Task<Poi?> GetByIdForCmsAsync(string poiId) =>
+            _db.Pois.AsNoTracking()
+                .Include(p => p.Contents)
+                .Include(p => p.Gallery)
+                .Include(p => p.CategoryPois)
+                    .ThenInclude(cp => cp.Category)
                 .FirstOrDefaultAsync(p => p.PoiId == poiId);
 
         /// <summary>
         /// Haversine filter: lấy POI trong bán kính (metres) từ toạ độ cho trước.
+        /// Chỉ trả về POI có IsActive = true.
         /// </summary>
         public async Task<List<Poi>> GetNearbyAsync(double lat, double lon, double radiusMeters)
         {
             const double EarthR = 6_371_000;
             double latRad = lat * Math.PI / 180;
-            double lonRad = lon * Math.PI / 180;
 
-            // Lấy candidate với bounding-box trước, filter chính xác ở client
+            // Bounding-box candidate filter
             double latDelta = radiusMeters / 111_000;
             double lonDelta = radiusMeters / (111_000 * Math.Cos(latRad));
 
             var candidates = await _db.Pois.AsNoTracking()
+                .Where(p => p.IsActive
+                         && p.Latitude  >= lat - latDelta && p.Latitude  <= lat + latDelta
+                         && p.Longitude >= lon - lonDelta && p.Longitude <= lon + lonDelta)
                 .Include(p => p.Contents)
-                .Where(p => p.Latitude  >= lat - latDelta && p.Latitude  <= lat + latDelta
-                         && p.Longitude >= lon - lonDelta && p.Longitude <= lon + lonDelta
-                         && p.Status == "active")
+                .Include(p => p.Gallery)
+                .Include(p => p.CategoryPois)
+                    .ThenInclude(cp => cp.Category)
                 .ToListAsync();
 
+            // Haversine precise filter
             return candidates.Where(p =>
             {
                 double dLat = (p.Latitude  - lat) * Math.PI / 180;
@@ -50,6 +111,48 @@ namespace Server.Repositories
                 return EarthR * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1-a)) <= radiusMeters;
             }).ToList();
         }
+
+        public async Task<List<Poi>> GetAllForCmsAsync(bool? isActive = null)
+        {
+            var query = _db.Pois.AsNoTracking()
+                .Include(p => p.Contents)
+                .Include(p => p.Gallery)
+                .Include(p => p.CategoryPois)
+                    .ThenInclude(cp => cp.Category)
+                .AsQueryable();
+
+            // isActive null → trả hết (CMS cần thấy toàn bộ)
+            if (isActive.HasValue)
+                query = query.Where(p => p.IsActive == isActive.Value);
+
+            return await query.OrderByDescending(p => p.CreatedAt).ToListAsync();
+        }
+
+        /// <summary>
+        /// Delta sync: chỉ trả về POI có UpdatedAt > since.
+        /// - Updated  = IsActive = true  (mobile upsert)
+        /// - Deleted  = IsActive = false (mobile xóa cục bộ)
+        /// Nếu UpdatedAt null, dùng CreatedAt để fallback.
+        /// </summary>
+        public async Task<(List<Poi> Updated, List<string> DeletedIds)> GetDeltaAsync(DateTime since)
+        {
+            // Chuẩn hóa sang UTC để so sánh nhất quán
+            var sinceUtc = since.Kind == DateTimeKind.Utc ? since : since.ToUniversalTime();
+
+            var changed = await _db.Pois.AsNoTracking()
+                .Include(p => p.Contents)
+                .Include(p => p.Gallery)
+                .Include(p => p.CategoryPois)
+                    .ThenInclude(cp => cp.Category)
+                .Where(p => (p.UpdatedAt ?? p.CreatedAt) > sinceUtc)
+                .ToListAsync();
+
+            var updated    = changed.Where(p =>  p.IsActive).ToList();
+            var deletedIds = changed.Where(p => !p.IsActive).Select(p => p.PoiId).ToList();
+
+            return (updated, deletedIds);
+        }
+
 
         public async Task<Poi> CreateAsync(Poi poi)
         {

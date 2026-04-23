@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Server.Data;
 using Server.Models;
 using Server.Repositories.Interfaces;
+using Shared.DTOs;
 
 namespace Server.Repositories
 {
@@ -15,6 +16,12 @@ namespace Server.Repositories
             _db.ListenHistories.Add(entry);
             await _db.SaveChangesAsync();
             return entry;
+        }
+
+        public async Task CreateBatchAsync(IEnumerable<ListenHistory> entries)
+        {
+            _db.ListenHistories.AddRange(entries);
+            await _db.SaveChangesAsync();
         }
 
         public Task<List<ListenHistory>> GetByPoiAsync(string poiId, int limit = 100) =>
@@ -33,6 +40,34 @@ namespace Server.Repositories
                 .Take(topN)
                 .Select(x => ValueTuple.Create(x.PoiId, x.Count))
                 .ToListAsync();
+        }
+        public async Task<int> GetTotalListensAsync()
+        {
+            return await _db.ListenHistories.CountAsync();
+        }
+
+        // cho chart
+        public async Task<List<DailyListenDto>> GetDailyListensAsync(int? days = null)
+        {
+            var query = _db.ListenHistories.AsNoTracking();
+
+            if (days.HasValue)
+            {
+                var fromDate = DateTime.Now.AddDays(-days.Value);
+                query = query.Where(x => x.Timestamp >= fromDate);
+            }
+
+            return await query
+                .GroupBy(x => x.Timestamp.Date)
+                .Select(g => new DailyListenDto
+                {
+                    Date = g.Key,
+                    Count = g.Count(),
+                    TotalDuration = g.Sum(x => x.ListenDuration)
+                })
+                .OrderBy(x => x.Date)
+                .ToListAsync();
+            
         }
     }
 }

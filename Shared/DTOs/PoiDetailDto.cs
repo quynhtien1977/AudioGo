@@ -2,11 +2,12 @@ namespace Shared.DTOs
 {
     public record PoiDetailDto(
         string PoiId,
+        string AccountId,
         double Latitude,
         double Longitude,
         int ActivationRadius,
         int Priority,
-        string Status,
+        bool IsActive,
         string LogoUrl,
         DateTime CreatedAt,
         DateTime? UpdatedAt,
@@ -24,13 +25,13 @@ namespace Shared.DTOs
         bool IsMaster
     );
 
+    
     public record PoiCreateRequest(
         double Latitude,
         double Longitude,
         int ActivationRadius,
         int Priority,
-        string Status,
-        string LogoUrl
+        string? LogoUrl
     );
 
     public record PoiUpdateRequest(
@@ -38,8 +39,8 @@ namespace Shared.DTOs
         double? Longitude,
         int? ActivationRadius,
         int? Priority,
-        string? Status,
-        string? LogoUrl
+        string? LogoUrl,
+        bool? IsActive 
     );
 
     public record PoiGalleryDto(

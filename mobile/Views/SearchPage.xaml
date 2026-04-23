@@ -1,0 +1,206 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:AudioGo.ViewModels"
+             x:Class="AudioGo_Mobile.Views.SearchPage"
+             x:Name="ThisPage"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{StaticResource Background}"
+             Title="{Binding PageTitle}">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- ── Header + Search + Filters ── -->
+        <VerticalStackLayout Grid.Row="0"
+                             BackgroundColor="{StaticResource Surface}"
+                             Padding="20,52,20,12"
+                             Spacing="14">
+            <Grid ColumnDefinitions="*,Auto">
+                <VerticalStackLayout Grid.Column="0" Spacing="2">
+                    <Label Text="{Binding PageTitle}" Style="{StaticResource HeadlineLabel}"/>
+                    <Label Text="{Binding AreaSubtitle}" Style="{StaticResource BodyLabel}"/>
+                </VerticalStackLayout>
+                <Border Grid.Column="1"
+                        BackgroundColor="{StaticResource Gray100}"
+                        StrokeShape="RoundRectangle 20"
+                        StrokeThickness="0"
+                        WidthRequest="40" HeightRequest="40"
+                        VerticalOptions="Center">
+                    <Label Text="&#xe55b;" FontFamily="MaterialIcons" FontSize="20"
+                           HorizontalOptions="Center" VerticalOptions="Center"/>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnMapViewTapped"/>
+                    </Border.GestureRecognizers>
+                </Border>
+            </Grid>
+
+            <!-- Search pill -->
+            <Border BackgroundColor="{StaticResource Gray100}"
+                    StrokeShape="RoundRectangle 24"
+                    StrokeThickness="0"
+                    Padding="14,10">
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                    <Label Grid.Column="0" Text="&#xe8b6;" FontFamily="MaterialIcons" FontSize="18"
+                           TextColor="{StaticResource TextSecondary}" VerticalOptions="Center"/>
+                    <Entry Grid.Column="1"
+                           Placeholder="{Binding SearchPlaceholder}"
+                           PlaceholderColor="{StaticResource Gray400}"
+                           BackgroundColor="Transparent"
+                           TextColor="{StaticResource TextPrimary}"
+                           FontSize="14"
+                           ReturnType="Search"
+                           Text="{Binding Query}"/>
+                    <!-- Clear button -->
+                    <Border Grid.Column="2"
+                            BackgroundColor="{StaticResource Gray200}"
+                            StrokeShape="RoundRectangle 12"
+                            StrokeThickness="0"
+                            Padding="4"
+                            IsVisible="{Binding HasResults}">
+                        <Label Text="&#xe5cd;" FontFamily="MaterialIcons" FontSize="16"
+                               TextColor="{StaticResource TextSecondary}"
+                               HorizontalOptions="Center" VerticalOptions="Center"/>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnClearSearchTapped"/>
+                        </Border.GestureRecognizers>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <!-- Category filter chips with icons -->
+            <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                <HorizontalStackLayout Spacing="8"
+                                       BindableLayout.ItemsSource="{Binding CategoryChips}">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="vm:CategoryChipVm">
+                            <Border Padding="12,7"
+                                    StrokeShape="RoundRectangle 20"
+                                    StrokeThickness="1.5">
+                                <Border.Triggers>
+                                    <DataTrigger TargetType="Border" Binding="{Binding IsActive}" Value="True">
+                                        <Setter Property="BackgroundColor" Value="{StaticResource Primary}"/>
+                                        <Setter Property="Stroke" Value="{StaticResource Primary}"/>
+                                    </DataTrigger>
+                                    <DataTrigger TargetType="Border" Binding="{Binding IsActive}" Value="False">
+                                        <Setter Property="BackgroundColor" Value="{StaticResource Surface}"/>
+                                        <Setter Property="Stroke" Value="{StaticResource Gray200}"/>
+                                    </DataTrigger>
+                                </Border.Triggers>
+                                <HorizontalStackLayout Spacing="5" VerticalOptions="Center">
+                                    <Label Text="{Binding Icon}" FontFamily="MaterialIcons" FontSize="14"
+                                           VerticalOptions="Center">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding IsActive}" Value="True">
+                                                <Setter Property="TextColor" Value="White"/>
+                                            </DataTrigger>
+                                            <DataTrigger TargetType="Label" Binding="{Binding IsActive}" Value="False">
+                                                <Setter Property="TextColor" Value="{StaticResource TextSecondary}"/>
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                    <Label Text="{Binding Label}" FontSize="12" VerticalOptions="Center">
+                                        <Label.Triggers>
+                                            <DataTrigger TargetType="Label" Binding="{Binding IsActive}" Value="True">
+                                                <Setter Property="TextColor" Value="White"/>
+                                            </DataTrigger>
+                                            <DataTrigger TargetType="Label" Binding="{Binding IsActive}" Value="False">
+                                                <Setter Property="TextColor" Value="{StaticResource TextSecondary}"/>
+                                            </DataTrigger>
+                                        </Label.Triggers>
+                                    </Label>
+                                </HorizontalStackLayout>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding BindingContext.FilterCommand, Source={x:Reference ThisPage}}"
+                                                          CommandParameter="{Binding .}"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </HorizontalStackLayout>
+            </ScrollView>
+        </VerticalStackLayout>
+
+        <!-- ── Results ── -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="16" Spacing="16">
+
+                <ActivityIndicator IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+                                   Color="{StaticResource Primary}" HorizontalOptions="Center"/>
+
+                <!-- Empty state -->
+                <VerticalStackLayout IsVisible="{Binding IsEmpty}" Spacing="12" HorizontalOptions="Center" Margin="0,40,0,0">
+                    <Label Text="&#xe8b6;" FontFamily="MaterialIcons" FontSize="56" TextColor="{StaticResource Gray300}" HorizontalOptions="Center"/>
+                    <!-- ── FIX: Bind title & subtitle để customize theo network state (online vs offline) ── -->
+                    <Label Text="{Binding EmptyTitle}" Style="{StaticResource SectionTitle}" HorizontalOptions="Center"/>
+                    <Label Text="{Binding EmptySubtitle}" Style="{StaticResource BodyLabel}" HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
+                </VerticalStackLayout>
+
+                <!-- Welcome state -->
+                <VerticalStackLayout IsVisible="{Binding ShowWelcome}" Spacing="12" HorizontalOptions="Center" Margin="0,40,0,0">
+                    <Label Text="&#xe0c8;" FontFamily="MaterialIcons" FontSize="56" TextColor="{StaticResource Primary}" HorizontalOptions="Center"/>
+                    <Label Text="{Binding WelcomeTitle}" Style="{StaticResource HeadlineLabel}" HorizontalOptions="Center"/>
+                    <Label Text="{Binding WelcomeSubtitle}" Style="{StaticResource BodyLabel}" HorizontalTextAlignment="Center" HorizontalOptions="Center"/>
+                </VerticalStackLayout>
+
+                <!-- Results: POI section -->
+                <Label IsVisible="{Binding HasResults}" Text="{Binding PoiSectionTitle}" Style="{StaticResource SectionTitle}"/>
+
+                <CollectionView ItemsSource="{Binding FilteredPois}" IsVisible="{Binding HasResults}" SelectionMode="None">
+                    <CollectionView.ItemsLayout>
+                        <GridItemsLayout Orientation="Vertical" Span="2" HorizontalItemSpacing="10" VerticalItemSpacing="10"/>
+                    </CollectionView.ItemsLayout>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="vm:PoiSearchVm">
+                            <Border Style="{StaticResource PoiGridCard}" Padding="0">
+                                <VerticalStackLayout Spacing="0">
+                                    <Grid HeightRequest="120">
+                                        <Border BackgroundColor="{StaticResource DarkSurface}" StrokeThickness="0">
+                                            <Label Text="&#xe0c8;" FontFamily="MaterialIcons" FontSize="40" TextColor="{StaticResource Gray400}" HorizontalOptions="Center" VerticalOptions="Center"/>
+                                        </Border>
+                                        <Image Source="{Binding LogoUrl}" Aspect="AspectFill" HeightRequest="120"/>
+                                    </Grid>
+                                    <VerticalStackLayout Padding="10,8" Spacing="4">
+                                        <Label Text="{Binding Title}" Style="{StaticResource SectionTitle}" FontSize="13" MaxLines="2" LineBreakMode="TailTruncation"/>
+                                        <Label Text="{Binding CategoryLabel}" Style="{StaticResource CaptionLabel}" FontSize="11"/>
+                                    </VerticalStackLayout>
+                                </VerticalStackLayout>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:SearchViewModel}}, Path=OpenPoiCommand}" CommandParameter="{Binding .}"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <!-- Tours section -->
+                <Label IsVisible="{Binding HasTours}" Text="{Binding TourSectionTitle}" Style="{StaticResource SectionTitle}"/>
+
+                <CollectionView ItemsSource="{Binding Tours}" IsVisible="False" SelectionMode="None">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="vm:TourSearchVm">
+                            <Border Style="{StaticResource CardBorder}" Margin="0,0,0,10" Padding="0">
+                                <Grid ColumnDefinitions="100,*" ColumnSpacing="0">
+                                    <Grid Grid.Column="0">
+                                        <Border BackgroundColor="{StaticResource DarkSurface}" StrokeThickness="0">
+                                            <Label Text="&#xe55b;" FontFamily="MaterialIcons" FontSize="36" TextColor="{StaticResource Gray400}" HorizontalOptions="Center" VerticalOptions="Center"/>
+                                        </Border>
+                                        <Image Source="{Binding ThumbnailUrl}" Aspect="AspectFill"/>
+                                    </Grid>
+                                    <VerticalStackLayout Grid.Column="1" Padding="12" Spacing="6" VerticalOptions="Center">
+                                        <Label Text="{Binding Name}" Style="{StaticResource SectionTitle}" FontSize="14" MaxLines="2" LineBreakMode="TailTruncation"/>
+                                        <Label Text="{Binding PoiCountLabel}" Style="{StaticResource CaptionLabel}"/>
+                                    </VerticalStackLayout>
+                                </Grid>
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type vm:SearchViewModel}}, Path=OpenTourCommand}" CommandParameter="{Binding .}"/>
+                                </Border.GestureRecognizers>
+                            </Border>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+
+                <BoxView HeightRequest="16" Color="Transparent"/>
+            </VerticalStackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

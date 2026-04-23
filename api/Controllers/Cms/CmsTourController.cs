@@ -90,7 +90,10 @@ namespace Server.Controllers.Cms
         }
 
         private static TourDto ToDto(Tour t) => new(
-            t.TourId, t.Name, t.Description, t.CreatedAt,
+            t.TourId, t.Name, t.Description ?? string.Empty, 
+            t.TourPois.Count,
+            t.TourPois.OrderBy(tp => tp.StepOrder).FirstOrDefault()?.Poi?.LogoUrl,
+            t.CreatedAt,
             t.TourPois
                 .OrderBy(tp => tp.StepOrder)
                 .Select(tp => new TourPoiDto(

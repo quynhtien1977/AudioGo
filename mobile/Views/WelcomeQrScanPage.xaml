@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:scanner="clr-namespace:BarcodeScanner.Mobile;assembly=BarcodeScanner.Mobile.Maui"
+             x:Class="AudioGo_Mobile.Views.WelcomeQrScanPage"
+             Shell.NavBarIsVisible="False"
+             NavigationPage.HasNavigationBar="False"
+             BackgroundColor="Black"
+             Title="Quét QR Hành Trình">
+
+    <Grid>
+        <!-- Camera View -->
+        <scanner:CameraView x:Name="barcodeReader"
+                            OnDetected="CameraBarcodeReaderView_BarcodesDetected"
+                            HorizontalOptions="FillAndExpand"
+                            VerticalOptions="FillAndExpand" />
+
+        <!-- Overlay Guide -->
+        <Grid RowDefinitions="*, 250, *" ColumnDefinitions="*, 250, *">
+            <!-- Semi-transparent borders around the viewfinder -->
+            <BoxView Grid.Row="0" Grid.ColumnSpan="3" Color="#99000000" />
+            <BoxView Grid.Row="1" Grid.Column="0" Color="#99000000" />
+            <BoxView Grid.Row="1" Grid.Column="2" Color="#99000000" />
+            <BoxView Grid.Row="2" Grid.ColumnSpan="3" Color="#99000000" />
+
+            <!-- Viewfinder Border -->
+            <Border Grid.Row="1" Grid.Column="1" 
+                    Stroke="{StaticResource Primary}" 
+                    StrokeThickness="2" 
+                    StrokeShape="RoundRectangle 16"
+                    BackgroundColor="Transparent" />
+        </Grid>
+
+        <!-- Top Header & Back Button -->
+        <Grid VerticalOptions="Start" Padding="16, 50, 16, 16" ColumnDefinitions="Auto, *, Auto">
+            <Border Grid.Column="0"
+                    BackgroundColor="#40000000"
+                    StrokeThickness="0"
+                    StrokeShape="Ellipse"
+                    WidthRequest="40" HeightRequest="40">
+                <Label Text="&#xe5cb;" FontFamily="MaterialIcons" FontSize="24" TextColor="White"
+                       HorizontalOptions="Center" VerticalOptions="Center"/>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnBackTapped" />
+                </Border.GestureRecognizers>
+            </Border>
+            
+            <!-- Pick photo from Gallery -->
+            <Border Grid.Column="2"
+                    BackgroundColor="#40000000"
+                    StrokeThickness="0"
+                    StrokeShape="Ellipse"
+                    WidthRequest="40" HeightRequest="40">
+                <Label Text="&#xe413;" FontFamily="MaterialIcons" FontSize="22" TextColor="White"
+                       HorizontalOptions="Center" VerticalOptions="Center"/>
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnPickPhotoTapped" />
+                </Border.GestureRecognizers>
+            </Border>
+        </Grid>
+
+        <!-- Bottom Instructions -->
+        <VerticalStackLayout VerticalOptions="End" Padding="24, 0, 24, 60" Spacing="8">
+            <Label Text="Quét mã QR" 
+                   FontSize="24" 
+                   FontAttributes="Bold" 
+                   TextColor="White" 
+                   HorizontalTextAlignment="Center" />
+            
+            <Label Text="Hãy quét mã QR tại điểm tham quan để bắt đầu" 
+                   FontSize="15" 
+                   TextColor="#D0D0D0" 
+                   HorizontalTextAlignment="Center" />
+                   
+            <Label Text="Đưa mã QR vào khung để quét tự động" 
+                   FontSize="13" 
+                   TextColor="#A0A0A0" 
+                   HorizontalTextAlignment="Center"
+                   Margin="0, 10, 0, 0"/>
+        </VerticalStackLayout>
+
+        <!-- Loading Overlay -->
+        <Grid x:Name="LoadingOverlay"
+              BackgroundColor="#CC000000"
+              IsVisible="{Binding IsLoading}"
+              VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand">
+            <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="16">
+                <ActivityIndicator IsRunning="{Binding IsLoading}" Color="#0066FF" HorizontalOptions="Center"/>
+                <Label Text="Đang xử lý mã QR..." TextColor="White" FontFamily="InterMedium" HorizontalOptions="Center"/>
+            </VerticalStackLayout>
+        </Grid>
+    </Grid>
+</ContentPage>

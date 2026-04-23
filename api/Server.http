@@ -3,4 +3,14 @@
 GET {{Server_HostAddress}}/weatherforecast/
 Accept: application/json
 
+### Setup admin account
+# POST {{Server_HostAddress}}/api/auth/setup-dev
+# Content-Type: application/json
+
+# {
+#   "username": "admin",
+#   "password": "Admin@123"
+# }
+
+
 ###

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<mct:Popup xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+           xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+           xmlns:mct="clr-namespace:CommunityToolkit.Maui.Views;assembly=CommunityToolkit.Maui"
+           x:Class="AudioGo_Mobile.Views.CustomAlertPopup"
+           Color="Transparent"
+           CanBeDismissedByTappingOutsideOfPopup="True">
+
+    <Border Style="{StaticResource CardBorder}"
+            WidthRequest="320"
+            HorizontalOptions="Center"
+            VerticalOptions="Center"
+            Padding="24">
+            
+        <VerticalStackLayout Spacing="16">
+            <!-- Icon/Title -->
+            <Label x:Name="TitleLabel"
+                   Text="Thông báo"
+                   Style="{StaticResource HeadlineLabel}"
+                   HorizontalOptions="Center"
+                   HorizontalTextAlignment="Center" />
+
+            <!-- Divider -->
+            <BoxView HeightRequest="1" Color="{StaticResource Gray400}" HorizontalOptions="Fill" />
+
+            <!-- Message -->
+            <Label x:Name="MessageLabel"
+                   Text="Nội dung thông báo"
+                   Style="{StaticResource BodyLabel}"
+                   HorizontalOptions="Center"
+                   HorizontalTextAlignment="Center"
+                   Margin="0, 10, 0, 10"/>
+
+            <!-- Buttons -->
+            <Button x:Name="ActionButton"
+                    Text="Đóng"
+                    Style="{StaticResource PrimaryButton}"
+                    Clicked="OnActionClicked"
+                    HorizontalOptions="Fill" />
+        </VerticalStackLayout>
+    </Border>
+
+</mct:Popup>
