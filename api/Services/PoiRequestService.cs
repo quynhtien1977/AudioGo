@@ -5,6 +5,7 @@ using Server.Repositories.Interfaces;
 using Server.Services.Interfaces;
 using Shared.DTOs;
 using System.Text.Json;
+using Server.Queues;
 
 namespace Server.Services
 {
@@ -13,12 +14,14 @@ namespace Server.Services
         private readonly AppDbContext _db;
         private readonly IPoiRepository _pois;
         private readonly IServiceProvider _serviceProvider;
+        private readonly IContentPipelineQueue _pipelineQueue;
 
-        public PoiRequestService(AppDbContext db, IPoiRepository pois, IServiceProvider serviceProvider)
+        public PoiRequestService(AppDbContext db, IPoiRepository pois, IServiceProvider serviceProvider, IContentPipelineQueue pipelineQueue)
         {
             _db = db;
             _pois = pois;
             _serviceProvider = serviceProvider;
+            _pipelineQueue = pipelineQueue;
         }
 
         public async Task<List<PoiRequestListDto>> GetMyPoiRequestsAsync(string accountId, string? status = null)
@@ -350,35 +353,8 @@ namespace Server.Services
 
                             await _db.SaveChangesAsync();
 
-                            var localPoiId = targetPoiId;
-                            _ = Task.Run(async () =>
-                            {
-                                using var scope = _serviceProvider.CreateScope();
-                                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                                var pipeline = scope.ServiceProvider.GetRequiredService<IContentPipelineService>();
-
-                                var poi = await dbContext.Pois
-                                    .Include(p => p.Contents)
-                                    .FirstOrDefaultAsync(p => p.PoiId == localPoiId);
-                                if (poi == null) return;
-
-                                var master = poi.Contents.FirstOrDefault(c => c.IsMaster);
-                                if (master != null)
-                                {
-                                    try { await pipeline.GenerateAudioAsync(master); } catch { }
-                                }
-
-                                var targetLangs = new[] { "en", "fr", "ja", "ko", "vi", "zh-Hans", "th" };
-                                foreach (var lang in targetLangs)
-                                {
-                                    try
-                                    {
-                                        await pipeline.EnsureContentAsync(poi, lang);
-                                        await dbContext.Entry(poi).Collection(p => p.Contents).LoadAsync();
-                                    }
-                                    catch { }
-                                }
-                            });
+                            // ✅ Gửi POI vào Queue để xử lý TTS và Dịch thuật thay vì Task.Run
+                            await _pipelineQueue.QueuePoiIdAsync(targetPoiId);
                         }
                     }
                 }

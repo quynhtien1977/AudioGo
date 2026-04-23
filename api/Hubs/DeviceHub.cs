@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
-using Server.Data;
 using Server.Models;
+using Server.Queues;
 using Server.Services.Interfaces;
 using System.Security.Claims;
 
@@ -12,16 +12,16 @@ namespace Server.Hubs
     public class DeviceHub : Hub
     {
         private readonly IDevicePresenceService _presence;
-        private readonly AppDbContext _context;
+        private readonly ILocationQueue _locationQueue;
         private readonly ILogger<DeviceHub> _logger;
 
         public DeviceHub(
             IDevicePresenceService presence,
-            AppDbContext context,
+            ILocationQueue locationQueue,
             ILogger<DeviceHub> logger)
         {
             _presence = presence;
-            _context = context;
+            _locationQueue = locationQueue;
             _logger = logger;
         }
 
@@ -93,18 +93,26 @@ namespace Server.Hubs
 
             if (deviceId is not null)
             {
-                var allOnline = _presence.GetOnlineDeviceIds();
-
-                await Clients.Group("admin_dashboard").SendAsync("DeviceOffline", new
+                // ✅ Chỉ gửi sự kiện Offline nếu KHÔNG còn connection nào khác của thiết bị này
+                if (!_presence.IsOnline(deviceId))
                 {
-                    deviceId,
-                    isActive  = false,
-                    lastSeen  = DateTime.UtcNow,
-                    onlineNow = allOnline.Count
-                });
+                    var allOnline = _presence.GetOnlineDeviceIds();
 
-                _logger.LogInformation("📴 Device disconnected: {DeviceId} | Online now: {Count}",
-                    deviceId, allOnline.Count);
+                    await Clients.Group("admin_dashboard").SendAsync("DeviceOffline", new
+                    {
+                        deviceId,
+                        isActive  = false,
+                        lastSeen  = DateTime.UtcNow,
+                        onlineNow = allOnline.Count
+                    });
+
+                    _logger.LogInformation("📴 Device disconnected: {DeviceId} | Online now: {Count}",
+                        deviceId, allOnline.Count);
+                }
+                else
+                {
+                    _logger.LogInformation("📴 Device connection dropped but device still online via another connection: {DeviceId}", deviceId);
+                }
             }
             else
             {
@@ -141,8 +149,8 @@ namespace Server.Hubs
                     Timestamp  = DateTime.UtcNow
                 };
 
-                _context.LocationLogs.Add(locationLog);
-                await _context.SaveChangesAsync();
+                // ✅ Gửi vào Queue thay vì lưu DB trực tiếp
+                await _locationQueue.QueueLocationAsync(locationLog);
 
                 // Broadcast tới admin dashboard (không phải Clients.All)
                 await Clients.Group("admin_dashboard").SendAsync("LocationUpdated", new

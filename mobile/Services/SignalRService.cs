@@ -30,9 +30,18 @@ namespace AudioGo.Services
         // Guard: ngăn gọi StartAsync song song
         private SemaphoreSlim _startLock = new(1, 1);
 
+        // Theo dõi xem đã hook sự kiện ConnectivityChanged chưa
+        private bool _isListeningConnectivity;
+
         // ── Start ──────────────────────────────────────────────────────────
         public async Task StartAsync(CancellationToken ct = default)
         {
+            if (!_isListeningConnectivity)
+            {
+                Connectivity.ConnectivityChanged += OnConnectivityChanged;
+                _isListeningConnectivity = true;
+            }
+
             await _startLock.WaitAsync(ct);
             try
             {
@@ -41,6 +50,13 @@ namespace AudioGo.Services
                                        or HubConnectionState.Connecting
                                        or HubConnectionState.Reconnecting)
                     return;
+
+                // Dispose connection cũ trước khi build mới nếu đã bị đóng (ngăn leak memory)
+                if (_connection != null)
+                {
+                    await _connection.DisposeAsync();
+                    _connection = null;
+                }
 
                 // Lấy JWT từ SecureStorage (set sau QR scan)
                 var token = await SecureStorage.GetAsync("GuestToken");
@@ -89,6 +105,20 @@ namespace AudioGo.Services
             }
         }
 
+        private void OnConnectivityChanged(object? sender, ConnectivityChangedEventArgs e)
+        {
+            if (e.NetworkAccess == NetworkAccess.Internet && !IsConnected)
+            {
+                System.Diagnostics.Debug.WriteLine("[SignalR] 🌐 Network restored, attempting to restart connection...");
+                try
+                {
+                    // Chạy ngầm StartAsync
+                    _ = StartAsync();
+                }
+                catch { }
+            }
+        }
+
         // ── Send Location ──────────────────────────────────────────────────
         /// <summary>
         /// Gọi HubMethod "SendLocationUpdate" trên server.
@@ -129,6 +159,11 @@ namespace AudioGo.Services
 
         public async ValueTask DisposeAsync()
         {
+            if (_isListeningConnectivity)
+            {
+                Connectivity.ConnectivityChanged -= OnConnectivityChanged;
+                _isListeningConnectivity = false;
+            }
             await StopAsync();
             _startLock.Dispose();
         }
