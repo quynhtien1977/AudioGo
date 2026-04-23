@@ -21,6 +21,7 @@ export default function DeviceTrackingPage() {
 
   // ⚡ Real-time count from in-memory SignalR presence
   const [onlineNow, setOnlineNow] = useState(0)
+  const [activeIds, setActiveIds] = useState(new Set())
   const [signalRStatus, setSignalRStatus] = useState("disconnected")
   const unsubscribeRef = useRef({})
 
@@ -60,6 +61,9 @@ export default function DeviceTrackingPage() {
         if (snapshot?.onlineNow !== undefined) {
           setOnlineNow(snapshot.onlineNow)
         }
+        if (snapshot?.deviceIds) {
+          setActiveIds(new Set(snapshot.deviceIds))
+        }
       } catch (err) {
         console.warn("⚠️ GetActiveDevices failed:", err.message)
       }
@@ -85,14 +89,20 @@ export default function DeviceTrackingPage() {
             // ⚡ Cập nhật count từ server
             if (device.onlineNow !== undefined) setOnlineNow(device.onlineNow)
 
+            // Thêm vào danh sách active
+            setActiveIds(prev => {
+              const newSet = new Set(prev)
+              newSet.add(device.deviceId)
+              return newSet
+            })
+
             setData((prevData) => {
               const existingIndex = prevData.findIndex((d) => d.deviceId === device.deviceId)
               if (existingIndex > -1) {
                 const updated = [...prevData]
                 updated[existingIndex] = {
                   ...updated[existingIndex],
-                  timestamp: new Date().toISOString(),
-                  isActive: true,
+                  timestamp: new Date().toISOString()
                 }
                 return updated
               } else {
@@ -101,8 +111,7 @@ export default function DeviceTrackingPage() {
                     deviceId: device.deviceId,
                     latitude: device.latitude || 0,
                     longitude: device.longitude || 0,
-                    timestamp: new Date().toISOString(),
-                    isActive: true,
+                    timestamp: new Date().toISOString()
                   },
                   ...prevData,
                 ]
@@ -122,15 +131,12 @@ export default function DeviceTrackingPage() {
             // ⚡ Cập nhật count từ server
             if (device.onlineNow !== undefined) setOnlineNow(device.onlineNow)
 
-            // ✅ Chỉ set isActive=false — KHÔNG thay timestamp
-            // Timestamp = thời điểm gửi location lần cuối, không phải lúc disconnect
-            setData((prevData) =>
-              prevData.map((d) =>
-                d.deviceId === device.deviceId
-                  ? { ...d, isActive: false }
-                  : d
-              )
-            )
+            // Loại khỏi danh sách active
+            setActiveIds(prev => {
+              const newSet = new Set(prev)
+              newSet.delete(device.deviceId)
+              return newSet
+            })
           }
         )
 
@@ -240,6 +246,12 @@ export default function DeviceTrackingPage() {
     fetchStats()
   }, [])
 
+  // Merge DB data with Real-time activeIds
+  const mergedData = data.map(d => ({
+    ...d,
+    isActive: activeIds.has(d.deviceId)
+  }))
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       
@@ -309,7 +321,7 @@ export default function DeviceTrackingPage() {
 
       {/* TABLE */}
       <DeviceTrackingTable
-        data={data}
+        data={mergedData}
         isLoading={loading}
         currentPage={currentPage}
         pageSize={pageSize}

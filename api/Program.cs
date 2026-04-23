@@ -8,6 +8,7 @@ using Server.Repositories;
 using Server.Repositories.Interfaces;
 using Server.Services;
 using Server.Services.Interfaces;
+using Server.Queues;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -78,6 +79,13 @@ builder.Services.AddScoped<ITourRepository, TourRepository>();
 builder.Services.AddScoped<IListenHistoryRepository, ListenHistoryRepository>();
 builder.Services.AddScoped<ILocationLogRepository, LocationLogRepository>();
 builder.Services.AddScoped<AuthService>();
+
+// ── Background Queues ────────────────────────────────────────────────
+builder.Services.AddSingleton<ILocationQueue, LocationQueue>();
+builder.Services.AddHostedService<LocationQueueHostedService>();
+
+builder.Services.AddSingleton<IContentPipelineQueue, ContentPipelineQueue>();
+builder.Services.AddHostedService<ContentPipelineHostedService>();
 builder.Services.AddSingleton<IBlobStorageService, BlobStorageService>();
 builder.Services.AddSingleton<ITranslationService, TranslationService>();
 builder.Services.AddSingleton<ITtsService, TtsService>();
