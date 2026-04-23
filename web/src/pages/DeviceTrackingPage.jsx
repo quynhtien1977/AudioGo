@@ -19,6 +19,8 @@ export default function DeviceTrackingPage() {
     year: 0
   })
 
+  // ⚡ Real-time count from in-memory SignalR presence
+  const [onlineNow, setOnlineNow] = useState(0)
   const [signalRStatus, setSignalRStatus] = useState("disconnected")
   const unsubscribeRef = useRef({})
 
@@ -57,25 +59,30 @@ export default function DeviceTrackingPage() {
         await signalRService.connect()
         setSignalRStatus("connected")
 
+        // ⚡ Lấy snapshot ngay khi kết nối thành công
+        try {
+          const snapshot = await signalRService.connection.invoke("GetActiveDevices")
+          if (snapshot?.onlineNow !== undefined) {
+            setOnlineNow(snapshot.onlineNow)
+          }
+        } catch (snapshotErr) {
+          console.warn("GetActiveDevices snapshot failed:", snapshotErr.message)
+        }
+
         // 🟢 SUBSCRIBE: DEVICE ONLINE
         const unsubscribeOnline = signalRService.subscribe(
           "onDeviceOnline",
           (device) => {
-            // ❌ IGNORE IF NO VALID DEVICE ID (from web connections)
-            if (!device?.deviceId || device.deviceId.trim() === "") {
-              console.log("⏭️ Ignored DeviceOnline: Empty deviceId")
-              return
-            }
+            if (!device?.deviceId || device.deviceId.trim() === "") return
 
-            console.log("📱 Device Online Event:", device)
-            
-            // UPDATE TABLE - Device xuất hiện online realtime
+            console.log("📱 Device Online:", device)
+
+            // ⚡ Cập nhật count từ server
+            if (device.onlineNow !== undefined) setOnlineNow(device.onlineNow)
+
             setData((prevData) => {
-              // Kiểm tra device đã có trong list chưa
               const existingIndex = prevData.findIndex((d) => d.deviceId === device.deviceId)
-              
               if (existingIndex > -1) {
-                // Cập nhật device hiện có
                 const updated = [...prevData]
                 updated[existingIndex] = {
                   ...updated[existingIndex],
@@ -84,7 +91,6 @@ export default function DeviceTrackingPage() {
                 }
                 return updated
               } else {
-                // Thêm device mới vào đầu danh sách
                 return [
                   {
                     deviceId: device.deviceId,
@@ -104,23 +110,17 @@ export default function DeviceTrackingPage() {
         const unsubscribeOffline = signalRService.subscribe(
           "onDeviceOffline",
           (device) => {
-            // ❌ IGNORE IF NO VALID DEVICE ID (from web connections)
-            if (!device?.deviceId || device.deviceId.trim() === "") {
-              console.log("⏭️ Ignored DeviceOffline: Empty deviceId")
-              return
-            }
+            if (!device?.deviceId || device.deviceId.trim() === "") return
 
-            console.log("📱 Device Offline Event:", device)
-            
-            // UPDATE TABLE - Device chuyển sang offline realtime
+            console.log("📴 Device Offline:", device)
+
+            // ⚡ Cập nhật count từ server
+            if (device.onlineNow !== undefined) setOnlineNow(device.onlineNow)
+
             setData((prevData) =>
               prevData.map((d) =>
                 d.deviceId === device.deviceId
-                  ? {
-                      ...d,
-                      timestamp: new Date().toISOString(),
-                      isActive: false,
-                    }
+                  ? { ...d, timestamp: new Date().toISOString(), isActive: false }
                   : d
               )
             )
@@ -259,9 +259,18 @@ export default function DeviceTrackingPage() {
       {/* DASHBOARD CARDS */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: "repeat(3, 1fr)",
+        gridTemplateColumns: "repeat(4, 1fr)",
         gap: "1rem"
       }}>
+        {/* ⚡ ONLINE NOW — real-time in-memory */}
+        <Card
+          title="Online ngay bây giờ"
+          value={onlineNow}
+          sub={signalRStatus === "connected" ? "🟢 Kết nối SignalR" : "🔴 Mất kết nối"}
+          color="text-emerald-600"
+          icon={signalRStatus === "connected" ? <Wifi size={20} /> : <WifiOff size={20} />}
+        />
+
         <Card
           title="Online hôm nay"
           value={stats.today}

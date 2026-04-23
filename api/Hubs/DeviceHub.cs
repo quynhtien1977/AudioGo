@@ -1,189 +1,167 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Server.Data;
 using Server.Models;
-using Microsoft.EntityFrameworkCore;
+using Server.Services.Interfaces;
+using System.Security.Claims;
 
 namespace Server.Hubs
 {
+    // ✅ Cho phép cả Admin (web) và GuestApp (mobile) kết nối
+    [Authorize]
     public class DeviceHub : Hub
     {
+        private readonly IDevicePresenceService _presence;
         private readonly AppDbContext _context;
         private readonly ILogger<DeviceHub> _logger;
 
-        public DeviceHub(AppDbContext context, ILogger<DeviceHub> logger)
+        public DeviceHub(
+            IDevicePresenceService presence,
+            AppDbContext context,
+            ILogger<DeviceHub> logger)
         {
+            _presence = presence;
             _context = context;
             _logger = logger;
         }
 
-        // ✅ WHEN DEVICE CONNECTS (Mobile app connects to hub)
+        // ─────────────────────────────────────────────────────────────────
+        // CONNECT
+        // ─────────────────────────────────────────────────────────────────
         public override async Task OnConnectedAsync()
         {
-            // Lấy deviceId từ query string
-            var deviceId = Context.GetHttpContext()?.Request.Query["deviceId"].ToString()
-                        ?? Context.User?.FindFirst("deviceId")?.Value
+            // DeviceId lấy từ claim sub/nameidentifier — do JWT mobile set khi QR login
+            // Web admin sẽ không có claim này → deviceId rỗng
+            var deviceId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                        ?? Context.User?.FindFirst("sub")?.Value
                         ?? "";
 
-            // ❌ SKIP WEB CONNECTIONS - Chỉ nhận mobile devices có deviceId hợp lệ
+            var connectionId = Context.ConnectionId;
+
             if (string.IsNullOrWhiteSpace(deviceId))
             {
-                _logger.LogInformation($"⏭️ WEB CONNECTION SKIPPED: {Context.ConnectionId}");
-                await base.OnConnectedAsync();
-                return;
+                // ── Web admin connection ──────────────────────────────────
+                _presence.MarkOnline(connectionId, ""); // web = empty deviceId
+                await Groups.AddToGroupAsync(connectionId, "admin_dashboard");
+                _logger.LogInformation("🖥️  Web admin joined admin_dashboard: {ConnId}", connectionId);
             }
-
-            _logger.LogInformation($"✅ Mobile Device Connected: {deviceId}");
-
-            try
+            else
             {
-                // 📍 CREATE NEW LOCATION LOG ENTRY - Device Online
-                var locationLog = new LocationLog
-                {
-                    LocationId = $"{deviceId}_{Guid.NewGuid()}_{DateTime.UtcNow.Ticks}",
-                    DeviceId = deviceId,
-                    Latitude = 0,
-                    Longitude = 0,
-                    Timestamp = DateTime.UtcNow
-                };
+                // ── Mobile device connection ──────────────────────────────
+                _presence.MarkOnline(connectionId, deviceId);
 
-                _context.LocationLogs.Add(locationLog);
-                await _context.SaveChangesAsync();
+                var allOnline = _presence.GetOnlineDeviceIds();
 
-                // 📢 BROADCAST: Device Online → All web clients
-                await Clients.All.SendAsync("DeviceOnline", new
+                // Gửi sự kiện DeviceOnline tới admin dashboard (không broadcast all)
+                await Clients.Group("admin_dashboard").SendAsync("DeviceOnline", new
                 {
-                    deviceId = deviceId,
-                    isActive = true,
-                    lastSeen = DateTime.UtcNow,
-                    latitude = 0,
-                    longitude = 0,
-                    timestamp = DateTime.UtcNow
+                    deviceId,
+                    isActive  = true,
+                    lastSeen  = DateTime.UtcNow,
+                    onlineNow = allOnline.Count
                 });
 
-                _logger.LogInformation($"✅ Device {deviceId} is now ONLINE");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"❌ Error in OnConnectedAsync: {ex.Message}");
+                _logger.LogInformation("📱 Device connected: {DeviceId} | Online now: {Count}",
+                    deviceId, allOnline.Count);
             }
 
             await base.OnConnectedAsync();
         }
 
-        // ✅ WHEN DEVICE DISCONNECTS (Mobile app closes or loses connection)
+        // ─────────────────────────────────────────────────────────────────
+        // DISCONNECT
+        // ─────────────────────────────────────────────────────────────────
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            // Lấy deviceId từ query string
-            var deviceId = Context.GetHttpContext()?.Request.Query["deviceId"].ToString()
-                        ?? Context.User?.FindFirst("deviceId")?.Value
-                        ?? "";
+            var connectionId = Context.ConnectionId;
 
-            // ❌ SKIP WEB CONNECTIONS
-            if (string.IsNullOrWhiteSpace(deviceId))
+            // MarkOffline trả về deviceId nếu là mobile, null nếu là web
+            var deviceId = _presence.MarkOffline(connectionId);
+
+            if (deviceId is not null)
             {
-                _logger.LogInformation($"⏭️ WEB DISCONNECTION SKIPPED: {Context.ConnectionId}");
-                await base.OnDisconnectedAsync(exception);
-                return;
-            }
+                var allOnline = _presence.GetOnlineDeviceIds();
 
-            _logger.LogInformation($"❌ Mobile Device Disconnected: {deviceId}");
-
-            try
-            {
-                // 🔍 FIND LAST ACTIVE LOCATION LOG FOR THIS DEVICE
-                var lastLocationLog = await _context.LocationLogs
-                    .Where(l => l.DeviceId == deviceId)
-                    .OrderByDescending(l => l.Timestamp)
-                    .FirstOrDefaultAsync();
-
-                // 📢 BROADCAST: Device Offline → All web clients
-                await Clients.All.SendAsync("DeviceOffline", new
+                await Clients.Group("admin_dashboard").SendAsync("DeviceOffline", new
                 {
-                    deviceId = deviceId,
-                    isActive = false,
-                    lastSeen = DateTime.UtcNow,
-                    latitude = lastLocationLog?.Latitude ?? 0,
-                    longitude = lastLocationLog?.Longitude ?? 0,
-                    timestamp = DateTime.UtcNow
+                    deviceId,
+                    isActive  = false,
+                    lastSeen  = DateTime.UtcNow,
+                    onlineNow = allOnline.Count
                 });
 
-                _logger.LogInformation($"❌ Device {deviceId} is now OFFLINE");
+                _logger.LogInformation("📴 Device disconnected: {DeviceId} | Online now: {Count}",
+                    deviceId, allOnline.Count);
             }
-            catch (Exception ex)
+            else
             {
-                _logger.LogError($"❌ Error in OnDisconnectedAsync: {ex.Message}");
+                _logger.LogInformation("🖥️  Web admin disconnected: {ConnId}", connectionId);
             }
 
             await base.OnDisconnectedAsync(exception);
         }
 
-        // ✅ MOBILE SENDS LOCATION UPDATE
-        public async Task SendLocationUpdate(string deviceId, double latitude, double longitude)
+        // ─────────────────────────────────────────────────────────────────
+        // MOBILE → SERVER: gửi vị trí GPS thực, lưu LocationLog
+        // ─────────────────────────────────────────────────────────────────
+        public async Task SendLocationUpdate(double latitude, double longitude)
         {
-            // ❌ SKIP IF NO VALID DEVICE ID
+            var deviceId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                        ?? Context.User?.FindFirst("sub")?.Value
+                        ?? "";
+
             if (string.IsNullOrWhiteSpace(deviceId))
             {
-                _logger.LogWarning($"⏭️ Location update rejected: Empty deviceId");
+                _logger.LogWarning("⚠️  SendLocationUpdate rejected: no deviceId in JWT");
                 return;
             }
 
             try
             {
+                // ✅ Chỉ lưu DB khi có tọa độ thực — không ghi 0,0
                 var locationLog = new LocationLog
                 {
-                    LocationId = $"{deviceId}_{Guid.NewGuid()}_{DateTime.UtcNow.Ticks}",
-                    DeviceId = deviceId,
-                    Latitude = latitude,
-                    Longitude = longitude,
-                    Timestamp = DateTime.UtcNow
+                    LocationId = $"{deviceId}_{Guid.NewGuid():N}",
+                    DeviceId   = deviceId,
+                    Latitude   = latitude,
+                    Longitude  = longitude,
+                    Timestamp  = DateTime.UtcNow
                 };
 
                 _context.LocationLogs.Add(locationLog);
                 await _context.SaveChangesAsync();
 
-                // 📢 BROADCAST LOCATION UPDATE → All web clients
-                await Clients.All.SendAsync("LocationUpdated", new
+                // Broadcast tới admin dashboard (không phải Clients.All)
+                await Clients.Group("admin_dashboard").SendAsync("LocationUpdated", new
                 {
-                    deviceId = deviceId,
-                    latitude = latitude,
-                    longitude = longitude,
-                    timestamp = DateTime.UtcNow
+                    deviceId,
+                    latitude,
+                    longitude,
+                    timestamp = locationLog.Timestamp
                 });
 
-                _logger.LogInformation($"📍 Location update from {deviceId}: ({latitude}, {longitude})");
+                _logger.LogInformation("📍 Location from {DeviceId}: ({Lat}, {Lon})",
+                    deviceId, latitude, longitude);
             }
             catch (Exception ex)
             {
-                _logger.LogError($"❌ Error in SendLocationUpdate: {ex.Message}");
+                _logger.LogError(ex, "❌ Error saving location for {DeviceId}", deviceId);
             }
         }
 
-        // ✅ GET ALL ACTIVE DEVICES (Web request)
-        public async Task<IEnumerable<object>> GetActiveDevices()
+        // ─────────────────────────────────────────────────────────────────
+        // WEB → SERVER: lấy snapshot danh sách đang online (call 1 lần khi mount)
+        // ─────────────────────────────────────────────────────────────────
+        public Task<object> GetActiveDevices()
         {
-            try
-            {
-                // Get latest location for each device
-                var devices = await _context.LocationLogs
-                    .GroupBy(l => l.DeviceId)
-                    .Select(g => g.OrderByDescending(l => l.Timestamp).First())
-                    .Select(l => new
-                    {
-                        l.DeviceId,
-                        l.Latitude,
-                        l.Longitude,
-                        l.Timestamp,
-                        isActive = (DateTime.UtcNow - l.Timestamp).TotalMinutes <= 5
-                    })
-                    .ToListAsync();
+            var onlineIds = _presence.GetOnlineDeviceIds();
 
-                return devices;
-            }
-            catch (Exception ex)
+            return Task.FromResult<object>(new
             {
-                _logger.LogError($"❌ Error in GetActiveDevices: {ex.Message}");
-                return Enumerable.Empty<object>();
-            }
+                onlineNow   = onlineIds.Count,
+                deviceIds   = onlineIds,
+                snapshotAt  = DateTime.UtcNow
+            });
         }
     }
 }

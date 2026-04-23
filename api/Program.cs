@@ -50,11 +50,28 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience            = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
+
+        // ✅ REQUIRED: SignalR WebSocket không gửi được Authorization header,
+        // nên token được đính kèm qua ?access_token=<jwt> trong URL.
+        opt.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+        {
+            OnMessageReceived = ctx =>
+            {
+                var token = ctx.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(token) &&
+                    ctx.Request.Path.StartsWithSegments("/deviceHub"))
+                {
+                    ctx.Token = token;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 builder.Services.AddAuthorization();
 
 // ── Services & Repositories ───────────────────────────────────────────
 builder.Services.AddSignalR(); // ✅ ADD SIGNALR
+builder.Services.AddSingleton<IDevicePresenceService, DevicePresenceService>(); // ✅ IN-MEMORY PRESENCE
 builder.Services.AddScoped<IPoiRepository, PoiRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<ITourRepository, TourRepository>();

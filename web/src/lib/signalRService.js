@@ -1,6 +1,6 @@
 import * as signalR from "@microsoft/signalr"
 
-const SIGNALR_URL = "http://localhost:5086/deviceHub"
+const SIGNALR_URL = `${import.meta.env.VITE_API_URL ?? "http://localhost:5086"}/deviceHub`
 
 class SignalRService {
   constructor() {

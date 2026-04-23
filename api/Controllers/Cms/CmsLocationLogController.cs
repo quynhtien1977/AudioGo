@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
+using Server.Services.Interfaces;
 
 namespace Server.Controllers.Cms
 {
@@ -11,10 +12,26 @@ namespace Server.Controllers.Cms
     public class LocationLogController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IDevicePresenceService _presence;
 
-        public LocationLogController(AppDbContext context)
+        public LocationLogController(AppDbContext context, IDevicePresenceService presence)
         {
             _context = context;
+            _presence = presence;
+        }
+
+        // ================================
+        // ⚡ ONLINE-NOW (in-memory — real-time, no DB)
+        // ================================
+        [HttpGet("online-now")]
+        public IActionResult GetOnlineNow()
+        {
+            return Ok(new
+            {
+                onlineNow = _presence.OnlineCount,
+                deviceIds = _presence.GetOnlineDeviceIds(),
+                snapshotAt = DateTime.UtcNow
+            });
         }
 
         // ================================
@@ -75,9 +92,7 @@ namespace Server.Controllers.Cms
 
             var today = now.Date;
             var month = new DateTime(now.Year, now.Month, 1);
-            var year = new DateTime(now.Year, 1, 1);
-
-            var onlineThreshold = now.AddMinutes(-5);
+            var year  = new DateTime(now.Year, 1, 1);
 
             var logs = _context.LocationLogs.AsNoTracking();
 
@@ -99,18 +114,13 @@ namespace Server.Controllers.Cms
                 .Distinct()
                 .CountAsync();
 
-            var onlineCount = await logs
-                .Where(x => x.Timestamp >= onlineThreshold)
-                .Select(x => x.DeviceId)
-                .Distinct()
-                .CountAsync();
-
             return Ok(new
             {
-                online = onlineCount,
-                today = todayCount,
-                month = monthCount,
-                year = yearCount
+                // ✅ online = in-memory (instant, no DB query)
+                online = _presence.OnlineCount,
+                today  = todayCount,
+                month  = monthCount,
+                year   = yearCount
             });
         }
     }
