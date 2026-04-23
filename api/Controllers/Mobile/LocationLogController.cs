@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Server.Models;
-using Server.Repositories.Interfaces;
+using Server.Queues;
 using Shared.DTOs;
 
 namespace Server.Controllers.Mobile
@@ -9,8 +9,8 @@ namespace Server.Controllers.Mobile
     [Route("api/mobile/location-log")]
     public class LocationLogController : ControllerBase
     {
-        private readonly ILocationLogRepository _repo;
-        public LocationLogController(ILocationLogRepository repo) => _repo = repo;
+        private readonly ILocationQueue _queue;
+        public LocationLogController(ILocationQueue queue) => _queue = queue;
 
         /// <summary>Mobile gửi batch GPS log (offline buffer flush).</summary>
         [HttpPost]
@@ -25,8 +25,12 @@ namespace Server.Controllers.Mobile
                 Timestamp  = p.Timestamp
             });
 
-            await _repo.CreateBatchAsync(logs);
-            return NoContent();
+            foreach (var log in logs)
+            {
+                await _queue.QueueLocationAsync(log);
+            }
+
+            return Accepted();
         }
     }
 }

@@ -6,6 +6,7 @@ namespace Server.Repositories.Interfaces
     public interface IListenHistoryRepository
     {
         Task<ListenHistory> CreateAsync(ListenHistory entry);
+        Task CreateBatchAsync(IEnumerable<ListenHistory> entries);
         Task<List<ListenHistory>> GetByPoiAsync(string poiId, int limit = 100);
         Task<List<(string PoiId, int Count)>> GetTopPoisAsync(int topN = 10);
 
