@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Server.Data;
+using Server.Hubs;
 using Server.Repositories;
 using Server.Repositories.Interfaces;
 using Server.Services;
@@ -25,7 +26,9 @@ builder.Services.AddCors(opt =>
 {
     opt.AddPolicy("MobilePolicy", p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
     opt.AddPolicy("WebCmsPolicy", p => p.WithOrigins(allowedOrigins)
-                                        .AllowAnyHeader().AllowAnyMethod().AllowCredentials());
+                                        .AllowAnyHeader()
+                                        .AllowAnyMethod()
+                                        .AllowCredentials()); // ✅ REQUIRED FOR SIGNALR WEBSOCKET
 });
 
 // ── Database ──────────────────────────────────────────────────────────
@@ -51,6 +54,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 // ── Services & Repositories ───────────────────────────────────────────
+builder.Services.AddSignalR(); // ✅ ADD SIGNALR
 builder.Services.AddScoped<IPoiRepository, PoiRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<ITourRepository, TourRepository>();
@@ -75,9 +79,11 @@ var app = builder.Build();
 
 app.MapOpenApi();           // /openapi/v1.json — dùng cho React generate TS types
 app.UseStaticFiles();       // serve /uploads/... cho audio + image
-app.UseCors("WebCmsPolicy");
+app.UseCors("WebCmsPolicy"); // ✅ CORS MUST BE BEFORE UseRouting
+app.UseRouting();           // ✅ REQUIRED FOR SIGNALR
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<DeviceHub>("/deviceHub"); // ✅ MAP SIGNALR HUB
 
 app.Run();

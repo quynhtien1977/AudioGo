@@ -127,7 +127,35 @@ export default function DeviceTrackingPage() {
           }
         )
 
-        // 📡 SUBSCRIBE: CONNECTION STATUS
+        // 📍 SUBSCRIBE: LOCATION UPDATE
+        const unsubscribeLocationUpdate = signalRService.subscribe(
+          "onLocationUpdated",
+          (location) => {
+            // ❌ IGNORE IF NO VALID DEVICE ID
+            if (!location?.deviceId || location.deviceId.trim() === "") {
+              console.log("⏭️ Ignored LocationUpdated: Empty deviceId")
+              return
+            }
+
+            console.log("📍 Location Update Event:", location)
+            
+            // UPDATE TABLE - Cập nhật vị trí device realtime
+            setData((prevData) =>
+              prevData.map((d) =>
+                d.deviceId === location.deviceId
+                  ? {
+                      ...d,
+                      latitude: location.latitude,
+                      longitude: location.longitude,
+                      timestamp: location.timestamp || new Date().toISOString(),
+                    }
+                  : d
+              )
+            )
+          }
+        )
+
+        // SUBSCRIBE: CONNECTION STATUS
         const unsubscribeStatus = signalRService.subscribe(
           "onConnectionStatusChanged",
           (status) => {
@@ -136,15 +164,24 @@ export default function DeviceTrackingPage() {
           }
         )
 
+        // ✅ STORE UNSUBSCRIBER FUNCTIONS SAFELY
         unsubscribeRef.current = {
-          online: unsubscribeOnline,
-          offline: unsubscribeOffline,
-          status: unsubscribeStatus,
+          online: unsubscribeOnline || (() => {}),
+          offline: unsubscribeOffline || (() => {}),
+          locationUpdate: unsubscribeLocationUpdate || (() => {}),
+          status: unsubscribeStatus || (() => {}),
         }
 
       } catch (err) {
         console.error("❌ SignalR Init Error:", err)
         setSignalRStatus("disconnected")
+        // ✅ ENSURE CLEANUP ON ERROR
+        unsubscribeRef.current = {
+          online: () => {},
+          offline: () => {},
+          locationUpdate: () => {},
+          status: () => {},
+        }
       }
     }
 
@@ -152,10 +189,13 @@ export default function DeviceTrackingPage() {
 
     // ✅ CLEANUP: DISCONNECT ON UNMOUNT
     return () => {
-      if (unsubscribeRef.current) {
-        unsubscribeRef.current.online?.()
-        unsubscribeRef.current.offline?.()
-        unsubscribeRef.current.status?.()
+      try {
+        if (unsubscribeRef.current?.online) unsubscribeRef.current.online()
+        if (unsubscribeRef.current?.offline) unsubscribeRef.current.offline()
+        if (unsubscribeRef.current?.locationUpdate) unsubscribeRef.current.locationUpdate()
+        if (unsubscribeRef.current?.status) unsubscribeRef.current.status()
+      } catch (err) {
+        console.error("❌ Error unsubscribing from listeners:", err)
       }
       signalRService.disconnect()
     }
@@ -213,45 +253,7 @@ export default function DeviceTrackingPage() {
             QUẢN LÝ THIẾT BỊ
           </h1>
           
-          {/* SIGNALR STATUS INDICATOR */}
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            padding: "0.5rem 1rem",
-            borderRadius: "0.375rem",
-            backgroundColor: signalRStatus === "connected" ? "#dcfce7" : "#fee2e2",
-            border: `1px solid ${signalRStatus === "connected" ? "#86efac" : "#fca5a5"}`
-          }}>
-            {signalRStatus === "connected" ? (
-              <>
-                <Wifi size={16} style={{ color: "#16a34a" }} />
-                <span style={{ fontSize: "0.875rem", color: "#16a34a", fontWeight: "500" }}>
-                  Connected
-                </span>
-              </>
-            ) : (
-              <>
-                <WifiOff size={16} style={{ color: "#dc2626" }} />
-                <span style={{ fontSize: "0.875rem", color: "#dc2626", fontWeight: "500" }}>
-                  {signalRStatus === "reconnecting" ? "Reconnecting..." : "Disconnected"}
-                </span>
-              </>
-            )}
-          </div>
         </div>
-        
-        <p style={{
-          fontSize: "0.875rem",
-          color: "#6b7280",
-          margin: 0
-        }}>
-          Hệ thống realtime monitoring device thông qua SignalR
-          <br />
-          <span style={{ fontSize: "0.75rem", color: "#9ca3af", fontStyle: "italic" }}>
-            (Web đang chờ kết nối từ mobile devices)
-          </span>
-        </p>
       </div>
 
       {/* DASHBOARD CARDS */}
