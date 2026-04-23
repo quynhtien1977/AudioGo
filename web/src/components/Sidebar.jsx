@@ -9,7 +9,8 @@ import {
   Headphones,
   BadgeCheck,
   QrCode,
-  Smartphone
+  Smartphone,
+  Rocket
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
@@ -69,6 +70,11 @@ export default function Sidebar() {
             <MenuItem to="/tracking" icon={<Smartphone size={18} />}>
               Quản lý thiết bị
             </MenuItem>
+            
+            <MenuItem to="/queue-demo" icon={<Rocket size={18} />}>
+              Demo Queue
+            </MenuItem>
+
             <MenuItem to="/audio" icon={<Headphones size={18} />}>
               Bản dịch & Audio
             </MenuItem>
