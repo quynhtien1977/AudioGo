@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
 import MainLayout from "@/layouts/MainLayout";
+import { SearchProvider } from "@/context/SearchContext";
 
 import DashboardPage from "@/pages/DashboardPage";
 import POIPage from "@/pages/POIPage";
@@ -26,28 +27,29 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 export default function App() {
   return (
     <BrowserRouter>
-      <Toaster
-        position="top-right"
-        reverseOrder={false}
-        gutter={8}
-        toastOptions={{
-          duration: 4000,
-          style: {
-            background: '#fff',
-            color: '#000',
-            borderRadius: '8px',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-          },
-          success: {
+      <SearchProvider>
+        <Toaster
+          position="top-right"
+          reverseOrder={false}
+          gutter={8}
+          toastOptions={{
+            duration: 4000,
             style: {
-              background: '#10b981',
-              color: '#fff',
+              background: '#fff',
+              color: '#000',
+              borderRadius: '8px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
             },
-          },
-          error: {
-            style: {
-              background: '#ef4444',
-              color: '#fff',
+            success: {
+              style: {
+                background: '#10b981',
+                color: '#fff',
+              },
+            },
+            error: {
+              style: {
+                background: '#ef4444',
+                color: '#fff',
             },
           },
         }}
@@ -259,6 +261,7 @@ export default function App() {
         {/* fallback */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
+      </SearchProvider>
     </BrowserRouter>
   );
 }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Server.Data;
+using Server.Hubs;
 using Server.Repositories;
 using Server.Repositories.Interfaces;
 using Server.Services;
@@ -25,7 +26,9 @@ builder.Services.AddCors(opt =>
 {
     opt.AddPolicy("MobilePolicy", p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
     opt.AddPolicy("WebCmsPolicy", p => p.WithOrigins(allowedOrigins)
-                                        .AllowAnyHeader().AllowAnyMethod().AllowCredentials());
+                                        .AllowAnyHeader()
+                                        .AllowAnyMethod()
+                                        .AllowCredentials()); // ✅ REQUIRED FOR SIGNALR WEBSOCKET
 });
 
 // ── Database ──────────────────────────────────────────────────────────
@@ -47,10 +50,28 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience            = builder.Configuration["Jwt:Audience"],
             IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
+
+        // ✅ REQUIRED: SignalR WebSocket không gửi được Authorization header,
+        // nên token được đính kèm qua ?access_token=<jwt> trong URL.
+        opt.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+        {
+            OnMessageReceived = ctx =>
+            {
+                var token = ctx.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(token) &&
+                    ctx.Request.Path.StartsWithSegments("/deviceHub"))
+                {
+                    ctx.Token = token;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 builder.Services.AddAuthorization();
 
 // ── Services & Repositories ───────────────────────────────────────────
+builder.Services.AddSignalR(); // ✅ ADD SIGNALR
+builder.Services.AddSingleton<IDevicePresenceService, DevicePresenceService>(); // ✅ IN-MEMORY PRESENCE
 builder.Services.AddScoped<IPoiRepository, PoiRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<ITourRepository, TourRepository>();
@@ -75,9 +96,12 @@ var app = builder.Build();
 
 app.MapOpenApi();           // /openapi/v1.json — dùng cho React generate TS types
 app.UseStaticFiles();       // serve /uploads/... cho audio + image
-app.UseCors("WebCmsPolicy");
+app.UseRouting();           // ✅ UseRouting PHẢI trước UseCors khi dùng [EnableCors]
+app.UseCors("WebCmsPolicy"); // ✅ CORS sau UseRouting, trước UseAuthentication
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<DeviceHub>("/deviceHub")     // ✅ MAP SIGNALR HUB
+   .RequireCors("WebCmsPolicy");         // ✅ HUB CẦN EXPLICIT CORS — [Authorize] không đủ
 
 app.Run();

@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useContext } from "react"
 import { NavLink } from "react-router-dom"
 import toast from "react-hot-toast"
 import {
   ChevronLeft,
   ChevronRight,
-  SlidersHorizontal,
   CheckCircle,
   Eye,
   EyeOff,
@@ -17,7 +16,6 @@ import {
 
 import POIMap from "@/components/POIMap"
 import Card from "@/components/Card"
-import Filter from "@/components/Filter"
 import StatusBadge from "@/components/StatusBadge"
 import ConfirmModal from "@/components/ConfirmModal"
 import { getPriorityColor, getPriorityInfo } from "@/components/PriorityBadge"
@@ -26,20 +24,30 @@ import { getAllPOIs, updatePOI, deletePOI } from "@/api/poiApi"
 import { getContentsByPOI } from "@/api/contentApi"
 import { getMyPoiRequests, getPoiRequestDetail, createPoiRequest } from "@/api/poiRequestApi"
 
-import useAuth from "@/hooks/useAuth";
+import useAuth from "@/hooks/useAuth"
+import { SearchContext } from "@/context/SearchContext"
 
 
 export default function POIPage() {
 
   const { user } = useAuth();
+  const { searchFilter } = useContext(SearchContext)
   const role = user?.role;
   const accountId = user?.accountId;
 
   const [pois, setPois] = useState([])
+  const [filteredPois, setFilteredPois] = useState([])
   const [poiRequests, setPoiRequests] = useState([])
   const [poiRequestDetails, setPoiRequestDetails] = useState({})
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
+
+  // FILTER STATE
+  const [filters, setFilters] = useState({
+    status: null, // "active" | "inactive" | null (all)
+    category: null,
+    priority: null
+  })
 
   // PAGINATION STATE
   const [currentPage, setCurrentPage] = useState(1)
@@ -189,14 +197,63 @@ export default function POIPage() {
     }
   }, [role, accountId])
 
+  // SEARCH FILTERING EFFECT
+  useEffect(() => {
+    let result = pois
+
+    // Apply search filter
+    if (searchFilter?.pageType === "poi" && searchFilter?.query) {
+      const searchTerm = searchFilter.query.toLowerCase()
+      result = result.filter(
+        (poi) =>
+          poi.name?.toLowerCase().includes(searchTerm) ||
+          poi.category?.toLowerCase().includes(searchTerm)
+      )
+    }
+
+    // Apply status filter
+    if (filters.status === "active") {
+      result = result.filter(poi => poi.isActive === true)
+    } else if (filters.status === "inactive") {
+      result = result.filter(poi => poi.isActive === false)
+    }
+
+    // Apply category filter
+    if (filters.category) {
+      result = result.filter(poi => poi.category === filters.category)
+    }
+
+    // Apply priority filter
+    if (filters.priority) {
+      result = result.filter(poi => poi.priority === filters.priority)
+    }
+
+    setFilteredPois(result)
+    setCurrentPage(1) // Reset to first page
+  }, [searchFilter, pois, filters])
+
+  // TOAST NOTIFICATION FOR NO RESULTS
+  useEffect(() => {
+    const hasActiveFilters = filters.status || filters.category || filters.priority || (searchFilter?.pageType === "poi" && searchFilter?.query)
+    const noResults = filteredPois.length === 0 && pois.length > 0 && hasActiveFilters
+    
+    if (noResults) {
+      toast.error("Không tìm thấy POI phù hợp với bộ lọc của bạn", {
+        duration: 3000,
+        position: "top-right"
+      })
+    }
+  }, [filteredPois, filters, searchFilter, pois])
+
   // PAGINATION LOGIC
-  const totalItems = pois.length
+  const displayData = filteredPois.length > 0 ? filteredPois : pois
+  const totalItems = displayData.length
   const totalPages = Math.ceil(totalItems / itemsPerPage)
 
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
 
-  const currentPOIs = pois.slice(startIndex, endIndex)
+  const currentPOIs = displayData.slice(startIndex, endIndex)
 
   const goToPage = (page) => {
     if (page >= 1 && page <= totalPages) {
@@ -244,6 +301,9 @@ export default function POIPage() {
         return "bg-gray-100 text-gray-500"
     }
   }
+
+  // Get unique categories from pois
+  const uniqueCategories = [...new Set(pois.map(p => p.category))].filter(Boolean)
 
   // HANDLERS SET PRIORITY
   const handleSetPriority = async (id, newPriority) => {
@@ -402,17 +462,84 @@ export default function POIPage() {
       </div>
 
       {/* FILTER */}
-      {/* <div className="flex justify-between items-center bg-white p-4 rounded-2xl border">
-        <div className="flex gap-3">
-          <Filter label="Tất cả" active={true} />
-          <Filter label="Thể loại: Đồ ăn & Nước uống" />
-          <Filter label="Độ ưu tiên: Cao" />
-          <Filter label="Lọc" icon={<SlidersHorizontal size={14} />} />
+      <div className="flex justify-between items-center bg-white p-4 rounded-2xl border flex-wrap gap-3">
+        <div className="flex gap-3 flex-wrap">
+          {/* Status Filter */}
+          <button
+            onClick={() => updateFilter("status", null)}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              filters.status === null
+                ? "bg-pink-500 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            Tất cả
+          </button>
+
+          <button
+            onClick={() => updateFilter("status", "active")}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              filters.status === "active"
+                ? "bg-green-500 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            Đang hoạt động
+          </button>
+
+          <button
+            onClick={() => updateFilter("status", "inactive")}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              filters.status === "inactive"
+                ? "bg-orange-500 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            Ẩn
+          </button>
+
+          {/* Category Filter Dropdown */}
+          <select
+            value={filters.category || ""}
+            onChange={(e) => updateFilter("category", e.target.value || null)}
+            className="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all border-0 outline-none cursor-pointer"
+          >
+            <option value="">Thể loại</option>
+            {uniqueCategories.map((cat) => (
+              <option key={cat} value={cat}>
+                {cat}
+              </option>
+            ))}
+          </select>
+
+          {/* Priority Filter Dropdown */}
+          <select
+            value={filters.priority || ""}
+            onChange={(e) => updateFilter("priority", e.target.value ? Number(e.target.value) : null)}
+            className="px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all border-0 outline-none cursor-pointer"
+          >
+            <option value="">Độ ưu tiên</option>
+            <option value="1">Thấp</option>
+            <option value="2">Trung bình</option>
+            <option value="3">Cao</option>
+            <option value="4">Rất cao</option>
+          </select>
+
+          {/* Reset Filters Button */}
+          {(filters.status || filters.category || filters.priority) && (
+            <button
+              onClick={() => setFilters({ status: null, category: null, priority: null })}
+              className="px-4 py-2 rounded-full text-sm font-medium bg-red-100 text-red-600 hover:bg-red-200 transition-all"
+            >
+              Xóa lọc
+            </button>
+          )}
         </div>
+
         <div className="text-sm text-gray-500">
-          Sắp bởi: <span className="font-semibold text-gray-700">Lần cập nhật mới nhất</span>
+          Kết quả: <span className="font-semibold text-gray-700">{displayData.length}/{totalItems}</span>
         </div>
-      </div> */}
+      </div>
 
       {/* TABLE */}
       <div className="bg-white rounded-2xl border overflow-hidden">

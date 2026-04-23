@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useContext } from "react"
 import { Edit3, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
 
 import {
@@ -9,9 +9,12 @@ import {
 import CreateCategoryModal from "@/components/CreateCategoryModal"
 import EditCategoryModal from "@/components/EditCategoryModal"
 import ConfirmModal from "@/components/ConfirmModal"
+import { SearchContext } from "@/context/SearchContext"
 
 export default function CategoryPage() {
+  const { searchFilter } = useContext(SearchContext)
   const [categories, setCategories] = useState([])
+  const [filteredCategories, setFilteredCategories] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [editingCategory, setEditingCategory] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
@@ -38,6 +41,20 @@ export default function CategoryPage() {
     fetchData()
   }, [])
 
+  // SEARCH FILTERING EFFECT
+  useEffect(() => {
+    if (searchFilter?.pageType === "category" && searchFilter?.query) {
+      const searchTerm = searchFilter.query.toLowerCase()
+      const filtered = categories.filter((cat) =>
+        cat.name?.toLowerCase().includes(searchTerm)
+      )
+      setFilteredCategories(filtered)
+      setCurrentPage(1) // Reset to first page
+    } else {
+      setFilteredCategories(categories)
+    }
+  }, [searchFilter, categories])
+
   const openDeleteConfirm = (id) => {
     setSelectedCategoryId(id)
     setShowDeleteModal(true)
@@ -61,9 +78,10 @@ export default function CategoryPage() {
     setShowDeleteModal(false)
   }
 
-  const totalPages = Math.ceil(categories.length / pageSize)
+  const displayData = filteredCategories.length > 0 ? filteredCategories : categories
+  const totalPages = Math.ceil(displayData.length / pageSize)
 
-  const paginatedData = categories.slice(
+  const paginatedData = displayData.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   )
@@ -152,7 +170,7 @@ export default function CategoryPage() {
 
         {/* PAGINATION */}
         <div className="flex justify-between px-8 py-4 text-sm text-gray-500 items-center">
-          <p>Hiển thị {paginatedData.length} / {categories.length} danh mục</p>
+          <p>Hiển thị {paginatedData.length} / {displayData.length} danh mục</p>
 
             <div className="flex gap-1 items-center">
               <button

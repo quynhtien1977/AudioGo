@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
+using Server.Services.Interfaces;
 
 namespace Server.Controllers.Cms
 {
@@ -11,10 +12,26 @@ namespace Server.Controllers.Cms
     public class LocationLogController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IDevicePresenceService _presence;
 
-        public LocationLogController(AppDbContext context)
+        public LocationLogController(AppDbContext context, IDevicePresenceService presence)
         {
             _context = context;
+            _presence = presence;
+        }
+
+        // ================================
+        // ⚡ ONLINE-NOW (in-memory — real-time, no DB)
+        // ================================
+        [HttpGet("online-now")]
+        public IActionResult GetOnlineNow()
+        {
+            return Ok(new
+            {
+                onlineNow = _presence.OnlineCount,
+                deviceIds = _presence.GetOnlineDeviceIds(),
+                snapshotAt = DateTime.UtcNow
+            });
         }
 
         // ================================
@@ -28,16 +45,17 @@ namespace Server.Controllers.Cms
             var now = DateTime.UtcNow;
             var onlineThreshold = now.AddMinutes(-5);
 
-            var query = _context.LocationLogs
-                                .AsNoTracking();
+            var logs = _context.LocationLogs.AsNoTracking();
 
-            // 🔥 GROUP theo device → lấy log mới nhất
-            var latestPerDevice = query
-                .GroupBy(x => x.DeviceId)
-                .Select(g => g
-                    .OrderByDescending(x => x.Timestamp)
-                    .First()
-                );
+            // ✅ EF Core-compatible: correlated NOT EXISTS subquery
+            // Lấy record mới nhất per device: giữ lại row L nếu không có row nào
+            // của cùng DeviceId có Timestamp lớn hơn.
+            var latestPerDevice = logs.Where(l =>
+                !logs.Any(other =>
+                    other.DeviceId  == l.DeviceId &&
+                    other.Timestamp >  l.Timestamp
+                )
+            );
 
             var totalCount = await latestPerDevice.CountAsync();
 
@@ -48,21 +66,15 @@ namespace Server.Controllers.Cms
                 .Select(x => new
                 {
                     locationId = x.LocationId,
-                    deviceId = x.DeviceId,
-                    latitude = x.Latitude,
-                    longitude = x.Longitude,
-                    timestamp = x.Timestamp,
-
-                    // 🔥 tính luôn trạng thái online tại BE
-                    isOnline = x.Timestamp >= onlineThreshold
+                    deviceId   = x.DeviceId,
+                    latitude   = x.Latitude,
+                    longitude  = x.Longitude,
+                    timestamp  = x.Timestamp,
+                    isOnline   = x.Timestamp >= onlineThreshold
                 })
                 .ToListAsync();
 
-            return Ok(new
-            {
-                data,
-                totalCount
-            });
+            return Ok(new { data, totalCount });
         }
 
         // ================================
@@ -75,9 +87,7 @@ namespace Server.Controllers.Cms
 
             var today = now.Date;
             var month = new DateTime(now.Year, now.Month, 1);
-            var year = new DateTime(now.Year, 1, 1);
-
-            var onlineThreshold = now.AddMinutes(-5);
+            var year  = new DateTime(now.Year, 1, 1);
 
             var logs = _context.LocationLogs.AsNoTracking();
 
@@ -99,18 +109,13 @@ namespace Server.Controllers.Cms
                 .Distinct()
                 .CountAsync();
 
-            var onlineCount = await logs
-                .Where(x => x.Timestamp >= onlineThreshold)
-                .Select(x => x.DeviceId)
-                .Distinct()
-                .CountAsync();
-
             return Ok(new
             {
-                online = onlineCount,
-                today = todayCount,
-                month = monthCount,
-                year = yearCount
+                // ✅ online = in-memory (instant, no DB query)
+                online = _presence.OnlineCount,
+                today  = todayCount,
+                month  = monthCount,
+                year   = yearCount
             });
         }
     }
