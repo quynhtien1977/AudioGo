@@ -62,7 +62,8 @@ namespace Server.Repositories
                 .Select(g => new DailyListenDto
                 {
                     Date = g.Key,
-                    Count = g.Count()
+                    Count = g.Count(),
+                    TotalDuration = g.Sum(x => x.ListenDuration)
                 })
                 .OrderBy(x => x.Date)
                 .ToListAsync();

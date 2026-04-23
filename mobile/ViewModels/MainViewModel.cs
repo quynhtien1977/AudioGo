@@ -482,7 +482,7 @@ namespace AudioGo.ViewModels
         {
             try
             {
-                var deviceId = await SecureStorage.GetAsync("deviceId") ?? "unknown";
+                var deviceId = await SecureStorage.GetAsync("AppDeviceId") ?? "unknown";
                 await _api.PostListenHistoryAsync(poiId, deviceId, durationSec);
                 System.Diagnostics.Debug.WriteLine($"[ListenHistory] Logged: poi={poiId}, duration={durationSec}s");
             }

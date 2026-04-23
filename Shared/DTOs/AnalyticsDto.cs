@@ -10,6 +10,7 @@ namespace Shared.DTOs
     {
         public DateTime Date { get; set; }
         public int Count { get; set; }
+        public int TotalDuration { get; set; }
     }
 
     // ── Device Activity Timeline ─────────────────────────────────────────────

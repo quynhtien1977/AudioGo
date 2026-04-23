@@ -5,8 +5,24 @@ import { getDeviceActivity } from '@/api/analyticsApi'
 import { getAllPOIs } from '@/api/poiApi'
 
 // ───────────────────────────── LEAFLET IMPORT ─────────────────────────────
-import { MapContainer, TileLayer, Polyline, CircleMarker, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, Polyline, CircleMarker, Popup, Marker } from 'react-leaflet'
+import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+let DefaultIcon = L.icon({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+L.Marker.prototype.options.icon = DefaultIcon;
 
 const DAYS_OPTIONS = [1, 3, 7, 14, 30]
 
@@ -73,6 +89,11 @@ export default function DeviceActivityPage() {
     ? gpsPoints[Math.floor(gpsPoints.length / 2)]
     : [10.7769, 106.7009]
 
+  // Tính toán số lượng POI unique
+  const uniquePoisCount = new Set(
+    activity?.timeline?.filter(e => e.eventType === 'listen' && e.poiId).map(e => e.poiId)
+  ).size
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '1100px', margin: '0 auto', padding: '2rem 0', width: '100%' }}>
 
@@ -137,8 +158,8 @@ export default function DeviceActivityPage() {
           {/* SUMMARY CARDS */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
             <StatCard label="Thiết bị" value={activity.deviceId} small />
-            <StatCard label="Điểm GPS đã ghi" value={activity.totalLocations} color="#2563eb" />
-            <StatCard label="POI đã nghe" value={activity.totalListens} color="#7c3aed" />
+            <StatCard label="Tổng lượt nghe POI" value={activity.totalListens} color="#7c3aed" />
+            <StatCard label="Số POI đã ghé" value={uniquePoisCount} color="#2563eb" />
             <StatCard label="Hoạt động trong" value={`${days} ngày`} color="#059669" />
           </div>
 
@@ -174,14 +195,9 @@ export default function DeviceActivityPage() {
                   
                   {/* POI Markers */}
                   {pois.map(poi => (
-                    <CircleMarker 
+                    <Marker 
                       key={poi.poiId} 
-                      center={[poi.latitude, poi.longitude]} 
-                      radius={6} 
-                      color="#0ea5e9" 
-                      fillColor="#0ea5e9" 
-                      fillOpacity={0.8}
-                      weight={2}
+                      position={[poi.latitude, poi.longitude]} 
                     >
                       <Popup>
                         <div style={{ fontWeight: '600' }}>{poi.title}</div>
@@ -189,7 +205,7 @@ export default function DeviceActivityPage() {
                           {poi.latitude.toFixed(5)}, {poi.longitude.toFixed(5)}
                         </div>
                       </Popup>
-                    </CircleMarker>
+                    </Marker>
                   ))}
                 </MapContainer>
               </div>

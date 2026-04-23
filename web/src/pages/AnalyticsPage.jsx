@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { MapContainer, TileLayer, useMap, CircleMarker, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, useMap, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import 'leaflet.heat'
@@ -7,6 +7,21 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Map as MapIcon, BarChart3, TrendingUp, Headphones } from 'lucide-react'
 import { getHeatmap, getListenStats } from '@/api/analyticsApi'
 import { getAllPOIs } from '@/api/poiApi'
+
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+let DefaultIcon = L.icon({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+L.Marker.prototype.options.icon = DefaultIcon;
 
 // Component để inject heatmap layer vào leaflet map
 function HeatmapLayer({ points }) {
@@ -18,13 +33,14 @@ function HeatmapLayer({ points }) {
     const heatPoints = points.map(p => [p.latitude, p.longitude, p.count])
     const maxCount = Math.max(...points.map(p => p.count), 1)
     
-    // Cấu hình Heatmap
+    // Cấu hình Heatmap (Màu đỏ mờ biểu thị di chuyển)
     const heatLayer = L.heatLayer(heatPoints, {
       radius: 25,
-      blur: 15,
+      blur: 25,
       maxZoom: 16,
-      max: maxCount,
-      gradient: { 0.4: 'blue', 0.6: 'cyan', 0.7: 'lime', 0.8: 'yellow', 1.0: 'red' }
+      max: maxCount * 1.5,
+      minOpacity: 0.3,
+      gradient: { 0.4: '#fca5a5', 0.6: '#ef4444', 0.8: '#dc2626', 1.0: '#991b1b' }
     }).addTo(map)
     
     // Tự động zoom đến khu vực có dữ liệu
@@ -73,8 +89,25 @@ export default function AnalyticsPage() {
   // Chuẩn bị data cho biểu đồ cột
   const chartData = statsData?.dailyListens?.map(d => ({
     date: new Date(d.date).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }),
-    count: d.count
+    totalSeconds: d.totalDuration || 0,
+    durationMinutes: parseFloat(((d.totalDuration || 0) / 60).toFixed(1))
   })) || []
+
+  // Custom tooltip cho chart
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      const sec = data.totalSeconds;
+      const timeText = sec < 60 ? `${sec} giây` : `${Math.floor(sec / 60)} phút ${sec % 60 > 0 ? (sec % 60) + ' giây' : ''}`;
+      return (
+        <div style={{ backgroundColor: 'white', padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
+          <p style={{ margin: '0 0 0.5rem 0', fontWeight: '600', color: '#374151' }}>{label}</p>
+          <p style={{ margin: 0, color: '#8b5cf6', fontWeight: '500' }}>Tổng thời gian: {timeText}</p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   const totalListens = statsData?.totalListens || 0
 
@@ -117,7 +150,7 @@ export default function AnalyticsPage() {
         {/* CHART CONTAINER */}
         <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '1rem', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', gridColumn: 'span 2' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', color: '#4b5563', fontWeight: '600' }}>
-            <BarChart3 size={20} className="text-blue-500" /> Biểu Đồ Lượt Nghe 30 Ngày Qua
+            <BarChart3 size={20} className="text-blue-500" /> Biểu Đồ Tổng Thời Gian Nghe (Phút) - 30 Ngày Qua
           </div>
           <div style={{ height: '300px', width: '100%' }}>
             {chartData.length > 0 ? (
@@ -126,11 +159,8 @@ export default function AnalyticsPage() {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                   <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} dy={10} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
-                  <Tooltip 
-                    cursor={{ fill: '#f3f4f6' }}
-                    contentStyle={{ borderRadius: '0.5rem', border: 'none', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
-                  />
-                  <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f3f4f6' }} />
+                  <Bar dataKey="durationMinutes" fill="#8b5cf6" radius={[4, 4, 0, 0]} maxBarSize={40} name="Phút" />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -171,14 +201,9 @@ export default function AnalyticsPage() {
 
             {/* POI Markers */}
             {poisData.map(poi => (
-              <CircleMarker 
+              <Marker 
                 key={poi.poiId} 
-                center={[poi.latitude, poi.longitude]} 
-                radius={6} 
-                color="#0ea5e9" 
-                fillColor="#0ea5e9" 
-                fillOpacity={0.8}
-                weight={2}
+                position={[poi.latitude, poi.longitude]} 
               >
                 <Popup>
                   <div style={{ fontWeight: '600' }}>{poi.title}</div>
@@ -186,7 +211,7 @@ export default function AnalyticsPage() {
                     {poi.latitude.toFixed(5)}, {poi.longitude.toFixed(5)}
                   </div>
                 </Popup>
-              </CircleMarker>
+              </Marker>
             ))}
           </MapContainer>
         </div>
