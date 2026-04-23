@@ -79,7 +79,7 @@ public class ContentPipelineService : IContentPipelineService
             using var audioStream = await _tts.SynthesizeAsync(translatedDesc, targetLang);
 
             // 6. Upload to Blob
-            var container = _config["Azure:BlobStorage:AudioContainer"] ?? "audio";
+            var container = _config["Azure:BlobStorage:AudioContainer"] ?? "audio-files";
             var blobPath = $"{poi.PoiId}/{targetLang}.mp3";
             var audioUrl = await _blob.UploadAsync(container, blobPath, audioStream, "audio/mpeg");
 

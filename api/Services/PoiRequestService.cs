@@ -368,7 +368,7 @@ namespace Server.Services
                                     try { await pipeline.GenerateAudioAsync(master); } catch { }
                                 }
 
-                                var targetLangs = new[] { "en", "fr", "ja", "ko" };
+                                var targetLangs = new[] { "en", "fr", "ja", "ko", "vi", "zh-Hans", "th" };
                                 foreach (var lang in targetLangs)
                                 {
                                     try
