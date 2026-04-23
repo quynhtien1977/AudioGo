@@ -10,7 +10,9 @@ import {
   BadgeCheck,
   QrCode,
   Smartphone,
-  Rocket
+  Rocket,
+  Route as RouteIcon2,
+  BarChart3
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
@@ -63,16 +65,20 @@ export default function Sidebar() {
               Tour
             </MenuItem>
 
-            <MenuItem to="/analytics" icon={<BarChart size={18} />} isDisabled>
+            <MenuItem to="/analytics" icon={<BarChart3 size={18} />}>
               Phân tích
             </MenuItem>
-            
+
             <MenuItem to="/tracking" icon={<Smartphone size={18} />}>
               Quản lý thiết bị
             </MenuItem>
-            
+
+            <MenuItem to="/device-activity" icon={<RouteIcon2 size={18} />}>
+              Hoạt động thiết bị
+            </MenuItem>
+
             <MenuItem to="/queue-demo" icon={<Rocket size={18} />}>
-              Demo Queue
+              Giả lập thiết bị
             </MenuItem>
 
             <MenuItem to="/audio" icon={<Headphones size={18} />}>

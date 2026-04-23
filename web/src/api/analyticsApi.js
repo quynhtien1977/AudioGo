@@ -84,3 +84,17 @@ export const getListenStats = async (days = null) => {
     }
   }
 }
+
+/**
+ * 🔥 Device Activity Timeline
+ * GET /api/cms/analytics/devices/{deviceId}/activity?days=7
+ */
+export const getDeviceActivity = async (deviceId, days = 7) => {
+  try {
+    const res = await analyticsClient.get(`/devices/${encodeURIComponent(deviceId)}/activity?days=${days}`)
+    return res.data
+  } catch (error) {
+    console.error("Error fetching device activity:", error)
+    return null
+  }
+}

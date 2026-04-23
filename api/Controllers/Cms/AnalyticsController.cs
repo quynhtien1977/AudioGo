@@ -116,5 +116,70 @@ namespace Server.Controllers.Cms
                 DailyListens = dailyListens
             });
         }
+
+        /// <summary>
+        /// Timeline hoạt động của một thiết bị cụ thể:
+        /// gộp LocationLog + ListenHistory → sắp xếp theo thời gian.
+        /// GET /api/cms/analytics/devices/{deviceId}/activity?days=7
+        /// </summary>
+        [HttpGet("devices/{deviceId}/activity")]
+        public async Task<ActionResult<DeviceActivityDto>> GetDeviceActivity(
+            string deviceId,
+            [FromQuery] int days = 7)
+        {
+            var since = DateTime.UtcNow.AddDays(-days);
+
+            // ─── 1. Location logs của thiết bị ───────────────────────────
+            var locations = await _db.LocationLogs.AsNoTracking()
+                .Where(l => l.DeviceId == deviceId && l.Timestamp >= since)
+                .OrderBy(l => l.Timestamp)
+                .Select(l => new DeviceActivityEventDto(
+                    "location",
+                    l.Timestamp,
+                    l.Latitude,
+                    l.Longitude,
+                    null, null, null))
+                .ToListAsync();
+
+            // ─── 2. Listen history của thiết bị ──────────────────────────
+            var listens = await _db.ListenHistories.AsNoTracking()
+                .Where(h => h.DeviceId == deviceId && h.Timestamp >= since)
+                .OrderBy(h => h.Timestamp)
+                .Select(h => new { h.PoiId, h.Timestamp, h.ListenDuration })
+                .ToListAsync();
+
+            // Lấy tên POI (một query duy nhất, tránh N+1)
+            var poiIds = listens.Select(h => h.PoiId).Distinct().ToList();
+            var poiTitles = await _db.PoiContents.AsNoTracking()
+                .Where(c => poiIds.Contains(c.PoiId) && (c.IsMaster || c.LanguageCode == "vi"))
+                .GroupBy(c => c.PoiId)
+                .Select(g => new { PoiId = g.Key, Title = g.First().Title })
+                .ToDictionaryAsync(x => x.PoiId, x => x.Title);
+
+            var listenEvents = listens.Select(h => new DeviceActivityEventDto(
+                "listen",
+                h.Timestamp,
+                null, null,
+                h.PoiId,
+                poiTitles.GetValueOrDefault(h.PoiId, h.PoiId),
+                h.ListenDuration
+            )).ToList();
+
+            // ─── 3. Merge + sort theo thời gian ──────────────────────────
+            var timeline = locations.Concat(listenEvents)
+                .OrderBy(e => e.Timestamp)
+                .ToList();
+
+            var allTimestamps = timeline.Select(e => e.Timestamp).ToList();
+
+            return Ok(new DeviceActivityDto(
+                deviceId,
+                allTimestamps.Count > 0 ? allTimestamps.Min() : null,
+                allTimestamps.Count > 0 ? allTimestamps.Max() : null,
+                locations.Count,
+                listens.Count,
+                timeline
+            ));
+        }
     }
 }

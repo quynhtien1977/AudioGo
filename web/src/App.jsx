@@ -22,6 +22,8 @@ import TourDetailPage from "@/pages/TourDetailPage";
 import DeviceTrackingPage from "@/pages/DeviceTrackingPage";
 import AccessCodePage from "@/pages/AccessCodePage";
 import QueueDemoPage from "@/pages/QueueDemoPage";
+import DeviceActivityPage from "@/pages/DeviceActivityPage";
+import AnalyticsPage from "@/pages/AnalyticsPage";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 
@@ -265,6 +267,28 @@ export default function App() {
             <ProtectedRoute roles={["Admin"]}>
               <MainLayout>
                 <QueueDemoPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/device-activity"
+          element={
+            <ProtectedRoute roles={["Admin"]}>
+              <MainLayout>
+                <DeviceActivityPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/analytics"
+          element={
+            <ProtectedRoute roles={["Admin"]}>
+              <MainLayout>
+                <AnalyticsPage />
               </MainLayout>
             </ProtectedRoute>
           }
