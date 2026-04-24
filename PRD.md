@@ -369,6 +369,35 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 | :--- | :--- | :--- |
 | `GET` | `/api/cms/analytics/top-pois?top=N` | Top POI được nghe nhiều |
 | `GET` | `/api/cms/analytics/heatmap` | Heatmap vị trí |
+| `GET` | `/api/cms/analytics/device-activity?deviceId=&days=` | Timeline GPS + listen history của 1 thiết bị |
+
+#### Access Code Management (Admin)
+| Method | Route | Mô tả |
+| :--- | :--- | :--- |
+| `GET` | `/api/cms/accesscodes?page=&pageSize=` | Danh sách QR access codes (phân trang) |
+| `POST` | `/api/cms/accesscodes` | Tạo batch mã QR (`{ count }`) |
+| `DELETE` | `/api/cms/accesscodes/{id}` | Xóa mã QR |
+
+#### CMS Location Log (Admin)
+| Method | Route | Mô tả |
+| :--- | :--- | :--- |
+| `GET` | `/api/cms/location-logs` | Danh sách GPS log (filter deviceId, date) |
+| `DELETE` | `/api/cms/location-logs/{id}` | Xóa log entry |
+
+#### CMS Translation
+| Method | Route | Mô tả |
+| :--- | :--- | :--- |
+| `POST` | `/api/cms/translation/translate` | Dịch văn bản qua Azure Translator |
+
+#### Real-Time Hub (SignalR)
+| Endpoint | Giao thức | Mô tả |
+| :--- | :--- | :--- |
+| `/hubs/device` | WebSocket (SignalR) | Hub theo dõi thiết bị real-time |
+| ↳ `OnConnectedAsync` | Event | Mobile → đăng ký online; Admin → join group `admin_dashboard` |
+| ↳ `SendLocationUpdate(lat, lon)` | Mobile→Server | Gửi GPS real-time, lưu LocationLog qua Queue |
+| ↳ `GetActiveDevices()` | Web→Server | Snapshot danh sách thiết bị đang online |
+| ↳ `DeviceOnline / DeviceOffline` | Server→Web | Broadcast khi thiết bị kết nối/ngắt |
+| ↳ `LocationUpdated` | Server→Web | Broadcast vị trí GPS mới tới admin dashboard |
 
 ### 📱 Mobile APIs
 
@@ -393,114 +422,390 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 | Route | Trang | Quyền | Mô tả |
 | :--- | :--- | :--- | :--- |
 | `/` | `LoginPage` | Public | Đăng nhập CMS |
-| `/dashboard` | `DashboardPage` | Admin, Owner | Tổng quan thống kê |
-| `/pois` | `POIPage` | Admin, Owner | Danh sách POI + filter/search |
+| `/dashboard` | `DashboardPage` | Admin, Owner | Tổng quan thống kê (Top POI, Heatmap, Online devices) |
+| `/pois` | `POIPage` | Admin, Owner | Danh sách POI + filter/search/sort |
 | `/pois/add` | `AddPOIPage` | Owner | Form tạo POI mới |
 | `/pois/:id` | `POIDetailPage` | Admin, Owner | Chi tiết: content, gallery, pipeline |
 | `/accounts` | `AccountsPage` | Admin | CRUD tài khoản |
 | `/categories` | `CategoryPage` | Admin | CRUD danh mục |
 | `/tours` | `ToursPage` | Admin | Danh sách tour |
 | `/tours/:id` | `TourDetailPage` | Admin | Chi tiết tour: quản lý steps |
-| `/audio` | `AudioPage` | Owner | Quản lý audio files |
-| `/analytics` | — | Admin | Phân tích dữ liệu |
+| `/audio` | `AudioPage` | Admin, Owner | Quản lý audio files |
+| `/audio/:poiId` | `AudioContentPage` | Admin, Owner | Nội dung audio chi tiết của POI |
+| `/analytics` | `AnalyticsPage` | Admin | Phân tích dữ liệu nâng cao |
+| `/access-codes` | `AccessCodePage` | Admin | Quản lý mã QR kích hoạt |
+| `/device-tracking` | `DeviceTrackingPage` | Admin | Real-time map vị trí thiết bị (SignalR) |
+| `/device-activity` | `DeviceActivityPage` | Admin | Timeline GPS + lịch sử nghe của thiết bị |
 
 ---
 
 ## 📊 9. SƠ ĐỒ USECASE (USE CASE DIAGRAMS)
 
-### 9.1. Tổng Quan Usecase (Tất Cả Vai Trò)
+> **Nguồn:** Dựa hoàn toàn vào codebase — `mobile/AppShell.xaml`, `mobile/Views/`, `web/src/components/Sidebar.jsx`, `web/src/pages/`, `api/Controllers/`
 
-![Usecase Tổng Quan](./public/img/useCase_all.drawio.png)
+---
 
-### 9.2. Usecase — Du Khách (Guest / Mobile User)
+### 📋 Tổng Số Chức Năng Theo Actor
 
-![Usecase Du Khách](./public/img/useCase_user.drawio.png)
+| Actor | Nhóm chức năng | Số UC |
+| :--- | :--- | :---: |
+| **Du Khách (Guest)** | Onboarding, Bản đồ, Tìm kiếm, Chi tiết POI, Tour, Cài đặt, Nền | **13** |
+| **Chủ Quán (POI Owner)** | Xác thực, POI, Nội dung đa ngôn ngữ, Dashboard | **9** |
+| **Admin — Nội dung** | POI, Content Pipeline, Quản trị hệ thống, Phân tích | **14** |
+| **Admin — Giám sát** | Real-time, Hoạt động thiết bị, Mã QR, Giả lập | **10** |
+| **Tổng cộng** | | **46** |
 
-### 9.3. Usecase — Chủ Quán (POI Owner / Web CMS)
+---
 
-![Usecase Owner](./public/img/useCase_shop_owner.drawio.png)
+### 9.0. Usecase — Tổng Quan (Tất Cả Vai Trò)
 
-### 9.4. Usecase — Admin Hệ Thống (Web CMS)
+```mermaid
+flowchart LR
+    G["Du Khách\nGuest"]
+    O["Chủ Quán\nOwner"]
+    A["Admin"]
 
-![Usecase Admin](./public/img/useCase_admin.drawio.png)
+    subgraph AG["🎧 AudioGo System"]
+        U1(["Quét QR kích hoạt"])
+        U2(["Xem bản đồ & nghe audio"])
+        U3(["Tìm kiếm POI"])
+        U4(["Xem Tour"])
+        U5(["Đăng nhập CMS"])
+        U6(["Quản lý POI của mình"])
+        U7(["Upload nội dung & audio"])
+        U8(["Xem Dashboard"])
+        U9(["Quản lý toàn bộ POI"])
+        U10(["Chạy Content Pipeline"])
+        U11(["Quản lý tài khoản & danh mục"])
+        U12(["Giám sát thiết bị real-time"])
+        U13(["Quản lý mã QR"])
+        U14(["Xem Analytics"])
+    end
+
+    G --> U1
+    G --> U2
+    G --> U3
+    G --> U4
+
+    O --> U5
+    O --> U6
+    O --> U7
+    O --> U8
+
+    A --> U5
+    A --> U8
+    A --> U9
+    A --> U10
+    A --> U11
+    A --> U12
+    A --> U13
+    A --> U14
+```
+
+---
+
+### 9.1. Usecase — Du Khách (Guest / Mobile App)
+
+> **Codebase:** `mobile/AppShell.xaml` · `mobile/Views/` · `api/Controllers/Mobile/`
+> **Tổng UC: 13**
+
+```mermaid
+flowchart LR
+    Guest["Du Khách\n(Guest)"]
+
+    subgraph MOBILE["📱 Mobile App — .NET MAUI"]
+        direction TB
+
+        subgraph GRP_ONBOARD["Onboarding (WelcomePage / WelcomeQrScanPage)"]
+            UC1(["Xem màn hình chào"])
+            UC2(["Quét mã QR kích hoạt"])
+            UC3(["Đồng bộ dữ liệu lần đầu"])
+        end
+
+        subgraph GRP_MAP["Bản đồ (MapPage)"]
+            UC4(["Xem bản đồ POI"])
+            UC5(["Tự động phát audio theo geofence"])
+            UC6(["Điều khiển Mini-Player"])
+        end
+
+        subgraph GRP_SEARCH["Khám phá (SearchPage)"]
+            UC7(["Tìm kiếm POI"])
+            UC8(["Lọc POI theo Category"])
+        end
+
+        subgraph GRP_DETAIL["Chi tiết (PoiDetailPage)"]
+            UC9(["Xem thông tin POI"])
+            UC10(["Xem gallery ảnh"])
+            UC11(["Nghe audio theo ngôn ngữ"])
+        end
+
+        subgraph GRP_TOUR["Tour (TourListPage / TourDetailPage)"]
+            UC12(["Xem danh sách Tour"])
+            UC13(["Xem lộ trình & các bước POI"])
+        end
+
+        subgraph GRP_SETTINGS["Cài đặt (SettingsPage)"]
+            UC14(["Chọn ngôn ngữ"])
+            UC15(["Xóa cache offline"])
+        end
+
+        subgraph GRP_BG["Nền — Background Services"]
+            UC16(["Ghi Listen History"])
+            UC17(["Gửi GPS Location Log"])
+        end
+    end
+
+    Guest --> UC1
+    Guest --> UC2
+    Guest --> UC3
+    Guest --> UC4
+    Guest --> UC5
+    Guest --> UC6
+    Guest --> UC7
+    Guest --> UC8
+    Guest --> UC9
+    Guest --> UC10
+    Guest --> UC11
+    Guest --> UC12
+    Guest --> UC13
+    Guest --> UC14
+```
+
+---
+
+### 9.2. Usecase — Chủ Quán (POI Owner / Web CMS)
+
+> **Codebase:** `Sidebar.jsx` (role=Owner) · `POIPage.jsx` · `AudioPage.jsx` · `CmsPoiController.cs` · `CmsPoiContentController.cs`
+> **Tổng UC: 9**
+
+```mermaid
+flowchart LR
+    Owner["Chủ Quán\n(POI Owner)"]
+
+    subgraph CMS["🌐 Web CMS — Khu vực Owner"]
+        direction TB
+
+        subgraph GRP_AUTH["Xác thực (LoginPage)"]
+            UC20(["Đăng nhập CMS"])
+        end
+
+        subgraph GRP_POI["Quản lý POI (POIPage)"]
+            UC21(["Xem danh sách POI của mình"])
+            UC22(["Tạo POI mới"])
+            UC23(["Sửa thông tin POI"])
+            UC24(["Upload logo POI"])
+            UC25(["Upload ảnh gallery"])
+        end
+
+        subgraph GRP_CONTENT["Nội dung đa ngôn ngữ (AudioPage)"]
+            UC26(["Xem nội dung theo ngôn ngữ"])
+            UC27(["Tạo / Sửa bản Master"])
+            UC28(["Upload audio thủ công"])
+        end
+
+        subgraph GRP_DASHBOARD["Dashboard (DashboardPage)"]
+            UC29(["Xem thống kê tổng quan"])
+        end
+    end
+
+    Owner --> UC20
+    Owner --> UC21
+    Owner --> UC22
+    Owner --> UC23
+    Owner --> UC24
+    Owner --> UC25
+    Owner --> UC26
+    Owner --> UC27
+    Owner --> UC28
+    Owner --> UC29
+```
+
+---
+
+### 9.3. Usecase — Admin (Web CMS — Quản Trị & Nội Dung)
+
+> **Codebase:** `Sidebar.jsx` (role=Admin) · `CmsPoiController.cs` · `CmsAccountController.cs` · `CmsCategoryController.cs` · `CmsTourController.cs` · `CmsContentPipelineController.cs` · `AnalyticsController.cs`
+> **Tổng UC: 14**
+
+```mermaid
+flowchart LR
+    Admin["Admin"]
+
+    subgraph CMS["🌐 Web CMS — Quản Trị & Nội Dung"]
+        direction TB
+
+        subgraph GRP_POI["Quản lý POI (POIPage / AddPOIPage)"]
+            UC30(["Xem toàn bộ POI hệ thống"])
+            UC31(["Tạo / Sửa / Xóa POI"])
+            UC32(["Xét duyệt POI mới"])
+            UC33(["Xét duyệt POI xóa"])
+            UC34(["Upload logo POI"])
+        end
+
+        subgraph GRP_CONTENT["Bản dịch & Audio (AudioPage)"]
+            UC35(["Tạo audio 1 POI"])
+            UC36(["Tạo audio batch"])
+            UC37(["Dịch + TTS toàn bộ 7 ngôn ngữ"])
+            UC38(["Xem kết quả pipeline"])
+        end
+
+        subgraph GRP_MGMT["Quản trị hệ thống"]
+            UC39(["CRUD tài khoản Owner"])
+            UC40(["CRUD danh mục Category"])
+            UC41(["CRUD Tour & StepOrder"])
+        end
+
+        subgraph GRP_ANALYTICS["Phân tích dữ liệu"]
+            UC42(["Xem Dashboard tổng quan"])
+            UC43(["Xem Analytics chi tiết"])
+        end
+    end
+
+    Admin --> UC30
+    Admin --> UC31
+    Admin --> UC32
+    Admin --> UC33
+    Admin --> UC34
+    Admin --> UC35
+    Admin --> UC36
+    Admin --> UC37
+    Admin --> UC38
+    Admin --> UC39
+    Admin --> UC40
+    Admin --> UC41
+    Admin --> UC42
+    Admin --> UC43
+```
+
+---
+
+### 9.4. Usecase — Admin (Web CMS — Giám Sát Thiết Bị & Mã QR)
+
+> **Codebase:** `DeviceTrackingPage.jsx` · `DeviceActivityPage.jsx` · `AccessCodePage.jsx` · `QueueDemoPage.jsx` · `DeviceHub.cs` · `CmsAccessCodeController.cs` · `CmsLocationLogController.cs`
+> **Tổng UC: 10**
+
+```mermaid
+flowchart LR
+    Admin["Admin"]
+    MobileApp["Mobile App\n(system)"]
+
+    subgraph CMS["🌐 Web CMS — Giám Sát & Truy Cập"]
+        direction TB
+
+        subgraph GRP_TRACK["Giám sát Real-time (DeviceTrackingPage / DeviceHub SignalR)"]
+            UC50(["Xem bản đồ vị trí thiết bị"])
+            UC51(["Nhận cảnh báo Online / Offline"])
+            UC52(["Xem danh sách thiết bị kết nối"])
+        end
+
+        subgraph GRP_ACTIVITY["Hoạt động thiết bị (DeviceActivityPage)"]
+            UC53(["Xem timeline hoạt động"])
+            UC54(["Xem lộ trình GPS & lịch sử nghe"])
+            UC55(["Xóa GPS Location Logs"])
+        end
+
+        subgraph GRP_QR["Quản lý mã QR (AccessCodePage)"]
+            UC56(["Xem danh sách mã QR"])
+            UC57(["Tạo batch mã QR 1–100"])
+            UC58(["Xóa mã QR"])
+        end
+
+        subgraph GRP_DEMO["Giả lập (QueueDemoPage)"]
+            UC59(["Giả lập thiết bị gửi GPS"])
+        end
+    end
+
+    Admin --> UC50
+    Admin --> UC51
+    Admin --> UC52
+    Admin --> UC53
+    Admin --> UC54
+    Admin --> UC55
+    Admin --> UC56
+    Admin --> UC57
+    Admin --> UC58
+    Admin --> UC59
+
+    MobileApp --> UC50
+    MobileApp --> UC51
+```
 
 ---
 
 ## 🧩 10. SƠ ĐỒ LỚP (CLASS DIAGRAMS)
 
-### 10.1. Tổng Quan — Backend Entity & DTO (Overview)
 
-> Sơ đồ rút gọn thể hiện 11 Entity + DTO chính và mối quan hệ.
+### 10.1. Tổng Quan — Backend Entity (Overview)
+
+> 11 Entity chính và quan hệ — tối giản, đúng với `api/Models/`.
 
 ```mermaid
 classDiagram
-    direction TB
-    class Account { +AccountId «PK» +Role }
-    class Poi { +PoiId «PK» +AccountId «FK» +IsActive }
-    class PoiContent { +ContentId «PK» +PoiId «FK» +LanguageCode +IsMaster }
-    class PoiGallery { +ImageId «PK» +PoiId «FK» }
-    class Category { +CategoryId «PK» +Name }
-    class CategoryPoi { +CategoryId «FK» +PoiId «FK» }
-    class Tour { +TourId «PK» +Name }
-    class TourPoi { +TourId «FK» +PoiId «FK» +StepOrder }
-    class AppAccessCode { +CodeId «PK» +Code +ExpireAt }
-    class ListenHistory { +HistoryId «PK» +PoiId «FK» }
-    class LocationLog { +LocationId «PK» +DeviceId }
-    class POI { «Mobile DTO» }
-    class PoiDetailDto { «CMS DTO» }
-    class CategoryDto { «DTO» }
-    class TourSummaryDto { «DTO» }
+    direction LR
+    class Account { +AccountId +Role }
+    class Poi { +PoiId +AccountId«FK» +IsActive }
+    class PoiContent { +ContentId +PoiId«FK» +LanguageCode +IsMaster }
+    class PoiGallery { +ImageId +PoiId«FK» }
+    class Category { +CategoryId +Name }
+    class Tour { +TourId +Name }
+    class AppAccessCode { +CodeId +Code +UsedByDeviceId +ExpireAt }
+    class ListenHistory { +HistoryId +DeviceId +PoiId«FK» +ListenDuration }
+    class LocationLog { +LocationId +DeviceId +Latitude +Longitude }
 
     Account "1" --> "0..*" Poi : owns
     Poi "1" --> "0..*" PoiContent : has
     Poi "1" --> "0..*" PoiGallery : has
-    Poi "0..*" <--> "0..*" Category : via CategoryPoi
-    Tour "0..*" <--> "0..*" Poi : via TourPoi
-    ListenHistory --> Poi : references
-    Poi ..|> POI : maps to
-    Poi ..|> PoiDetailDto : maps to
-    Category ..|> CategoryDto : maps to
-    Tour ..|> TourSummaryDto : maps to
+    Poi "0..*" <--> "0..*" Category : CategoryPoi
+    Tour "0..*" <--> "0..*" Poi : TourPoi
+    ListenHistory --> Poi
 ```
 
 ### 10.2. Tổng Quan — Backend Application Logic (Overview)
 
-> Controllers → Services / Repositories → Data Layer.
+> Controllers → Services / Repositories → Data Layer + Real-Time Hub.
 
 ```mermaid
 classDiagram
     direction LR
     class AuthController { «api/auth» }
     class CmsPoiController { «api/cms/pois 🔒» }
-    class CmsPoiContentController { «api/cms/content 🔒» }
     class CmsContentPipelineController { «api/cms/pipeline 🔒» }
     class CmsAccountController { «api/cms/accounts 🔒» }
     class CmsCategoryController { «api/cms/categories 🔒» }
     class CmsTourController { «api/cms/tours 🔒» }
     class AnalyticsController { «api/cms/analytics 🔒» }
+    class CmsAccessCodeController { «api/cms/accesscodes 🔒» }
     class MediaController { «api/cms/media 🔒» }
     class PoiController { «api/mobile/poi» }
     class AuthMobileController { «api/mobile/auth» }
 
+    class DeviceHub { «SignalR /hubs/device» }
+    class IDevicePresenceService { <<interface>> }
+    class DevicePresenceService { «Singleton in-memory» }
+    class ILocationQueue { <<interface>> }
+
     class AuthService
     class ContentPipelineService
+    class PoiRequestService
     class IBlobStorageService { <<interface>> }
     class IPoiRepository { <<interface>> }
     class IAccountRepository { <<interface>> }
-    class ICategoryRepository { <<interface>> }
-    class ITourRepository { <<interface>> }
     class AppDbContext
 
     AuthController --> AuthService
     CmsPoiController --> IPoiRepository
     CmsAccountController --> IAccountRepository
-    CmsCategoryController --> ICategoryRepository
-    CmsTourController --> ITourRepository
+    CmsCategoryController --> AppDbContext
+    CmsTourController --> AppDbContext
     CmsContentPipelineController --> ContentPipelineService
-    MediaController --> IBlobStorageService
     AnalyticsController --> AppDbContext
-    PoiController --> AppDbContext
+    CmsAccessCodeController --> AppDbContext
+    MediaController --> IBlobStorageService
+    PoiController --> PoiRequestService
     ContentPipelineService --> IBlobStorageService
+    DeviceHub --> IDevicePresenceService
+    DeviceHub --> ILocationQueue
+    DevicePresenceService ..|> IDevicePresenceService
 ```
 
 ### 10.3. Tổng Quan — Mobile Architecture (Overview)
@@ -1262,31 +1567,253 @@ classDiagram
 
 ## 🔄 11. SƠ ĐỒ TRÌNH TỰ (SEQUENCE DIAGRAMS)
 
-### 11.1. Khởi Động App & Đồng Bộ Dữ Liệu (📱 Mobile)
+> **Mapping:** Mỗi diagram bên dưới tương ứng trực tiếp với các Use Case ở Section 9.
+> **Ký hiệu:** `participant` = thành phần tham gia · `->>` = gọi đồng bộ · `-->>` = phản hồi · `alt/opt/loop` = nhánh điều kiện
 
-![Sequence: Đồng bộ](./public/img/sequence_syncmobile.drawio.png)
+---
 
-### 11.2. Theo Dõi Vị Trí & Tự Động Phát Audio (📱 Mobile)
+### 11.1. Khởi Động App & Xác Thực QR (📱 Mobile — UC1, UC2, UC3)
 
-![Sequence: Geofencing](./public/img/sequenceAutoPlayAudioInBoundary.drawio.png)
-
-### 11.3. Content Pipeline — Backend (CMS + Auto-generate)
-
-![Sequence: Pipeline](./public/img/sequence_contentPipelineGeneratemobile.drawio.png)
-
-### 11.4. Xác Thực QR Code (📱 Mobile → Backend)
-
-![Sequence: QR Auth](./public/img/sequence_authQRmobile.drawio.png)
-
-### 11.5. CMS — Đăng Nhập (🌐 Web CMS)
-
-![Sequence: CMS Login](./public/img/sequence_loginweb.drawio.png)
-
-### 11.6. CMS — Quản Lý POI (🌐 Web CMS)
+> **UC:** UC1 Xem màn hình chào · UC2 Quét QR kích hoạt · UC3 Đồng bộ dữ liệu lần đầu
 
 ```mermaid
 sequenceDiagram
-    actor Admin
+    participant MobileUser as Người dùng
+    participant Welcome as WelcomePage
+    participant QrPage as WelcomeQrScanPage
+    participant VM as WelcomeViewModel
+    participant API as ApiService
+    participant AuthCtrl as AuthMobileController
+    participant SyncSvc as SyncService
+    participant DB as Local SQLite
+
+    MobileUser ->> Welcome: Mở App
+    Welcome ->> VM: CheckFirstLaunch()
+
+    alt Đã có DeviceId (đã kích hoạt trước)
+        VM -->> Welcome: Navigate → MapPage
+    else Lần đầu — chưa có DeviceId
+        VM -->> Welcome: Hiển thị màn hình chào (WelcomePage)
+        MobileUser ->> Welcome: Nhấn "Bắt đầu"
+        Welcome ->> QrPage: Navigate → WelcomeQrScanPage
+
+        MobileUser ->> QrPage: Camera quét mã QR
+        QrPage ->> VM: OnQrScanned(code)
+        VM ->> API: AuthenticateAsync(qrCode)
+        API ->> AuthCtrl: POST /api/mobile/auth/authenticate { code }
+        AuthCtrl ->> AuthCtrl: Validate AppAccessCode (chưa dùng, chưa hết hạn)
+
+        alt Mã hợp lệ
+            AuthCtrl -->> API: 200 { deviceId, jwtToken }
+            API -->> VM: DeviceId + JWT
+            VM ->> VM: Lưu DeviceId + Token vào SecureStorage
+            VM ->> SyncSvc: SyncAllAsync()
+            SyncSvc ->> API: GetPoisAsync() / GetToursAsync() / GetCategoriesAsync()
+            API -->> SyncSvc: POIs + Tours + Categories
+            SyncSvc ->> DB: Upsert local cache
+            VM -->> QrPage: Navigate → MapPage
+        else Mã không hợp lệ / đã dùng
+            AuthCtrl -->> API: 400 Bad Request
+            API -->> VM: Exception
+            VM -->> QrPage: Hiển thị lỗi "Mã QR không hợp lệ"
+        end
+    end
+```
+
+---
+
+### 11.2. Theo Dõi Vị Trí & Tự Động Phát Audio — Geofence (📱 Mobile — UC4, UC5, UC6)
+
+> **UC:** UC4 Xem bản đồ POI · UC5 Tự động phát audio theo geofence · UC6 Điều khiển Mini-Player
+
+```mermaid
+sequenceDiagram
+    participant MobileUser as Người dùng
+    participant MapPage
+    participant MapVM as MapViewModel
+    participant GeoSvc as GeofenceService
+    participant AudioSvc as AudioPlayerService
+    participant API as ApiService
+    participant Ctrls as MobileControllers
+    participant Queues as BackgroundQueues
+    participant HostedSvc as HostedServices
+    participant DB as AppDbContext
+
+    MobileUser ->> MapPage: Mở MapPage
+    MapPage ->> MapVM: InitializeAsync()
+    MapVM ->> API: GetPoisAsync(lang)
+    API -->> MapVM: List~PoiSummaryDto~
+    MapVM -->> MapPage: Render POI pins trên bản đồ
+
+    loop Định kỳ (GPS polling - Background)
+        GeoSvc ->> GeoSvc: GetCurrentLocation()
+        GeoSvc ->> GeoSvc: CheckGeofence(location, activePois)
+
+        alt Thiết bị vào geofence POI mới
+            GeoSvc ->> MapVM: OnPoiEntered(poi)
+            MapVM ->> AudioSvc: PlayAsync(poi.AudioUrl, lang)
+            AudioSvc -->> MapPage: Hiển thị Mini-Player (tiêu đề POI)
+        end
+
+        opt Thiết bị rời khỏi geofence
+            GeoSvc ->> MapVM: OnPoiExited(poi)
+            MapVM ->> AudioSvc: StopAsync()
+            MapVM ->> API: PostListenHistoryAsync(poiId, duration)
+            API ->> Ctrls: POST /api/mobile/listen-history
+            Ctrls ->> Queues: QueueListenHistoryAsync()
+            Ctrls -->> API: 202 Accepted
+        end
+
+        GeoSvc ->> API: PostLocationLogAsync(batch)
+        API ->> Ctrls: POST /api/mobile/location-log
+        Ctrls ->> Queues: QueueLocationAsync()
+        Ctrls -->> API: 202 Accepted
+    end
+
+    loop Background Services
+        HostedSvc ->> Queues: ReadAsync() (batching)
+        Queues -->> HostedSvc: List Data (ListenHistory / LocationLog)
+        HostedSvc ->> DB: CreateBatchAsync()
+    end
+
+    MobileUser ->> MapPage: Nhấn nút Play/Pause trên Mini-Player
+    MapPage ->> AudioSvc: TogglePlayPause()
+    AudioSvc -->> MapPage: Cập nhật trạng thái nút
+
+    MobileUser ->> MapPage: Kéo thanh seek
+    MapPage ->> AudioSvc: SeekTo(position)
+```
+
+---
+
+### 11.3. Xem Chi Tiết POI & Nghe Audio (📱 Mobile — UC9, UC10, UC11)
+
+> **UC:** UC9 Xem thông tin POI · UC10 Xem gallery ảnh · UC11 Nghe audio theo ngôn ngữ
+
+```mermaid
+sequenceDiagram
+    participant MobileUser as Người dùng
+    participant MapPage
+    participant DetailPage as PoiDetailPage
+    participant DetailVM as PoiDetailViewModel
+    participant GalleryPage as GalleryFullScreenPage
+    participant API as ApiService
+    participant Backend as PoiMobileController
+
+    MobileUser ->> MapPage: Nhấn vào POI pin
+    MapPage ->> DetailPage: Navigate(poiId)
+    DetailPage ->> DetailVM: LoadAsync(poiId, lang)
+    DetailVM ->> API: GetPoiDetailAsync(poiId, lang)
+    API ->> Backend: GET /api/mobile/poi/{poiId}?lang=vi
+    Backend -->> API: PoiDetailDto (info, audioUrl, gallery[])
+    API -->> DetailVM: PoiDetailDto
+    DetailVM -->> DetailPage: Render thông tin + gallery thumbnails
+
+    MobileUser ->> DetailPage: Nhấn nút "Nghe audio"
+    DetailPage ->> DetailVM: PlayAudio(audioUrl, lang)
+    DetailVM ->> DetailVM: Chuyển ngôn ngữ nếu cần
+    DetailVM -->> DetailPage: Mở Mini-Player với audio POI
+
+    MobileUser ->> DetailPage: Nhấn ảnh trong gallery
+    DetailPage ->> GalleryPage: Navigate(images[], selectedIndex)
+    GalleryPage -->> MobileUser: Hiển thị ảnh full-screen (swipe)
+
+    MobileUser ->> DetailPage: Đổi ngôn ngữ audio (vi/en/ja/...)
+    DetailPage ->> DetailVM: ChangeLanguage(lang)
+    DetailVM ->> API: GetPoiDetailAsync(poiId, newLang)
+    API ->> Backend: GET /api/mobile/poi/{poiId}?lang=en
+    Backend -->> API: PoiDetailDto (ngôn ngữ mới)
+    DetailVM -->> DetailPage: Cập nhật audio URL + nội dung
+```
+
+---
+
+### 11.4. Tìm Kiếm & Lọc POI (📱 Mobile — UC7, UC8)
+
+> **UC:** UC7 Tìm kiếm POI · UC8 Lọc POI theo Category
+
+```mermaid
+sequenceDiagram
+    participant MobileUser as Người dùng
+    participant SearchPage
+    participant SearchVM as SearchViewModel
+    participant API as ApiService
+    participant Backend as SearchMobileController
+
+    MobileUser ->> SearchPage: Mở tab Search
+    SearchPage ->> SearchVM: LoadCategoriesAsync()
+    SearchVM ->> API: GetCategoriesAsync()
+    API ->> Backend: GET /api/mobile/categories
+    Backend -->> API: List~CategoryDto~
+    API -->> SearchVM: Categories
+    SearchVM -->> SearchPage: Hiển thị bộ lọc Category
+
+    MobileUser ->> SearchPage: Nhập từ khóa tìm kiếm
+    SearchPage ->> SearchVM: SearchAsync(keyword, categoryId)
+    SearchVM ->> API: SearchPoisAsync(keyword, lang, categoryId)
+    API ->> Backend: GET /api/mobile/poi/search?q=...&lang=vi&categoryId=...
+    Backend -->> API: List~PoiSummaryDto~
+    API -->> SearchVM: Kết quả tìm kiếm
+    SearchVM -->> SearchPage: Render danh sách POI kết quả
+
+    MobileUser ->> SearchPage: Chọn bộ lọc Category
+    SearchPage ->> SearchVM: FilterByCategory(categoryId)
+    SearchVM ->> SearchVM: Filter local cache (không gọi API lại)
+    SearchVM -->> SearchPage: Render danh sách đã lọc
+
+    MobileUser ->> SearchPage: Nhấn vào POI trong kết quả
+    SearchPage -->> MobileUser: Navigate → PoiDetailPage(poiId)
+```
+
+---
+
+### 11.5. CMS — Đăng Nhập (🌐 Web CMS — UC20)
+
+> **UC:** UC20 Đăng nhập CMS (Owner & Admin)
+
+```mermaid
+sequenceDiagram
+    participant AdminUser as Owner / Admin
+    participant LoginPage
+    participant AuthCtx as AuthContext (React)
+    participant API as axiosInstance
+    participant AuthCtrl as AuthController (Backend)
+    participant DB as AppDbContext
+
+    MobileUser ->> LoginPage: Nhập username + password → Nhấn Login
+    LoginPage ->> AuthCtx: login(username, password)
+    AuthCtx ->> API: POST /api/auth/login { username, password }
+    API ->> AuthCtrl: Login(request)
+    AuthCtrl ->> DB: Query Account WHERE Username = ?
+    DB -->> AuthCtrl: Account (PasswordHash, Role)
+    AuthCtrl ->> AuthCtrl: BCrypt.Verify(password, hash)
+
+    alt Xác thực thành công
+        AuthCtrl ->> AuthCtrl: GenerateJWT(accountId, role)
+        AuthCtrl -->> API: 200 { token, role, accountId }
+        API -->> AuthCtx: token + role
+        AuthCtx ->> AuthCtx: Lưu token vào localStorage / Cookie
+        AuthCtx -->> LoginPage: Redirect theo role
+
+        alt role == "Admin"
+            LoginPage -->> MobileUser: Navigate → Dashboard (Admin)
+        else role == "Owner"
+            LoginPage -->> MobileUser: Navigate → POI List (Owner)
+        end
+    else Sai thông tin
+        AuthCtrl -->> API: 401 Unauthorized
+        API -->> AuthCtx: Error
+        AuthCtx -->> LoginPage: Hiển thị lỗi "Sai tên đăng nhập hoặc mật khẩu"
+    end
+```
+
+---
+
+### 11.6. CMS — Quản Lý POI (🌐 Web CMS — UC21–UC25, UC30–UC34)
+
+```mermaid
+sequenceDiagram
+    participant Admin
     participant CMS as Web CMS (Browser)
     participant PoiCtrl as CmsPoiController
     participant DB as AppDbContext
@@ -1320,11 +1847,13 @@ sequenceDiagram
     PoiCtrl -->> CMS: 204 No Content
 ```
 
-### 11.7. CMS — Content Pipeline Trigger (🌐 Web CMS)
+---
+
+### 11.7. CMS — Content Pipeline Trigger (🌐 Web CMS — UC35, UC36, UC37, UC38)
 
 ```mermaid
 sequenceDiagram
-    actor Admin
+    participant Admin
     participant CMS as Web CMS (Browser)
     participant PipeCtrl as CmsContentPipelineController
     participant Pipeline as ContentPipelineService
@@ -1370,11 +1899,13 @@ sequenceDiagram
     CMS -->> Admin: Hiển thị nội dung đã dịch
 ```
 
-### 11.8. CMS — Gallery & Media Upload (🌐 Web CMS)
+---
+
+### 11.8. CMS — Gallery & Media Upload (🌐 Web CMS — UC24, UC25)
 
 ```mermaid
 sequenceDiagram
-    actor Admin
+    participant Admin
     participant CMS as Web CMS (Browser)
     participant GalleryCtrl as CmsPoiGalleryController
     participant MediaCtrl as MediaController
@@ -1402,19 +1933,61 @@ sequenceDiagram
     MediaCtrl -->> CMS: 200 { url }
 ```
 
-### 11.9. Phát Audio Mini-Player (📱 Mobile — Pause/Resume)
+---
 
-![Sequence: Mini-Player](./public/img/sequence_audioMiniPlayAndPoiDetailmobile.drawio.png)
+### 11.9. Phát Audio Mini-Player — Pause/Resume (📱 Mobile — UC6, UC11)
 
-### 11.10. Tìm Kiếm & Lọc POI (📱 Mobile)
+> **UC:** UC6 Điều khiển Mini-Player · UC11 Nghe audio theo ngôn ngữ
 
-![Sequence: Search](./public/img/sequence_searchAndFillmobile.drawio.png)
+```mermaid
+sequenceDiagram
+    participant MobileUser as Người dùng
+    participant MiniPlayer as MiniPlayerView
+    participant AudioSvc as AudioPlayerService
+    participant DetailPage as PoiDetailPage
+    participant DetailVM as PoiDetailViewModel
+
+    MobileUser ->> MiniPlayer: Nhấn Pause
+    MiniPlayer ->> AudioSvc: PauseAsync()
+    AudioSvc ->> AudioSvc: MediaElement.Pause()
+    AudioSvc -->> MiniPlayer: State = Paused
+    MiniPlayer -->> MobileUser: Nút chuyển sang Play
+
+    MobileUser ->> MiniPlayer: Nhấn Play (Resume)
+    MiniPlayer ->> AudioSvc: ResumeAsync()
+    AudioSvc ->> AudioSvc: MediaElement.Play()
+    AudioSvc -->> MiniPlayer: State = Playing
+
+    MobileUser ->> MiniPlayer: Kéo thanh seek (thay đổi vị trí)
+    MiniPlayer ->> AudioSvc: SeekTo(position)
+    AudioSvc ->> AudioSvc: MediaElement.SeekTo(position)
+
+    MobileUser ->> MiniPlayer: Đổi tốc độ phát (0.75x / 1.0x / 1.25x / 1.5x)
+    MiniPlayer ->> AudioSvc: SetPlaybackSpeed(rate)
+    AudioSvc -->> MiniPlayer: Speed updated
+
+    MobileUser ->> DetailPage: Mở PoiDetailPage từ Mini-Player
+    DetailPage ->> DetailVM: LoadAsync(currentPoiId)
+    DetailVM -->> DetailPage: Hiển thị chi tiết POI đang phát
+
+    MobileUser ->> MiniPlayer: Nhấn nút X (đóng player)
+    MiniPlayer ->> AudioSvc: StopAsync()
+    AudioSvc -->> MiniPlayer: Hidden
+```
+
+---
+
+### 11.10. Tìm Kiếm & Lọc POI — Đã hợp nhất vào 11.4
+
+> *Xem lại **11.4** — Tìm kiếm & Lọc POI (UC7, UC8)*
+
+---
 
 ### 11.11. Xem Tour (📱 Mobile)
 
 ```mermaid
 sequenceDiagram
-    actor User
+    participant MobileUser as Người dùng
     participant ListUI as TourListPage
     participant ListVM as TourListViewModel
     participant DetailUI as TourDetailPage
@@ -1422,7 +1995,7 @@ sequenceDiagram
     participant API as ApiService
     participant Backend as TourMobileController
 
-    User ->> ListUI: Mở tab Tours
+    MobileUser ->> ListUI: Mở tab Tours
     ListUI ->> ListVM: LoadToursAsync()
     ListVM ->> API: GetToursAsync(lang)
     API ->> Backend: GET /api/mobile/tour?lang=vi
@@ -1430,7 +2003,7 @@ sequenceDiagram
     API -->> ListVM: List<TourSummaryDto>
     ListVM -->> ListUI: Hiển thị danh sách tour
 
-    User ->> ListUI: Chọn một tour
+    MobileUser ->> ListUI: Chọn một tour
     ListUI ->> DetailUI: Navigate(tourId)
     DetailUI ->> DetailVM: LoadTourDetailAsync(tourId)
     DetailVM ->> API: GetTourByIdAsync(tourId, lang)
@@ -1439,15 +2012,15 @@ sequenceDiagram
     API -->> DetailVM: TourDetailDto
     DetailVM -->> DetailUI: Hiển thị chi tiết tour + danh sách POI steps
 
-    User ->> DetailUI: Nhấn "Bắt đầu Tour"
-    DetailUI -->> User: Chuyển sang MapPage với route POI
+    MobileUser ->> DetailUI: Nhấn "Bắt đầu Tour"
+    DetailUI -->> MobileUser: Chuyển sang MapPage với route POI
 ```
 
 ### 11.12. CMS — Bulk Content Pipeline: GenerateAllLanguages (⚙️ Backend)
 
 ```mermaid
 sequenceDiagram
-    actor Admin
+    participant Admin
     participant CMS as Web CMS (Browser)
     participant PipeCtrl as CmsContentPipelineController
     participant DB as AppDbContext
@@ -1517,7 +2090,7 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    actor Admin
+    participant Admin
     participant CMS as Web CMS (Browser)
     participant AccCtrl as CmsAccountController
     participant Repo as IAccountRepository
@@ -1574,7 +2147,7 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    actor Admin
+    participant Admin
     participant CMS as Web CMS (Browser)
     participant CatCtrl as CmsCategoryController
     participant Repo as ICategoryRepository
@@ -1623,7 +2196,7 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    actor Admin
+    participant Admin
     participant CMS as Web CMS (Browser)
     participant TourCtrl as CmsTourController
     participant Repo as ITourRepository
@@ -1676,6 +2249,90 @@ sequenceDiagram
     TourCtrl -->> CMS: 204 No Content
 ```
 
+### 11.16. Real-Time Device Monitoring — SignalR (📱 Mobile ↔ 🌐 Web CMS)
+
+```mermaid
+sequenceDiagram
+    participant Mobile as 📱 Mobile App
+    participant Admin as 🛡️ Admin (CMS)
+    participant Hub as DeviceHub (SignalR)
+    participant Presence as DevicePresenceService
+    participant Queue as ILocationQueue
+    participant DB as AppDbContext
+
+    Note over Mobile,Hub: Mobile kết nối với JWT GuestApp
+    Mobile ->> Hub: Connect (JWT GuestApp)
+    Hub ->> Presence: MarkOnline(connectionId, deviceId)
+    Hub ->> Admin: DeviceOnline { deviceId, onlineNow }
+
+    Note over Admin,Hub: Admin kết nối với JWT Admin
+    Admin ->> Hub: Connect (JWT Admin)
+    Hub ->> Presence: MarkOnline(connectionId, "")
+    Hub ->> Hub: AddToGroup("admin_dashboard")
+
+    Admin ->> Hub: GetActiveDevices()
+    Hub ->> Presence: GetOnlineDeviceIds()
+    Hub -->> Admin: { onlineNow, deviceIds, snapshotAt }
+
+    loop Định kỳ GPS polling
+        Mobile ->> Hub: SendLocationUpdate(lat, lon)
+        Hub ->> Queue: QueueLocationAsync(LocationLog)
+        Queue ->> DB: Batch insert LocationLog
+        Hub ->> Admin: LocationUpdated { deviceId, lat, lon, timestamp }
+    end
+
+    Mobile ->> Hub: Disconnect
+    Hub ->> Presence: MarkOffline(connectionId) → deviceId
+    Hub ->> Admin: DeviceOffline { deviceId, isActive=false, onlineNow }
+```
+
+### 11.17. CMS — Quản Lý Access Code (🌐 Web CMS)
+
+```mermaid
+sequenceDiagram
+    participant Admin
+    participant CMS as Web CMS (Browser)
+    participant CodeCtrl as CmsAccessCodeController
+    participant DB as AppDbContext
+
+    Admin ->> CMS: Xem danh sách mã QR
+    CMS ->> CodeCtrl: GET /api/cms/accesscodes?page=1
+    CodeCtrl ->> DB: Query AppAccessCodes (ORDER BY CreatedAt DESC)
+    DB -->> CodeCtrl: List<AppAccessCode> + pagination
+    CodeCtrl -->> CMS: 200 { data, pagination }
+    CMS -->> Admin: Hiển thị bảng mã QR (trạng thái từng mã)
+
+    Admin ->> CMS: Tạo batch 10 mã QR mới
+    CMS ->> CodeCtrl: POST /api/cms/accesscodes { count: 10 }
+    CodeCtrl ->> CodeCtrl: GenerateRandomCode() × 10
+    CodeCtrl ->> DB: AddRange(newCodes) + SaveChanges
+    CodeCtrl -->> CMS: 200 { message, codes[] }
+    CMS -->> Admin: Hiển thị danh sách mã mới
+
+    Admin ->> CMS: Xóa mã QR
+    CMS ->> CodeCtrl: DELETE /api/cms/accesscodes/{id}
+    CodeCtrl ->> DB: Remove + SaveChanges
+    CodeCtrl -->> CMS: 200 { message }
+```
+
+### 11.18. CMS — Xem Timeline Hoạt Động Thiết Bị (🌐 Web CMS)
+
+```mermaid
+sequenceDiagram
+    participant Admin
+    participant CMS as DeviceActivityPage (CMS)
+    participant AnalCtrl as AnalyticsController
+    participant DB as AppDbContext
+
+    Admin ->> CMS: Nhập deviceId + chọn khoảng ngày
+    CMS ->> AnalCtrl: GET /api/cms/analytics/device-activity?deviceId=X&days=7
+    AnalCtrl ->> DB: Query ListenHistory WHERE DeviceId = X AND Timestamp > (now - 7d)
+    AnalCtrl ->> DB: Query LocationLog WHERE DeviceId = X AND Timestamp > (now - 7d)
+    DB -->> AnalCtrl: ListenHistory[] + LocationLog[]
+    AnalCtrl ->> AnalCtrl: Merge & sort by Timestamp → timeline[]
+    AnalCtrl -->> CMS: 200 { deviceId, totalListens, firstSeen, lastSeen, timeline[] }
+    CMS -->> Admin: Hiển thị bản đồ lộ trình GPS + timeline sự kiện
+```
 
 ---
 
@@ -1683,7 +2340,7 @@ sequenceDiagram
 
 > **Quy ước ký hiệu:** `((●))` = Start (filled circle) · `((◉))` = End · `{ }` = Decision (diamond) · `[ ]` = Action (rectangle)
 
-### 12.1. Luồng Khởi Động App & Quyết Định Màn Hình (📱 Mobile)
+### 12.1. Luồng Khởi Động App & Quyết Định Màn Hình (📱 Mobile - UC1, UC2, UC3)
 
 ```mermaid
 flowchart TD
@@ -1717,7 +2374,7 @@ flowchart TD
     style MAIN fill:#2196F3,color:#fff
 ```
 
-### 12.2. Luồng Xử Lý Geofence — Kích Hoạt POI Tự Động (📱 Mobile)
+### 12.2. Luồng Xử Lý Geofence — Kích Hoạt POI Tự Động (📱 Mobile - UC4, UC5, UC6)
 
 ```mermaid
 flowchart TD
@@ -1741,7 +2398,8 @@ flowchart TD
     TRIGGER --> AUDIO_CHECK{Audio đang phát?}
     
     AUDIO_CHECK -- Đang phát POI cũ --> STOP_OLD[StopAsync - dừng cũ]
-    STOP_OLD --> PLAY_NEW
+    STOP_OLD --> LOG_HISTORY[Ghi nhận lịch sử<br/>QueueListenHistoryAsync]
+    LOG_HISTORY --> PLAY_NEW
     AUDIO_CHECK -- Không phát --> PLAY_NEW
     
     PLAY_NEW[TriggerAudioAsync] --> FALLBACK{Nguồn audio?}
@@ -1762,7 +2420,7 @@ flowchart TD
     style PLAY_NEW fill:#2196F3,color:#fff
 ```
 
-### 12.3. Luồng Content Pipeline — Backend
+### 12.3. Luồng Content Pipeline (⚙️ Backend - UC35, UC36, UC37, UC38)
 
 ```mermaid
 flowchart TD
@@ -1795,7 +2453,7 @@ flowchart TD
     style ERROR fill:#F44336,color:#fff
 ```
 
-### 12.4. Luồng Đồng Bộ Offline-First (📱 Mobile)
+### 12.4. Luồng Đồng Bộ Offline-First (📱 Mobile - UC2)
 
 ```mermaid
 flowchart TD
@@ -1819,7 +2477,7 @@ flowchart TD
     style BG_DOWNLOAD fill:#FF9800,color:#fff
 ```
 
-### 12.5. Xác Thực QR Code (📱 Mobile)
+### 12.5. Xác Thực QR Code (📱 Mobile - UC2)
 
 ```mermaid
 flowchart TD
@@ -1861,7 +2519,7 @@ flowchart TD
     style ERR_410 fill:#F44336,color:#fff
 ```
 
-### 12.6. CMS — Quản Lý POI Activity (🌐 Web CMS)
+### 12.6. CMS — Quản Lý POI Activity (🌐 Web CMS - UC21-UC25)
 
 ```mermaid
 flowchart TD
@@ -1908,7 +2566,7 @@ flowchart TD
     style SHOW_ERR fill:#F44336,color:#fff
 ```
 
-### 12.7. CMS — Bulk Content Pipeline: GenerateAllLanguages (⚙️ Backend)
+### 12.7. CMS — Bulk Content Pipeline: GenerateAllLanguages (⚙️ Backend - UC38)
 
 ```mermaid
 flowchart TD
@@ -1959,7 +2617,7 @@ flowchart TD
     style COUNT_FAIL fill:#F44336,color:#fff
 ```
 
-### 12.8. CMS — Quản Lý Tour Activity (🌐 Web CMS)
+### 12.8. CMS — Quản Lý Tour Activity (🌐 Web CMS - UC30-UC34)
 
 ```mermaid
 flowchart TD
@@ -2005,7 +2663,7 @@ flowchart TD
     style REORDER fill:#FF9800,color:#fff
 ```
 
-### 12.9. CMS — Lựa Chọn Content Pipeline (⚙️ Backend)
+### 12.9. CMS — Lựa Chọn Content Pipeline (⚙️ Backend - UC35-UC38)
 
 > Admin chọn cấp độ Pipeline phù hợp dựa trên nhu cầu: Single → Batch → Bulk.
 
@@ -2062,6 +2720,189 @@ flowchart TD
     style BULK_EMPTY fill:#FF9800,color:#fff
 ```
 
+### 12.10. Luồng Real-Time Device Monitoring — SignalR (📱 Mobile + 🌐 Web CMS - UC42, UC43)
+
+```mermaid
+flowchart TD
+    START_M((●)) --> CONNECT_M[Mobile kết nối SignalR\nwith JWT GuestApp]
+    CONNECT_M --> AUTH_M{JWT hợp lệ?}
+    AUTH_M -- Không --> ABORT[Abort connection]
+    AUTH_M -- Có --> MARK_ONLINE[DevicePresenceService\nMarkOnline deviceId]
+    MARK_ONLINE --> BROADCAST_ON[Broadcast DeviceOnline\ntới admin_dashboard group]
+
+    START_A((●)) --> CONNECT_A[Admin kết nối SignalR\nwith JWT Admin]
+    CONNECT_A --> JOIN_GROUP[AddToGroup admin_dashboard]
+    JOIN_GROUP --> SNAPSHOT[Gọi GetActiveDevices\nlấy snapshot online]
+
+    BROADCAST_ON --> ADMIN_VIEW[Admin thấy thiết bị Online]
+
+    MARK_ONLINE --> GPS_LOOP{Nhận GPS update\ntừ Mobile}
+    GPS_LOOP --> QUEUE[Enqueue LocationLog\nvào ILocationQueue]
+    QUEUE --> DB_SAVE[Background: Batch insert\nvào LocationLog table]
+    QUEUE --> BROADCAST_GPS[Broadcast LocationUpdated\ntới admin_dashboard]
+    BROADCAST_GPS --> ADMIN_MAP[Admin thấy vị trí\ntrên bản đồ real-time]
+    ADMIN_MAP --> GPS_LOOP
+
+    GPS_LOOP -- Mobile disconnect --> MARK_OFFLINE[DevicePresenceService\nMarkOffline]
+    MARK_OFFLINE --> STILL_ONLINE{Còn connection\nkhác của device?}
+    STILL_ONLINE -- Có --> GPS_LOOP
+    STILL_ONLINE -- Không --> BROADCAST_OFF[Broadcast DeviceOffline\ntới admin_dashboard]
+    BROADCAST_OFF --> END_M((◉))
+
+    style START_M fill:#000,color:#fff,stroke:#000
+    style START_A fill:#000,color:#fff,stroke:#000
+    style END_M fill:#000,color:#fff,stroke:#fff,stroke-width:3px
+    style ABORT fill:#F44336,color:#fff
+    style BROADCAST_ON fill:#4CAF50,color:#fff
+    style BROADCAST_OFF fill:#F44336,color:#fff
+    style BROADCAST_GPS fill:#2196F3,color:#fff
+```
+
+### 12.11. Luồng Quản Lý Access Code — Admin (🌐 Web CMS - UC39, UC40)
+
+```mermaid
+flowchart TD
+    START((●)) --> VIEW[Xem AccessCodePage\nGET /api/cms/accesscodes]
+    VIEW --> HAS_CODES{Có mã QR?}
+
+    HAS_CODES -- Không --> CREATE_BATCH
+    HAS_CODES -- Có --> DISPLAY[Hiển thị bảng mã\ntrạng thái: chưa dùng / đã dùng / hết hạn]
+
+    DISPLAY --> ACTION{Admin chọn}
+
+    ACTION -- Tạo batch mã mới --> INPUT[Nhập số lượng\n1–100]
+    INPUT --> VALIDATE{Count hợp lệ?}
+    VALIDATE -- Không --> INPUT
+    VALIDATE -- Có --> CREATE_BATCH[POST /api/cms/accesscodes\nGenerateRandomCode × N]
+    CREATE_BATCH --> SAVE_CODES[AddRange + SaveChanges]
+    SAVE_CODES --> DISPLAY
+
+    ACTION -- Xóa mã --> CONFIRM{Xác nhận xóa?}
+    CONFIRM -- Không --> DISPLAY
+    CONFIRM -- Có --> DELETE_CODE[DELETE /api/cms/accesscodes/id]
+    DELETE_CODE --> DISPLAY
+
+    ACTION -- Xem chi tiết mã --> DETAIL[Xem: Code, DeviceId\nActivatedAt, ExpireAt]
+    DETAIL --> DISPLAY
+
+    ACTION -- Xong --> END_NODE((◉))
+
+    style START fill:#000,color:#fff,stroke:#000
+    style END_NODE fill:#000,color:#fff,stroke:#fff,stroke-width:3px
+    style CREATE_BATCH fill:#4CAF50,color:#fff
+    style DELETE_CODE fill:#F44336,color:#fff
+    style DISPLAY fill:#2196F3,color:#fff
+```
+
+### 12.12. Luồng Tìm Kiếm & Lọc POI (📱 Mobile - UC7, UC8)
+
+```mermaid
+flowchart TD
+    START((●)) --> LOAD_CAT[Load Categories<br/>từ API / Local Cache]
+    LOAD_CAT --> VIEW_SEARCH[Hiển thị SearchPage]
+    VIEW_SEARCH --> ACTION{User thao tác}
+    
+    ACTION -- Nhập từ khóa --> API_SEARCH[Gọi API SearchPoisAsync]
+    API_SEARCH --> DISPLAY[Hiển thị danh sách kết quả]
+    
+    ACTION -- Chọn Category --> FILTER_LOCAL[Filter dữ liệu local<br/>hoặc gọi API nếu cần]
+    FILTER_LOCAL --> DISPLAY
+    
+    DISPLAY --> CLICK_POI{User chọn POI?}
+    CLICK_POI -- Không --> ACTION
+    CLICK_POI -- Có --> NAV_DETAIL[Navigate tới PoiDetailPage]
+    NAV_DETAIL --> END_NODE((◉))
+    
+    style START fill:#000,color:#fff,stroke:#000
+    style END_NODE fill:#000,color:#fff,stroke:#fff,stroke-width:3px
+```
+
+### 12.13. Luồng Xem Chi Tiết POI (📱 Mobile - UC9, UC10, UC11)
+
+```mermaid
+flowchart TD
+    START((●)) --> LOAD[Load POI Detail<br/>GetPoiDetailAsync]
+    LOAD --> DISPLAY[Hiển thị thông tin POI<br/>Text, Ảnh thumbnail]
+    DISPLAY --> ACTION{User thao tác}
+    
+    ACTION -- Xem ảnh --> OPEN_GALLERY[Mở GalleryFullScreenPage]
+    OPEN_GALLERY --> ACTION
+    
+    ACTION -- Nghe audio --> CLICK_AUDIO[Nhấn Play Audio]
+    CLICK_AUDIO --> CHECK_AUDIO{Có AudioUrl hoặc<br/>LocalAudioPath?}
+    CHECK_AUDIO -- Không có --> TTS[Chạy TTS / SpeakAsync]
+    CHECK_AUDIO -- Có --> PLAY_MEDIA[MiniPlayer: phát audio]
+    TTS --> OPEN_PLAYER[Mở MiniPlayer]
+    PLAY_MEDIA --> OPEN_PLAYER
+    OPEN_PLAYER --> ACTION
+    
+    ACTION -- Đổi ngôn ngữ --> CHANGE_LANG[Gọi API GetPoiDetailAsync<br/>với ngôn ngữ mới]
+    CHANGE_LANG --> LOAD
+    
+    ACTION -- Đóng --> END_NODE((◉))
+    
+    style START fill:#000,color:#fff,stroke:#000
+    style END_NODE fill:#000,color:#fff,stroke:#fff,stroke-width:3px
+```
+
+### 12.14. Luồng Xem và Bắt Đầu Tour (📱 Mobile - UC12, UC13, UC14)
+
+```mermaid
+flowchart TD
+    START((●)) --> LOAD_TOURS[Load danh sách Tour]
+    LOAD_TOURS --> SELECT_TOUR[User chọn Tour]
+    SELECT_TOUR --> LOAD_DETAIL[Load TourDetail<br/>Kèm danh sách POI steps]
+    LOAD_DETAIL --> DISPLAY[Hiển thị chi tiết Tour]
+    DISPLAY --> START_TOUR{User nhấn<br/>Bắt đầu Tour?}
+    START_TOUR -- Không --> SELECT_TOUR
+    START_TOUR -- Có --> START_MODE[Kích hoạt chế độ Tour]
+    START_MODE --> SET_ROUTE[Đặt route trên bản đồ]
+    SET_ROUTE --> NAV_MAP[Chuyển hướng sang MapPage]
+    NAV_MAP --> END_NODE((◉))
+    
+    style START fill:#000,color:#fff,stroke:#000
+    style END_NODE fill:#000,color:#fff,stroke:#fff,stroke-width:3px
+```
+
+### 12.15. Luồng Quản Lý Tài Khoản và Danh Mục (🌐 Web CMS - UC15-19, UC26-29)
+
+```mermaid
+flowchart TD
+    START((●)) --> VIEW_LIST[GET /api/cms/entities<br/>Accounts hoặc Categories]
+    VIEW_LIST --> HAS_DATA{Có dữ liệu?}
+    HAS_DATA -- Có --> SELECT_ACTION[Chọn thao tác]
+    
+    SELECT_ACTION -- Tạo mới --> CREATE[POST /api/cms/entities]
+    CREATE --> VIEW_LIST
+    
+    SELECT_ACTION -- Cập nhật --> EDIT[PUT /api/cms/entities/id]
+    EDIT --> VIEW_LIST
+    
+    SELECT_ACTION -- Xóa --> DELETE[DELETE /api/cms/entities/id]
+    DELETE --> VIEW_LIST
+    
+    SELECT_ACTION -- Xong --> END_NODE((◉))
+    
+    style START fill:#000,color:#fff,stroke:#000
+    style END_NODE fill:#000,color:#fff,stroke:#fff,stroke-width:3px
+```
+
+### 12.16. Luồng Xem Timeline Hoạt Động (🌐 Web CMS - UC44)
+
+```mermaid
+flowchart TD
+    START((●)) --> INPUT_DEVICE[Nhập Device ID & Khoảng ngày]
+    INPUT_DEVICE --> CALL_API[GET /analytics/device-activity]
+    CALL_API --> QUERY_DB[Backend Query ListenHistory & LocationLog]
+    QUERY_DB --> MERGE_SORT[Merge & Sort theo Timestamp]
+    MERGE_SORT --> RESPOND[Trả về timeline]
+    RESPOND --> DISPLAY[Render bản đồ lộ trình & danh sách sự kiện]
+    DISPLAY --> END_NODE((◉))
+    
+    style START fill:#000,color:#fff,stroke:#000
+    style END_NODE fill:#000,color:#fff,stroke:#fff,stroke-width:3px
+```
+
 ---
 
 ## 📂 PHỤ LỤC: CẤU TRÚC THƯ MỤC DỰ ÁN
@@ -2085,12 +2926,23 @@ CSharpProject/
 │   │       ├── CmsCategoryController.cs
 │   │       ├── CmsTourController.cs
 │   │       ├── CmsContentPipelineController.cs
-│   │       ├── AnalyticsController.cs
+│   │       ├── CmsAccessCodeController.cs  # Quản lý QR codes
+│   │       ├── CmsLocationLogController.cs # Xem & xóa GPS logs
+│   │       ├── CmsQrController.cs
+│   │       ├── CmsTranslationController.cs
+│   │       ├── AnalyticsController.cs      # Top POI, Heatmap, DeviceActivity
 │   │       └── MediaController.cs
+│   ├── Hubs/
+│   │   └── DeviceHub.cs          # SignalR: real-time device monitoring
+│   ├── Queues/
+│   │   └── ILocationQueue.cs     # Background queue cho LocationLog
 │   ├── Models/                   # EF Core Entities (11 models)
 │   ├── Services/                 # Business Logic
 │   │   ├── Interfaces/
 │   │   ├── ContentPipelineService.cs
+│   │   ├── DevicePresenceService.cs  # In-memory device presence (Singleton)
+│   │   ├── PoiRequestService.cs      # Mobile POI query logic
+│   │   ├── CmsPoiService.cs
 │   │   ├── TranslationService.cs
 │   │   ├── TtsService.cs
 │   │   ├── BlobStorageService.cs
@@ -2099,9 +2951,9 @@ CSharpProject/
 │       └── AppDbContext.cs       # EF Core DbContext
 │
 ├── mobile/                       # .NET MAUI (Android)
-│   ├── Views/                    # 10 XAML pages
-│   ├── ViewModels/               # 10 ViewModels (MVVM)
-│   ├── Services/                 # 5 services + interfaces
+│   ├── Views/                    # XAML pages
+│   ├── ViewModels/               # ViewModels (MVVM)
+│   ├── Services/                 # Services + Interfaces
 │   ├── Data/
 │   │   └── AppDatabase.cs        # SQLite (offline cache)
 │   ├── Helpers/                  # GeoHelper, LanguageHelper
@@ -2113,7 +2965,22 @@ CSharpProject/
 │
 ├── web/                          # Web CMS (React + Vite)
 │   ├── src/
-│   │   ├── pages/                # LoginPage, POIPage, AccountsPage, etc.
+│   │   ├── pages/
+│   │   │   ├── LoginPage.jsx
+│   │   │   ├── DashboardPage.jsx
+│   │   │   ├── POIPage.jsx
+│   │   │   ├── POIDetailPage.jsx
+│   │   │   ├── AddPOIPage.jsx
+│   │   │   ├── AccountsPage.jsx
+│   │   │   ├── CategoryPage.jsx
+│   │   │   ├── ToursPage.jsx
+│   │   │   ├── TourDetailPage.jsx
+│   │   │   ├── AudioPage.jsx
+│   │   │   ├── AudioContentPage.jsx
+│   │   │   ├── AnalyticsPage.jsx
+│   │   │   ├── AccessCodePage.jsx      # Quản lý QR codes
+│   │   │   ├── DeviceTrackingPage.jsx  # Real-time map (SignalR)
+│   │   │   └── DeviceActivityPage.jsx  # Timeline GPS + listen history
 │   │   ├── components/           # Sidebar, ProtectedRoute, modals
 │   │   ├── api/                  # API client modules
 │   │   └── App.jsx               # React Router config
