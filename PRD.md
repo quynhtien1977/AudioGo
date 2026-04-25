@@ -25,7 +25,7 @@
 
 ## 📅 1. GIỚI THIỆU CHUNG (EXECUTIVE SUMMARY)
 
-**AudioGo** là nền tảng số hóa trải nghiệm du lịch thông qua âm thanh (Audio-Guided Tour). Dự án áp dụng mô hình Client-Server để cung cấp chức năng phát âm thanh tự động dựa trên vị trí địa lý (Geofencing) trên Mobile App dành cho du khách, kết hợp với Web CMS quản trị đa ngôn ngữ và phân tích dữ liệu chuyên sâu dành cho Ban quản lý (Admin) và Chủ cửa hàng (POI Owner).
+**AudioGo** là nền tảng số hóa trải nghiệm du lịch thông qua âm thanh (Audio-Guided Route). Dự án áp dụng mô hình Client-Server để cung cấp chức năng phát âm thanh tự động dựa trên vị trí địa lý (Geofencing) trên Mobile App dành cho du khách, kết hợp với Web CMS quản trị đa ngôn ngữ và phân tích dữ liệu chuyên sâu dành cho Ban quản lý (Admin) và Chủ cửa hàng (POI Owner).
 
 **Hệ thống bao gồm 3 thành phần chính:**
 
@@ -43,9 +43,9 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 
 | Vai trò (Actor) | Nền tảng | Quyền hạn (Permissions) | Xác thực |
 | :--- | :--- | :--- | :--- |
-| **Du khách (Guest)** | Mobile App | Xem bản đồ, quét QR kích hoạt, tự động nghe Audio khi đi vào hàng rào ảo, tìm kiếm/lọc POI, xem Tour. | Quét mã QR → JWT `GuestApp` (7 ngày) |
+| **Du khách (Guest)** | Mobile App | Xem bản đồ, quét QR kích hoạt, tự động nghe Audio khi đi vào hàng rào ảo, tìm kiếm/lọc POI, xem Route. | Quét mã QR → JWT `GuestApp` (7 ngày) |
 | **Chủ quán (POI Owner)** | Web CMS | Xem/Thêm/Sửa POI của mình, upload media. | JWT Bearer (`Owner`) |
-| **Admin Hệ thống** | Web CMS | Toàn quyền: CRUD POI, Account, Category, Tour. Chạy Content Pipeline. Xem Dashboard Analytics. | JWT Bearer (`Admin`) |
+| **Admin Hệ thống** | Web CMS | Toàn quyền: CRUD POI, Account, Category, Route. Chạy Content Pipeline. Xem Dashboard Analytics. | JWT Bearer (`Admin`) |
 
 ---
 
@@ -98,11 +98,11 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 - **AC:**
   - [x] Audio phát mượt mà, thanh progress hiển thị. Gallery ảnh vuốt ngang.
 
-**US 1.6 — Xem Tour (Lộ Trình Tham Quan)**
-> *Là Du khách, tôi muốn xem các Tour và đi theo lộ trình gợi ý.*
+**US 1.6 — Xem Route (Lộ Trình Tham Quan)**
+> *Là Du khách, tôi muốn xem các Route và đi theo lộ trình gợi ý.*
 - **FR:**
-  - `GET /api/mobile/tours?lang=vi` — danh sách tour.
-  - `GET /api/mobile/tours/{tourId}?lang=vi` — chi tiết tour: steps kèm POI info + audio.
+  - `GET /api/mobile/routes?lang=vi` — danh sách route.
+  - `GET /api/mobile/routes/{routeId}?lang=vi` — chi tiết route: steps kèm POI info + audio.
 - **AC:**
   - [x] Hiển thị lộ trình theo `StepOrder`. Nội dung đúng ngôn ngữ.
 
@@ -186,14 +186,14 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 - **AC:**
   - [x] Hiển thị `PoiCount`. Mobile lấy qua `GET /api/mobile/categories`.
 
-**US 3.4 — Quản Lý Tour**
-> *Là Admin, tôi muốn thiết kế Tour tham quan.*
+**US 3.4 — Quản Lý Route**
+> *Là Admin, tôi muốn thiết kế Route tham quan.*
 - **FR:**
-  - `GET/POST/PUT/DELETE /api/cms/tours` — CRUD tour.
-  - `POST/DELETE /api/cms/tours/{id}/pois` — thêm/xóa POI.
-  - `PUT /api/cms/tours/{id}/pois/{poiId}/order` — đổi thứ tự bước.
+  - `GET/POST/PUT/DELETE /api/cms/routes` — CRUD route.
+  - `POST/DELETE /api/cms/routes/{id}/pois` — thêm/xóa POI.
+  - `PUT /api/cms/routes/{id}/pois/{poiId}/order` — đổi thứ tự bước.
 - **AC:**
-  - [x] Tour hiển thị đúng thứ tự `StepOrder`. Mobile lấy chi tiết kèm audio.
+  - [x] Route hiển thị đúng thứ tự `StepOrder`. Mobile lấy chi tiết kèm audio.
 
 **US 3.5 — Content Pipeline: Dịch Thuật & Âm Thanh Tự Động**
 > *Là Admin, tôi muốn hệ thống tự động dịch và tạo audio cho 7 ngôn ngữ.*
@@ -273,8 +273,8 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 | `PoiGallery` | Ảnh gallery (imageUrl, sortOrder) | `ImageId` |
 | `Category` | Danh mục (name) | `CategoryId` |
 | `CategoryPoi` | Bảng nối N-N Category ↔ POI | `CategoryId + PoiId` |
-| `Tour` | Tour tham quan (name, description, thumbnailUrl) | `TourId` |
-| `TourPoi` | Bảng nối Tour ↔ POI (stepOrder) | `TourId + PoiId` |
+| `Route` | Route tham quan (name, description, thumbnailUrl) | `RouteId` |
+| `RoutePoi` | Bảng nối Route ↔ POI (stepOrder) | `RouteId + PoiId` |
 | `ListenHistory` | Lịch sử nghe (deviceId, poiId, listenDuration, timestamp) | `HistoryId` |
 | `LocationLog` | GPS log (deviceId, lat, lon, timestamp) | `LocationId` |
 
@@ -344,17 +344,17 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 | `POST` | `/api/cms/categories/{id}/pois` | Gán POI |
 | `DELETE` | `/api/cms/categories/{id}/pois/{poiId}` | Bỏ POI |
 
-#### Tour Management
+#### Route Management
 | Method | Route | Mô tả |
 | :--- | :--- | :--- |
-| `GET` | `/api/cms/tours` | Danh sách tour |
-| `GET` | `/api/cms/tours/{id}` | Chi tiết tour |
-| `POST` | `/api/cms/tours` | Tạo tour |
-| `PUT` | `/api/cms/tours/{id}` | Sửa tour |
-| `DELETE` | `/api/cms/tours/{id}` | Xóa tour |
-| `POST` | `/api/cms/tours/{id}/pois` | Thêm POI (kèm stepOrder) |
-| `DELETE` | `/api/cms/tours/{id}/pois/{poiId}` | Xóa POI |
-| `PUT` | `/api/cms/tours/{id}/pois/{poiId}/order` | Đổi thứ tự bước |
+| `GET` | `/api/cms/routes` | Danh sách route |
+| `GET` | `/api/cms/routes/{id}` | Chi tiết route |
+| `POST` | `/api/cms/routes` | Tạo route |
+| `PUT` | `/api/cms/routes/{id}` | Sửa route |
+| `DELETE` | `/api/cms/routes/{id}` | Xóa route |
+| `POST` | `/api/cms/routes/{id}/pois` | Thêm POI (kèm stepOrder) |
+| `DELETE` | `/api/cms/routes/{id}/pois/{poiId}` | Xóa POI |
+| `PUT` | `/api/cms/routes/{id}/pois/{poiId}/order` | Đổi thứ tự bước |
 
 #### Content Pipeline
 | Method | Route | Mô tả |
@@ -408,8 +408,8 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 | `GET` | `/api/mobile/pois/nearby?lat=&lon=&radius=` | POI gần vị trí |
 | `GET` | `/api/mobile/pois/{poiId}?lang=vi` | Chi tiết POI |
 | `GET` | `/api/mobile/categories` | Danh sách danh mục |
-| `GET` | `/api/mobile/tours?lang=vi` | Danh sách tour |
-| `GET` | `/api/mobile/tours/{tourId}?lang=vi` | Chi tiết tour |
+| `GET` | `/api/mobile/routes?lang=vi` | Danh sách route |
+| `GET` | `/api/mobile/routes/{routeId}?lang=vi` | Chi tiết route |
 | `POST` | `/api/mobile/listen-history` | Ghi lịch sử nghe |
 | `POST` | `/api/mobile/location-log` | Gửi batch GPS log |
 
@@ -428,8 +428,8 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 | `/pois/:id` | `POIDetailPage` | Admin, Owner | Chi tiết: content, gallery, pipeline |
 | `/accounts` | `AccountsPage` | Admin | CRUD tài khoản |
 | `/categories` | `CategoryPage` | Admin | CRUD danh mục |
-| `/tours` | `ToursPage` | Admin | Danh sách tour |
-| `/tours/:id` | `TourDetailPage` | Admin | Chi tiết tour: quản lý steps |
+| `/routes` | `ToursPage` | Admin | Danh sách route |
+| `/routes/:id` | `RouteDetailPage` | Admin | Chi tiết route: quản lý steps |
 | `/audio` | `AudioPage` | Admin, Owner | Quản lý audio files |
 | `/audio/:poiId` | `AudioContentPage` | Admin, Owner | Nội dung audio chi tiết của POI |
 | `/analytics` | `AnalyticsPage` | Admin | Phân tích dữ liệu nâng cao |
@@ -449,7 +449,7 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 
 | Actor | Nhóm chức năng | Số UC |
 | :--- | :--- | :---: |
-| **Du Khách (Guest)** | Onboarding, Bản đồ, Tìm kiếm, Chi tiết POI, Tour, Cài đặt, Nền | **13** |
+| **Du Khách (Guest)** | Onboarding, Bản đồ, Tìm kiếm, Chi tiết POI, Route, Cài đặt, Nền | **13** |
 | **Chủ Quán (POI Owner)** | Xác thực, POI, Nội dung đa ngôn ngữ, Dashboard | **9** |
 | **Admin — Nội dung** | POI, Content Pipeline, Quản trị hệ thống, Phân tích | **14** |
 | **Admin — Giám sát** | Real-time, Hoạt động thiết bị, Mã QR, Giả lập | **10** |
@@ -469,7 +469,7 @@ flowchart LR
         U1(["Quét QR kích hoạt"])
         U2(["Xem bản đồ & nghe audio"])
         U3(["Tìm kiếm POI"])
-        U4(["Xem Tour"])
+        U4(["Xem Route"])
         U5(["Đăng nhập CMS"])
         U6(["Quản lý POI của mình"])
         U7(["Upload nội dung & audio"])
@@ -539,8 +539,8 @@ flowchart LR
             UC11(["Nghe audio theo ngôn ngữ"])
         end
 
-        subgraph GRP_TOUR["Tour (TourListPage / TourDetailPage)"]
-            UC12(["Xem danh sách Tour"])
+        subgraph GRP_TOUR["Route (RouteListPage / RouteDetailPage)"]
+            UC12(["Xem danh sách Route"])
             UC13(["Xem lộ trình & các bước POI"])
         end
 
@@ -624,7 +624,7 @@ flowchart LR
 
 ### 9.3. Usecase — Admin (Web CMS — Quản Trị & Nội Dung)
 
-> **Codebase:** `Sidebar.jsx` (role=Admin) · `CmsPoiController.cs` · `CmsAccountController.cs` · `CmsCategoryController.cs` · `CmsTourController.cs` · `CmsContentPipelineController.cs` · `AnalyticsController.cs`
+> **Codebase:** `Sidebar.jsx` (role=Admin) · `CmsPoiController.cs` · `CmsAccountController.cs` · `CmsCategoryController.cs` · `CmsRouteController.cs` · `CmsContentPipelineController.cs` · `AnalyticsController.cs`
 > **Tổng UC: 14**
 
 ```mermaid
@@ -652,7 +652,7 @@ flowchart LR
         subgraph GRP_MGMT["Quản trị hệ thống"]
             UC39(["CRUD tài khoản Owner"])
             UC40(["CRUD danh mục Category"])
-            UC41(["CRUD Tour & StepOrder"])
+            UC41(["CRUD Route & StepOrder"])
         end
 
         subgraph GRP_ANALYTICS["Phân tích dữ liệu"]
@@ -747,7 +747,7 @@ classDiagram
     class PoiContent { +ContentId +PoiId«FK» +LanguageCode +IsMaster }
     class PoiGallery { +ImageId +PoiId«FK» }
     class Category { +CategoryId +Name }
-    class Tour { +TourId +Name }
+    class Route { +RouteId +Name }
     class AppAccessCode { +CodeId +Code +UsedByDeviceId +ExpireAt }
     class ListenHistory { +HistoryId +DeviceId +PoiId«FK» +ListenDuration }
     class LocationLog { +LocationId +DeviceId +Latitude +Longitude }
@@ -756,811 +756,73 @@ classDiagram
     Poi "1" --> "0..*" PoiContent : has
     Poi "1" --> "0..*" PoiGallery : has
     Poi "0..*" <--> "0..*" Category : CategoryPoi
-    Tour "0..*" <--> "0..*" Poi : TourPoi
+    Route "0..*" <--> "0..*" Poi : RoutePoi
     ListenHistory --> Poi
 ```
 
 ### 10.2. Tổng Quan — Backend Application Logic (Overview)
 
-> Controllers → Services / Repositories → Data Layer + Real-Time Hub.
+> Gom nhóm API Controller và Services theo Domain thay vì kỹ thuật (MVC/API/Mobile), giúp dễ quản lý và mở rộng.
 
 ```mermaid
 classDiagram
-    direction LR
-    class AuthController { «api/auth» }
-    class CmsPoiController { «api/cms/pois 🔒» }
-    class CmsContentPipelineController { «api/cms/pipeline 🔒» }
-    class CmsAccountController { «api/cms/accounts 🔒» }
-    class CmsCategoryController { «api/cms/categories 🔒» }
-    class CmsTourController { «api/cms/tours 🔒» }
-    class AnalyticsController { «api/cms/analytics 🔒» }
-    class CmsAccessCodeController { «api/cms/accesscodes 🔒» }
-    class MediaController { «api/cms/media 🔒» }
-    class PoiController { «api/mobile/poi» }
-    class AuthMobileController { «api/mobile/auth» }
+    direction TB
+    
+    namespace UserManagement {
+        class AuthController { «api/auth» }
+        class AuthMobileController { «api/mobile/auth» }
+        class CmsAccountController { «api/cms/accounts 🔒» }
+        class AuthService
+        class IAccountRepository { <<interface>> }
+    }
+    
+    namespace PoiAndRouteManagement {
+        class CmsPoiController { «api/cms/pois 🔒» }
+        class PoiController { «api/mobile/poi» }
+        class CmsCategoryController { «api/cms/categories 🔒» }
+        class CmsRouteController { «api/cms/routes 🔒» }
+        class PoiRequestService
+        class IPoiRepository { <<interface>> }
+    }
 
-    class DeviceHub { «SignalR /hubs/device» }
-    class IDevicePresenceService { <<interface>> }
-    class DevicePresenceService { «Singleton in-memory» }
-    class ILocationQueue { <<interface>> }
-
-    class AuthService
-    class ContentPipelineService
-    class PoiRequestService
-    class IBlobStorageService { <<interface>> }
-    class IPoiRepository { <<interface>> }
-    class IAccountRepository { <<interface>> }
-    class AppDbContext
+    namespace MediaAndContentPipeline {
+        class CmsContentPipelineController { «api/cms/pipeline 🔒» }
+        class MediaController { «api/cms/media 🔒» }
+        class ContentPipelineService
+        class IBlobStorageService { <<interface>> }
+    }
+    
+    namespace DeviceMonitoring {
+        class DeviceHub { «SignalR /hubs/device» }
+        class AnalyticsController { «api/cms/analytics 🔒» }
+        class CmsAccessCodeController { «api/cms/accesscodes 🔒» }
+        class IDevicePresenceService { <<interface>> }
+        class ILocationQueue { <<interface>> }
+    }
+    
+    class AppDbContext { «Entity Framework» }
 
     AuthController --> AuthService
-    CmsPoiController --> IPoiRepository
+    AuthMobileController --> AuthService
     CmsAccountController --> IAccountRepository
-    CmsCategoryController --> AppDbContext
-    CmsTourController --> AppDbContext
-    CmsContentPipelineController --> ContentPipelineService
-    AnalyticsController --> AppDbContext
-    CmsAccessCodeController --> AppDbContext
-    MediaController --> IBlobStorageService
+    
+    CmsPoiController --> IPoiRepository
     PoiController --> PoiRequestService
+    PoiRequestService --> IPoiRepository
+    CmsCategoryController --> AppDbContext
+    CmsRouteController --> AppDbContext
+
+    CmsContentPipelineController --> ContentPipelineService
     ContentPipelineService --> IBlobStorageService
+    MediaController --> IBlobStorageService
+
     DeviceHub --> IDevicePresenceService
     DeviceHub --> ILocationQueue
-    DevicePresenceService ..|> IDevicePresenceService
-```
-
-### 10.3. Tổng Quan — Mobile Architecture (Overview)
-
-> Kiến trúc MVVM: View → ViewModel → Service → Platform.
-
-```mermaid
-classDiagram
-    direction TB
-    class BaseViewModel { <<abstract>> }
-    class MainViewModel
-    class MapViewModel
-    class SearchViewModel
-    class PoiDetailViewModel
-    class WelcomeQrScanViewModel
-    class TourListViewModel
-    class TourDetailViewModel
-    class CreateTourViewModel
-
-    class IApiService { <<interface>> }
-    class IGeofenceService { <<interface>> }
-    class IAudioService { <<interface>> }
-    class ILocationService { <<interface>> }
-    class SyncService
-    class AppDatabase
-
-    BaseViewModel <|-- MainViewModel
-    BaseViewModel <|-- MapViewModel
-    BaseViewModel <|-- SearchViewModel
-    BaseViewModel <|-- PoiDetailViewModel
-    BaseViewModel <|-- WelcomeQrScanViewModel
-    BaseViewModel <|-- TourListViewModel
-    BaseViewModel <|-- TourDetailViewModel
-    BaseViewModel <|-- CreateTourViewModel
-
-    MainViewModel --> SyncService
-    MainViewModel --> IGeofenceService
-    MainViewModel --> IAudioService
-    MainViewModel --> ILocationService
-    SearchViewModel --> IApiService
-    PoiDetailViewModel --> IAudioService
-    SyncService --> IApiService
-    SyncService --> AppDatabase
-```
-
----
-
-### 10.4. Chi Tiết — Core Entities (Backend `api/Models/`)
-
-> 11 Entity đầy đủ thuộc tính và mối quan hệ.
-
-```mermaid
-classDiagram
-    direction TB
-
-    class Account {
-        +string AccountId «PK»
-        +string Username
-        +string PasswordHash
-        +string FullName
-        +string Email
-        +string PhoneNumber
-        +string Role
-        +bool IsLocked
-        +DateTime CreatedAt
-        +DateTime? UpdatedAt
-    }
-
-    class Poi {
-        +string PoiId «PK»
-        +string AccountId «FK»
-        +double Latitude
-        +double Longitude
-        +int ActivationRadius
-        +int Priority
-        +string Status
-        +bool IsActive
-        +string? LogoUrl
-        +DateTime CreatedAt
-        +DateTime? UpdatedAt
-    }
-
-    class PoiContent {
-        +string ContentId «PK»
-        +string PoiId «FK»
-        +string LanguageCode
-        +string Title
-        +string Description
-        +string? AudioUrl
-        +string? LocalAudioPath
-        +bool IsMaster
-        +DateTime CreatedAt
-        +DateTime? UpdatedAt
-    }
-
-    class PoiGallery {
-        +string ImageId «PK»
-        +string PoiId «FK»
-        +string ImageUrl
-        +int SortOrder
-        +DateTime CreatedAt
-        +DateTime? UpdatedAt
-    }
-
-    class Category {
-        +string CategoryId «PK»
-        +string Name
-        +DateTime CreatedAt
-        +DateTime? UpdatedAt
-    }
-
-    class CategoryPoi {
-        +string CategoryId «FK»
-        +string PoiId «FK»
-    }
-
-    class Tour {
-        +string TourId «PK»
-        +string Name
-        +string Description
-        +string? ThumbnailUrl
-        +DateTime CreatedAt
-        +DateTime? UpdatedAt
-    }
-
-    class TourPoi {
-        +string TourId «FK»
-        +string PoiId «FK»
-        +int StepOrder
-    }
-
-    class AppAccessCode {
-        +int CodeId «PK»
-        +string Code
-        +string? UsedByDeviceId
-        +DateTime? ActivatedAt
-        +DateTime? ExpireAt
-        +DateTime CreatedAt
-    }
-
-    class ListenHistory {
-        +string HistoryId «PK»
-        +string DeviceId
-        +string PoiId «FK»
-        +DateTime Timestamp
-        +int ListenDuration
-    }
-
-    class LocationLog {
-        +string LocationId «PK»
-        +string DeviceId
-        +double Latitude
-        +double Longitude
-        +DateTime Timestamp
-    }
-
-    Account "1" --> "0..*" Poi : owns
-    Poi "1" --> "0..*" PoiContent : has
-    Poi "1" --> "0..*" PoiGallery : has
-    Poi "0..*" <--> "0..*" Category : categorized via
-    CategoryPoi --> Poi
-    CategoryPoi --> Category
-    Tour "0..*" <--> "0..*" Poi : contains via
-    TourPoi --> Tour
-    TourPoi --> Poi
-    ListenHistory --> Poi : references
-```
-
-### 10.5. Chi Tiết — DTO Layer (`shared/DTOs/`)
-
-> Tất cả Data Transfer Objects sử dụng bởi Mobile App và Web CMS.
-
-```mermaid
-classDiagram
-    direction TB
-
-    class POI {
-        «Shared DTO — Mobile»
-        +string PoiId
-        +double Latitude
-        +double Longitude
-        +int ActivationRadius
-        +int Priority
-        +string Status
-        +bool IsActive
-        +string? LogoUrl
-        +string? LocalLogoPath
-        +string LanguageCode
-        +string Title
-        +string Description
-        +string? AudioUrl
-        +string? LocalAudioPath
-        +List~string~ Categories
-        +List~string~ GalleryUrls
-    }
-
-    class PoiDetailDto {
-        «CMS DTO»
-        +string PoiId
-        +double Latitude
-        +double Longitude
-        +int ActivationRadius
-        +int Priority
-        +string Status
-        +string? LogoUrl
-        +DateTime CreatedAt
-        +DateTime? UpdatedAt
-        +List~PoiContentDto~ Contents
-        +List~PoiGalleryDto~ Gallery
-    }
-
-    class PoiContentDto {
-        +string ContentId
-        +string PoiId
-        +string LanguageCode
-        +string Title
-        +string Description
-        +string? AudioUrl
-        +bool IsMaster
-    }
-
-    class PoiGalleryDto {
-        +string ImageId
-        +string PoiId
-        +string ImageUrl
-        +int SortOrder
-    }
-
-    class AccountDto {
-        +string AccountId
-        +string Username
-        +string Role
-        +string FullName
-        +string Email
-        +string PhoneNumber
-        +bool IsLocked
-        +DateTime CreatedAt
-        +DateTime? UpdatedAt
-    }
-
-    class LoginRequest {
-        +string Username
-        +string Password
-    }
-
-    class LoginResponse {
-        +string Token
-        +string Role
-        +DateTime Expiry
-    }
-
-    class CategoryDto {
-        +string CategoryId
-        +string Name
-        +int PoiCount
-        +DateTime CreatedAt
-    }
-
-    class TourSummaryDto {
-        +string TourId
-        +string Name
-        +string Description
-        +int PoiCount
-        +string? ThumbnailUrl
-        +DateTime CreatedAt
-    }
-
-    class TourDetailDto {
-        +string TourId
-        +string Name
-        +string Description
-        +int PoiCount
-        +string? ThumbnailUrl
-        +DateTime CreatedAt
-        +IReadOnlyList~TourStepDto~ Steps
-    }
-
-    class TourStepDto {
-        +string PoiId
-        +string Title
-        +string Description
-        +string LogoUrl
-        +int StepOrder
-        +string AudioUrl
-        +List~string~ Categories
-    }
-
-    class TopPoiDto {
-        +string PoiId
-        +string Title
-        +int ListenCount
-    }
-
-    class HeatmapPointDto {
-        +double Latitude
-        +double Longitude
-        +int Count
-    }
-
-    PoiDetailDto *-- PoiContentDto : contains
-    PoiDetailDto *-- PoiGalleryDto : contains
-    TourDetailDto *-- TourStepDto : contains
-```
-
-### 10.6. Chi Tiết — Backend Services (`api/Services/`)
-
-> Service interfaces và implementations: Pipeline, Translation, TTS, Blob, Auth.
-
-```mermaid
-classDiagram
-    direction TB
-
-    class IContentPipelineService {
-        <<interface>>
-        +EnsureContentAsync(Poi, targetLang) Task~PoiContent~
-        +GenerateAudioAsync(PoiContent) Task~PoiContent~
-    }
-
-    class ITranslationService {
-        <<interface>>
-        +TranslateAsync(text, from, to) Task~string~
-    }
-
-    class ITtsService {
-        <<interface>>
-        +SynthesizeAsync(text, lang) Task~Stream~
-    }
-
-    class IBlobStorageService {
-        <<interface>>
-        +UploadAsync(container, path, content, type) Task~string~
-        +DeleteAsync(container, path) Task
-    }
-
-    class ContentPipelineService {
-        -IServiceScopeFactory _scopeFactory
-        -ITranslationService _translator
-        -ITtsService _tts
-        -IBlobStorageService _blob
-        -ConcurrentDictionary _locks
-        +EnsureContentAsync() Task~PoiContent~
-        +GenerateAudioAsync() Task~PoiContent~
-    }
-
-    class TranslationService {
-        +TranslateAsync() Task~string~
-    }
-
-    class TtsService {
-        +SynthesizeAsync() Task~Stream~
-    }
-
-    class BlobStorageService {
-        +UploadAsync() Task~string~
-        +DeleteAsync() Task
-    }
-
-    class AuthService {
-        -AppDbContext _db
-        -IConfiguration _config
-        +LoginAsync(LoginRequest) Task~LoginResponse?~
-        +RegisterAsync(RegisterRequest) Task~Account?~
-        -GenerateToken(Account) string
-    }
-
-    class AppDbContext {
-        +DbSet~Account~ Accounts
-        +DbSet~Poi~ Pois
-        +DbSet~PoiContent~ PoiContents
-        +DbSet~PoiGallery~ PoiGalleries
-        +DbSet~Category~ Categories
-        +DbSet~Tour~ Tours
-        +DbSet~ListenHistory~ ListenHistories
-        +DbSet~LocationLog~ LocationLogs
-        +DbSet~AppAccessCode~ AppAccessCodes
-    }
-
-    ContentPipelineService ..|> IContentPipelineService
-    TranslationService ..|> ITranslationService
-    TtsService ..|> ITtsService
-    BlobStorageService ..|> IBlobStorageService
-
-    ContentPipelineService --> ITranslationService : uses
-    ContentPipelineService --> ITtsService : uses
-    ContentPipelineService --> IBlobStorageService : uses
-    ContentPipelineService --> AppDbContext : scoped
-    AuthService --> AppDbContext : query
-```
-
-### 10.7. Chi Tiết — Backend Controllers & Repositories
-
-> Controllers + Repository interfaces: thể hiện luồng Controller → Repository → AppDbContext.
-
-```mermaid
-classDiagram
-    direction TB
-
-    class AuthController {
-        «api/auth»
-        +Login(LoginRequest) IActionResult
-        +Register(RegisterRequest) IActionResult
-        +SetupDev(LoginRequest) IActionResult
-    }
-
-    class PoiController {
-        «api/mobile/poi»
-        +GetAll(lang, lat, lon, radius) IActionResult
-        +GetById(id, lang) IActionResult
-    }
-
-    class AuthMobileController {
-        «api/mobile/auth»
-        +ScanQr(code, deviceId) IActionResult
-    }
-
-    class CategoryMobileController {
-        «api/mobile/category»
-        +GetAll() IActionResult
-    }
-
-    class TourMobileController {
-        «api/mobile/tour»
-        +GetAll(lang, query) IActionResult
-        +GetById(tourId, lang) IActionResult
-    }
-
-    class ListenHistoryController {
-        «api/mobile/listen-history»
-        +Post(dto) IActionResult
-    }
-
-    class LocationLogController {
-        «api/mobile/location-log»
-        +Post(dto) IActionResult
-    }
-
-    class CmsPoiController {
-        «api/cms/pois 🔒»
-        +GetAll(status) IActionResult
-        +GetById(id) IActionResult
-        +Create(dto) IActionResult
-        +Update(id, dto) IActionResult
-        +Delete(id) IActionResult
-    }
-
-    class CmsPoiContentController {
-        «api/cms/content 🔒»
-        +GetByPoi(poiId) IActionResult
-        +Upsert(dto) IActionResult
-    }
-
-    class CmsPoiGalleryController {
-        «api/cms/gallery 🔒»
-        +Upload(poiId, file) IActionResult
-        +Delete(imageId) IActionResult
-    }
-
-    class CmsAccountController {
-        «api/cms/accounts 🔒»
-        +GetAll() IActionResult
-        +GetById(id) IActionResult
-        +Create(req) IActionResult
-        +Update(id, req) IActionResult
-        +Delete(id) IActionResult
-    }
-
-    class CmsCategoryController {
-        «api/cms/categories 🔒»
-        +GetAll() IActionResult
-        +Create(dto) IActionResult
-        +Update(id, dto) IActionResult
-        +Delete(id) IActionResult
-        +AddPoi(catId, poiId) IActionResult
-        +RemovePoi(catId, poiId) IActionResult
-    }
-
-    class CmsTourController {
-        «api/cms/tours 🔒»
-        +GetAll() IActionResult
-        +GetById(id) IActionResult
-        +Create(dto) IActionResult
-        +Update(id, dto) IActionResult
-        +Delete(id) IActionResult
-        +AddPoi(tourId, poiId) IActionResult
-        +RemovePoi(tourId, poiId) IActionResult
-        +ReorderPoi(tourId, poiId, order) IActionResult
-    }
-
-    class CmsContentPipelineController {
-        «api/cms/pipeline 🔒»
-        +GenerateForPoi(poiId) IActionResult
-        +GenerateAll() IActionResult
-        +GenerateAllLanguages() IActionResult
-        +GetPipelineStatus() IActionResult
-    }
-
-    class AnalyticsController {
-        «api/cms/analytics 🔒»
-        +GetTopPois(top) IActionResult
-        +GetHeatmap() IActionResult
-    }
-
-    class MediaController {
-        «api/cms/media 🔒»
-        +Upload(file) IActionResult
-        +Delete(url) IActionResult
-    }
-
-    class IPoiRepository { <<interface>> }
-    class IAccountRepository { <<interface>> }
-    class ICategoryRepository { <<interface>> }
-    class ITourRepository { <<interface>> }
-    class IListenHistoryRepository { <<interface>> }
-    class ILocationLogRepository { <<interface>> }
-
-    AuthController --> AuthService : uses
-    CmsPoiController --> IPoiRepository : uses
-    CmsAccountController --> IAccountRepository : uses
-    CmsCategoryController --> ICategoryRepository : uses
-    CmsTourController --> ITourRepository : uses
-    CmsContentPipelineController --> IContentPipelineService : uses
-    CmsContentPipelineController --> AppDbContext : query
-    CmsPoiContentController --> AppDbContext : query
-    CmsPoiGalleryController --> IBlobStorageService : upload
-    AnalyticsController --> AppDbContext : query
-    MediaController --> IBlobStorageService : uses
-    PoiController --> AppDbContext : query
-    AuthMobileController --> AppDbContext : query
-    ListenHistoryController --> IListenHistoryRepository : uses
-    LocationLogController --> ILocationLogRepository : uses
-```
-
-### 10.8. Chi Tiết — Mobile ViewModels (`mobile/ViewModels/`)
-
-> 8 ViewModels kế thừa BaseViewModel, với properties và methods chính.
-
-```mermaid
-classDiagram
-    direction TB
-
-    class BaseViewModel {
-        <<abstract>>
-        +bool IsLoading
-        +event PropertyChanged
-        #OnPropertyChanged(name)
-        #SetProperty~T~(ref field, value)
-    }
-
-    class MainViewModel {
-        -SyncService _sync
-        -IGeofenceService _geofence
-        -IAudioService _audio
-        -ILocationService _location
-        -List~POI~ _pois
-        -POI? _activePoi
-        +ObservableCollection~POI~ NearbyPois
-        +bool HasActivePoi
-        +string StatusMessage
-        +string CurrentLanguage
-        +ICommand PlayPoiCommand
-        +ICommand OpenPoiDetailCommand
-        +InitAsync() Task
-        +ReloadPoisAsync() Task
-        +StopAudio()
-        +ToggleAudio()
-        +TriggerAudioAsync(POI) Task
-    }
-
-    class MapViewModel {
-        -SyncService _sync
-        -MainViewModel _main
-        +Map integration
-        +POI pins display
-    }
-
-    class SearchViewModel {
-        -IApiService _api
-        +SearchAsync(query) Task
-        +FilterByCategory()
-    }
-
-    class PoiDetailViewModel {
-        -AppDatabase _db
-        -IAudioService _audio
-        -MainViewModel _main
-        +POI Detail display
-        +Audio playback controls
-        +Gallery display
-        +Seekbar and Speed controls
-    }
-
-    class WelcomeQrScanViewModel {
-        -IApiService _api
-        +ScanQrAsync(code) Task
-    }
-
-    class TourListViewModel {
-        -IApiService _api
-        +Tours list
-        +Search and filter
-    }
-
-    class TourDetailViewModel {
-        -IApiService _api
-        +Tour steps display
-    }
-
-    class CreateTourViewModel {
-        -IApiService _api
-        +Create tour form
-    }
-
-    BaseViewModel <|-- MainViewModel
-    BaseViewModel <|-- MapViewModel
-    BaseViewModel <|-- SearchViewModel
-    BaseViewModel <|-- PoiDetailViewModel
-    BaseViewModel <|-- WelcomeQrScanViewModel
-    BaseViewModel <|-- TourListViewModel
-    BaseViewModel <|-- TourDetailViewModel
-    BaseViewModel <|-- CreateTourViewModel
-
-    MainViewModel --> SyncService : load/sync POI
-    MainViewModel --> IGeofenceService : monitor zones
-    MainViewModel --> IAudioService : play audio
-    MainViewModel --> ILocationService : track GPS
-    MapViewModel --> SyncService : load POI
-    MapViewModel --> MainViewModel : share ActivePoi
-    SearchViewModel --> IApiService : search/filter
-    PoiDetailViewModel --> IAudioService : playback
-    PoiDetailViewModel --> AppDatabase : cached POI
-    WelcomeQrScanViewModel --> IApiService : scan QR
-    TourListViewModel --> IApiService : load tours
-    TourDetailViewModel --> IApiService : tour detail
-    CreateTourViewModel --> IApiService : create tour
-```
-
-### 10.9. Chi Tiết — Mobile Services & Data (`mobile/Services/`)
-
-> Service interfaces, implementations, data layer và platform-specific components.
-
-```mermaid
-classDiagram
-    direction TB
-
-    class IApiService {
-        <<interface>>
-        +GetPoisAsync(lang, query, category) Task~List~POI~~
-        +GetToursAsync(lang, query) Task~List~TourSummaryDto~~
-        +GetCategoriesAsync() Task~List~CategoryDto~~
-        +PostListenHistoryAsync() Task
-        +PostLocationLogAsync() Task
-        +CreateTourAsync() Task~bool~
-        +ScanQrAsync(code, deviceId) Task
-    }
-
-    class IGeofenceService {
-        <<interface>>
-        +event PoiTriggered
-        +StartMonitoringAsync(pois) Task
-        +StopMonitoringAsync() Task
-        +OnLocationUpdated(lat, lon)
-    }
-
-    class IAudioService {
-        <<interface>>
-        +bool IsPlaying
-        +bool IsPaused
-        +double DurationSeconds
-        +double CurrentPositionSeconds
-        +event PlaybackStateChanged
-        +PlayFileAsync(path) Task
-        +SpeakAsync(text, lang) Task
-        +PauseAsync() Task
-        +ResumeAsync() Task
-        +StopAsync() Task
-        +SetSpeed(speed)
-        +SeekAsync(position) Task
-    }
-
-    class ILocationService {
-        <<interface>>
-        +event LocationUpdated
-        +StartAsync() Task
-        +StopAsync() Task
-        +bool IsRunning
-    }
-
-    class ApiService {
-        -HttpClient _http
-        +REST calls to Backend
-    }
-
-    class GeofenceService {
-        -List~POI~ _monitoredPois
-        -Dictionary _cooldowns
-        +Haversine distance check
-        +Priority-based sorting
-    }
-
-    class AudioService {
-        -IAudioPlayer _player
-        +3-tier fallback
-        +Queue management
-    }
-
-    class LocationService {
-        -CancellationTokenSource _cts
-        +GPS polling
-    }
-
-    class SyncService {
-        -IApiService _api
-        -AppDatabase _db
-        -IHttpClientFactory _httpFactory
-        +GetPoisAsync(lang) Task~List~POI~~
-        +DownloadAudioFilesAsync() Task
-        +DownloadImagesAsync() Task
-    }
-
-    class AppDatabase {
-        -SQLiteAsyncConnection _db
-        +InitAsync() Task
-        +GetAllPoisAsync() Task~List~PoiEntity~~
-        +SavePoiAsync(poi) Task
-        +DeletePoiAsync(poi) Task
-    }
-
-    class GeoHelper {
-        <<static>>
-        +HaversineMeters(lat1, lon1, lat2, lon2) double
-    }
-
-    class LanguageHelper {
-        <<static>>
-        +GetDeviceLanguageCode() string
-    }
-
-    class AndroidLocationService {
-        «Android Foreground Service»
-        +OnStartCommand() StartCommandResult
-        +OnDestroy()
-        +Foreground notification
-    }
-
-    ApiService ..|> IApiService
-    GeofenceService ..|> IGeofenceService
-    AudioService ..|> IAudioService
-    LocationService ..|> ILocationService
-
-    SyncService --> IApiService : calls API
-    SyncService --> AppDatabase : caches locally
-    GeofenceService --> GeoHelper : distance calc
-    LocationService --> AndroidLocationService : Android foreground
-
-    note for AudioService "3-tier fallback:\n1. LocalAudioPath (offline)\n2. AudioUrl (streaming)\n3. SpeakAsync (TTS device)"
+    AnalyticsController --> AppDbContext
+    CmsAccessCodeController --> AppDbContext
+
+    IAccountRepository --> AppDbContext
+    IPoiRepository --> AppDbContext
 ```
 
 ---
@@ -1572,87 +834,125 @@ classDiagram
 
 ---
 
-### 11.1. Khởi Động App & Xác Thực QR (📱 Mobile — UC1, UC2, UC3)
-
-> **UC:** UC1 Xem màn hình chào · UC2 Quét QR kích hoạt · UC3 Đồng bộ dữ liệu lần đầu
+### 11.1. Xem Màn Hình Chào (📱 Mobile — UC1)
 
 ```mermaid
 sequenceDiagram
     participant MobileUser as Người dùng
     participant Welcome as WelcomePage
-    participant QrPage as WelcomeQrScanPage
     participant VM as WelcomeViewModel
-    participant API as ApiService
-    participant AuthCtrl as AuthMobileController
-    participant SyncSvc as SyncService
-    participant DB as Local SQLite
-
+    
     MobileUser ->> Welcome: Mở App
     Welcome ->> VM: CheckFirstLaunch()
-
+    
     alt Đã có DeviceId (đã kích hoạt trước)
         VM -->> Welcome: Navigate → MapPage
     else Lần đầu — chưa có DeviceId
         VM -->> Welcome: Hiển thị màn hình chào (WelcomePage)
         MobileUser ->> Welcome: Nhấn "Bắt đầu"
-        Welcome ->> QrPage: Navigate → WelcomeQrScanPage
-
-        MobileUser ->> QrPage: Camera quét mã QR
-        QrPage ->> VM: OnQrScanned(code)
-        VM ->> API: AuthenticateAsync(qrCode)
-        API ->> AuthCtrl: POST /api/mobile/auth/authenticate { code }
-        AuthCtrl ->> AuthCtrl: Validate AppAccessCode (chưa dùng, chưa hết hạn)
-
-        alt Mã hợp lệ
-            AuthCtrl -->> API: 200 { deviceId, jwtToken }
-            API -->> VM: DeviceId + JWT
-            VM ->> VM: Lưu DeviceId + Token vào SecureStorage
-            VM ->> SyncSvc: SyncAllAsync()
-            SyncSvc ->> API: GetPoisAsync() / GetToursAsync() / GetCategoriesAsync()
-            API -->> SyncSvc: POIs + Tours + Categories
-            SyncSvc ->> DB: Upsert local cache
-            VM -->> QrPage: Navigate → MapPage
-        else Mã không hợp lệ / đã dùng
-            AuthCtrl -->> API: 400 Bad Request
-            API -->> VM: Exception
-            VM -->> QrPage: Hiển thị lỗi "Mã QR không hợp lệ"
-        end
+        Welcome -->> MobileUser: Navigate → WelcomeQrScanPage (UC2)
     end
 ```
 
 ---
 
-### 11.2. Theo Dõi Vị Trí & Tự Động Phát Audio — Geofence (📱 Mobile — UC4, UC5, UC6)
+### 11.2. Quét QR Kích Hoạt (📱 Mobile — UC2)
 
-> **UC:** UC4 Xem bản đồ POI · UC5 Tự động phát audio theo geofence · UC6 Điều khiển Mini-Player
+```mermaid
+sequenceDiagram
+    participant MobileUser as Người dùng
+    participant QrPage as WelcomeQrScanPage
+    participant VM as WelcomeViewModel
+    participant API as ApiService
+    participant AuthCtrl as AuthMobileController
+
+    MobileUser ->> QrPage: Camera quét mã QR
+    QrPage ->> VM: OnQrScanned(code)
+    VM ->> API: AuthenticateAsync(qrCode)
+    API ->> AuthCtrl: POST /api/mobile/auth/authenticate { code }
+    AuthCtrl ->> AuthCtrl: Validate AppAccessCode (chưa dùng, chưa hết hạn)
+
+    alt Mã hợp lệ
+        AuthCtrl -->> API: 200 { deviceId, jwtToken }
+        API -->> VM: DeviceId + JWT
+        VM ->> VM: Lưu DeviceId + Token vào SecureStorage
+        VM ->> VM: Gọi Đồng bộ dữ liệu (UC3)
+    else Mã không hợp lệ / đã dùng
+        AuthCtrl -->> API: 400 Bad Request
+        API -->> VM: Exception
+        VM -->> QrPage: Hiển thị lỗi "Mã QR không hợp lệ"
+    end
+```
+
+---
+
+### 11.3. Đồng Bộ Dữ Liệu Lần Đầu (📱 Mobile — UC3)
+
+```mermaid
+sequenceDiagram
+    participant VM as WelcomeViewModel
+    participant SyncSvc as SyncService
+    participant API as ApiService
+    participant DB as Local SQLite
+    participant MapPage
+
+    VM ->> SyncSvc: SyncAllAsync()
+    SyncSvc ->> API: GetPoisAsync() / GetRoutesAsync() / GetCategoriesAsync()
+    API -->> SyncSvc: POIs + Routes + Categories
+    SyncSvc ->> DB: Upsert local cache
+    SyncSvc -->> VM: Sync hoàn tất
+    VM -->> MapPage: Navigate → MapPage
+```
+
+---
+
+### 11.4. Xem Bản Đồ POI (📱 Mobile — UC4)
 
 ```mermaid
 sequenceDiagram
     participant MobileUser as Người dùng
     participant MapPage
     participant MapVM as MapViewModel
-    participant GeoSvc as GeofenceService
-    participant AudioSvc as AudioPlayerService
     participant API as ApiService
-    participant Ctrls as MobileControllers
-    participant Queues as BackgroundQueues
-    participant HostedSvc as HostedServices
-    participant DB as AppDbContext
 
     MobileUser ->> MapPage: Mở MapPage
     MapPage ->> MapVM: InitializeAsync()
     MapVM ->> API: GetPoisAsync(lang)
     API -->> MapVM: List~PoiSummaryDto~
     MapVM -->> MapPage: Render POI pins trên bản đồ
+```
+
+---
+
+### 11.5. Theo Dõi Vị Trí & Tự Động Phát Audio — Geofence (📱 Mobile — UC5)
+
+> Bao gồm xử lý ưu tiên khi có nhiều POI trong vùng geofence và gọi hàng đợi ghi log.
+
+```mermaid
+sequenceDiagram
+    participant GeoSvc as GeofenceService
+    participant MapVM as MapViewModel
+    participant AudioSvc as AudioPlayerService
+    participant API as ApiService
+    participant Ctrls as MobileControllers
+    participant Queues as BackgroundQueues
 
     loop Định kỳ (GPS polling - Background)
         GeoSvc ->> GeoSvc: GetCurrentLocation()
         GeoSvc ->> GeoSvc: CheckGeofence(location, activePois)
-
+        
         alt Thiết bị vào geofence POI mới
-            GeoSvc ->> MapVM: OnPoiEntered(poi)
-            MapVM ->> AudioSvc: PlayAsync(poi.AudioUrl, lang)
-            AudioSvc -->> MapPage: Hiển thị Mini-Player (tiêu đề POI)
+            GeoSvc ->> GeoSvc: Lọc các POI thiết bị đang nằm trong vùng
+            
+            opt Có nhiều POI
+                GeoSvc ->> GeoSvc: Sắp xếp theo mức độ ưu tiên & khoảng cách
+                GeoSvc ->> GeoSvc: Chọn POI ưu tiên cao nhất
+            end
+
+            GeoSvc ->> MapVM: OnPoiEntered(selectedPoi)
+            MapVM ->> AudioSvc: PlayAsync(selectedPoi.AudioUrl, lang)
+            AudioSvc -->> MapVM: Bắt đầu phát
+            MapVM ->> MapVM: Mở Mini-Player (UC6)
         end
 
         opt Thiết bị rời khỏi geofence
@@ -1669,12 +969,17 @@ sequenceDiagram
         Ctrls ->> Queues: QueueLocationAsync()
         Ctrls -->> API: 202 Accepted
     end
+```
 
-    loop Background Services
-        HostedSvc ->> Queues: ReadAsync() (batching)
-        Queues -->> HostedSvc: List Data (ListenHistory / LocationLog)
-        HostedSvc ->> DB: CreateBatchAsync()
-    end
+---
+
+### 11.6. Điều Khiển Mini-Player (📱 Mobile — UC6)
+
+```mermaid
+sequenceDiagram
+    participant MobileUser as Người dùng
+    participant MapPage
+    participant AudioSvc as AudioPlayerService
 
     MobileUser ->> MapPage: Nhấn nút Play/Pause trên Mini-Player
     MapPage ->> AudioSvc: TogglePlayPause()
@@ -1682,55 +987,12 @@ sequenceDiagram
 
     MobileUser ->> MapPage: Kéo thanh seek
     MapPage ->> AudioSvc: SeekTo(position)
+    AudioSvc -->> MapPage: Cập nhật vị trí âm thanh
 ```
 
 ---
 
-### 11.3. Xem Chi Tiết POI & Nghe Audio (📱 Mobile — UC9, UC10, UC11)
-
-> **UC:** UC9 Xem thông tin POI · UC10 Xem gallery ảnh · UC11 Nghe audio theo ngôn ngữ
-
-```mermaid
-sequenceDiagram
-    participant MobileUser as Người dùng
-    participant MapPage
-    participant DetailPage as PoiDetailPage
-    participant DetailVM as PoiDetailViewModel
-    participant GalleryPage as GalleryFullScreenPage
-    participant API as ApiService
-    participant Backend as PoiMobileController
-
-    MobileUser ->> MapPage: Nhấn vào POI pin
-    MapPage ->> DetailPage: Navigate(poiId)
-    DetailPage ->> DetailVM: LoadAsync(poiId, lang)
-    DetailVM ->> API: GetPoiDetailAsync(poiId, lang)
-    API ->> Backend: GET /api/mobile/poi/{poiId}?lang=vi
-    Backend -->> API: PoiDetailDto (info, audioUrl, gallery[])
-    API -->> DetailVM: PoiDetailDto
-    DetailVM -->> DetailPage: Render thông tin + gallery thumbnails
-
-    MobileUser ->> DetailPage: Nhấn nút "Nghe audio"
-    DetailPage ->> DetailVM: PlayAudio(audioUrl, lang)
-    DetailVM ->> DetailVM: Chuyển ngôn ngữ nếu cần
-    DetailVM -->> DetailPage: Mở Mini-Player với audio POI
-
-    MobileUser ->> DetailPage: Nhấn ảnh trong gallery
-    DetailPage ->> GalleryPage: Navigate(images[], selectedIndex)
-    GalleryPage -->> MobileUser: Hiển thị ảnh full-screen (swipe)
-
-    MobileUser ->> DetailPage: Đổi ngôn ngữ audio (vi/en/ja/...)
-    DetailPage ->> DetailVM: ChangeLanguage(lang)
-    DetailVM ->> API: GetPoiDetailAsync(poiId, newLang)
-    API ->> Backend: GET /api/mobile/poi/{poiId}?lang=en
-    Backend -->> API: PoiDetailDto (ngôn ngữ mới)
-    DetailVM -->> DetailPage: Cập nhật audio URL + nội dung
-```
-
----
-
-### 11.4. Tìm Kiếm & Lọc POI (📱 Mobile — UC7, UC8)
-
-> **UC:** UC7 Tìm kiếm POI · UC8 Lọc POI theo Category
+### 11.7. Tìm Kiếm POI (📱 Mobile — UC7)
 
 ```mermaid
 sequenceDiagram
@@ -1741,6 +1003,27 @@ sequenceDiagram
     participant Backend as SearchMobileController
 
     MobileUser ->> SearchPage: Mở tab Search
+    MobileUser ->> SearchPage: Nhập từ khóa tìm kiếm
+    SearchPage ->> SearchVM: SearchAsync(keyword)
+    SearchVM ->> API: SearchPoisAsync(keyword, lang, null)
+    API ->> Backend: GET /api/mobile/poi/search?q=...&lang=vi
+    Backend -->> API: List~PoiSummaryDto~
+    API -->> SearchVM: Kết quả tìm kiếm
+    SearchVM -->> SearchPage: Render danh sách POI kết quả
+```
+
+---
+
+### 11.8. Lọc POI Theo Category (📱 Mobile — UC8)
+
+```mermaid
+sequenceDiagram
+    participant MobileUser as Người dùng
+    participant SearchPage
+    participant SearchVM as SearchViewModel
+    participant API as ApiService
+    participant Backend as SearchMobileController
+
     SearchPage ->> SearchVM: LoadCategoriesAsync()
     SearchVM ->> API: GetCategoriesAsync()
     API ->> Backend: GET /api/mobile/categories
@@ -1748,26 +1031,77 @@ sequenceDiagram
     API -->> SearchVM: Categories
     SearchVM -->> SearchPage: Hiển thị bộ lọc Category
 
-    MobileUser ->> SearchPage: Nhập từ khóa tìm kiếm
-    SearchPage ->> SearchVM: SearchAsync(keyword, categoryId)
-    SearchVM ->> API: SearchPoisAsync(keyword, lang, categoryId)
-    API ->> Backend: GET /api/mobile/poi/search?q=...&lang=vi&categoryId=...
-    Backend -->> API: List~PoiSummaryDto~
-    API -->> SearchVM: Kết quả tìm kiếm
-    SearchVM -->> SearchPage: Render danh sách POI kết quả
-
     MobileUser ->> SearchPage: Chọn bộ lọc Category
     SearchPage ->> SearchVM: FilterByCategory(categoryId)
     SearchVM ->> SearchVM: Filter local cache (không gọi API lại)
     SearchVM -->> SearchPage: Render danh sách đã lọc
-
-    MobileUser ->> SearchPage: Nhấn vào POI trong kết quả
-    SearchPage -->> MobileUser: Navigate → PoiDetailPage(poiId)
 ```
 
 ---
 
-### 11.5. CMS — Đăng Nhập (🌐 Web CMS — UC20)
+### 11.9. Xem Thông Tin POI (📱 Mobile — UC9)
+
+```mermaid
+sequenceDiagram
+    participant MobileUser as Người dùng
+    participant MapPage
+    participant DetailPage as PoiDetailPage
+    participant DetailVM as PoiDetailViewModel
+    participant API as ApiService
+    participant Backend as PoiMobileController
+
+    MobileUser ->> MapPage: Nhấn vào POI pin
+    MapPage ->> DetailPage: Navigate(poiId)
+    DetailPage ->> DetailVM: LoadAsync(poiId, lang)
+    DetailVM ->> API: GetPoiDetailAsync(poiId, lang)
+    API ->> Backend: GET /api/mobile/poi/{poiId}?lang=vi
+    Backend -->> API: PoiDetailDto (info, audioUrl, gallery[])
+    API -->> DetailVM: PoiDetailDto
+    DetailVM -->> DetailPage: Render thông tin
+```
+
+---
+
+### 11.10. Xem Gallery Ảnh (📱 Mobile — UC10)
+
+```mermaid
+sequenceDiagram
+    participant MobileUser as Người dùng
+    participant DetailPage as PoiDetailPage
+    participant GalleryPage as GalleryFullScreenPage
+
+    MobileUser ->> DetailPage: Nhấn ảnh trong gallery của POI
+    DetailPage ->> GalleryPage: Navigate(images[], selectedIndex)
+    GalleryPage -->> MobileUser: Hiển thị ảnh full-screen (vuốt trái/phải)
+```
+
+---
+
+### 11.11. Nghe Audio Theo Ngôn Ngữ (📱 Mobile — UC11)
+
+```mermaid
+sequenceDiagram
+    participant MobileUser as Người dùng
+    participant DetailPage as PoiDetailPage
+    participant DetailVM as PoiDetailViewModel
+    participant API as ApiService
+    participant Backend as PoiMobileController
+
+    MobileUser ->> DetailPage: Nhấn nút "Nghe audio"
+    DetailPage ->> DetailVM: PlayAudio(audioUrl, lang)
+    DetailVM -->> DetailPage: Mở Mini-Player với audio POI (Gọi UC6)
+
+    MobileUser ->> DetailPage: Đổi ngôn ngữ (vi/en/ja/...)
+    DetailPage ->> DetailVM: ChangeLanguage(lang)
+    DetailVM ->> API: GetPoiDetailAsync(poiId, newLang)
+    API ->> Backend: GET /api/mobile/poi/{poiId}?lang=en
+    Backend -->> API: PoiDetailDto (ngôn ngữ mới)
+    DetailVM -->> DetailPage: Cập nhật audio URL + nội dung
+```
+
+---
+
+### 11.12. CMS — Đăng Nhập (🌐 Web CMS — UC20)
 
 > **UC:** UC20 Đăng nhập CMS (Owner & Admin)
 
@@ -1809,7 +1143,7 @@ sequenceDiagram
 
 ---
 
-### 11.6. CMS — Quản Lý POI (🌐 Web CMS — UC21–UC25, UC30–UC34)
+### 11.13. CMS — Quản Lý POI (🌐 Web CMS — UC21–UC25, UC30–UC34)
 
 ```mermaid
 sequenceDiagram
@@ -1849,7 +1183,7 @@ sequenceDiagram
 
 ---
 
-### 11.7. CMS — Content Pipeline Trigger (🌐 Web CMS — UC35, UC36, UC37, UC38)
+### 11.14. CMS — Content Pipeline Trigger (🌐 Web CMS — UC35, UC36, UC37, UC38)
 
 ```mermaid
 sequenceDiagram
@@ -1901,7 +1235,7 @@ sequenceDiagram
 
 ---
 
-### 11.8. CMS — Gallery & Media Upload (🌐 Web CMS — UC24, UC25)
+### 11.15. CMS — Gallery & Media Upload (🌐 Web CMS — UC24, UC25)
 
 ```mermaid
 sequenceDiagram
@@ -1935,88 +1269,40 @@ sequenceDiagram
 
 ---
 
-### 11.9. Phát Audio Mini-Player — Pause/Resume (📱 Mobile — UC6, UC11)
-
-> **UC:** UC6 Điều khiển Mini-Player · UC11 Nghe audio theo ngôn ngữ
+### 11.16. Xem Route (📱 Mobile)
 
 ```mermaid
 sequenceDiagram
     participant MobileUser as Người dùng
-    participant MiniPlayer as MiniPlayerView
-    participant AudioSvc as AudioPlayerService
-    participant DetailPage as PoiDetailPage
-    participant DetailVM as PoiDetailViewModel
-
-    MobileUser ->> MiniPlayer: Nhấn Pause
-    MiniPlayer ->> AudioSvc: PauseAsync()
-    AudioSvc ->> AudioSvc: MediaElement.Pause()
-    AudioSvc -->> MiniPlayer: State = Paused
-    MiniPlayer -->> MobileUser: Nút chuyển sang Play
-
-    MobileUser ->> MiniPlayer: Nhấn Play (Resume)
-    MiniPlayer ->> AudioSvc: ResumeAsync()
-    AudioSvc ->> AudioSvc: MediaElement.Play()
-    AudioSvc -->> MiniPlayer: State = Playing
-
-    MobileUser ->> MiniPlayer: Kéo thanh seek (thay đổi vị trí)
-    MiniPlayer ->> AudioSvc: SeekTo(position)
-    AudioSvc ->> AudioSvc: MediaElement.SeekTo(position)
-
-    MobileUser ->> MiniPlayer: Đổi tốc độ phát (0.75x / 1.0x / 1.25x / 1.5x)
-    MiniPlayer ->> AudioSvc: SetPlaybackSpeed(rate)
-    AudioSvc -->> MiniPlayer: Speed updated
-
-    MobileUser ->> DetailPage: Mở PoiDetailPage từ Mini-Player
-    DetailPage ->> DetailVM: LoadAsync(currentPoiId)
-    DetailVM -->> DetailPage: Hiển thị chi tiết POI đang phát
-
-    MobileUser ->> MiniPlayer: Nhấn nút X (đóng player)
-    MiniPlayer ->> AudioSvc: StopAsync()
-    AudioSvc -->> MiniPlayer: Hidden
-```
-
----
-
-### 11.10. Tìm Kiếm & Lọc POI — Đã hợp nhất vào 11.4
-
-> *Xem lại **11.4** — Tìm kiếm & Lọc POI (UC7, UC8)*
-
----
-
-### 11.11. Xem Tour (📱 Mobile)
-
-```mermaid
-sequenceDiagram
-    participant MobileUser as Người dùng
-    participant ListUI as TourListPage
-    participant ListVM as TourListViewModel
-    participant DetailUI as TourDetailPage
-    participant DetailVM as TourDetailViewModel
+    participant ListUI as RouteListPage
+    participant ListVM as RouteListViewModel
+    participant DetailUI as RouteDetailPage
+    participant DetailVM as RouteDetailViewModel
     participant API as ApiService
-    participant Backend as TourMobileController
+    participant Backend as RouteMobileController
 
-    MobileUser ->> ListUI: Mở tab Tours
-    ListUI ->> ListVM: LoadToursAsync()
-    ListVM ->> API: GetToursAsync(lang)
-    API ->> Backend: GET /api/mobile/tour?lang=vi
-    Backend -->> API: List<TourSummaryDto>
-    API -->> ListVM: List<TourSummaryDto>
-    ListVM -->> ListUI: Hiển thị danh sách tour
+    MobileUser ->> ListUI: Mở tab Routes
+    ListUI ->> ListVM: LoadRoutesAsync()
+    ListVM ->> API: GetRoutesAsync(lang)
+    API ->> Backend: GET /api/mobile/route?lang=vi
+    Backend -->> API: List<RouteSummaryDto>
+    API -->> ListVM: List<RouteSummaryDto>
+    ListVM -->> ListUI: Hiển thị danh sách route
 
-    MobileUser ->> ListUI: Chọn một tour
-    ListUI ->> DetailUI: Navigate(tourId)
-    DetailUI ->> DetailVM: LoadTourDetailAsync(tourId)
-    DetailVM ->> API: GetTourByIdAsync(tourId, lang)
-    API ->> Backend: GET /api/mobile/tour/{tourId}?lang=vi
-    Backend -->> API: TourDetailDto (with Steps)
-    API -->> DetailVM: TourDetailDto
-    DetailVM -->> DetailUI: Hiển thị chi tiết tour + danh sách POI steps
+    MobileUser ->> ListUI: Chọn một route
+    ListUI ->> DetailUI: Navigate(routeId)
+    DetailUI ->> DetailVM: LoadRouteDetailAsync(routeId)
+    DetailVM ->> API: GetRouteByIdAsync(routeId, lang)
+    API ->> Backend: GET /api/mobile/route/{routeId}?lang=vi
+    Backend -->> API: RouteDetailDto (with Steps)
+    API -->> DetailVM: RouteDetailDto
+    DetailVM -->> DetailUI: Hiển thị chi tiết route + danh sách POI steps
 
-    MobileUser ->> DetailUI: Nhấn "Bắt đầu Tour"
+    MobileUser ->> DetailUI: Nhấn "Bắt đầu Route"
     DetailUI -->> MobileUser: Chuyển sang MapPage với route POI
 ```
 
-### 11.12. CMS — Bulk Content Pipeline: GenerateAllLanguages (⚙️ Backend)
+### 11.17. CMS — Bulk Content Pipeline: GenerateAllLanguages (⚙️ Backend)
 
 ```mermaid
 sequenceDiagram
@@ -2086,7 +1372,7 @@ sequenceDiagram
 ```
 
 
-### 11.13. CMS — Quản Lý Tài Khoản (🌐 Web CMS)
+### 11.18. CMS — Quản Lý Tài Khoản (🌐 Web CMS)
 
 ```mermaid
 sequenceDiagram
@@ -2143,7 +1429,7 @@ sequenceDiagram
     end
 ```
 
-### 11.14. CMS — Quản Lý Danh Mục (🌐 Web CMS)
+### 11.19. CMS — Quản Lý Danh Mục (🌐 Web CMS)
 
 ```mermaid
 sequenceDiagram
@@ -2192,64 +1478,64 @@ sequenceDiagram
     CatCtrl -->> CMS: 204 No Content
 ```
 
-### 11.15. CMS — Quản Lý Tour (🌐 Web CMS)
+### 11.20. CMS — Quản Lý Route (🌐 Web CMS)
 
 ```mermaid
 sequenceDiagram
     participant Admin
     participant CMS as Web CMS (Browser)
-    participant TourCtrl as CmsTourController
-    participant Repo as ITourRepository
+    participant RouteCtrl as CmsRouteController
+    participant Repo as IRouteRepository
     participant DB as AppDbContext
 
-    Admin ->> CMS: Xem danh sách tour
-    CMS ->> TourCtrl: GET /api/cms/tours
-    TourCtrl ->> Repo: GetAllAsync()
-    Repo -->> TourCtrl: List~Tour~ (include TourPois)
-    TourCtrl -->> CMS: 200 List~TourDto~
-    CMS -->> Admin: Hiển thị danh sách tour
+    Admin ->> CMS: Xem danh sách route
+    CMS ->> RouteCtrl: GET /api/cms/routes
+    RouteCtrl ->> Repo: GetAllAsync()
+    Repo -->> RouteCtrl: List~Route~ (include RoutePois)
+    RouteCtrl -->> CMS: 200 List~TourDto~
+    CMS -->> Admin: Hiển thị danh sách route
 
-    Admin ->> CMS: Tạo tour mới
-    CMS ->> TourCtrl: POST /api/cms/tours { name, description }
-    TourCtrl ->> Repo: CreateAsync(tour)
+    Admin ->> CMS: Tạo route mới
+    CMS ->> RouteCtrl: POST /api/cms/routes { name, description }
+    RouteCtrl ->> Repo: CreateAsync(route)
     Repo ->> DB: Add + SaveChanges
-    TourCtrl -->> CMS: 201 Created TourDto
-    CMS -->> Admin: Tour mới hiện trong danh sách
+    RouteCtrl -->> CMS: 201 Created TourDto
+    CMS -->> Admin: Route mới hiện trong danh sách
 
-    Admin ->> CMS: Xem chi tiết tour
-    CMS ->> TourCtrl: GET /api/cms/tours/{id}
-    TourCtrl ->> Repo: GetByIdAsync(id)
-    Repo -->> TourCtrl: Tour (include TourPois + Poi + Contents)
-    TourCtrl -->> CMS: 200 TourDto (kèm danh sách POI steps)
-    CMS -->> Admin: Hiển thị chi tiết tour + POI steps
+    Admin ->> CMS: Xem chi tiết route
+    CMS ->> RouteCtrl: GET /api/cms/routes/{id}
+    RouteCtrl ->> Repo: GetByIdAsync(id)
+    Repo -->> RouteCtrl: Route (include RoutePois + Poi + Contents)
+    RouteCtrl -->> CMS: 200 TourDto (kèm danh sách POI steps)
+    CMS -->> Admin: Hiển thị chi tiết route + POI steps
 
-    Admin ->> CMS: Thêm POI vào tour
-    CMS ->> TourCtrl: POST /api/cms/tours/{id}/pois { poiId, stepOrder }
-    TourCtrl ->> Repo: AddPoiAsync(tourId, poiId, stepOrder)
-    Repo ->> DB: Add TourPoi + SaveChanges
-    TourCtrl -->> CMS: 204 No Content
-    CMS -->> Admin: POI thêm vào tour thành công
+    Admin ->> CMS: Thêm POI vào route
+    CMS ->> RouteCtrl: POST /api/cms/routes/{id}/pois { poiId, stepOrder }
+    RouteCtrl ->> Repo: AddPoiAsync(routeId, poiId, stepOrder)
+    Repo ->> DB: Add RoutePoi + SaveChanges
+    RouteCtrl -->> CMS: 204 No Content
+    CMS -->> Admin: POI thêm vào route thành công
 
     Admin ->> CMS: Đổi thứ tự bước
-    CMS ->> TourCtrl: PUT /api/cms/tours/{id}/pois/{poiId}/order { newOrder }
-    TourCtrl ->> Repo: ReorderPoiAsync(tourId, poiId, newOrder)
-    Repo ->> DB: Update TourPoi.StepOrder
-    TourCtrl -->> CMS: 204 No Content
+    CMS ->> RouteCtrl: PUT /api/cms/routes/{id}/pois/{poiId}/order { newOrder }
+    RouteCtrl ->> Repo: ReorderPoiAsync(routeId, poiId, newOrder)
+    Repo ->> DB: Update RoutePoi.StepOrder
+    RouteCtrl -->> CMS: 204 No Content
     CMS -->> Admin: Thứ tự đã cập nhật
 
-    Admin ->> CMS: Xóa POI khỏi tour
-    CMS ->> TourCtrl: DELETE /api/cms/tours/{id}/pois/{poiId}
-    TourCtrl ->> Repo: RemovePoiAsync(tourId, poiId)
-    Repo ->> DB: Remove TourPoi
-    TourCtrl -->> CMS: 204 No Content
+    Admin ->> CMS: Xóa POI khỏi route
+    CMS ->> RouteCtrl: DELETE /api/cms/routes/{id}/pois/{poiId}
+    RouteCtrl ->> Repo: RemovePoiAsync(routeId, poiId)
+    Repo ->> DB: Remove RoutePoi
+    RouteCtrl -->> CMS: 204 No Content
 
-    Admin ->> CMS: Xóa tour
-    CMS ->> TourCtrl: DELETE /api/cms/tours/{id}
-    TourCtrl ->> Repo: DeleteAsync(id)
-    TourCtrl -->> CMS: 204 No Content
+    Admin ->> CMS: Xóa route
+    CMS ->> RouteCtrl: DELETE /api/cms/routes/{id}
+    RouteCtrl ->> Repo: DeleteAsync(id)
+    RouteCtrl -->> CMS: 204 No Content
 ```
 
-### 11.16. Real-Time Device Monitoring — SignalR (📱 Mobile ↔ 🌐 Web CMS)
+### 11.21. Real-Time Device Monitoring — SignalR (📱 Mobile ↔ 🌐 Web CMS)
 
 ```mermaid
 sequenceDiagram
@@ -2286,7 +1572,7 @@ sequenceDiagram
     Hub ->> Admin: DeviceOffline { deviceId, isActive=false, onlineNow }
 ```
 
-### 11.17. CMS — Quản Lý Access Code (🌐 Web CMS)
+### 11.22. CMS — Quản Lý Access Code (🌐 Web CMS)
 
 ```mermaid
 sequenceDiagram
@@ -2315,7 +1601,7 @@ sequenceDiagram
     CodeCtrl -->> CMS: 200 { message }
 ```
 
-### 11.18. CMS — Xem Timeline Hoạt Động Thiết Bị (🌐 Web CMS)
+### 11.23. CMS — Xem Timeline Hoạt Động Thiết Bị (🌐 Web CMS)
 
 ```mermaid
 sequenceDiagram
@@ -2617,37 +1903,37 @@ flowchart TD
     style COUNT_FAIL fill:#F44336,color:#fff
 ```
 
-### 12.8. CMS — Quản Lý Tour Activity (🌐 Web CMS - UC30-UC34)
+### 12.8. CMS — Quản Lý Route Activity (🌐 Web CMS - UC30-UC34)
 
 ```mermaid
 flowchart TD
     START((●)) --> LOGIN{Admin đã đăng nhập?}
     LOGIN -- Chưa --> AUTH[Đăng nhập CMS]
     AUTH --> LOGIN
-    LOGIN -- Rồi --> VIEW_TOURS[GET /api/cms/tours]
+    LOGIN -- Rồi --> VIEW_TOURS[GET /api/cms/routes]
 
-    VIEW_TOURS --> HAS_TOURS{Có tour nào?}
-    HAS_TOURS -- Không --> CREATE_TOUR[Tạo tour mới:<br/>POST /api/cms/tours]
+    VIEW_TOURS --> HAS_TOURS{Có route nào?}
+    HAS_TOURS -- Không --> CREATE_TOUR[Tạo route mới:<br/>POST /api/cms/routes]
     CREATE_TOUR --> SELECT_TOUR
 
-    HAS_TOURS -- Có --> SELECT_TOUR[Chọn tour để quản lý]
+    HAS_TOURS -- Có --> SELECT_TOUR[Chọn route để quản lý]
     SELECT_TOUR --> ACTION{Admin chọn hành động}
 
-    ACTION -- Thêm POI --> ADD_POI[POST /tours/id/pois<br/>poiId + stepOrder]
-    ADD_POI --> REFRESH[Refresh chi tiết tour]
+    ACTION -- Thêm POI --> ADD_POI[POST /routes/id/pois<br/>poiId + stepOrder]
+    ADD_POI --> REFRESH[Refresh chi tiết route]
 
-    ACTION -- Sắp xếp thứ tự --> REORDER[PUT /tours/id/pois/poiId/order<br/>newOrder]
+    ACTION -- Sắp xếp thứ tự --> REORDER[PUT /routes/id/pois/poiId/order<br/>newOrder]
     REORDER --> REFRESH
 
-    ACTION -- Xóa POI --> REMOVE_POI[DELETE /tours/id/pois/poiId]
+    ACTION -- Xóa POI --> REMOVE_POI[DELETE /routes/id/pois/poiId]
     REMOVE_POI --> REFRESH
 
-    ACTION -- Sửa thông tin --> EDIT_TOUR[PUT /api/cms/tours/id<br/>name, description]
+    ACTION -- Sửa thông tin --> EDIT_TOUR[PUT /api/cms/routes/id<br/>name, description]
     EDIT_TOUR --> REFRESH
 
-    ACTION -- Xóa tour --> CONFIRM{Xác nhận xóa?}
+    ACTION -- Xóa route --> CONFIRM{Xác nhận xóa?}
     CONFIRM -- Không --> REFRESH
-    CONFIRM -- Có --> DELETE_TOUR[DELETE /api/cms/tours/id]
+    CONFIRM -- Có --> DELETE_TOUR[DELETE /api/cms/routes/id]
     DELETE_TOUR --> VIEW_TOURS
 
     REFRESH --> ACTION
@@ -2845,17 +2131,17 @@ flowchart TD
     style END_NODE fill:#000,color:#fff,stroke:#fff,stroke-width:3px
 ```
 
-### 12.14. Luồng Xem và Bắt Đầu Tour (📱 Mobile - UC12, UC13, UC14)
+### 12.14. Luồng Xem và Bắt Đầu Route (📱 Mobile - UC12, UC13, UC14)
 
 ```mermaid
 flowchart TD
-    START((●)) --> LOAD_TOURS[Load danh sách Tour]
-    LOAD_TOURS --> SELECT_TOUR[User chọn Tour]
+    START((●)) --> LOAD_TOURS[Load danh sách Route]
+    LOAD_TOURS --> SELECT_TOUR[User chọn Route]
     SELECT_TOUR --> LOAD_DETAIL[Load TourDetail<br/>Kèm danh sách POI steps]
-    LOAD_DETAIL --> DISPLAY[Hiển thị chi tiết Tour]
-    DISPLAY --> START_TOUR{User nhấn<br/>Bắt đầu Tour?}
+    LOAD_DETAIL --> DISPLAY[Hiển thị chi tiết Route]
+    DISPLAY --> START_TOUR{User nhấn<br/>Bắt đầu Route?}
     START_TOUR -- Không --> SELECT_TOUR
-    START_TOUR -- Có --> START_MODE[Kích hoạt chế độ Tour]
+    START_TOUR -- Có --> START_MODE[Kích hoạt chế độ Route]
     START_MODE --> SET_ROUTE[Đặt route trên bản đồ]
     SET_ROUTE --> NAV_MAP[Chuyển hướng sang MapPage]
     NAV_MAP --> END_NODE((◉))
@@ -2916,7 +2202,7 @@ CSharpProject/
 │   │   │   ├── PoiController.cs
 │   │   │   ├── AuthMobileController.cs
 │   │   │   ├── CategoryMobileController.cs
-│   │   │   ├── TourMobileController.cs
+│   │   │   ├── RouteMobileController.cs
 │   │   │   ├── ListenHistoryController.cs
 │   │   │   └── LocationLogController.cs
 │   │   └── Cms/                  # API cho Web CMS (🔒 JWT)
@@ -2924,7 +2210,7 @@ CSharpProject/
 │   │       ├── CmsPoiContentController.cs
 │   │       ├── CmsPoiGalleryController.cs
 │   │       ├── CmsCategoryController.cs
-│   │       ├── CmsTourController.cs
+│   │       ├── CmsRouteController.cs
 │   │       ├── CmsContentPipelineController.cs
 │   │       ├── CmsAccessCodeController.cs  # Quản lý QR codes
 │   │       ├── CmsLocationLogController.cs # Xem & xóa GPS logs
@@ -2974,7 +2260,7 @@ CSharpProject/
 │   │   │   ├── AccountsPage.jsx
 │   │   │   ├── CategoryPage.jsx
 │   │   │   ├── ToursPage.jsx
-│   │   │   ├── TourDetailPage.jsx
+│   │   │   ├── RouteDetailPage.jsx
 │   │   │   ├── AudioPage.jsx
 │   │   │   ├── AudioContentPage.jsx
 │   │   │   ├── AnalyticsPage.jsx
