@@ -37,7 +37,10 @@ namespace Server.Services
         }
 
         public int OnlineCount =>
-            _connections.Values.Count(v => !string.IsNullOrEmpty(v));
+            _connections.Values
+                .Where(v => !string.IsNullOrEmpty(v))
+                .Distinct()
+                .Count();
 
         public bool IsOnline(string deviceId) =>
             _connections.Values.Any(v => v == deviceId);

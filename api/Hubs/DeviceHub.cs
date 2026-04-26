@@ -64,18 +64,16 @@ namespace Server.Hubs
 
                 _presence.MarkOnline(connectionId, deviceId);
 
-                var allOnline = _presence.GetOnlineDeviceIds();
-
                 await Clients.Group("admin_dashboard").SendAsync("DeviceOnline", new
                 {
                     deviceId,
                     isActive  = true,
                     lastSeen  = DateTime.UtcNow,
-                    onlineNow = allOnline.Count
+                    onlineNow = _presence.OnlineCount
                 });
 
                 _logger.LogInformation("📱 Device connected: {DeviceId} | Online now: {Count}",
-                    deviceId, allOnline.Count);
+                    deviceId, _presence.OnlineCount);
             }
 
             await base.OnConnectedAsync();
@@ -96,18 +94,16 @@ namespace Server.Hubs
                 // ✅ Chỉ gửi sự kiện Offline nếu KHÔNG còn connection nào khác của thiết bị này
                 if (!_presence.IsOnline(deviceId))
                 {
-                    var allOnline = _presence.GetOnlineDeviceIds();
-
                     await Clients.Group("admin_dashboard").SendAsync("DeviceOffline", new
                     {
                         deviceId,
                         isActive  = false,
                         lastSeen  = DateTime.UtcNow,
-                        onlineNow = allOnline.Count
+                        onlineNow = _presence.OnlineCount
                     });
 
                     _logger.LogInformation("📴 Device disconnected: {DeviceId} | Online now: {Count}",
-                        deviceId, allOnline.Count);
+                        deviceId, _presence.OnlineCount);
                 }
                 else
                 {
@@ -179,7 +175,7 @@ namespace Server.Hubs
 
             return Task.FromResult<object>(new
             {
-                onlineNow   = onlineIds.Count,
+                onlineNow   = _presence.OnlineCount,
                 deviceIds   = onlineIds,
                 snapshotAt  = DateTime.UtcNow
             });
