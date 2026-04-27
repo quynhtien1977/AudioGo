@@ -62,7 +62,8 @@ export default function AccountsPage() {
       const filtered = users.filter(
         (acc) =>
           acc.username?.toLowerCase().includes(searchTerm) ||
-          acc.email?.toLowerCase().includes(searchTerm)
+          acc.email?.toLowerCase().includes(searchTerm) || 
+          acc.fullName?.toLowerCase().includes(searchTerm)
       )
       setFilteredUsers(filtered)
       setCurrentPage(1) // Reset to first page

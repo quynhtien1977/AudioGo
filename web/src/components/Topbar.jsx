@@ -159,7 +159,8 @@ export default function Topbar() {
         results = allData.filter(
           (acc) =>
             acc.username?.toLowerCase().includes(searchTerm) ||
-            acc.email?.toLowerCase().includes(searchTerm)
+            acc.email?.toLowerCase().includes(searchTerm) || 
+            acc.fullName?.toLowerCase().includes(searchTerm)
         )
         break
       case "audio":
