@@ -29,23 +29,39 @@ const InfoCardOfAddPOI = ({ form, handleChange, categories = [] }) => {
           />
         </div>
 
-        {/* CATEGORY */}
+        {/* CATEGORY - MULTI SELECT */}
         <div>
-          <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">
-            Danh mục
+          <label className="text-[10px] font-bold text-gray-400 uppercase ml-1 block mb-3">
+            Danh mục (chọn một hoặc nhiều)
           </label>
-          <select 
-            value={form.category}
-            onChange={(e) => handleChange("category", e.target.value)}
-            className="w-full bg-transparent border-b-2 border-pink-100 py-2 outline-none focus:border-pink-500 transition-all font-medium text-gray-600"
-          >
-            <option value="">-- Chọn danh mục --</option>
-            {categories.map((cat) => (
-              <option key={cat.categoryId} value={cat.name}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
+          <div className="space-y-2 bg-pink-50/30 p-4 rounded-lg border-2 border-dashed border-pink-100">
+            {categories.length > 0 ? (
+              categories.map((cat) => (
+                <label key={cat.categoryId} className="flex items-center gap-2 cursor-pointer hover:bg-white/50 p-2 rounded transition">
+                  <input
+                    type="checkbox"
+                    checked={form.categories?.includes(cat.categoryId) || false}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        handleChange("categories", [...(form.categories || []), cat.categoryId]);
+                      } else {
+                        handleChange("categories", (form.categories || []).filter(id => id !== cat.categoryId));
+                      }
+                    }}
+                    className="w-4 h-4 rounded accent-pink-500 cursor-pointer"
+                  />
+                  <span className="text-sm text-gray-700 font-medium">{cat.name}</span>
+                </label>
+              ))
+            ) : (
+              <p className="text-sm text-gray-400 italic">Không có danh mục nào</p>
+            )}
+          </div>
+          {form.categories?.length > 0 && (
+            <p className="text-xs text-pink-500 mt-2 font-semibold">
+              ✓ Đã chọn {form.categories.length} danh mục
+            </p>
+          )}
         </div>
 
         {/* LANGUAGE */}

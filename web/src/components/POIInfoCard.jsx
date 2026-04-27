@@ -29,31 +29,53 @@ const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role, getCategor
       </h4>
 
       {/* Row 1: Category & Language */}
-      <div className="flex gap-6">
+      <div className="flex gap-6 flex-col">
         <div className="flex-1 min-h-[45px]">
-          <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Danh mục</p>
+          <p className="text-[10px] font-bold text-gray-400 uppercase mb-3">Danh mục</p>
           {isEditing ? (
-            <div className="relative group">
-              <select
-                value={poi.category || ""}
-                onChange={(e) => handleChange("category", e.target.value)}
-                className={`appearance-none cursor-pointer ${inputStyle}`}
-              >
-                <option value="">-- Chọn danh mục --</option>
-                {categories.map((cat) => (
-                  <option key={cat.categoryId} value={cat.name}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute right-0 bottom-1 flex items-center text-pink-400">
-                <svg className="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-              </div>
+            <div className="space-y-2 bg-pink-50/30 p-4 rounded-lg border-2 border-dashed border-pink-100">
+              {categories.length > 0 ? (
+                categories.map((cat) => (
+                  <label key={cat.categoryId} className="flex items-center gap-2 cursor-pointer hover:bg-white/50 p-2 rounded transition">
+                    <input
+                      type="checkbox"
+                      checked={poi.categories?.includes(cat.categoryId) || false}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          handleChange("categories", [...(poi.categories || []), cat.categoryId]);
+                        } else {
+                          handleChange("categories", (poi.categories || []).filter(id => id !== cat.categoryId));
+                        }
+                      }}
+                      className="w-4 h-4 rounded accent-pink-500 cursor-pointer"
+                    />
+                    <span className="text-sm text-gray-700 font-medium">{cat.name}</span>
+                  </label>
+                ))
+              ) : (
+                <p className="text-sm text-gray-400 italic">Không có danh mục nào</p>
+              )}
             </div>
           ) : (
-            <span className={`px-2 py-0.5 rounded text-xs font-medium ${getCategoryColor ? getCategoryColor(poi.category) : "bg-pink-50 text-pink-600"}`}>
-              {poi.category || "N/A"}
-            </span>
+            <div className="flex flex-wrap gap-2">
+              {poi.categories && poi.categories.length > 0 ? (
+                poi.categories.map((catId) => {
+                  const cat = categories.find(c => c.categoryId === catId);
+                  return cat ? (
+                    <span key={catId} className={`px-2 py-1 rounded text-xs font-medium ${getCategoryColor ? getCategoryColor(cat.name) : "bg-pink-50 text-pink-600"}`}>
+                      {cat.name}
+                    </span>
+                  ) : null;
+                })
+              ) : (
+                <span className="text-xs text-gray-400 italic">Chưa chọn danh mục</span>
+              )}
+            </div>
+          )}
+          {poi.categories?.length > 0 && isEditing && (
+            <p className="text-xs text-pink-500 mt-2 font-semibold">
+              ✓ Đã chọn {poi.categories.length} danh mục
+            </p>
           )}
         </div>
 
