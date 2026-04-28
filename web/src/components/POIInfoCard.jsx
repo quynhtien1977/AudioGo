@@ -29,35 +29,106 @@ const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role, getCategor
       </h4>
 
       {/* Row 1: Category & Language */}
-      <div className="flex gap-6 flex-col">
-        <div className="flex-1 min-h-[45px]">
-          <p className="text-[10px] font-bold text-gray-400 uppercase mb-3">Danh mục</p>
-          {isEditing ? (
-            <div className="space-y-2 bg-pink-50/30 p-4 rounded-lg border-2 border-dashed border-pink-100">
-              {categories.length > 0 ? (
-                categories.map((cat) => (
-                  <label key={cat.categoryId} className="flex items-center gap-2 cursor-pointer hover:bg-white/50 p-2 rounded transition">
-                    <input
-                      type="checkbox"
-                      checked={poi.categories?.includes(cat.categoryId) || false}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          handleChange("categories", [...(poi.categories || []), cat.categoryId]);
-                        } else {
-                          handleChange("categories", (poi.categories || []).filter(id => id !== cat.categoryId));
-                        }
-                      }}
-                      className="w-4 h-4 rounded accent-pink-500 cursor-pointer"
-                    />
-                    <span className="text-sm text-gray-700 font-medium">{cat.name}</span>
-                  </label>
-                ))
-              ) : (
-                <p className="text-sm text-gray-400 italic">Không có danh mục nào</p>
+      {isEditing ? (
+        <div className="flex gap-6 flex-col">
+          <div className="flex-1 min-h-[45px]">
+            <p className="text-[10px] font-bold text-gray-400 uppercase mb-3">Danh mục (tối đa 2)</p>
+            <div className="space-y-2">
+              {/* Selected Categories as Badges */}
+              {poi.categories?.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {poi.categories.map((catId) => {
+                    const cat = categories.find(c => c.categoryId === catId);
+                    return cat ? (
+                      <span key={catId} className="inline-flex items-center gap-2 bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-sm font-medium">
+                        {cat.name}
+                        <button
+                          onClick={() => handleChange("categories", poi.categories.filter(id => id !== catId))}
+                          className="ml-1 hover:text-pink-900 font-bold"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              )}
+              
+              {/* Add Category Dropdown */}
+              {poi.categories?.length < 2 && (
+                <select
+                  value=""
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      handleChange("categories", [...(poi.categories || []), e.target.value]);
+                    }
+                  }}
+                  className="w-full bg-white border-2 border-pink-100 rounded-lg py-2 px-3 outline-none focus:border-pink-500 transition-all font-medium text-gray-600 cursor-pointer"
+                >
+                  <option value="" disabled>
+                    Chọn danh mục
+                  </option>
+                  {categories.length > 0 ? (
+                    categories.map((cat) => {
+                      const isSelected = poi.categories?.includes(cat.categoryId);
+                      return !isSelected ? (
+                        <option key={cat.categoryId} value={cat.categoryId}>
+                          {cat.name}
+                        </option>
+                      ) : null;
+                    })
+                  ) : (
+                    <option disabled>Không có danh mục nào</option>
+                  )}
+                </select>
+              )}
+              
+              {poi.categories?.length >= 2 && (
+                <p className="text-xs text-gray-400 italic">Đã chọn tối đa 2 danh mục</p>
               )}
             </div>
-          ) : (
-            <div className="flex flex-wrap gap-2">
+          </div>
+
+          <div className="flex-1 min-h-[45px]">
+            <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Ngôn ngữ</p>
+            <div className="relative group">
+              <select
+                value={poi.languageCode || ""}
+                onChange={(e) => handleChange("languageCode", e.target.value)}
+                className={`appearance-none cursor-pointer ${inputStyle}`}
+              >
+                <option value="" disabled>
+                  Chọn ngôn ngữ
+                </option>
+
+                {[
+                  { code: "en", label: "Tiếng Anh" },
+                  { code: "fr", label: "Tiếng Pháp" },
+                  { code: "ja", label: "Tiếng Nhật" },
+                  { code: "ko", label: "Tiếng Hàn" },
+                  { code: "th", label: "Tiếng Thái" },
+                  { code: "vi", label: "Tiếng Việt" },
+                  { code: "zh-Hans", label: "Tiếng Trung (Giản thể)" },
+                ].map((lang) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.label}
+                  </option>
+                ))}
+              </select>
+
+              <div className="pointer-events-none absolute right-0 bottom-1 flex items-center text-pink-400">
+                <svg className="h-3 w-3 fill-current" viewBox="0 0 20 20">
+                  <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex gap-6 items-start">
+          <div className="flex-0">
+            <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Danh mục</p>
+            <div className="flex flex-col gap-2">
               {poi.categories && poi.categories.length > 0 ? (
                 poi.categories.map((catId) => {
                   const cat = categories.find(c => c.categoryId === catId);
@@ -71,56 +142,16 @@ const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role, getCategor
                 <span className="text-xs text-gray-400 italic">Chưa chọn danh mục</span>
               )}
             </div>
-          )}
-          {poi.categories?.length > 0 && isEditing && (
-            <p className="text-xs text-pink-500 mt-2 font-semibold">
-              ✓ Đã chọn {poi.categories.length} danh mục
-            </p>
-          )}
-        </div>
+          </div>
 
-        <div className="flex-1 min-h-[45px]">
-          <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Ngôn ngữ</p>
-          {isEditing ? (
-            <div className="relative group">
-      <select
-        value={poi.languageCode || ""}
-        onChange={(e) => handleChange("languageCode", e.target.value)}
-        className={`appearance-none cursor-pointer ${inputStyle}`}
-      >
-        <option value="" disabled>
-          Chọn ngôn ngữ
-        </option>
-
-        {[
-          { code: "en", label: "Tiếng Anh" },
-          { code: "fr", label: "Tiếng Pháp" },
-          { code: "ja", label: "Tiếng Nhật" },
-          { code: "ko", label: "Tiếng Hàn" },
-          { code: "th", label: "Tiếng Thái" },
-          { code: "vi", label: "Tiếng Việt" },
-          { code: "zh-Hans", label: "Tiếng Trung (Giản thể)" },
-        ].map((lang) => (
-          <option key={lang.code} value={lang.code}>
-            {lang.label}
-          </option>
-        ))}
-      </select>
-
-      <div className="pointer-events-none absolute right-0 bottom-1 flex items-center text-pink-400">
-        <svg className="h-3 w-3 fill-current" viewBox="0 0 20 20">
-          <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-        </svg>
-      </div>
-    </div>
-            
-          ) : (
+          <div className="flex-0">
+            <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Ngôn ngữ</p>
             <span className="bg-pink-50 text-pink-600 px-2 py-0.5 rounded text-xs font-medium">
               {languageLabels[poi.languageCode] || "N/A"}
             </span>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Row 2: Location (Lat/Lng) */}
       <div className="space-y-1">

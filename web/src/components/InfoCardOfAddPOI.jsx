@@ -29,39 +29,66 @@ const InfoCardOfAddPOI = ({ form, handleChange, categories = [] }) => {
           />
         </div>
 
-        {/* CATEGORY - MULTI SELECT */}
+        {/* CATEGORY - DROPDOWN */}
         <div>
           <label className="text-[10px] font-bold text-gray-400 uppercase ml-1 block mb-3">
-            Danh mục (chọn một hoặc nhiều)
+            Danh mục (tối đa 2)
           </label>
-          <div className="space-y-2 bg-pink-50/30 p-4 rounded-lg border-2 border-dashed border-pink-100">
-            {categories.length > 0 ? (
-              categories.map((cat) => (
-                <label key={cat.categoryId} className="flex items-center gap-2 cursor-pointer hover:bg-white/50 p-2 rounded transition">
-                  <input
-                    type="checkbox"
-                    checked={form.categories?.includes(cat.categoryId) || false}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        handleChange("categories", [...(form.categories || []), cat.categoryId]);
-                      } else {
-                        handleChange("categories", (form.categories || []).filter(id => id !== cat.categoryId));
-                      }
-                    }}
-                    className="w-4 h-4 rounded accent-pink-500 cursor-pointer"
-                  />
-                  <span className="text-sm text-gray-700 font-medium">{cat.name}</span>
-                </label>
-              ))
-            ) : (
-              <p className="text-sm text-gray-400 italic">Không có danh mục nào</p>
+          
+          {/* Selected Categories as Badges */}
+          <div className="space-y-2">
+            {form.categories?.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {form.categories.map((catId) => {
+                  const cat = categories.find(c => c.categoryId === catId);
+                  return cat ? (
+                    <span key={catId} className="inline-flex items-center gap-2 bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-sm font-medium">
+                      {cat.name}
+                      <button
+                        onClick={() => handleChange("categories", form.categories.filter(id => id !== catId))}
+                        className="ml-1 hover:text-pink-900 font-bold"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ) : null;
+                })}
+              </div>
+            )}
+            
+            {/* Add Category Dropdown */}
+            {form.categories?.length < 2 && (
+              <select
+                value=""
+                onChange={(e) => {
+                  if (e.target.value) {
+                    handleChange("categories", [...(form.categories || []), e.target.value]);
+                  }
+                }}
+                className="w-full bg-white border-2 border-pink-100 rounded-lg py-2 px-3 outline-none focus:border-pink-500 transition-all font-medium text-gray-600 cursor-pointer"
+              >
+                <option value="" disabled>
+                  Chọn danh mục
+                </option>
+                {categories.length > 0 ? (
+                  categories.map((cat) => {
+                    const isSelected = form.categories?.includes(cat.categoryId);
+                    return !isSelected ? (
+                      <option key={cat.categoryId} value={cat.categoryId}>
+                        {cat.name}
+                      </option>
+                    ) : null;
+                  })
+                ) : (
+                  <option disabled>Không có danh mục nào</option>
+                )}
+              </select>
+            )}
+            
+            {form.categories?.length >= 2 && (
+              <p className="text-xs text-gray-400 italic">Đã chọn tối đa 2 danh mục</p>
             )}
           </div>
-          {form.categories?.length > 0 && (
-            <p className="text-xs text-pink-500 mt-2 font-semibold">
-              ✓ Đã chọn {form.categories.length} danh mục
-            </p>
-          )}
         </div>
 
         {/* LANGUAGE */}
