@@ -71,18 +71,23 @@ public partial class MapPage : ContentPage
         RefreshGeofenceOverlays();
     }
 
-    /// <summary>Xóa polygons cũ, thêm lại từ GeofencePolygons của VM.</summary>
+    /// <summary>Xóa overlays cũ, thêm lại GeofencePolylines (dashed) từ VM.</summary>
     private void RefreshGeofenceOverlays()
     {
-        // Remove old geofence polygons (keep other map elements)
+        // Remove old geofence polylines
         var toRemove = MapControl.MapElements
-            .OfType<Polygon>()
+            .OfType<Polyline>()
             .ToList();
-        foreach (var poly in toRemove)
-            MapControl.MapElements.Remove(poly);
+        foreach (var seg in toRemove)
+            MapControl.MapElements.Remove(seg);
 
-        foreach (var poly in _vm.GeofencePolygons)
-            MapControl.MapElements.Add(poly);
+        // Also clear any residual solid polygons (legacy)
+        var polyRemove = MapControl.MapElements.OfType<Polygon>().ToList();
+        foreach (var p in polyRemove)
+            MapControl.MapElements.Remove(p);
+
+        foreach (var seg in _vm.GeofencePolylines)
+            MapControl.MapElements.Add(seg);
     }
 
     private async void OnPinMarkerClicked(object? sender, PinClickedEventArgs e)
@@ -100,6 +105,9 @@ public partial class MapPage : ContentPage
 
         // Update VM selected POI (for distance label etc.)
         _vm.SelectedPoi = poi;
+
+        // S1-3: Highlight this POI's boundary, dim others
+        _vm.HighlightActivePoi(poiId);
 
         // Populate banner labels
         BannerTitle.Text    = poi.Title ?? string.Empty;
@@ -123,6 +131,8 @@ public partial class MapPage : ContentPage
         PoiBanner.IsVisible = false;
         _vm.SelectedPoi = null;
         _activePinPoiId = null;
+        // S1-3 + S2: reset boundary highlight when banner is dismissed
+        _vm.ClearPoiHighlight();
     }
 
     private void OnPoiBannerPlayClicked(object? sender, TappedEventArgs e)
@@ -147,6 +157,15 @@ public partial class MapPage : ContentPage
             {
                 _vm.LoadPois(_main.Pois);
                 RefreshPins();
+
+                // S2-1: Nếu POI đang được chọn đã bị ẩn/xoá → đóng banner
+                if (_activePinPoiId is not null)
+                {
+                    bool stillExists = MapControl.Pins
+                        .Any(p => p.BindingContext is string id && id == _activePinPoiId);
+                    if (!stillExists)
+                        _ = HidePoiBannerAsync();
+                }
             });
             return;
         }
@@ -176,7 +195,8 @@ public partial class MapPage : ContentPage
                     catch { /* Map chưa sẵn sàng — bỏ qua */ }
                 });
         }
-        else if (e.PropertyName == nameof(MapViewModel.GeofencePolygons))
+        else if (e.PropertyName == nameof(MapViewModel.GeofencePolylines)
+              || e.PropertyName == nameof(MapViewModel.GeofencePolygons))
         {
             MainThread.BeginInvokeOnMainThread(RefreshGeofenceOverlays);
         }
