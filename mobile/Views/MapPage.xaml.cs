@@ -71,18 +71,32 @@ public partial class MapPage : ContentPage
         RefreshGeofenceOverlays();
     }
 
-    /// <summary>Xóa polygons cũ, thêm lại từ GeofencePolygons của VM.</summary>
+    /// <summary>
+    /// Differential overlay sync — chỉ add/remove phần thay đổi.
+    /// POI không đổi → object trong MapElements không bị đụng vào → không bị alpha darkening.
+    /// </summary>
     private void RefreshGeofenceOverlays()
     {
-        // Remove old geofence polygons (keep other map elements)
-        var toRemove = MapControl.MapElements
-            .OfType<Polygon>()
-            .ToList();
-        foreach (var poly in toRemove)
-            MapControl.MapElements.Remove(poly);
+        var desiredFills = _vm.GeofenceFills;
+        var desiredLines = _vm.GeofencePolylines;
 
-        foreach (var poly in _vm.GeofencePolygons)
-            MapControl.MapElements.Add(poly);
+        var desiredFillSet = desiredFills.ToHashSet();
+        var desiredLineSet = desiredLines.ToHashSet();
+
+        var currentFills = MapControl.MapElements.OfType<Polygon>().ToHashSet();
+        var currentLines = MapControl.MapElements.OfType<Polyline>().ToHashSet();
+
+        // Xóa những gì không còn cần (set difference)
+        foreach (var p in currentFills.Except(desiredFillSet))
+            MapControl.MapElements.Remove(p);
+        foreach (var s in currentLines.Except(desiredLineSet))
+            MapControl.MapElements.Remove(s);
+
+        // Add những gì mới (set difference) — fill trước để z-order đúng
+        foreach (var p in desiredFillSet.Except(currentFills))
+            MapControl.MapElements.Add(p);
+        foreach (var s in desiredLineSet.Except(currentLines))
+            MapControl.MapElements.Add(s);
     }
 
     private async void OnPinMarkerClicked(object? sender, PinClickedEventArgs e)
@@ -100,6 +114,9 @@ public partial class MapPage : ContentPage
 
         // Update VM selected POI (for distance label etc.)
         _vm.SelectedPoi = poi;
+
+        // S1-3: Highlight this POI's boundary, dim others
+        _vm.HighlightActivePoi(poiId);
 
         // Populate banner labels
         BannerTitle.Text    = poi.Title ?? string.Empty;
@@ -123,6 +140,8 @@ public partial class MapPage : ContentPage
         PoiBanner.IsVisible = false;
         _vm.SelectedPoi = null;
         _activePinPoiId = null;
+        // S1-3 + S2: reset boundary highlight when banner is dismissed
+        _vm.ClearPoiHighlight();
     }
 
     private void OnPoiBannerPlayClicked(object? sender, TappedEventArgs e)
@@ -147,6 +166,15 @@ public partial class MapPage : ContentPage
             {
                 _vm.LoadPois(_main.Pois);
                 RefreshPins();
+
+                // S2-1: Nếu POI đang được chọn đã bị ẩn/xoá → đóng banner
+                if (_activePinPoiId is not null)
+                {
+                    bool stillExists = MapControl.Pins
+                        .Any(p => p.BindingContext is string id && id == _activePinPoiId);
+                    if (!stillExists)
+                        _ = HidePoiBannerAsync();
+                }
             });
             return;
         }
@@ -176,7 +204,7 @@ public partial class MapPage : ContentPage
                     catch { /* Map chưa sẵn sàng — bỏ qua */ }
                 });
         }
-        else if (e.PropertyName == nameof(MapViewModel.GeofencePolygons))
+        else if (e.PropertyName == nameof(MapViewModel.GeofenceVersion))
         {
             MainThread.BeginInvokeOnMainThread(RefreshGeofenceOverlays);
         }

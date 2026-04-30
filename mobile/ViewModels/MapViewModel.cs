@@ -1,4 +1,4 @@
-﻿using AudioGo.Services;
+using AudioGo.Services;
 using AudioGo.Services.Interfaces;
 using Microsoft.Maui.Controls.Maps;
 using Microsoft.Maui.Maps;
@@ -145,6 +145,17 @@ namespace AudioGo.ViewModels
         {
             _sourcePois = pois.ToList();
             RefilterPins();
+
+            // S3-3: Pre-warm icon cache ngay khi danh sách POI được load
+            // Đảm bảo khi MapPage render lần đầu, cache đã sẵn sàng và không cần await
+#if ANDROID
+            var logoUrls = _sourcePois
+                .Select(p => !string.IsNullOrEmpty(p.LocalLogoPath) && File.Exists(p.LocalLogoPath)
+                    ? p.LocalLogoPath
+                    : p.LogoUrl)
+                .Where(u => !string.IsNullOrEmpty(u));
+            _ = AudioGo.Platforms.Android.CustomMapPinHandler.PreloadIconsAsync(logoUrls);
+#endif
         }
 
         private void RefilterPins()
@@ -182,69 +193,161 @@ namespace AudioGo.ViewModels
                 }
             }
             OnPropertyChanged(nameof(MapStatusLabel));
-            // Update geofence overlays in sync
+            // Geofence luôn sync với Pins — gọi sau khi Pins đã được build xong
             BuildGeofenceCircles();
         }
 
-        // ─── Geofence circles ────────────────────────────────────────────────────
+        // ─── Geofence overlays — differential update ─────────────────────────────
+        //
+        // Persistent caches: object sống suốt vòng đời của POI visible.
+        // Khi POI không đổi → KHÔNG tạo object mới → không remove/add → không bị alpha bug.
 
-        /// <summary>Polygons approximating each POI's activation radius (64 segments).</summary>
-        public List<Polygon> GeofencePolygons { get; private set; } = new();
+        private readonly Dictionary<string, Polygon>        _fillByPoiId  = new();
+        private readonly Dictionary<string, List<Polyline>> _linesByPoiId = new();
+
+        /// <summary>Fill Polygons hiện đang active — flat list để MapPage đọc.</summary>
+        public IReadOnlyList<Polygon>  GeofenceFills     => _fillByPoiId.Values.ToList();
+        /// <summary>Dashed Polylines hiện đang active — flat list để MapPage đọc.</summary>
+        public IReadOnlyList<Polyline> GeofencePolylines => _linesByPoiId.Values.SelectMany(s => s).ToList();
 
         private const double DegToRad = Math.PI / 180.0;
         private const double RadToDeg = 180.0 / Math.PI;
+        private const int TotalSegments = 72;
 
-        /// <summary>Rebuilds geofence polygons from the currently visible _sourcePois.</summary>
+        private static readonly Color BoundaryStrokeIdle   = Color.FromArgb("#BFEF4444");
+        private static readonly Color BoundaryStrokeActive = Color.FromArgb("#FFEF4444");
+        private const float BoundaryIdleWidth   = 2.5f;
+        private const float BoundaryActiveWidth = 4.0f;
+        // Fill màu cố định — KHÔNG BAO GIỜ thay đổi sau khi tạo
+        private static readonly Color BoundaryFill = Color.FromArgb("#18EF4444");
+
+        private int _geofenceSourceHash = -1;
+
+        /// <summary>
+        /// Tăng mỗi khi geofence thay đổi — MapPage subscribe để gọi RefreshGeofenceOverlays.
+        /// </summary>
+        public int GeofenceVersion { get; private set; }
+
+        /// <summary>
+        /// Differential rebuild: chỉ tạo/xóa object của POI thực sự thay đổi.
+        /// POI giữ nguyên → object giữ nguyên trong MapElements → không bị alpha darkening.
+        /// </summary>
         public void BuildGeofenceCircles()
         {
-            const int segments = 64;
+            const int dash = 8;
+            const int gap  = 4;
 
-            var filtered = _sourcePois.Where(p =>
+            // Visible POI IDs (source of truth = Pins)
+            var poiLookup  = _sourcePois.ToDictionary(p => p.PoiId, p => p);
+            var visibleIds = Pins
+                .Select(pin => pin.BindingContext as string)
+                .Where(id => id != null && poiLookup.ContainsKey(id!))
+                .ToHashSet()!;
+
+            // Hash: thay đổi khi set visible POI hoặc radius của bất kỳ POI nào thay đổi
+            int newHash = 0;
+            foreach (var id in visibleIds.OrderBy(x => x))
             {
-                if (p.Latitude is 0 && p.Longitude is 0) return false;
-                if (p.Latitude is < -90 or > 90) return false;
-                if (p.Longitude is < -180 or > 180) return false;
-                if (!string.IsNullOrEmpty(_activeCategory))
-                    if (p.Categories == null || !p.Categories.Contains(_activeCategory)) return false;
-                return true;
-            }).ToList();
+                newHash = HashCode.Combine(newHash, id,
+                    poiLookup.TryGetValue(id, out var pp) ? pp.ActivationRadius : 0.0);
+            }
+            newHash = HashCode.Combine(newHash, _activeCategory);
+            if (newHash == _geofenceSourceHash) return;
+            _geofenceSourceHash = newHash;
 
-            var newPolygons = new List<Polygon>(filtered.Count);
+            bool changed = false;
 
-            foreach (var poi in filtered)
+            // ── 1. Xóa cache của POI không còn visible ──
+            foreach (var id in _fillByPoiId.Keys.Where(k => !visibleIds.Contains(k)).ToList())
             {
-                double radiusM = poi.ActivationRadius > 0 ? poi.ActivationRadius : 30.0;
-                var poly = new Polygon
-                {
-                    StrokeColor      = Color.FromArgb("#80E53935"),   // red 50% opacity
-                    StrokeWidth      = 1.5f,
-                    FillColor        = Color.FromArgb("#1AE53935"),   // red 10% tint
-                };
-
-                double latRad  = poi.Latitude  * DegToRad;
-                double lonRad  = poi.Longitude * DegToRad;
-                // Earth radius in meters
-                double R = 6_378_137.0;
-                double angDist = radiusM / R;
-
-                for (int i = 0; i < segments; i++)
-                {
-                    double bearing = 2 * Math.PI * i / segments;
-                    double ptLat = Math.Asin(
-                        Math.Sin(latRad) * Math.Cos(angDist) +
-                        Math.Cos(latRad) * Math.Sin(angDist) * Math.Cos(bearing));
-                    double ptLon = lonRad + Math.Atan2(
-                        Math.Sin(bearing) * Math.Sin(angDist) * Math.Cos(latRad),
-                        Math.Cos(angDist) - Math.Sin(latRad) * Math.Sin(ptLat));
-                    poly.Geopath.Add(new Location(ptLat * RadToDeg, ptLon * RadToDeg));
-                }
-
-                newPolygons.Add(poly);
+                _fillByPoiId.Remove(id);
+                _linesByPoiId.Remove(id);
+                changed = true;
             }
 
-            GeofencePolygons = newPolygons;
-            OnPropertyChanged(nameof(GeofencePolygons));
+            // ── 2. Thêm cache cho POI mới xuất hiện ──
+            foreach (var id in visibleIds.Where(id => !_fillByPoiId.ContainsKey(id)))
+            {
+                if (!poiLookup.TryGetValue(id, out var poi)) continue;
+
+                double radiusM = poi.ActivationRadius > 0 ? poi.ActivationRadius : 30.0;
+                double latRad  = poi.Latitude  * DegToRad;
+                double lonRad  = poi.Longitude * DegToRad;
+                const double R = 6_378_137.0;
+                double angDist = radiusM / R;
+
+                var pts = new Location[TotalSegments];
+                for (int i = 0; i < TotalSegments; i++)
+                {
+                    double bearing = 2 * Math.PI * i / TotalSegments;
+                    double ptLat   = Math.Asin(
+                        Math.Sin(latRad) * Math.Cos(angDist) +
+                        Math.Cos(latRad) * Math.Sin(angDist) * Math.Cos(bearing));
+                    double ptLon   = lonRad + Math.Atan2(
+                        Math.Sin(bearing) * Math.Sin(angDist) * Math.Cos(latRad),
+                        Math.Cos(angDist) - Math.Sin(latRad) * Math.Sin(ptLat));
+                    pts[i] = new Location(ptLat * RadToDeg, ptLon * RadToDeg);
+                }
+
+                // Fill — tạo 1 lần, không bao giờ mutate
+                var fill = new Polygon
+                {
+                    StrokeWidth = 0,
+                    StrokeColor = Colors.Transparent,
+                    FillColor   = BoundaryFill,
+                };
+                foreach (var pt in pts) fill.Geopath.Add(pt);
+                _fillByPoiId[id] = fill;
+
+                // Dashed border
+                var segs = new List<Polyline>();
+                int idx = 0;
+                while (idx < TotalSegments)
+                {
+                    int end = Math.Min(idx + dash + 1, TotalSegments);
+                    var seg = new Polyline
+                    {
+                        StrokeColor = BoundaryStrokeIdle,
+                        StrokeWidth = BoundaryIdleWidth,
+                    };
+                    seg.SetValue(BindableObject.BindingContextProperty, id);
+                    for (int j = idx; j < end; j++)
+                        seg.Geopath.Add(pts[j]);
+                    segs.Add(seg);
+                    idx += dash + gap;
+                }
+                _linesByPoiId[id] = segs;
+                changed = true;
+            }
+
+            if (!changed) return;
+            GeofenceVersion++;
+            OnPropertyChanged(nameof(GeofenceVersion));
         }
+
+
+        /// <summary>
+        /// S1-3: Highlight the active POI's boundary (thicker + brighter stroke).
+        /// Call when user taps a pin.
+        /// </summary>
+        public void HighlightActivePoi(string? poiId)
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                foreach (var (id, segs) in _linesByPoiId)
+                {
+                    bool isActive = id == poiId;
+                    foreach (var seg in segs)
+                    {
+                        seg.StrokeColor = isActive ? BoundaryStrokeActive : BoundaryStrokeIdle;
+                        seg.StrokeWidth = isActive ? BoundaryActiveWidth  : BoundaryIdleWidth;
+                    }
+                }
+            });
+        }
+
+        /// <summary>Resets all boundaries to default style.</summary>
+        public void ClearPoiHighlight() => HighlightActivePoi(null);
 
         public async Task InitAsync()
         {
