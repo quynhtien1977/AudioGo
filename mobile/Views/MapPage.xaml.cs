@@ -71,23 +71,32 @@ public partial class MapPage : ContentPage
         RefreshGeofenceOverlays();
     }
 
-    /// <summary>Xóa overlays cũ, thêm lại GeofencePolylines (dashed) từ VM.</summary>
+    /// <summary>
+    /// Differential overlay sync — chỉ add/remove phần thay đổi.
+    /// POI không đổi → object trong MapElements không bị đụng vào → không bị alpha darkening.
+    /// </summary>
     private void RefreshGeofenceOverlays()
     {
-        // Remove old geofence polylines
-        var toRemove = MapControl.MapElements
-            .OfType<Polyline>()
-            .ToList();
-        foreach (var seg in toRemove)
-            MapControl.MapElements.Remove(seg);
+        var desiredFills = _vm.GeofenceFills;
+        var desiredLines = _vm.GeofencePolylines;
 
-        // Also clear any residual solid polygons (legacy)
-        var polyRemove = MapControl.MapElements.OfType<Polygon>().ToList();
-        foreach (var p in polyRemove)
+        var desiredFillSet = desiredFills.ToHashSet();
+        var desiredLineSet = desiredLines.ToHashSet();
+
+        var currentFills = MapControl.MapElements.OfType<Polygon>().ToHashSet();
+        var currentLines = MapControl.MapElements.OfType<Polyline>().ToHashSet();
+
+        // Xóa những gì không còn cần (set difference)
+        foreach (var p in currentFills.Except(desiredFillSet))
             MapControl.MapElements.Remove(p);
+        foreach (var s in currentLines.Except(desiredLineSet))
+            MapControl.MapElements.Remove(s);
 
-        foreach (var seg in _vm.GeofencePolylines)
-            MapControl.MapElements.Add(seg);
+        // Add những gì mới (set difference) — fill trước để z-order đúng
+        foreach (var p in desiredFillSet.Except(currentFills))
+            MapControl.MapElements.Add(p);
+        foreach (var s in desiredLineSet.Except(currentLines))
+            MapControl.MapElements.Add(s);
     }
 
     private async void OnPinMarkerClicked(object? sender, PinClickedEventArgs e)
@@ -195,8 +204,7 @@ public partial class MapPage : ContentPage
                     catch { /* Map chưa sẵn sàng — bỏ qua */ }
                 });
         }
-        else if (e.PropertyName == nameof(MapViewModel.GeofencePolylines)
-              || e.PropertyName == nameof(MapViewModel.GeofencePolygons))
+        else if (e.PropertyName == nameof(MapViewModel.GeofenceVersion))
         {
             MainThread.BeginInvokeOnMainThread(RefreshGeofenceOverlays);
         }

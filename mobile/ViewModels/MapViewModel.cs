@@ -193,54 +193,89 @@ namespace AudioGo.ViewModels
                 }
             }
             OnPropertyChanged(nameof(MapStatusLabel));
-            // Update geofence overlays in sync
+            // Geofence luôn sync với Pins — gọi sau khi Pins đã được build xong
             BuildGeofenceCircles();
         }
 
-        // ─── Geofence overlays (pseudo-dashed boundary) ───────────────────────────
+        // ─── Geofence overlays — differential update ─────────────────────────────
+        //
+        // Persistent caches: object sống suốt vòng đời của POI visible.
+        // Khi POI không đổi → KHÔNG tạo object mới → không remove/add → không bị alpha bug.
 
-        /// <summary>Dashed polyline segments approximating each POI's activation radius.</summary>
-        public List<Polyline> GeofencePolylines { get; private set; } = new();
+        private readonly Dictionary<string, Polygon>        _fillByPoiId  = new();
+        private readonly Dictionary<string, List<Polyline>> _linesByPoiId = new();
 
-        // Keep for backward compat — always empty now (no solid fill)
-        public List<Polygon> GeofencePolygons { get; private set; } = new();
+        /// <summary>Fill Polygons hiện đang active — flat list để MapPage đọc.</summary>
+        public IReadOnlyList<Polygon>  GeofenceFills     => _fillByPoiId.Values.ToList();
+        /// <summary>Dashed Polylines hiện đang active — flat list để MapPage đọc.</summary>
+        public IReadOnlyList<Polyline> GeofencePolylines => _linesByPoiId.Values.SelectMany(s => s).ToList();
 
         private const double DegToRad = Math.PI / 180.0;
         private const double RadToDeg = 180.0 / Math.PI;
-        private const int TotalSegments = 64;   // total points around circle
-        private const int DrawnSegments = 28;   // segments to draw   (dash)
-        private const int GapSegments   = 8;    // segments to skip   (gap)
-        // DrawnSegments + GapSegments must divide evenly into TotalSegments: 28+8=36 won't; use 32+32 or 24+8...
-        // Using: 64 total, 8 dash, 4 gap → ~10.7 dashes. Adjust as desired.
+        private const int TotalSegments = 72;
 
-        /// <summary>Rebuilds dashed geofence polylines from the currently visible _sourcePois.</summary>
+        private static readonly Color BoundaryStrokeIdle   = Color.FromArgb("#BFEF4444");
+        private static readonly Color BoundaryStrokeActive = Color.FromArgb("#FFEF4444");
+        private const float BoundaryIdleWidth   = 2.5f;
+        private const float BoundaryActiveWidth = 4.0f;
+        // Fill màu cố định — KHÔNG BAO GIỜ thay đổi sau khi tạo
+        private static readonly Color BoundaryFill = Color.FromArgb("#18EF4444");
+
+        private int _geofenceSourceHash = -1;
+
+        /// <summary>
+        /// Tăng mỗi khi geofence thay đổi — MapPage subscribe để gọi RefreshGeofenceOverlays.
+        /// </summary>
+        public int GeofenceVersion { get; private set; }
+
+        /// <summary>
+        /// Differential rebuild: chỉ tạo/xóa object của POI thực sự thay đổi.
+        /// POI giữ nguyên → object giữ nguyên trong MapElements → không bị alpha darkening.
+        /// </summary>
         public void BuildGeofenceCircles()
         {
-            const int dash = 8;   // consecutive points to draw
-            const int gap  = 4;   // consecutive points to skip
-            // With TotalSegments=64: one cycle=12 pts → 5.3 dashes. Visually fine.
+            const int dash = 8;
+            const int gap  = 4;
 
-            var filtered = _sourcePois.Where(p =>
+            // Visible POI IDs (source of truth = Pins)
+            var poiLookup  = _sourcePois.ToDictionary(p => p.PoiId, p => p);
+            var visibleIds = Pins
+                .Select(pin => pin.BindingContext as string)
+                .Where(id => id != null && poiLookup.ContainsKey(id!))
+                .ToHashSet()!;
+
+            // Hash: thay đổi khi set visible POI hoặc radius của bất kỳ POI nào thay đổi
+            int newHash = 0;
+            foreach (var id in visibleIds.OrderBy(x => x))
             {
-                if (p.Latitude is 0 && p.Longitude is 0) return false;
-                if (p.Latitude is < -90 or > 90) return false;
-                if (p.Longitude is < -180 or > 180) return false;
-                if (!string.IsNullOrEmpty(_activeCategory))
-                    if (p.Categories == null || !p.Categories.Contains(_activeCategory)) return false;
-                return true;
-            }).ToList();
+                newHash = HashCode.Combine(newHash, id,
+                    poiLookup.TryGetValue(id, out var pp) ? pp.ActivationRadius : 0.0);
+            }
+            newHash = HashCode.Combine(newHash, _activeCategory);
+            if (newHash == _geofenceSourceHash) return;
+            _geofenceSourceHash = newHash;
 
-            var newPolylines = new List<Polyline>();
+            bool changed = false;
 
-            foreach (var poi in filtered)
+            // ── 1. Xóa cache của POI không còn visible ──
+            foreach (var id in _fillByPoiId.Keys.Where(k => !visibleIds.Contains(k)).ToList())
             {
+                _fillByPoiId.Remove(id);
+                _linesByPoiId.Remove(id);
+                changed = true;
+            }
+
+            // ── 2. Thêm cache cho POI mới xuất hiện ──
+            foreach (var id in visibleIds.Where(id => !_fillByPoiId.ContainsKey(id)))
+            {
+                if (!poiLookup.TryGetValue(id, out var poi)) continue;
+
                 double radiusM = poi.ActivationRadius > 0 ? poi.ActivationRadius : 30.0;
                 double latRad  = poi.Latitude  * DegToRad;
                 double lonRad  = poi.Longitude * DegToRad;
-                double R       = 6_378_137.0;
+                const double R = 6_378_137.0;
                 double angDist = radiusM / R;
 
-                // Pre-compute all circle points
                 var pts = new Location[TotalSegments];
                 for (int i = 0; i < TotalSegments; i++)
                 {
@@ -254,35 +289,42 @@ namespace AudioGo.ViewModels
                     pts[i] = new Location(ptLat * RadToDeg, ptLon * RadToDeg);
                 }
 
-                // Build dash segments
+                // Fill — tạo 1 lần, không bao giờ mutate
+                var fill = new Polygon
+                {
+                    StrokeWidth = 0,
+                    StrokeColor = Colors.Transparent,
+                    FillColor   = BoundaryFill,
+                };
+                foreach (var pt in pts) fill.Geopath.Add(pt);
+                _fillByPoiId[id] = fill;
+
+                // Dashed border
+                var segs = new List<Polyline>();
                 int idx = 0;
                 while (idx < TotalSegments)
                 {
-                    // Drawn segment
-                    int end = Math.Min(idx + dash + 1, TotalSegments); // +1 so segment connects
+                    int end = Math.Min(idx + dash + 1, TotalSegments);
                     var seg = new Polyline
                     {
-                        StrokeColor = Color.FromArgb("#CC3B82F6"),  // blue, 80% opacity
-                        StrokeWidth = 2.5f,
+                        StrokeColor = BoundaryStrokeIdle,
+                        StrokeWidth = BoundaryIdleWidth,
                     };
-                    seg.SetValue(BindableObject.BindingContextProperty, poi.PoiId);
+                    seg.SetValue(BindableObject.BindingContextProperty, id);
                     for (int j = idx; j < end; j++)
                         seg.Geopath.Add(pts[j]);
-                    newPolylines.Add(seg);
-
-                    idx += dash + gap; // skip gap
+                    segs.Add(seg);
+                    idx += dash + gap;
                 }
+                _linesByPoiId[id] = segs;
+                changed = true;
             }
 
-            // Always update on main thread to prevent MapElements race
-            MainThread.BeginInvokeOnMainThread(() =>
-            {
-                GeofencePolylines = newPolylines;
-                GeofencePolygons  = new List<Polygon>(); // clear solid fill
-                OnPropertyChanged(nameof(GeofencePolylines));
-                OnPropertyChanged(nameof(GeofencePolygons));
-            });
+            if (!changed) return;
+            GeofenceVersion++;
+            OnPropertyChanged(nameof(GeofenceVersion));
         }
+
 
         /// <summary>
         /// S1-3: Highlight the active POI's boundary (thicker + brighter stroke).
@@ -292,13 +334,14 @@ namespace AudioGo.ViewModels
         {
             MainThread.BeginInvokeOnMainThread(() =>
             {
-                foreach (var seg in GeofencePolylines)
+                foreach (var (id, segs) in _linesByPoiId)
                 {
-                    bool isActive = seg.BindingContext is string id && id == poiId;
-                    seg.StrokeColor = isActive
-                        ? Color.FromArgb("#FF0EA5E9")   // active: bright sky-blue, 100%
-                        : Color.FromArgb("#803B82F6");  // others: dim blue 50%
-                    seg.StrokeWidth = isActive ? 3.5f : 2f;
+                    bool isActive = id == poiId;
+                    foreach (var seg in segs)
+                    {
+                        seg.StrokeColor = isActive ? BoundaryStrokeActive : BoundaryStrokeIdle;
+                        seg.StrokeWidth = isActive ? BoundaryActiveWidth  : BoundaryIdleWidth;
+                    }
                 }
             });
         }
