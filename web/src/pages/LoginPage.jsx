@@ -1,7 +1,7 @@
 import React from 'react';
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, LockKeyhole, LogIn, UtensilsCrossed } from 'lucide-react';
+import { User, LockKeyhole, LogIn, UtensilsCrossed, Eye, EyeOff } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import useAuth from "@/hooks/useAuth";
@@ -9,24 +9,38 @@ import useAuth from "@/hooks/useAuth";
 const loginBg = "/asset/loginImg.png";
 
 const LoginPage = () => {
-  const [username, setUsername] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("")
   const [rememberMe, setRememberMe] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const { login, loading, error } = useAuth()
   const navigate = useNavigate()
 
+  // Kiểm tra loại identifier (username, email, hoặc số điện thoại)
+  const getIdentifierType = (value) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^(\+84|84|0)[0-9]{9,10}$/;
+    
+    if (emailRegex.test(value)) {
+      return 'email';
+    } else if (phoneRegex.test(value)) {
+      return 'phone';
+    } else {
+      return 'username';
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      if (!username.trim() || !password.trim()) {
-        toast.error("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu");
+      if (!identifier.trim() || !password.trim()) {
+        toast.error("Vui lòng nhập đầy đủ tài khoản và mật khẩu");
         return;
       }
 
-      const res = await login(username, password, rememberMe);
+      const res = await login(identifier, password, rememberMe);
 
       const role = res?.user?.role;
 
@@ -72,17 +86,26 @@ const LoginPage = () => {
 
           <form className="space-y-5" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700 ml-1">Tên đăng nhập</label>
+              <label className="text-sm font-bold text-gray-700 ml-1">Tài khoản</label>
               <div className="relative group">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#EE4B8E] transition-colors w-5 h-5" />
                 <input 
                   type="text" 
-                   value={username}
-                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Tên đăng nhập của bạn  " 
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  placeholder="Username / Email / Số điện thoại" 
                   className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-[#EE4B8E] focus:ring-4 focus:ring-pink-100 outline-none transition-all text-gray-900"
                 />
               </div>
+              {identifier && (
+                <p className="text-xs text-gray-500 ml-1">
+                  Loại tài khoản: <span className="font-semibold text-[#EE4B8E]">
+                    {getIdentifierType(identifier) === 'email' ? 'Email' : 
+                     getIdentifierType(identifier) === 'phone' ? 'Số điện thoại' : 
+                     'Username'}
+                  </span>
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -90,12 +113,23 @@ const LoginPage = () => {
               <div className="relative group">
                 <LockKeyhole className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#EE4B8E] transition-colors w-5 h-5" />
                 <input 
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)} 
                   placeholder="••••••••" 
-                  className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-[#EE4B8E] focus:ring-4 focus:ring-pink-100 outline-none transition-all text-gray-900"
+                  className="w-full pl-12 pr-12 py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-[#EE4B8E] focus:ring-4 focus:ring-pink-100 outline-none transition-all text-gray-900"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#EE4B8E] transition-colors"
+                >
+                  {showPassword ? (
+                    <Eye className="w-5 h-5" />
+                  ) : (
+                    <EyeOff className="w-5 h-5" />
+                  )}
+                </button>
               </div>
             </div>
 

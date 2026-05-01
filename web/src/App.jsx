@@ -19,6 +19,7 @@ import AddPOIPage from "@/pages/AddPOIPage";
 import AudioContentPage from "@/pages/AudioContentPage";
 import ToursPage from "@/pages/ToursPage";
 import TourDetailPage from "@/pages/TourDetailPage";
+import ProfilePage from "@/pages/ProfilePage";
 import DeviceTrackingPage from "@/pages/DeviceTrackingPage";
 import AccessCodePage from "@/pages/AccessCodePage";
 import QueueDemoPage from "@/pages/QueueDemoPage";
@@ -68,6 +69,18 @@ export default function App() {
             <ProtectedRoute roles={["Admin", "Owner"]}>
               <MainLayout>
                 <DashboardPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Profile */}
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute roles={["Owner"]}>
+              <MainLayout>
+                <ProfilePage />
               </MainLayout>
             </ProtectedRoute>
           }

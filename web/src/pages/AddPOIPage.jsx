@@ -18,7 +18,7 @@ const AddPOIPage = () => {
 
   const [form, setForm] = useState({
     name: "",
-    category: "",
+    categories: [],
     lat: 10.7574,
     lng: 106.7020,
     radius: 50,
@@ -67,8 +67,8 @@ const AddPOIPage = () => {
       toast.error("Vui lòng nhập tên POI");
       return;
     }
-    if (!form.category.trim()) {
-      toast.error("Vui lòng chọn danh mục");
+    if (form.categories.length === 0) {
+      toast.error("Vui lòng chọn ít nhất 1 danh mục");
       return;
     }
     // Ràng buộc: phải có ít nhất 1 ảnh logo VÀ 1 ảnh gallery
@@ -123,7 +123,7 @@ const AddPOIPage = () => {
       }
 
       // Build payload và gửi request
-      const selectedCategory = categories.find(cat => cat.name === form.category);
+      const selectedCategoryIds = form.categories;
       const payload = {
         ActionType: "CREATE",
         PoiId: null,
@@ -137,7 +137,7 @@ const AddPOIPage = () => {
           LogoUrl: finalImages[0] || "",
           GalleryImageUrls: finalImages,
           AudioUrl: finalAudio,
-          CategoryIds: selectedCategory ? [selectedCategory.categoryId] : [],
+          CategoryIds: selectedCategoryIds,
           LanguageCode: form.languageCode || "en",
         }
       };

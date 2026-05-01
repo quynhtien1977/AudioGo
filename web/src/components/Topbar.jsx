@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom"
-import { Search, X } from "lucide-react"
+import { Search, X, User } from "lucide-react"
 import { useState, useEffect, useRef, useContext } from "react"
 import { getAllPOIs } from "../api/poiApi"
 import { getCategoriesApi } from "../api/categoryApi"
@@ -159,7 +159,8 @@ export default function Topbar() {
         results = allData.filter(
           (acc) =>
             acc.username?.toLowerCase().includes(searchTerm) ||
-            acc.email?.toLowerCase().includes(searchTerm)
+            acc.email?.toLowerCase().includes(searchTerm) || 
+            acc.fullName?.toLowerCase().includes(searchTerm)
         )
         break
       case "audio":
@@ -302,10 +303,23 @@ export default function Topbar() {
         </button>
 
         {/*  User Info */}
-        <div className="text-right">
-          <p className="font-semibold">{user.username}</p>
-          <p className="text-xs text-gray-400">{user.role}</p>
-        </div>
+        {role === "Owner" ? (
+          <button
+            onClick={() => navigate("/profile")}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-pink-50 transition"
+          >
+            <User size={16} className="text-pink-500" />
+            <div className="text-right">
+              <p className="font-semibold text-sm">{user.fullName || user.username}</p>
+              <p className="text-xs text-gray-400">{user.role}</p>
+            </div>
+          </button>
+        ) : (
+          <div className="text-right">
+            <p className="font-semibold">{user.fullName || user.username}</p>
+            <p className="text-xs text-gray-400">{user.role}</p>
+          </div>
+        )}
 
       </div>
 
