@@ -12,6 +12,10 @@ export default function Topbar() {
   const navigate = useNavigate()
   const location = useLocation()
   const { updateSearch, clearSearch } = useContext(SearchContext)
+  const [user, setUser] = useState(
+    JSON.parse(localStorage.getItem("user")) ||
+    JSON.parse(sessionStorage.getItem("user"))
+  )
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState([])
   const [isLoading, setIsLoading] = useState(false)
@@ -19,12 +23,19 @@ export default function Topbar() {
   const [showResults, setShowResults] = useState(false)
   const searchRef = useRef(null)
 
-  // Lấy user từ localStorage / sessionStorage
-  const user =
-    JSON.parse(localStorage.getItem("user")) ||
-    JSON.parse(sessionStorage.getItem("user"))
+  const role = user?.role
 
-  const role = user?.role 
+  // 🔄 P1-A: Lắng nghe storage event để sync tên sau khi ProfilePage cập nhật
+  useEffect(() => {
+    const syncUser = () => {
+      const updated =
+        JSON.parse(localStorage.getItem("user")) ||
+        JSON.parse(sessionStorage.getItem("user"))
+      setUser(updated)
+    }
+    window.addEventListener("storage", syncUser)
+    return () => window.removeEventListener("storage", syncUser)
+  }, [])
 
   // logout
   const handleLogout = () => {
