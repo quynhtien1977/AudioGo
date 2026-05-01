@@ -73,12 +73,6 @@ const POIDetailPage = () => {
             console.error("Parse proposedData failed", e)
           }
 
-          let categoryName = "Unknown"
-          if (data.CategoryIds?.length > 0) {
-            const found = categories.find(c => c.categoryId === data.CategoryIds[0])
-            if (found) categoryName = found.name
-          }
-
           mapped = {
             id: res.requestId,
             poiId: res.poiId,
@@ -86,7 +80,7 @@ const POIDetailPage = () => {
             description: data.Description || "",
             audio: data.AudioUrl || "",
             languageCode: "vi",
-            category: categoryName,
+            categories: data.CategoryIds || [],
             lat: Number(data.Latitude) || 0,
             lng: Number(data.Longitude) || 0,
             priority: Number(data.Priority) || 1,
@@ -107,6 +101,8 @@ const POIDetailPage = () => {
           const poiDetail = await getPoiDetail(id)
           const master = poiDetail.contents?.find(c => c.isMaster) || poiDetail.contents?.[0]
 
+          const categoryIds = poiDetail.categoryIds || (poiDetail.category ? [categories.find(c => c.name === poiDetail.category)?.categoryId].filter(Boolean) : [])
+
           mapped = {
             id: poiDetail.poiId,
             poiId: poiDetail.poiId,
@@ -114,7 +110,7 @@ const POIDetailPage = () => {
             description: master?.description || "",
             audio: master?.audioUrl || "",
             languageCode: master?.languageCode || "vi",
-            category: poiDetail.category || "Unknown",
+            categories: categoryIds,
             lat: poiDetail.latitude,
             lng: poiDetail.longitude,
             priority: Number(poiDetail.priority) || 1,
@@ -208,7 +204,6 @@ const POIDetailPage = () => {
         }
       }
 
-      const selectedCategory = categories.find(c => c.name === form.category)
       const poiId = form.poiId || id
 
       const payload = {
@@ -222,7 +217,7 @@ const POIDetailPage = () => {
           LogoUrl: finalImages[0] || "",
           Title: form.name,
           Description: form.description,
-          CategoryIds: selectedCategory ? [selectedCategory.categoryId] : [],
+          CategoryIds: form.categories || [],
           GalleryImageUrls: finalImages,
           // Bug #4: "" = xóa audio, URL = có audio; backend sẽ phân biệt null vs ""
           AudioUrl: finalAudio,

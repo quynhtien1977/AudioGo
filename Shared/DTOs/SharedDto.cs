@@ -80,9 +80,9 @@ namespace Shared.DTOs
         List<string> Categories
     );
 
-    public record TourCreateRequest(string Name, string Description);
+    public record TourCreateRequest(string Name, string Description, string? ThumbnailUrl = null);
 
-    public record TourUpdateRequest(string? Name, string? Description);
+    public record TourUpdateRequest(string? Name, string? Description, string? ThumbnailUrl = null);
 
     // ── Delta Sync ──────────────────────────────────────────────────────
     /// <summary>
