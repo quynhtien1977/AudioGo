@@ -95,6 +95,20 @@ export const updateUserApi = async (id, data) => {
 
 
 // ======================
+// 🟢 UPDATE MY PROFILE (self — dùng cho ProfilePage)
+// Gọi PUT /me, không bị chặn bởi Guard R1
+// ======================
+export const updateMyProfileApi = async (data) => {
+  const res = await client.put("/me", {
+    fullName: data.fullName,
+    email: data.email,
+    phoneNumber: data.phoneNumber,
+  })
+  return res.data
+}
+
+
+// ======================
 // 🟢 DELETE
 // ======================
 export const deleteUserApi = async (id) => {

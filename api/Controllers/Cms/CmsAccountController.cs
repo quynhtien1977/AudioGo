@@ -58,6 +58,10 @@ namespace Server.Controllers.Cms
             if (await _accounts.ExistsByUsernameAsync(req.Username))
                 return BadRequest("Username đã tồn tại");
 
+            // ── 🛡️ V-BE: Validate email + SĐT ──────────────────────────────────
+            var (validCreate, errCreate) = ValidateContactInfo(req.Email, req.PhoneNumber);
+            if (!validCreate) return BadRequest(errCreate);
+
             var account = new Account
             {
                 AccountId    = Guid.NewGuid().ToString(),
@@ -84,7 +88,37 @@ namespace Server.Controllers.Cms
         }
 
         // ======================
-        // 🟢 UPDATE
+        // 🟢 UPDATE MY PROFILE (self)
+        // Endpoint riêng cho Owner/Admin tự sửa thông tin cá nhân.
+        // KHÔNG có Guard R1 — được phép sửa chính mình.
+        // KHÔNG cho phép đổi Role hay IsLocked qua endpoint này.
+        // ======================
+        [HttpPut("me")]
+        public async Task<ActionResult<AccountDto>> UpdateMyProfile(
+            [FromBody] ProfileUpdateRequest req)
+        {
+            var currentUserId = GetCurrentUserId();
+            var existing = await _accounts.GetByIdAsync(currentUserId);
+            if (existing is null) return NotFound();
+
+            // ── 🛡️ V-BE: Validate email + SĐT ──────────────────────────────────
+            var (validMe, errMe) = ValidateContactInfo(req.Email, req.PhoneNumber);
+            if (!validMe) return BadRequest(errMe);
+
+            if (!string.IsNullOrWhiteSpace(req.FullName))
+                existing.FullName = req.FullName;
+            if (!string.IsNullOrWhiteSpace(req.Email))
+                existing.Email = req.Email;
+            if (!string.IsNullOrWhiteSpace(req.PhoneNumber))
+                existing.PhoneNumber = req.PhoneNumber;
+
+            existing.UpdatedAt = DateTime.UtcNow;
+            var updated = await _accounts.UpdateAsync(existing);
+            return Ok(ToDto(updated));
+        }
+
+        // ======================
+        // 🟢 UPDATE (admin quản lý user khác)
         // ======================
         [HttpPut("{id}")]
         public async Task<ActionResult<AccountDto>> Update(
@@ -184,6 +218,32 @@ namespace Server.Controllers.Cms
                 a.CreatedAt,
                 a.UpdatedAt
             );
+        }
+
+        // ======================
+        // 🔧 VALIDATION HELPER
+        // Backend guard: kiểm tra format email + SĐT.
+        // Frontend đã check trước, đây là lớp bảo vệ thứ 2 chống bypass API.
+        // ======================
+        private static (bool ok, string error) ValidateContactInfo(string? email, string? phone)
+        {
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                var emailRegex = new System.Text.RegularExpressions.Regex(
+                    @"^[^\s@]+@[^\s@]+\.[^\s@]{2,}$");
+                if (!emailRegex.IsMatch(email))
+                    return (false, "Email không đúng định dạng.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(phone))
+            {
+                var phoneRegex = new System.Text.RegularExpressions.Regex(
+                    @"^(0[3-9][0-9]{8}|(\+84)[3-9][0-9]{8})$");
+                if (!phoneRegex.IsMatch(phone))
+                    return (false, "Số điện thoại không hợp lệ. Nhập 10 số bắt đầu bằng 0 hoặc +84.");
+            }
+
+            return (true, "");
         }
     }
 }
