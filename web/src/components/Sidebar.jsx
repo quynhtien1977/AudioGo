@@ -28,7 +28,7 @@ export default function Sidebar() {
       
       <h1 className="text-lg font-bold text-pink-500 mb-6 flex items-center">
         <Map size={20} className="mr-2" />
-        AudioGo Admin 
+        AudioGo 
       </h1>
 
       <div className="space-y-2">
@@ -49,26 +49,30 @@ export default function Sidebar() {
               Tài khoản
             </MenuItem>
 
-            <MenuItem to="/access-codes" icon={<QrCode size={18} />}>
-              Mã Truy Cập
-            </MenuItem>
-            
             <MenuItem to="/categories" icon={<Layers size={18} />}>
               Danh mục
+            </MenuItem>
+
+            <MenuItem to="/tours" icon={<RouteIcon size={18} />}>
+              Tour
+            </MenuItem>
+
+            <MenuItem to="/audio" icon={<Headphones size={18} />}>
+              Bản dịch & Audio
             </MenuItem>
 
             <MenuItem to="/poi/management" icon={<BadgeCheck size={18} />}>
               Xét duyệt
             </MenuItem>
 
-            <MenuItem to="/tours" icon={<RouteIcon size={18} />} isDisabled>
-              Tour
-            </MenuItem>
-
             <MenuItem to="/analytics" icon={<BarChart3 size={18} />}>
               Phân tích
             </MenuItem>
 
+            <MenuItem to="/access-codes" icon={<QrCode size={18} />}>
+              Mã Truy Cập
+            </MenuItem>
+            
             <MenuItem to="/tracking" icon={<Smartphone size={18} />}>
               Quản lý thiết bị
             </MenuItem>
@@ -81,9 +85,6 @@ export default function Sidebar() {
               Giả lập thiết bị
             </MenuItem>
 
-            <MenuItem to="/audio" icon={<Headphones size={18} />}>
-              Bản dịch & Audio
-            </MenuItem>
           </>
         )}
 
