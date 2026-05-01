@@ -36,7 +36,8 @@ namespace Server.Controllers.Cms
             {
                 TourId      = Guid.NewGuid().ToString(),
                 Name        = req.Name,
-                Description = req.Description
+                Description = req.Description,
+                ThumbnailUrl = req.ThumbnailUrl
             };
             var created = await _repo.CreateAsync(tour);
             return CreatedAtAction(nameof(GetById), new { id = created.TourId }, ToDto(created));
@@ -51,6 +52,7 @@ namespace Server.Controllers.Cms
 
             existing.Name        = req.Name        ?? existing.Name;
             existing.Description = req.Description ?? existing.Description;
+            existing.ThumbnailUrl = req.ThumbnailUrl ?? existing.ThumbnailUrl;
 
             var updated = await _repo.UpdateAsync(existing);
             return Ok(ToDto(updated!));
@@ -92,13 +94,15 @@ namespace Server.Controllers.Cms
         private static TourDto ToDto(Tour t) => new(
             t.TourId, t.Name, t.Description ?? string.Empty, 
             t.TourPois.Count,
-            t.TourPois.OrderBy(tp => tp.StepOrder).FirstOrDefault()?.Poi?.LogoUrl,
+            t.ThumbnailUrl ?? t.TourPois.OrderBy(tp => tp.StepOrder).FirstOrDefault()?.Poi?.LogoUrl,
             t.CreatedAt,
             t.TourPois
                 .OrderBy(tp => tp.StepOrder)
                 .Select(tp => new TourPoiDto(
                     tp.PoiId,
-                    tp.Poi?.Contents.FirstOrDefault()?.Title ?? tp.PoiId,
+                    tp.Poi?.Contents.FirstOrDefault(c => c.LanguageCode == "vi")?.Title 
+                        ?? tp.Poi?.Contents.FirstOrDefault()?.Title 
+                        ?? tp.PoiId,
                     tp.StepOrder))
                 .ToList());
     }

@@ -40,6 +40,7 @@ export const getAllToursApi = async () => {
 // 🟢 GET TOUR BY ID
 // ======================
 export const getTourByIdApi = async (id) => {
+  console.log("🔍 Fetching tour with ID:", id)
   const res = await client.get(`/${id}`)
   return res.data
 }
@@ -71,7 +72,8 @@ export const deleteTourApi = async (id) => {
 // 🟢 ADD POI TO TOUR
 // ======================
 export const addPoiToTourApi = async (tourId, data) => {
-  await client.post(`/${tourId}/pois`, data)
+  const res = await client.post(`/${tourId}/pois`, data)
+  return res.data
 }
 
 // ======================
