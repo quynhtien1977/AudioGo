@@ -10,7 +10,7 @@ import toast from "react-hot-toast";
 import TourRouteMap from "@/components/TourRouteMap";
 import ConfirmModal from "@/components/ConfirmModal";
 import { getTourByIdApi, updateTourApi, addPoiToTourApi, removePoiFromTourApi } from "@/api/tourApi";
-import { getAllPOIs } from "@/api/poiApi";
+import { getAllPOIs, updatePOI } from "@/api/poiApi";
 import { uploadImage } from "@/api/mediaApi";
 
 const TourDetailPage = () => {
@@ -172,12 +172,17 @@ const TourDetailPage = () => {
   // === LOGIC QUẢN LÝ POI ===
   const handleDeletePOI = async (poiId) => {
     try {
+      // Remove POI from tour
       await removePoiFromTourApi(tourId, poiId);
+      
+      // Hide POI globally (set isActive = false)
+      await updatePOI(poiId, { isActive: false });
+      
       setTour(prev => ({
         ...prev,
         pois: prev.pois.filter(p => p.poiId !== poiId)
       }));
-      toast.success("Xóa POI khỏi Tour thành công!");
+      toast.success("Xóa POI khỏi Tour và ẩn POI thành công!");
     } catch (err) {
       console.error("Error deleting POI:", err);
       toast.error("Lỗi khi xóa POI");
