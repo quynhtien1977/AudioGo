@@ -1,19 +1,18 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { loginApi } from "@/api/authApi";
 
 export default function useAuth() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const getUser = () => {
-    const user =
+  // useMemo: chỉ parse storage 1 lần khi mount, giữ reference ổn định
+  // Tránh JSON.parse() tạo object mới mỗi render → gây infinite useEffect loop
+  const user = useMemo(() => {
+    const raw =
       localStorage.getItem("user") ||
       sessionStorage.getItem("user");
-
-    return user ? JSON.parse(user) : null;
-  };
-
-  const user = getUser();
+    return raw ? JSON.parse(raw) : null;
+  }, []);
 
   const login = async (identifier, password, rememberMe) => {
     setLoading(true);
