@@ -36,28 +36,11 @@ namespace AudioGo.ViewModels
         public string LabelTours => AudioGo.Helpers.AppStrings.Get("tour_list_tours");
         public string LabelEmptyTitle => AudioGo.Helpers.AppStrings.Get("tour_list_empty_title");
         public string LabelEmptyDesc => AudioGo.Helpers.AppStrings.Get("tour_list_empty_desc");
-        public string LabelCreateBtn => "+ " + AudioGo.Helpers.AppStrings.Get("tour_list_create_btn");
 
         public ICommand OpenTourCommand { get; }
         public ICommand RefreshCommand { get; }
         public ICommand ContinueTourCommand { get; }
 
-        public async Task DeleteTourAsync(string tourId)
-        {
-            try
-            {
-                // TODO: gọi API xóa tour khi endpoint sẵn sàng
-                var found = _allTours.FirstOrDefault(t => t.TourId == tourId);
-                if (found != null)
-                {
-                    _allTours.Remove(found);
-                    FilterTours(SearchText);
-                    OnPropertyChanged(nameof(HasTours));
-                    OnPropertyChanged(nameof(IsEmpty));
-                }
-            }
-            catch { /* silent */ }
-        }
 
         public TourListViewModel(IApiService api)
         {

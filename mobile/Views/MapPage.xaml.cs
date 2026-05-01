@@ -1,4 +1,5 @@
 using AudioGo.ViewModels;
+using AudioGo_Mobile.Helpers;
 using Microsoft.Maui.Controls.Maps;
 using Microsoft.Maui.Maps;
 using Shared;
@@ -11,6 +12,7 @@ public partial class MapPage : ContentPage
     private readonly MainViewModel _main;
     private string? _activePinPoiId;
     private bool _isSubscribed;
+    private List<string>? _tourPoiFilter;   // null = chế độ bình thường, non-null = chỉ hiển thị POI của tour
 
     // Expose Main for XAML bindings (MiniPlayer)
     public MainViewModel Main => _main;
@@ -31,8 +33,22 @@ public partial class MapPage : ContentPage
     {
         base.OnAppearing();
 
-        // Load pins từ danh sách POI hiện tại
-        _vm.LoadPois(_main.Pois);
+        // Chế độ tour: chỉ hiển thị POI thuộc tour và auto-zoom vừa khung
+        var filter = TourMapContext.PendingTourPoiIds;
+        if (filter != null)
+        {
+            TourMapContext.PendingTourPoiIds = null;  // reset ngay sau khi nhận
+            var tourPois = _main.Pois.Where(p => filter.Contains(p.PoiId)).ToList();
+            _vm.LoadPois(tourPois);
+            if (tourPois.Count > 0)
+                _vm.FitToPoints(tourPois.Select(p => new Location(p.Latitude, p.Longitude)));
+        }
+        else
+        {
+            // Chế độ bình thường: hiển thị tất cả POI
+            _vm.LoadPois(_main.Pois);
+        }
+
         RefreshPins();
 
         // Subscribe to map clicks to dismiss banner
