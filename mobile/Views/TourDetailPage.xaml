@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:maps="clr-namespace:Microsoft.Maui.Controls.Maps;assembly=Microsoft.Maui.Controls.Maps"
              x:Class="AudioGo_Mobile.Views.TourDetailPage"
              Shell.NavBarIsVisible="False"
              BackgroundColor="{StaticResource Background}"
@@ -10,9 +11,12 @@
 
         <!-- ── Header: Map Preview + progress overlay ── -->
         <Grid Grid.Row="0" HeightRequest="220">
-            <!-- Map background image (mock preview) -->
-            <Image Source="{Binding ThumbnailUrl, TargetNullValue='tour_mock1.jpg', FallbackValue='tour_mock1.jpg'}"
-                   Aspect="AspectFill" />
+            <!-- Mini Map — hiển thị POI pins của tour (ngoài ScrollView, tránh conflict scroll) -->
+            <maps:Map x:Name="MiniMap"
+                      IsScrollEnabled="False"
+                      IsZoomEnabled="False"
+                      MapType="Street"
+                      IsShowingUser="False" />
 
             <!-- Back & share overlay -->
             <Grid Padding="16,52,16,16" VerticalOptions="Start"

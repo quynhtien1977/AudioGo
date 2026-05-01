@@ -76,6 +76,9 @@ public static class MauiProgram
         builder.Services.AddTransient<SettingsViewModel>();
         builder.Services.AddTransient<SearchViewModel>();
         builder.Services.AddTransient<WelcomeQrScanViewModel>();
+        // Tour ViewModels
+        builder.Services.AddSingleton<TourListViewModel>();   // Singleton vì là tab page
+        builder.Services.AddTransient<TourDetailViewModel>();  // Transient vì dùng QueryProperty
 
         // ── Views ─────────────────────────────────────────────────
         // AppShell phải là Singleton để WelcomeQrScanViewModel có thể
@@ -88,6 +91,9 @@ public static class MauiProgram
         builder.Services.AddTransient<SearchPage>();
         builder.Services.AddTransient<WelcomePage>();
         builder.Services.AddTransient<WelcomeQrScanPage>();
+        // Tour Pages
+        builder.Services.AddSingleton<TourListPage>();    // Singleton vì là tab page
+        builder.Services.AddTransient<TourDetailPage>();   // Transient vì navigate bằng route + QueryProperty
 
 #if DEBUG
         builder.Logging.AddDebug();

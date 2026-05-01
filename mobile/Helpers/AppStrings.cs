@@ -32,6 +32,11 @@ public static class AppStrings
             ["vi"] = "Cài đặt", ["en"] = "Settings", ["ja"] = "設定",
             ["ko"] = "설정", ["zh-Hans"] = "设置", ["fr"] = "Paramètres", ["th"] = "ตั้งค่า"
         },
+        ["tab_tours"] = new()
+        {
+            ["vi"] = "Tours", ["en"] = "Tours", ["ja"] = "ツアー",
+            ["ko"] = "투어", ["zh-Hans"] = "游览", ["fr"] = "Tours", ["th"] = "ทัวร์"
+        },
 
         // ═══════════════════════════════════════════════════════════════
         // MainPage — Hero & Header

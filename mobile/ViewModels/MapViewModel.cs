@@ -391,5 +391,25 @@ namespace AudioGo.ViewModels
             if (VisibleRegion is null)
                 MoveTo(e.Lat, e.Lon);
         }
+
+        /// <summary>
+        /// Auto-zoom bản đồ để vừa tất cả các điểm được truyền vào.
+        /// Dùng khi navigate từ TourDetailPage → MapPage để chỉ hiển thị POI của tour.
+        /// </summary>
+        public void FitToPoints(IEnumerable<Location> points)
+        {
+            var list = points.ToList();
+            if (!list.Any()) return;
+
+            var centerLat = list.Average(p => p.Latitude);
+            var centerLon = list.Average(p => p.Longitude);
+            var latSpan   = list.Max(p => p.Latitude)  - list.Min(p => p.Latitude)  + 0.01;
+            var lonSpan   = list.Max(p => p.Longitude) - list.Min(p => p.Longitude) + 0.01;
+
+            VisibleRegion = new MapSpan(
+                new Location(centerLat, centerLon),
+                Math.Max(latSpan, 0.01),
+                Math.Max(lonSpan, 0.01));
+        }
     }
 }
