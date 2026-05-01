@@ -14,10 +14,17 @@ namespace Server.Controllers.Cms
         private readonly ITourRepository _repo;
         public CmsTourController(ITourRepository repo) => _repo = repo;
 
+        /// <summary>
+        /// Lấy danh sách tour.
+        /// Thêm ?includeInactive=true để CMS admin xem cả tour đã bị ẩn.
+        /// </summary>
         [HttpGet]
-        public async Task<ActionResult<List<TourDto>>> GetAll()
+        public async Task<ActionResult<List<TourDto>>> GetAll(
+            [FromQuery] bool includeInactive = false)
         {
-            var tours = await _repo.GetAllAsync();
+            var tours = includeInactive
+                ? await _repo.GetAllIncludingInactiveAsync()
+                : await _repo.GetAllAsync();
             return Ok(tours.Select(ToDto));
         }
 
@@ -58,10 +65,19 @@ namespace Server.Controllers.Cms
             return Ok(ToDto(updated!));
         }
 
+        /// <summary>Soft-delete: ẩn tour khỏi danh sách (IsActive = false).</summary>
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
             var ok = await _repo.DeleteAsync(id);
+            return ok ? NoContent() : NotFound();
+        }
+
+        /// <summary>Khôi phục tour đã bị ẩn (IsActive = true).</summary>
+        [HttpPatch("{id}/restore")]
+        public async Task<IActionResult> Restore(string id)
+        {
+            var ok = await _repo.RestoreAsync(id);
             return ok ? NoContent() : NotFound();
         }
 
@@ -104,6 +120,7 @@ namespace Server.Controllers.Cms
                         ?? tp.Poi?.Contents.FirstOrDefault()?.Title 
                         ?? tp.PoiId,
                     tp.StepOrder))
-                .ToList());
+                .ToList(),
+            t.IsActive);
     }
 }

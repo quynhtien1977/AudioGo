@@ -44,7 +44,8 @@ namespace Shared.DTOs
         int PoiCount,
         string? ThumbnailUrl,
         DateTime CreatedAt,
-        IReadOnlyList<TourPoiDto> Pois
+        IReadOnlyList<TourPoiDto> Pois,
+        bool IsActive = true
     );
 
     /// <summary>Detail cho Mobile.</summary>

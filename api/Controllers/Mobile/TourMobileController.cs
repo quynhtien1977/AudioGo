@@ -57,7 +57,7 @@ namespace Server.Controllers.Mobile
             string tourId, [FromQuery] string lang = "vi")
         {
             var tour = await _tourRepo.GetByIdAsync(tourId);
-            if (tour is null) return NotFound();
+            if (tour is null || !tour.IsActive) return NotFound();
 
             var steps = new List<TourStepDto>();
             foreach (var tp in tour.TourPois.OrderBy(t => t.StepOrder))
