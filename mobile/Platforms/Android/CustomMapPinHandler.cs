@@ -8,8 +8,12 @@ namespace AudioGo.Platforms.Android;
 public static class CustomMapPinHandler
 {
     private static readonly HttpClient _httpClient = new HttpClient();
-    // LRU/Simple Dictionary Cache for Marker Bitmaps
+
+    // Cache: imageUrl → BitmapDescriptor (ready to set on Marker)
     private static readonly Dictionary<string, BitmapDescriptor> _markerCache = new();
+
+    // Track in-progress downloads to avoid duplicate requests
+    private static readonly HashSet<string> _downloading = new();
 
     public static void Register()
     {
@@ -22,17 +26,34 @@ public static class CustomMapPinHandler
         });
     }
 
-    private static async Task UpdateMarkerIconAsync(Microsoft.Maui.Maps.Handlers.IMapPinHandler handler, CustomPin customPin)
+    /// <summary>
+    /// S3-2: Pre-warms the icon cache for all POI logo URLs.
+    /// Call this right after POI list is loaded, BEFORE entering MapPage.
+    /// </summary>
+    public static async Task PreloadIconsAsync(IEnumerable<string?> urls)
     {
-        var imageUrl = customPin.ImageUrl;
-        if (string.IsNullOrEmpty(imageUrl))
-            return;
+        var tasks = urls
+            .Where(u => !string.IsNullOrEmpty(u) && !_markerCache.ContainsKey(u!))
+            .Distinct()
+            .Select(u => DownloadAndCacheAsync(u!));
 
-        // Use cached if available
-        if (_markerCache.TryGetValue(imageUrl, out var cachedDescriptor))
+        await Task.WhenAll(tasks);
+        System.Diagnostics.Debug.WriteLine($"[PinCache] Preloaded {_markerCache.Count} icons.");
+    }
+
+    /// <summary>
+    /// S3-1: Downloads image bytes and stores the BitmapDescriptor in cache.
+    /// Does NOT set anything on a handler — safe to call from any thread.
+    /// </summary>
+    private static async Task DownloadAndCacheAsync(string imageUrl)
+    {
+        if (_markerCache.ContainsKey(imageUrl)) return;
+
+        // Guard against concurrent duplicate downloads
+        lock (_downloading)
         {
-            SetDescriptor(handler, cachedDescriptor);
-            return;
+            if (_downloading.Contains(imageUrl)) return;
+            _downloading.Add(imageUrl);
         }
 
         try
@@ -52,39 +73,66 @@ public static class CustomMapPinHandler
             }
 
             using var sourceBitmap = BitmapFactory.DecodeByteArray(imageBytes, 0, imageBytes.Length);
-            
             if (sourceBitmap != null)
             {
                 var customMarkerBitmap = CreateCustomPinBitmap(sourceBitmap);
                 var descriptor = BitmapDescriptorFactory.FromBitmap(customMarkerBitmap);
-                
-                // Cache it
                 _markerCache[imageUrl] = descriptor;
-                
-                // Update marker
-                SetDescriptor(handler, descriptor);
-                
                 customMarkerBitmap.Recycle();
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to load custom pin image: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"[PinCache] Failed to cache {imageUrl}: {ex.Message}");
+        }
+        finally
+        {
+            lock (_downloading)
+                _downloading.Remove(imageUrl);
         }
     }
 
-    private static void SetDescriptor(Microsoft.Maui.Maps.Handlers.IMapPinHandler handler, BitmapDescriptor descriptor)
+    private static async Task UpdateMarkerIconAsync(IMapPinHandler handler, CustomPin customPin)
     {
-        if (handler.PlatformView is MarkerOptions options)
+        var imageUrl = customPin.ImageUrl;
+        if (string.IsNullOrEmpty(imageUrl)) return;
+
+        // Cache hit — set synchronously before MarkerOptions is committed to the map
+        if (_markerCache.TryGetValue(imageUrl, out var cachedDescriptor))
         {
-            options.SetIcon(descriptor);
+            await SetDescriptorWithRetryAsync(handler, cachedDescriptor);
+            return;
         }
 
-        // Try dynamically setting the Marker property if it has been instantiated
-        var markerProp = handler.GetType().GetProperty("Marker");
-        if (markerProp?.GetValue(handler) is Marker createdMarker)
+        // Cache miss — download first, then retry set
+        await DownloadAndCacheAsync(imageUrl);
+
+        if (_markerCache.TryGetValue(imageUrl, out var descriptor))
         {
-            createdMarker.SetIcon(descriptor);
+            await SetDescriptorWithRetryAsync(handler, descriptor);
+        }
+    }
+
+    /// <summary>
+    /// S3-4: Tries to set the icon. If the Marker hasn't been committed yet,
+    /// retries up to 8 times with 30ms gaps (total max wait ~240ms).
+    /// </summary>
+    private static async Task SetDescriptorWithRetryAsync(IMapPinHandler handler, BitmapDescriptor descriptor)
+    {
+        // Attempt 1: set on MarkerOptions (runs BEFORE map commits the marker)
+        if (handler.PlatformView is MarkerOptions options)
+            options.SetIcon(descriptor);
+
+        // Attempt 2+: poll for Marker (runs AFTER map commits)
+        var markerProp = handler.GetType().GetProperty("Marker");
+        for (int i = 0; i < 8; i++)
+        {
+            if (markerProp?.GetValue(handler) is Marker createdMarker)
+            {
+                createdMarker.SetIcon(descriptor);
+                return; // success
+            }
+            await Task.Delay(30);
         }
     }
 
@@ -96,32 +144,27 @@ public static class CustomMapPinHandler
         int cx = width / 2;
         int cy = 60;
 
-        // Create a mutable bitmap
         var output = Bitmap.CreateBitmap(width, height, Bitmap.Config.Argb8888);
         using var canvas = new Canvas(output);
 
-        // Paints
         using var shadowPaint = new global::Android.Graphics.Paint { AntiAlias = true, Color = global::Android.Graphics.Color.ParseColor("#40000000") };
         using var bgPaint = new global::Android.Graphics.Paint { AntiAlias = true, Color = global::Android.Graphics.Color.White };
-        
         using var imagePaint = new global::Android.Graphics.Paint { AntiAlias = true };
         imagePaint.SetXfermode(new PorterDuffXfermode(PorterDuff.Mode.SrcIn));
 
-        // Draw shadow (simple oval under the pin)
+        // Shadow
         canvas.DrawOval(new global::Android.Graphics.RectF(cx - 30, height - 15, cx + 30, height - 5), shadowPaint);
 
-        // Create Pin path
+        // Pin shape
         using var path = new global::Android.Graphics.Path();
-        path.MoveTo(cx, height - 10); // Bottom point
+        path.MoveTo(cx, height - 10);
         path.LineTo(cx - 20, cy + 40);
         path.ArcTo(new global::Android.Graphics.RectF(cx - radius, cy - radius, cx + radius, cy + radius), 140, 260, false);
         path.LineTo(cx, height - 10);
         path.Close();
-
-        // Draw white pin background
         canvas.DrawPath(path, bgPaint);
 
-        // Calculate aspect fill rect for image
+        // Circular image crop
         int imgSize = radius * 2 - 10;
         float scale = Math.Max((float)imgSize / sourceBitmap.Width, (float)imgSize / sourceBitmap.Height);
         float scaledWidth = scale * sourceBitmap.Width;
@@ -130,15 +173,9 @@ public static class CustomMapPinHandler
         float top = cy - (scaledHeight / 2);
         var destRect = new global::Android.Graphics.RectF(left, top, left + scaledWidth, top + scaledHeight);
 
-        // Draw Circular Image
         int savedState = canvas.SaveLayer(new global::Android.Graphics.RectF(0, 0, width, height), null);
-        
-        // Draw mask circle
-        canvas.DrawCircle(cx, cy, radius - 8, bgPaint); // using bgPaint as solid alpha mask
-        
-        // Draw image onto mask
+        canvas.DrawCircle(cx, cy, radius - 8, bgPaint);
         canvas.DrawBitmap(sourceBitmap, null, destRect, imagePaint);
-        
         canvas.RestoreToCount(savedState);
 
         return output!;

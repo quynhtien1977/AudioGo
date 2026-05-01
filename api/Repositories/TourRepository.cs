@@ -10,15 +10,29 @@ namespace Server.Repositories
         private readonly AppDbContext _db;
         public TourRepository(AppDbContext db) => _db = db;
 
-        /// <summary>List tours - cần Poi.LogoUrl để tính ThumbnailUrl.</summary>
-        public Task<List<Tour>> GetAllAsync() =>
-            _db.Tours.AsNoTracking()
+        private IQueryable<Tour> BaseQuery() =>
+            _db.Tours
                 .Include(t => t.TourPois.OrderBy(tp => tp.StepOrder))
-                    .ThenInclude(tp => tp.Poi)
+                    .ThenInclude(tp => tp.Poi);
+
+        /// <summary>
+        /// Mobile & CMS list: chỉ trả về tour còn hoạt động (IsActive = true).
+        /// </summary>
+        public Task<List<Tour>> GetAllAsync() =>
+            BaseQuery().AsNoTracking()
+                .Where(t => t.IsActive)
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
 
-        /// <summary>Tour detail - cần Poi.Contents và Poi.CategoryPois để build TourStepDto.</summary>
+        /// <summary>
+        /// CMS admin: trả về tất cả tour kể cả đã bị ẩn (IsActive = false).
+        /// </summary>
+        public Task<List<Tour>> GetAllIncludingInactiveAsync() =>
+            BaseQuery().AsNoTracking()
+                .OrderByDescending(t => t.CreatedAt)
+                .ToListAsync();
+
+        /// <summary>Tour detail — cần Poi.Contents và Poi.CategoryPois để build TourStepDto.</summary>
         public Task<Tour?> GetByIdAsync(string tourId) =>
             _db.Tours.AsNoTracking()
                 .Include(t => t.TourPois.OrderBy(tp => tp.StepOrder))
@@ -49,11 +63,28 @@ namespace Server.Repositories
             return existing;
         }
 
+        /// <summary>
+        /// Soft-delete: đặt IsActive = false thay vì xóa cứng khỏi DB.
+        /// </summary>
         public async Task<bool> DeleteAsync(string tourId)
         {
             var tour = await _db.Tours.FindAsync(tourId);
             if (tour is null) return false;
-            _db.Tours.Remove(tour);
+            tour.IsActive = false;
+            tour.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+            return true;
+        }
+
+        /// <summary>
+        /// Khôi phục tour đã bị ẩn (IsActive = true).
+        /// </summary>
+        public async Task<bool> RestoreAsync(string tourId)
+        {
+            var tour = await _db.Tours.FindAsync(tourId);
+            if (tour is null) return false;
+            tour.IsActive = true;
+            tour.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
             return true;
         }
