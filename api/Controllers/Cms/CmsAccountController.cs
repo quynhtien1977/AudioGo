@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Server.Models;
 using Server.Repositories.Interfaces;
 using Shared.DTOs;
+using System.Security.Claims;
 
 namespace Server.Controllers.Cms
 {
@@ -19,6 +20,11 @@ namespace Server.Controllers.Cms
         {
             _accounts = accounts;
         }
+
+        // ── Helper: lấy AccountId của người đang gọi API từ JWT claim ──────────
+        private string GetCurrentUserId() =>
+            User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? throw new UnauthorizedAccessException("Không tìm thấy thông tin người dùng trong token.");
 
         // ======================
         // 🟢 GET ALL
@@ -54,17 +60,16 @@ namespace Server.Controllers.Cms
 
             var account = new Account
             {
-                AccountId = Guid.NewGuid().ToString(),
-                Username = req.Username,
+                AccountId    = Guid.NewGuid().ToString(),
+                Username     = req.Username,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(req.Password),
-                Role = req.Role,
+                Role         = req.Role,
 
-                FullName = req.FullName,
-                Email = req.Email,
+                FullName    = req.FullName,
+                Email       = req.Email,
                 PhoneNumber = req.PhoneNumber,
 
-                IsLocked = false, // mặc định
-
+                IsLocked  = false,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -86,10 +91,28 @@ namespace Server.Controllers.Cms
             string id,
             [FromBody] AccountUpdateRequest req)
         {
+            var currentUserId = GetCurrentUserId();
+
+            // ── 🛡️ GUARD R1: Tự bảo vệ ────────────────────────────────────────
+            if (id == currentUserId)
+                return BadRequest("Không thể sửa đổi tài khoản của chính mình tại đây. Vui lòng sử dụng trang Profile.");
+
             var existing = await _accounts.GetByIdAsync(id);
             if (existing == null) return NotFound();
 
-            // basic fields
+            // ── 🛡️ GUARD R2: Last Admin Rule ────────────────────────────────────
+            bool isTargetActiveAdmin = existing.Role == "Admin" && !existing.IsLocked;
+            bool isChangingRole      = !string.IsNullOrWhiteSpace(req.Role) && req.Role != existing.Role;
+            bool isLocking           = req.IsLocked == true && !existing.IsLocked;
+
+            if (isTargetActiveAdmin && (isChangingRole || isLocking))
+            {
+                var activeAdminCount = await _accounts.CountActiveAdminsAsync();
+                if (activeAdminCount <= 1)
+                    return BadRequest("Không thể thay đổi role hoặc khóa tài khoản Admin duy nhất còn lại. Hệ thống cần ít nhất 1 Admin active.");
+            }
+
+            // ── Cập nhật các field được phép ────────────────────────────────────
             if (!string.IsNullOrWhiteSpace(req.Username))
                 existing.Username = req.Username;
 
@@ -124,6 +147,21 @@ namespace Server.Controllers.Cms
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
+            var currentUserId = GetCurrentUserId();
+
+            // ── 🛡️ GUARD R1: Tự bảo vệ ────────────────────────────────────────
+            if (id == currentUserId)
+                return BadRequest("Không thể xóa tài khoản của chính mình.");
+
+            // ── 🛡️ GUARD R2: Last Admin Rule ────────────────────────────────────
+            var target = await _accounts.GetByIdAsync(id);
+            if (target?.Role == "Admin" && !target.IsLocked)
+            {
+                var activeAdminCount = await _accounts.CountActiveAdminsAsync();
+                if (activeAdminCount <= 1)
+                    return BadRequest("Không thể xóa tài khoản Admin duy nhất còn lại. Hệ thống cần ít nhất 1 Admin active.");
+            }
+
             var ok = await _accounts.DeleteAsync(id);
             return ok ? NoContent() : NotFound();
         }
@@ -136,7 +174,7 @@ namespace Server.Controllers.Cms
             return new AccountDto(
                 a.AccountId,
                 a.Username,
-                a.Role,           
+                a.Role,
 
                 a.FullName,
                 a.Email,
