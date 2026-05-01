@@ -31,8 +31,10 @@ client.interceptors.response.use(
 // ======================
 // 🟢 GET ALL TOURS
 // ======================
-export const getAllToursApi = async () => {
-  const res = await client.get("")
+export const getAllToursApi = async (includeInactive = true) => {
+  const res = await client.get("", {
+    params: { includeInactive }
+  })
   return res.data
 }
 
@@ -66,6 +68,13 @@ export const updateTourApi = async (id, data) => {
 // ======================
 export const deleteTourApi = async (id) => {
   await client.delete(`/${id}`)
+}
+
+// ======================
+// 🟢 RESTORE TOUR
+// ======================
+export const restoreTourApi = async (id) => {
+  await client.patch(`/${id}/restore`)
 }
 
 // ======================

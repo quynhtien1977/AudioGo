@@ -8,7 +8,7 @@ import toast from "react-hot-toast";
 import ConfirmModal from "@/components/ConfirmModal";
 import CreateTourModal from "@/components/CreateTourModal";
 import Card from "@/components/Card";
-import { getAllToursApi, createTourApi, deleteTourApi, addPoiToTourApi } from "@/api/tourApi";
+import { getAllToursApi, createTourApi, deleteTourApi, addPoiToTourApi, restoreTourApi } from "@/api/tourApi";
 import { SearchContext } from "@/context/SearchContext";
 
 const ToursPage = () => {
@@ -19,7 +19,7 @@ const ToursPage = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isCreatingTour, setIsCreatingTour] = useState(false);
-  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [toggleConfirmId, setToggleConfirmId] = useState(null);
 
   // Fetch tours from API
   useEffect(() => {
@@ -95,16 +95,27 @@ const ToursPage = () => {
     }
   };
 
-  const handleDeleteTour = async (id) => {
+  const handleToggleTourStatus = async (id) => {
     try {
       setIsLoading(true);
-      await deleteTourApi(id);
-      setTours(tours.filter(t => t.tourId !== id));
-      setDeleteConfirmId(null);
-      toast.success("Xóa Tour thành công");
+      const tour = tours.find(t => t.tourId === id);
+      
+      if (tour.isActive) {
+        // Ẩn tour
+        await deleteTourApi(id);
+        setTours(tours.map(t => t.tourId === id ? { ...t, isActive: false } : t));
+        toast.success("Ẩn Tour thành công");
+      } else {
+        // Hiện tour
+        await restoreTourApi(id);
+        setTours(tours.map(t => t.tourId === id ? { ...t, isActive: true } : t));
+        toast.success("Hiện Tour thành công");
+      }
+      
+      setToggleConfirmId(null);
     } catch (err) {
-      console.error("Error deleting tour:", err);
-      toast.error("Lỗi khi xóa Tour");
+      console.error("Error toggling tour status:", err);
+      toast.error("Lỗi khi cập nhật trạng thái Tour");
     } finally {
       setIsLoading(false);
     }
@@ -141,7 +152,7 @@ const ToursPage = () => {
         </Card>
         <Card
             title = "TOUR ĐANG HOẠT ĐỘNG"
-            value = {tours.length}
+            value = {tours.filter(t => t.isActive).length}
             color = "text-green-600"
             sub = "Các Tour đang hoạt động trong hệ thống"
             icon = {<ShieldCheck size={16} className="text-green-600" />}>
@@ -168,15 +179,21 @@ const ToursPage = () => {
           <div className="col-span-full text-center py-12 text-gray-500">Chưa có Tour nào</div>
         ) : (
           filteredTours.map((tour) => (
-            <div key={tour.tourId} className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden group hover:shadow-xl transition-all">
+            <div key={tour.tourId} className={`bg-white rounded-[2.5rem] border shadow-sm overflow-hidden group hover:shadow-xl transition-all ${
+              tour.isActive ? 'border-gray-100' : 'border-gray-200 opacity-60'
+            }`}>
               <div className="relative h-48 w-full overflow-hidden">
                 <img src={tour.thumbnailUrl || "https://via.placeholder.com/400x200?text=No+Image"} alt={tour.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
               </div>
 
               <div className="p-8 pt-6 space-y-4">
                 <div className="flex justify-between items-center text-left">
-                  <div className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-green-50 text-green-600">
-                    Active
+                  <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                    tour.isActive 
+                      ? 'bg-green-50 text-green-600' 
+                      : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {tour.isActive ? 'Active' : 'Inactive'}
                   </div>
                 </div>
 
@@ -197,11 +214,19 @@ const ToursPage = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 pt-2">
-                  <button onClick={() => handleGoToDetail(tour.tourId)} className="flex items-center justify-center gap-2 py-3 bg-gray-50 text-gray-600 rounded-xl text-xs font-bold hover:bg-pink-50 hover:text-pink-600 transition-all">
+                  <button onClick={() => handleGoToDetail(tour.tourId)} disabled={!tour.isActive} className={`flex items-center justify-center gap-2 py-3 bg-gray-50 rounded-xl text-xs font-bold transition-all ${
+                    tour.isActive
+                      ? 'text-gray-600 hover:bg-pink-50 hover:text-pink-600 cursor-pointer'
+                      : 'text-gray-400 cursor-not-allowed'
+                  }`}>
                      Vào Tour
                   </button>
-                  <button onClick={() => setDeleteConfirmId(tour.tourId)} className="flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all border bg-red-50 text-red-600 border-red-100 hover:bg-red-100">
-                    <Eye size={14} /> Ẩn
+                  <button onClick={() => setToggleConfirmId(tour.tourId)} className={`flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all border ${
+                    tour.isActive
+                      ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100'
+                      : 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'
+                  }`}>
+                    {tour.isActive ? 'Ẩn' : 'Hiện'}
                   </button>
                 </div>
               </div>
@@ -218,15 +243,15 @@ const ToursPage = () => {
         isLoading={isCreatingTour}
       />
 
-      {/* MODAL XÓA TOUR */}
+      {/* MODAL TOGGLE TOUR STATUS */}
       <ConfirmModal
-        open={deleteConfirmId !== null}
-        title="Xóa Tour"
-        onConfirm={() => deleteConfirmId && handleDeleteTour(deleteConfirmId)}
-        onCancel={() => setDeleteConfirmId(null)}
-        confirmText="Xóa"
+        open={toggleConfirmId !== null}
+        title={tours.find(t => t.tourId === toggleConfirmId)?.isActive ? "Ẩn Tour" : "Hiện Tour"}
+        onConfirm={() => toggleConfirmId && handleToggleTourStatus(toggleConfirmId)}
+        onCancel={() => setToggleConfirmId(null)}
+        confirmText={tours.find(t => t.tourId === toggleConfirmId)?.isActive ? "Ẩn" : "Hiện"}
         cancelText="Hủy"
-        message="Bạn có chắc chắn muốn xóa Tour này? Hành động này không thể hoàn tác."
+        message={tours.find(t => t.tourId === toggleConfirmId)?.isActive ? "Bạn có chắc chắn muốn ẩn Tour này?" : "Bạn có chắc chắn muốn hiện Tour này?"}
       />
     </div>
   );
