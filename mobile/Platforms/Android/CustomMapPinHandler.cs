@@ -21,9 +21,26 @@ public static class CustomMapPinHandler
         {
             if (pin is CustomPin customPin)
             {
+                // Numbered pin (tour mini map) — ưu tiên hơn logo
+                if (customPin.StepNumber > 0)
+                {
+                    var descriptor = CreateNumberedPinDescriptor(customPin.StepNumber);
+                    await SetDescriptorWithRetryAsync(handler, descriptor);
+                    return;
+                }
+
                 await UpdateMarkerIconAsync(handler, customPin);
             }
         });
+    }
+
+    /// <summary>Tạo BitmapDescriptor với số thứ tự (không cache vì số nhỏ).</summary>
+    private static BitmapDescriptor CreateNumberedPinDescriptor(int stepNumber)
+    {
+        var bmp = CreateNumberedPinBitmap(stepNumber);
+        var descriptor = BitmapDescriptorFactory.FromBitmap(bmp);
+        bmp.Recycle();
+        return descriptor;
     }
 
     /// <summary>
@@ -177,6 +194,60 @@ public static class CustomMapPinHandler
         canvas.DrawCircle(cx, cy, radius - 8, bgPaint);
         canvas.DrawBitmap(sourceBitmap, null, destRect, imagePaint);
         canvas.RestoreToCount(savedState);
+
+        return output!;
+    }
+
+    /// <summary>
+    /// Vẽ pin hình giọt nước màu Primary (#D15993) với số thứ tự trắng ở giữa.
+    /// Dùng cho mini map trong TourDetailPage.
+    /// </summary>
+    private static Bitmap CreateNumberedPinBitmap(int stepNumber)
+    {
+        int width  = 96;
+        int height = 120;
+        int radius = 40;
+        int cx = width / 2;
+        int cy = 44;
+
+        var output = Bitmap.CreateBitmap(width, height, Bitmap.Config.Argb8888);
+        using var canvas = new Canvas(output);
+
+        // Shadow
+        using var shadowPaint = new global::Android.Graphics.Paint
+            { AntiAlias = true, Color = global::Android.Graphics.Color.ParseColor("#40000000") };
+        canvas.DrawOval(new global::Android.Graphics.RectF(cx - 24, height - 12, cx + 24, height - 4), shadowPaint);
+
+        // Pin shape (Primary color)
+        using var pinPaint = new global::Android.Graphics.Paint
+            { AntiAlias = true, Color = global::Android.Graphics.Color.ParseColor("#E53935") };
+        using var path = new global::Android.Graphics.Path();
+        path.MoveTo(cx, height - 8);
+        path.LineTo(cx - 16, cy + 32);
+        path.ArcTo(new global::Android.Graphics.RectF(cx - radius, cy - radius, cx + radius, cy + radius), 140, 260, false);
+        path.LineTo(cx, height - 8);
+        path.Close();
+        canvas.DrawPath(path, pinPaint);
+
+        // White circle background
+        using var circlePaint = new global::Android.Graphics.Paint
+            { AntiAlias = true, Color = global::Android.Graphics.Color.White };
+        canvas.DrawCircle(cx, cy, radius - 8, circlePaint);
+
+        // Step number text
+        using var textPaint = new global::Android.Graphics.Paint
+        {
+            AntiAlias  = true,
+            Color      = global::Android.Graphics.Color.ParseColor("#E53935"),
+            TextSize   = 28,
+            TextAlign  = global::Android.Graphics.Paint.Align.Center,
+            FakeBoldText = true,
+        };
+        // Vertical center: measure text height
+        var bounds = new global::Android.Graphics.Rect();
+        textPaint.GetTextBounds(stepNumber.ToString(), 0, stepNumber.ToString().Length, bounds);
+        float textY = cy + bounds.Height() / 2f;
+        canvas.DrawText(stepNumber.ToString(), cx, textY, textPaint);
 
         return output!;
     }
