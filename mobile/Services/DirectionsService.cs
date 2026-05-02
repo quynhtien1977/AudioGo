@@ -7,7 +7,7 @@ using Microsoft.Maui.Devices.Sensors;
 namespace AudioGo.Services;
 
 /// <summary>
-/// Lấy đường đi bộ thực tế thông qua backend proxy → Google Directions API.
+/// Lấy đường đi bộ thực tế thông qua backend proxy → OpenRouteService API.
 /// Tránh Android key restriction khi gọi HTTP trực tiếp từ mobile.
 /// Cache in-memory theo cacheKey. Fallback straight-line khi offline/lỗi.
 /// </summary>
