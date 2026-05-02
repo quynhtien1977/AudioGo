@@ -7,4 +7,10 @@ namespace AudioGo_Mobile;
 [Activity(Theme = "@style/Maui.SplashTheme", MainLauncher = true, Exported = true, LaunchMode = LaunchMode.SingleTop, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize | ConfigChanges.Density)]
 public class MainActivity : MauiAppCompatActivity
 {
+    protected override void OnCreate(Bundle? savedInstanceState)
+    {
+        // Chuyển sang MainTheme (MaterialComponents) sau splash
+        SetTheme(AudioGo.Resource.Style.MainTheme);
+        base.OnCreate(savedInstanceState);
+    }
 }

@@ -32,6 +32,11 @@ public static class AppStrings
             ["vi"] = "Cài đặt", ["en"] = "Settings", ["ja"] = "設定",
             ["ko"] = "설정", ["zh-Hans"] = "设置", ["fr"] = "Paramètres", ["th"] = "ตั้งค่า"
         },
+        ["tab_tours"] = new()
+        {
+            ["vi"] = "Tours", ["en"] = "Tours", ["ja"] = "ツアー",
+            ["ko"] = "투어", ["zh-Hans"] = "游览", ["fr"] = "Tours", ["th"] = "ทัวร์"
+        },
 
         // ═══════════════════════════════════════════════════════════════
         // MainPage — Hero & Header
@@ -241,6 +246,21 @@ public static class AppStrings
         {
             ["vi"] = "~{0} phút đi bộ", ["en"] = "~{0} min walk", ["ja"] = "徒歩約{0}分",
             ["ko"] = "도보 약 {0}분", ["zh-Hans"] = "步行约{0}分钟", ["fr"] = "~{0} min à pied", ["th"] = "เดินประมาณ {0} นาที"
+        },
+        ["map_route_loading"] = new()
+        {
+            ["vi"] = "Đang tính đường đi...", ["en"] = "Calculating route...", ["ja"] = "ルートを計算中...",
+            ["ko"] = "경로 계산 중...", ["zh-Hans"] = "正在计算路线...", ["fr"] = "Calcul du trajet...", ["th"] = "กำลังคำนวณเส้นทาง..."
+        },
+        ["map_route_error"] = new()
+        {
+            ["vi"] = "Không tải được đường đi", ["en"] = "Could not load route", ["ja"] = "ルートを取得できません",
+            ["ko"] = "경로를 불러올 수 없습니다", ["zh-Hans"] = "无法加载路线", ["fr"] = "Impossible de charger l'itinéraire", ["th"] = "ไม่สามารถโหลดเส้นทางได้"
+        },
+        ["map_tour_mode"] = new()
+        {
+            ["vi"] = "Chế độ Tour", ["en"] = "Tour Mode", ["ja"] = "ツアーモード",
+            ["ko"] = "투어 모드", ["zh-Hans"] = "游览模式", ["fr"] = "Mode circuit", ["th"] = "โหมดทัวร์"
         },
 
         // ═══════════════════════════════════════════════════════════════
@@ -524,6 +544,16 @@ public static class AppStrings
             ["fr"] = "Créez votre premier circuit pour explorer la rue gastronomique Vinh Khanh",
             ["th"] = "สร้างทัวร์แรกของคุณเพื่อเริ่มสำรวจถนนอาหารวิญคานห์"
         },
+        ["tour_list_empty_desc_mobile"] = new()
+        {
+            ["vi"] = "Chưa có tour nào trong khu vực. Vui lòng thử lại sau.",
+            ["en"] = "No tours available in this area. Please try again later.",
+            ["ja"] = "このエリアにはツアーがありません。後でもう一度お試しください。",
+            ["ko"] = "이 지역에는 투어가 없습니다. 나중에 다시 시도해주세요.",
+            ["zh-Hans"] = "该区域暂无游览。请稍后再试。",
+            ["fr"] = "Aucun circuit disponible dans cette zone. Veuillez réessayer plus tard.",
+            ["th"] = "ไม่มีทัวร์ในพื้นที่นี้ กรุณาลองใหม่ภายหลัง"
+        },
         ["tour_list_create_btn"] = new()
         {
             ["vi"] = "Tạo Tour Mới", ["en"] = "Create New Tour", ["ja"] = "新しいツアーを作成",
@@ -539,10 +569,15 @@ public static class AppStrings
             ["vi"] = "điểm", ["en"] = "points", ["ja"] = "ポイント",
             ["ko"] = "포인트", ["zh-Hans"] = "点数", ["fr"] = "points", ["th"] = "จุด"
         },
-        ["tour_minutes"] = new()
+        ["tour_walk"] = new()
+        {
+            ["vi"] = "di chuyển", ["en"] = "walk", ["ja"] = "徒歩",
+            ["ko"] = "도보", ["zh-Hans"] = "步行", ["fr"] = "marche", ["th"] = "เดิน"
+        },
+        ["tour_walk_min"] = new()
         {
             ["vi"] = "phút", ["en"] = "mins", ["ja"] = "分",
-            ["ko"] = "분", ["zh-Hans"] = "分钟", ["fr"] = "mins", ["th"] = "นาที"
+            ["ko"] = "분", ["zh-Hans"] = "分钟", ["fr"] = "min", ["th"] = "นาที"
         },
         ["tour_lang"] = new()
         {
@@ -631,10 +666,60 @@ public static class AppStrings
             ["vi"] = "Danh sách điểm dừng", ["en"] = "Stop List", ["ja"] = "停留所リスト",
             ["ko"] = "정류장 목록", ["zh-Hans"] = "停靠点列表", ["fr"] = "Liste des arrêts", ["th"] = "รายการจุดหยุด"
         },
+        ["tour_detail_open_map"] = new()
+        {
+            ["vi"] = "Nhấn để xem bản đồ đầy đủ", ["en"] = "Tap to view full map", ["ja"] = "タップして地図を表示",
+            ["ko"] = "탭하여 전체 지도 보기", ["zh-Hans"] = "点击查看完整地图", ["fr"] = "Appuyer pour voir la carte", ["th"] = "แตะเพื่อดูแผนที่เต็ม"
+        },
         ["tour_load_err"] = new()
         {
             ["vi"] = "Không tải được tour", ["en"] = "Failed to load tour", ["ja"] = "ツアーを読み込めませんでした",
             ["ko"] = "투어를 불러오지 못했습니다", ["zh-Hans"] = "无法加载游览", ["fr"] = "Échec du chargement du circuit", ["th"] = "ไม่สามารถโหลดทัวร์ได้"
+        },
+        ["tour_start"] = new()
+        {
+            ["vi"] = "Khám phá", ["en"] = "Start Exploring", ["ja"] = "探索を開始",
+            ["ko"] = "탐색 시작", ["zh-Hans"] = "开始探索", ["fr"] = "Commencer", ["th"] = "เริ่มสำรวจ"
+        },
+        ["tour_stop"] = new()
+        {
+            ["vi"] = "Dừng Tour", ["en"] = "Stop Tour", ["ja"] = "ツアーを停止",
+            ["ko"] = "투어 중지", ["zh-Hans"] = "停止游览", ["fr"] = "Arrêter", ["th"] = "หยุดทัวร์"
+        },
+        ["tour_reset"] = new()
+        {
+            ["vi"] = "Bắt đầu lại", ["en"] = "Restart", ["ja"] = "やり直す",
+            ["ko"] = "다시 시작", ["zh-Hans"] = "重新开始", ["fr"] = "Recommencer", ["th"] = "เริ่มใหม่"
+        },
+        ["tour_reset_confirm"] = new()
+        {
+            ["vi"] = "Bạn có chắc muốn bắt đầu lại tour này không? Tiến trình hiện tại sẽ bị xóa.",
+            ["en"] = "Are you sure you want to restart this tour? Current progress will be lost.",
+            ["ja"] = "このツアーをやり直しますか？現在の進捗は削除されます。",
+            ["ko"] = "이 투어를 다시 시작하시겠습니까? 현재 진행 상황이 삭제됩니다.",
+            ["zh-Hans"] = "您确定要重新开始此游览吗？当前进度将丢失。",
+            ["fr"] = "Voulez-vous vraiment recommencer ce circuit ? La progression actuelle sera perdue.",
+            ["th"] = "คุณแน่ใจหรือไม่ว่าต้องการเริ่มทัวร์นี้ใหม่ ความคืบหน้าปัจจุบันจะถูกลบ"
+        },
+        ["tour_completed_msg"] = new()
+        {
+            ["vi"] = "Chúc mừng! Bạn đã hoàn thành {0} điểm dừng của tour.",
+            ["en"] = "Congratulations! You have completed {0} stops of the tour.",
+            ["ja"] = "おめでとうございます！ツアーの{0}の停留所を完了しました。",
+            ["ko"] = "축하합니다! 투어의 {0}개 정류장을 모두 방문했습니다.",
+            ["zh-Hans"] = "恭喜！您已完成游览的{0}个停靠点。",
+            ["fr"] = "Félicitations ! Vous avez terminé {0} arrêts du circuit.",
+            ["th"] = "ยินดีด้วย! คุณได้ทำครบ {0} จุดหยุดของทัวร์แล้ว"
+        },
+        ["completed"] = new()
+        {
+            ["vi"] = "Hoàn thành", ["en"] = "Completed", ["ja"] = "完了",
+            ["ko"] = "완료", ["zh-Hans"] = "已完成", ["fr"] = "Terminé", ["th"] = "เสร็จสิ้น"
+        },
+        ["cancel"] = new()
+        {
+            ["vi"] = "Hủy", ["en"] = "Cancel", ["ja"] = "キャンセル",
+            ["ko"] = "취소", ["zh-Hans"] = "取消", ["fr"] = "Annuler", ["th"] = "ยกเลิก"
         },
 
 

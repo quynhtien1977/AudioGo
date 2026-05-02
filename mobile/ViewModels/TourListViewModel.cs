@@ -35,29 +35,12 @@ namespace AudioGo.ViewModels
         // UI Strings
         public string LabelTours => AudioGo.Helpers.AppStrings.Get("tour_list_tours");
         public string LabelEmptyTitle => AudioGo.Helpers.AppStrings.Get("tour_list_empty_title");
-        public string LabelEmptyDesc => AudioGo.Helpers.AppStrings.Get("tour_list_empty_desc");
-        public string LabelCreateBtn => "+ " + AudioGo.Helpers.AppStrings.Get("tour_list_create_btn");
+        public string LabelEmptyDesc => AudioGo.Helpers.AppStrings.Get("tour_list_empty_desc_mobile");
 
         public ICommand OpenTourCommand { get; }
         public ICommand RefreshCommand { get; }
         public ICommand ContinueTourCommand { get; }
 
-        public async Task DeleteTourAsync(string tourId)
-        {
-            try
-            {
-                // TODO: gọi API xóa tour khi endpoint sẵn sàng
-                var found = _allTours.FirstOrDefault(t => t.TourId == tourId);
-                if (found != null)
-                {
-                    _allTours.Remove(found);
-                    FilterTours(SearchText);
-                    OnPropertyChanged(nameof(HasTours));
-                    OnPropertyChanged(nameof(IsEmpty));
-                }
-            }
-            catch { /* silent */ }
-        }
 
         public TourListViewModel(IApiService api)
         {
@@ -84,20 +67,19 @@ namespace AudioGo.ViewModels
             try
             {
                 var result = await _api.GetToursAsync(languageCode: lang);
-
                 _allTours = result?.Select(t => new TourRowVm(t)).ToList() ?? new();
                 FilterTours(SearchText);
             }
-            catch
+            catch (Exception ex)
             {
-                // Fallback: giữ danh sách mock nếu API chưa chạy
-                if (_allTours.Count == 0)
-                    LoadMockData();
+                System.Diagnostics.Debug.WriteLine($"[TourList] Load failed: {ex.Message}");
+                // Giữ dữ liệu cũ nếu đã có, không mock
             }
             finally
             {
                 IsLoading = false;
                 OnPropertyChanged(nameof(HasTours));
+                OnPropertyChanged(nameof(IsEmpty));
                 OnPropertyChanged(nameof(CountLabel));
             }
         }
@@ -111,21 +93,13 @@ namespace AudioGo.ViewModels
 
             foreach (var t in filtered)
                 Tours.Add(t);
+
+            // Notify các computed props phụ thuộc Tours.Count
+            OnPropertyChanged(nameof(HasTours));
+            OnPropertyChanged(nameof(IsEmpty));
+            OnPropertyChanged(nameof(CountLabel));
         }
 
-        private void LoadMockData()
-        {
-            _allTours = new List<TourRowVm>
-            {
-                new TourRowVm(new TourSummaryDto("mock-1", "Tour Hải Sản Vĩnh Khánh",
-                    "Khám phá tinh hoa ẩm thực hải sản nổi tiếng ở khu phố Vĩnh Khánh.",
-                    8, "tour_mock1.jpg", DateTime.Today)),
-                new TourRowVm(new TourSummaryDto("mock-2", "Vĩnh Khánh — Ký Ức Phố Cảng",
-                    "Hành trình ngược thời gian về lịch sử hình thành khu phố Vĩnh Khánh.",
-                    12, "tour_mock2.jpg", DateTime.Today)),
-            };
-            FilterTours(SearchText);
-        }
     }
 
     /// <summary>Row VM cho CollectionView (có computed labels).</summary>
@@ -145,13 +119,14 @@ namespace AudioGo.ViewModels
         public int    PoiCount      => _dto.PoiCount;
         
         public string LabelProgress => AudioGo.Helpers.AppStrings.Get("tour_progress");
-        public string LabelPoints => AudioGo.Helpers.AppStrings.Get("tour_points");
-        public string LabelMinutes => AudioGo.Helpers.AppStrings.Get("tour_minutes");
-        public string LabelLang => AudioGo.Helpers.AppStrings.Get("tour_lang");
+        public string LabelPoints   => AudioGo.Helpers.AppStrings.Get("tour_points");
+        public string LabelWalk     => AudioGo.Helpers.AppStrings.Get("tour_walk");
+        public string LabelLang     => AudioGo.Helpers.AppStrings.Get("tour_lang");
         public string LabelContinue => "▶  " + AudioGo.Helpers.AppStrings.Get("tour_continue");
 
-        // Duration & language — not in DTO yet, show placeholder
-        public string DurationText  => "--";
+        // Walk time: tính Haversine giữa các POI theo thứ tự — ô bình thường 4 km/h
+        // Tạm dùng PoiCount * 8 phút/POI (bao gồm cả nghe + đi lại) đến khi có toạ độ đầy đủ từ API detail
+        public string DurationText  => $"{_dto.PoiCount * 8}";
         public string Language      => "VI";
         // Progress — no real data yet, keep at 0
         public string ProgressText  => $"0/{_dto.PoiCount}";
