@@ -16,6 +16,8 @@ public partial class AppShell : Shell
 
         // Đăng ký routes — MAUI Shell tự resolve từ DI khi page được register vào Services.
         Routing.RegisterRoute(nameof(PoiDetailPage), typeof(PoiDetailPage));
+        Routing.RegisterRoute(nameof(TourDetailPage), typeof(TourDetailPage));
+
 
         // Subscribe to language changes to refresh tab bar labels
         _sync.LanguageChanged += OnLanguageChanged;
@@ -40,6 +42,7 @@ public partial class AppShell : Shell
                 TabHome.Title     = AppStrings.Get("tab_home");
                 TabSearch.Title   = AppStrings.Get("tab_search");
                 TabMap.Title      = AppStrings.Get("tab_map");
+                TabTours.Title    = AppStrings.Get("tab_tours");
                 TabSettings.Title = AppStrings.Get("tab_settings");
             }
             else
@@ -47,6 +50,7 @@ public partial class AppShell : Shell
                 TabHome.Title     = AppStrings.GetForLanguage("tab_home", languageCode);
                 TabSearch.Title   = AppStrings.GetForLanguage("tab_search", languageCode);
                 TabMap.Title      = AppStrings.GetForLanguage("tab_map", languageCode);
+                TabTours.Title    = AppStrings.GetForLanguage("tab_tours", languageCode);
                 TabSettings.Title = AppStrings.GetForLanguage("tab_settings", languageCode);
             }
         }

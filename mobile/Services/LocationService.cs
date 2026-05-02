@@ -12,6 +12,7 @@ namespace AudioGo.Services
         private CancellationTokenSource? _cts;
 
         public event EventHandler<(double Lat, double Lon)>? LocationUpdated;
+        public (double Lat, double Lon)? LastKnownLocation { get; private set; }
         public bool IsRunning { get; private set; }
 
         public async Task StartAsync()
@@ -60,6 +61,23 @@ namespace AudioGo.Services
             return Task.CompletedTask;
         }
 
+        public async Task<(double Lat, double Lon)?> GetCurrentLocationAsync()
+        {
+            if (LastKnownLocation.HasValue) return LastKnownLocation.Value;
+            try
+            {
+                var loc = await Geolocation.Default.GetLocationAsync(
+                    new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(3)));
+                if (loc is not null)
+                {
+                    LastKnownLocation = (loc.Latitude, loc.Longitude);
+                    return LastKnownLocation;
+                }
+            }
+            catch { /* Fallback */ }
+            return null;
+        }
+
         private async Task LoopAsync(CancellationToken ct)
         {
             while (!ct.IsCancellationRequested)
@@ -70,7 +88,10 @@ namespace AudioGo.Services
                         new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(2)), ct);
 
                     if (loc is not null)
+                    {
+                        LastKnownLocation = (loc.Latitude, loc.Longitude);
                         LocationUpdated?.Invoke(this, (loc.Latitude, loc.Longitude));
+                    }
                 }
                 catch (FeatureNotSupportedException) { break; }
                 catch (PermissionException) { break; }
