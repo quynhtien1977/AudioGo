@@ -17,6 +17,19 @@ public class CustomPin : Pin, INotifyPropertyChanged
         set => SetValue(ImageUrlProperty, value);
     }
 
+    /// <summary>
+    /// Số thứ tự hiển thị trực tiếp trên pin (dùng cho mini map của tour).
+    /// 0 = không hiển thị số (dùng logo bình thường).
+    /// </summary>
+    public static readonly BindableProperty StepNumberProperty = BindableProperty.Create(
+        nameof(StepNumber), typeof(int), typeof(CustomPin), defaultValue: 0);
+
+    public int StepNumber
+    {
+        get => (int)GetValue(StepNumberProperty);
+        set => SetValue(StepNumberProperty, value);
+    }
+
     public string PoiId { get; set; } = string.Empty;
 
     public event Action? ImageUrlChanged;

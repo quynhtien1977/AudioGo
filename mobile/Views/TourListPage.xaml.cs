@@ -20,18 +20,14 @@ public partial class TourListPage : ContentPage
         await _vm.LoadToursAsync();
     }
 
-    private async void OnCreateTourClicked(object? sender, EventArgs e)
-        => await Shell.Current.GoToAsync(nameof(CreateTourPage));
 
     private async void OnTourMenuTapped(object? sender, TappedEventArgs e)
     {
         if (e.Parameter is not AudioGo.ViewModels.TourRowVm tour) return;
         var action = await DisplayActionSheetAsync(
             tour.Name, "Hủy", null,
-            "Xem chi tiết", "Xóa");
+            "Xem chi tiết");
         if (action == "Xem chi tiết")
             await Shell.Current.GoToAsync($"{nameof(TourDetailPage)}?tourId={tour.TourId}");
-        else if (action == "Xóa")
-            await _vm.DeleteTourAsync(tour.TourId);
     }
 }

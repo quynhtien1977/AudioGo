@@ -41,6 +41,20 @@
         </ShellContent>
 
         <ShellContent
+            x:Name="TabTours"
+            Title="Tours"
+            ContentTemplate="{DataTemplate views:TourListPage}"
+            Route="Tours">
+            <ShellContent.Icon>
+                <FontImageSource
+                    FontFamily="MaterialIcons"
+                    Glyph="&#xe56f;"
+                    Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource Primary}}"
+                    Size="26" />
+            </ShellContent.Icon>
+        </ShellContent>
+
+        <ShellContent
             x:Name="TabSearch"
             Title="Khám phá"
             ContentTemplate="{DataTemplate views:SearchPage}"

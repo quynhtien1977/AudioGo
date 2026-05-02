@@ -61,6 +61,16 @@ public static class MauiProgram
             client.Timeout = TimeSpan.FromSeconds(60);
         });
 
+        // Named client cho OpenRouteService API (proxy qua backend)
+        builder.Services.AddHttpClient("directions", client =>
+        {
+            client.BaseAddress = new Uri(DeviceInfo.DeviceType == DeviceType.Virtual
+                ? "http://10.0.2.2:5086/"
+                : "http://192.168.1.12:5086/");
+            client.Timeout = TimeSpan.FromSeconds(12);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+        });
+
         // ── Services ──────────────────────────────────────────────
         builder.Services.AddSingleton(AudioManager.Current);
         builder.Services.AddSingleton<SyncService>();
@@ -68,6 +78,8 @@ public static class MauiProgram
         builder.Services.AddSingleton<IAudioService, AudioService>();
         builder.Services.AddSingleton<ILocationService, LocationService>();
         builder.Services.AddSingleton<ISignalRService, SignalRService>();
+        builder.Services.AddSingleton<IDirectionsService, DirectionsService>(); // ORS Directions
+        builder.Services.AddSingleton<ITourSessionManager, TourSessionManager>();
 
         // ── ViewModels ────────────────────────────────────────────
         builder.Services.AddSingleton<MainViewModel>();
@@ -76,6 +88,9 @@ public static class MauiProgram
         builder.Services.AddTransient<SettingsViewModel>();
         builder.Services.AddTransient<SearchViewModel>();
         builder.Services.AddTransient<WelcomeQrScanViewModel>();
+        // Tour ViewModels
+        builder.Services.AddSingleton<TourListViewModel>();   // Singleton vì là tab page
+        builder.Services.AddTransient<TourDetailViewModel>();  // Transient vì dùng QueryProperty
 
         // ── Views ─────────────────────────────────────────────────
         // AppShell phải là Singleton để WelcomeQrScanViewModel có thể
@@ -88,6 +103,9 @@ public static class MauiProgram
         builder.Services.AddTransient<SearchPage>();
         builder.Services.AddTransient<WelcomePage>();
         builder.Services.AddTransient<WelcomeQrScanPage>();
+        // Tour Pages
+        builder.Services.AddSingleton<TourListPage>();    // Singleton vì là tab page
+        builder.Services.AddTransient<TourDetailPage>();   // Transient vì navigate bằng route + QueryProperty
 
 #if DEBUG
         builder.Logging.AddDebug();

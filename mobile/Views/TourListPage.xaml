@@ -42,10 +42,7 @@
                            HorizontalOptions="Center"
                            HorizontalTextAlignment="Center"
                            MaxLines="3"/>
-                    <Button Text="{Binding LabelCreateBtn}"
-                            Style="{StaticResource PrimaryButton}"
-                            HorizontalOptions="Center"
-                            Clicked="OnCreateTourClicked"/>
+                    <!-- Không có nút tạo tour từ mobile -->
                 </VerticalStackLayout>
 
                 <!-- Tour cards -->
@@ -102,7 +99,7 @@
                                                      HorizontalOptions="End" VerticalOptions="Center"/>
                                             <VerticalStackLayout Grid.Column="1" Spacing="2" HorizontalOptions="Center">
                                                 <Label Text="{Binding DurationText}" Style="{StaticResource SectionTitle}" HorizontalOptions="Center"/>
-                                                <Label Text="{Binding LabelMinutes}" Style="{StaticResource CaptionLabel}" HorizontalOptions="Center"/>
+                                                <Label Text="{Binding LabelWalk}" Style="{StaticResource CaptionLabel}" HorizontalOptions="Center"/>
                                             </VerticalStackLayout>
                                             <BoxView Grid.Column="1" WidthRequest="1" HeightRequest="30"
                                                      Color="{StaticResource Gray200}"

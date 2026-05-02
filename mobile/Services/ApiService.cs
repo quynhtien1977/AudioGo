@@ -118,10 +118,39 @@ namespace AudioGo.Services
             }
         }
 
-        public async Task<bool> CreateTourAsync(Shared.DTOs.TourCreateRequest request, CancellationToken ct = default)
+        public async Task<TourDetailDto?> GetTourByIdAsync(string tourId, string lang = "vi", CancellationToken ct = default)
         {
-            var resp = await _http.PostAsJsonAsync("api/mobile/tours", request, ct);
-            return resp.IsSuccessStatusCode;
+            try
+            {
+                var url    = $"api/mobile/tours/{tourId}?lang={lang}";
+                var detail = await _http.GetFromJsonAsync<TourDetailDto>(url, ct);
+                if (detail is null) return null;
+
+                // Patch relative URLs trong Steps
+                var baseUrl = _http.BaseAddress?.ToString().TrimEnd('/');
+                if (!string.IsNullOrEmpty(baseUrl))
+                {
+                    foreach (var step in detail.Steps)
+                    {
+                        if (!string.IsNullOrEmpty(step.AudioUrl) && !step.AudioUrl.StartsWith("http"))
+                        {
+                            // TourStepDto là record — không patch trực tiếp;
+                            // TourStepVm constructor sẽ dùng baseUrl khi khởi tạo
+                        }
+                    }
+
+                    // Patch ThumbnailUrl của tour
+                    if (!string.IsNullOrEmpty(detail.ThumbnailUrl) && !detail.ThumbnailUrl.StartsWith("http"))
+                        detail = detail with { ThumbnailUrl = $"{baseUrl}/{detail.ThumbnailUrl.TrimStart('/')}" };
+                }
+
+                return detail;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ApiService] GetTourByIdAsync: {ex.Message}");
+                return null;
+            }
         }
 
         public async Task<PoiDeltaDto?> GetDeltaAsync(
