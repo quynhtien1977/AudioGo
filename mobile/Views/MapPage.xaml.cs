@@ -1,3 +1,4 @@
+using AudioGo.Services.Interfaces;
 using AudioGo.ViewModels;
 using AudioGo_Mobile.Helpers;
 using Microsoft.Maui.Controls.Maps;
@@ -10,9 +11,10 @@ public partial class MapPage : ContentPage
 {
     private readonly MapViewModel _vm;
     private readonly MainViewModel _main;
+    private readonly IDirectionsService _directions;
     private string? _activePinPoiId;
     private bool _isSubscribed;
-    private List<string>? _tourPoiFilter;   // null = chế độ bình thường, non-null = chỉ hiển thị POI của tour
+    private List<string>? _tourPoiFilter;
 
     // Expose Main for XAML bindings (MiniPlayer)
     public MainViewModel Main => _main;
@@ -20,11 +22,12 @@ public partial class MapPage : ContentPage
     // Property wrapper để map MainMap → MapControl
     private Microsoft.Maui.Controls.Maps.Map MapControl => MainMap;
 
-    public MapPage(MapViewModel vm, MainViewModel main)
+    public MapPage(MapViewModel vm, MainViewModel main, IDirectionsService directions)
     {
         InitializeComponent();
         _vm = vm;
         _main = main;
+        _directions = directions;
         BindingContext = vm;
         MiniPlayerGrid.BindingContext = _main;
     }
@@ -43,7 +46,7 @@ public partial class MapPage : ContentPage
         var filter = TourMapContext.PendingTourPoiIds;
         if (filter != null)
         {
-            // Từ TourDetail: chỉ vẽ route + zoom vào tour POIs
+            // Từ TourDetail: vẽ route thực + zoom vào tour POIs
             var stepOrders = TourMapContext.PendingTourStepOrders ?? new();
             TourMapContext.Clear();
 
@@ -52,7 +55,8 @@ public partial class MapPage : ContentPage
                 .OrderBy(p => stepOrders.TryGetValue(p.PoiId, out var o) ? o : 999)
                 .ToList();
 
-            DrawTourRoute(tourPois);
+            // Fire-and-forget async route draw (có loading indicator bên trong)
+            _ = DrawTourRouteAsync(tourPois);
 
             if (tourPois.Count > 0)
                 _vm.FitToPoints(tourPois.Select(p => new Location(p.Latitude, p.Longitude)));
@@ -74,18 +78,39 @@ public partial class MapPage : ContentPage
         }
     }
 
-    /// <summary>Vẽ route Polyline màu Primary, z-order trên geofence.</summary>
-    private void DrawTourRoute(List<Shared.POI> orderedPois)
+    /// <summary>Vẽ route Polyline thực từ Directions API, fallback straight-line khi offline.</summary>
+    private async Task DrawTourRouteAsync(List<POI> orderedPois)
     {
         RemoveTourRoute();
         if (orderedPois.Count < 2) return;
 
-        var line = new Polyline { StrokeColor = Color.FromArgb("#E53935"), StrokeWidth = 5 };
-        foreach (var p in orderedPois)
-            line.Geopath.Add(new Location(p.Latitude, p.Longitude));
+        // Loading: hiện text trên StatusLabel (nếu có) hoặc log
+        System.Diagnostics.Debug.WriteLine("[MapPage] Đang tính đường đi...");
+
+        var waypoints = orderedPois
+            .Select(p => (p.Latitude, p.Longitude))
+            .ToList();
+
+        // cacheKey = tourId nếu có, fallback = hash waypoints
+        var cacheKey = string.Join("|", orderedPois.Select(p => p.PoiId));
+
+        var routePoints = await _directions.GetWalkingRouteAsync(cacheKey, waypoints);
+
+        if (routePoints.Count == 0) return;
+
+        var line = new Polyline
+        {
+            StrokeColor = Color.FromArgb("#E53935"),
+            StrokeWidth = 5
+        };
+
+        foreach (var pt in routePoints)
+            line.Geopath.Add(pt);
 
         _tourRoutePolyline = line;
-        MapControl.MapElements.Add(_tourRoutePolyline);
+        MainThread.BeginInvokeOnMainThread(() => MapControl.MapElements.Add(_tourRoutePolyline));
+
+        System.Diagnostics.Debug.WriteLine($"[MapPage] Route vẽ xong — {routePoints.Count} điểm");
     }
 
     /// <summary>Xóa tour route khỏi map (giữ nguyên geofence overlays).</summary>

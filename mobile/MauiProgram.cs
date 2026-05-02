@@ -61,6 +61,16 @@ public static class MauiProgram
             client.Timeout = TimeSpan.FromSeconds(60);
         });
 
+        // Named client cho Google Directions API (proxy qua backend)
+        builder.Services.AddHttpClient("directions", client =>
+        {
+            client.BaseAddress = new Uri(DeviceInfo.DeviceType == DeviceType.Virtual
+                ? "http://10.0.2.2:5086/"
+                : "http://192.168.1.12:5086/");
+            client.Timeout = TimeSpan.FromSeconds(12);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+        });
+
         // ── Services ──────────────────────────────────────────────
         builder.Services.AddSingleton(AudioManager.Current);
         builder.Services.AddSingleton<SyncService>();
@@ -68,6 +78,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IAudioService, AudioService>();
         builder.Services.AddSingleton<ILocationService, LocationService>();
         builder.Services.AddSingleton<ISignalRService, SignalRService>();
+        builder.Services.AddSingleton<IDirectionsService, DirectionsService>(); // Google Directions
 
         // ── ViewModels ────────────────────────────────────────────
         builder.Services.AddSingleton<MainViewModel>();

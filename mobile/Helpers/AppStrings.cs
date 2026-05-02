@@ -247,6 +247,21 @@ public static class AppStrings
             ["vi"] = "~{0} phút đi bộ", ["en"] = "~{0} min walk", ["ja"] = "徒歩約{0}分",
             ["ko"] = "도보 약 {0}분", ["zh-Hans"] = "步行约{0}分钟", ["fr"] = "~{0} min à pied", ["th"] = "เดินประมาณ {0} นาที"
         },
+        ["map_route_loading"] = new()
+        {
+            ["vi"] = "Đang tính đường đi...", ["en"] = "Calculating route...", ["ja"] = "ルートを計算中...",
+            ["ko"] = "경로 계산 중...", ["zh-Hans"] = "正在计算路线...", ["fr"] = "Calcul du trajet...", ["th"] = "กำลังคำนวณเส้นทาง..."
+        },
+        ["map_route_error"] = new()
+        {
+            ["vi"] = "Không tải được đường đi", ["en"] = "Could not load route", ["ja"] = "ルートを取得できません",
+            ["ko"] = "경로를 불러올 수 없습니다", ["zh-Hans"] = "无法加载路线", ["fr"] = "Impossible de charger l'itinéraire", ["th"] = "ไม่สามารถโหลดเส้นทางได้"
+        },
+        ["map_tour_mode"] = new()
+        {
+            ["vi"] = "Chế độ Tour", ["en"] = "Tour Mode", ["ja"] = "ツアーモード",
+            ["ko"] = "투어 모드", ["zh-Hans"] = "游览模式", ["fr"] = "Mode circuit", ["th"] = "โหมดทัวร์"
+        },
 
         // ═══════════════════════════════════════════════════════════════
         // SettingsPage

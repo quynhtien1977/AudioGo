@@ -157,7 +157,7 @@ public partial class TourDetailPage : ContentPage
     }
 
     // ── Mini Map: render pins + Polyline route ───────────────────────
-    private void PopulateMiniMap()
+    private async void PopulateMiniMap()
     {
         MiniMap.Pins.Clear();
         MiniMap.MapElements.Clear();
@@ -168,18 +168,25 @@ public partial class TourDetailPage : ContentPage
 
         foreach (var stop in valid)
         {
-            // CustomPin với số thứ tự — handler Android vẽ numbered circle pin
             MiniMap.Pins.Add(new CustomPin
             {
-                Label      = stop.StepNumber,  // callout text (fallback)
-                StepNumber = stop.StepOrder,    // trigger numbered rendering
+                Label      = stop.StepNumber,
+                StepNumber = stop.StepOrder,
                 PoiId      = stop.PoiId,
                 Location   = new Location(stop.Latitude, stop.Longitude),
                 Type       = PinType.Place,
             });
         }
 
-        // Route polyline màu Primary (#D15993)
+        // Auto-zoom trước khi route tải xong
+        var cLat    = valid.Average(s => s.Latitude);
+        var cLon    = valid.Average(s => s.Longitude);
+        var latSpan = Math.Max(valid.Max(s => s.Latitude) - valid.Min(s => s.Latitude) + 0.008, 0.008);
+        var lonSpan = Math.Max(valid.Max(s => s.Longitude) - valid.Min(s => s.Longitude) + 0.008, 0.008);
+        try { MiniMap.MoveToRegion(new MapSpan(new Location(cLat, cLon), latSpan, lonSpan)); }
+        catch { /* ignore */ }
+
+        // Fetch OSRM route qua backend
         if (valid.Count >= 2)
         {
             var line = new Polyline
@@ -187,18 +194,34 @@ public partial class TourDetailPage : ContentPage
                 StrokeColor = Color.FromArgb("#D15993"),
                 StrokeWidth = 4
             };
-            foreach (var s in valid)
-                line.Geopath.Add(new Location(s.Latitude, s.Longitude));
+
+            var waypoints = valid.Select(s => (s.Latitude, s.Longitude)).ToList();
+            
+            try 
+            {
+                var dirService = Application.Current?.Handler?.MauiContext?.Services.GetService<AudioGo.Services.Interfaces.IDirectionsService>();
+                if (dirService is not null)
+                {
+                    var cacheKey = $"tour_{_vm.TourId}";
+                    var routePts = await dirService.GetWalkingRouteAsync(cacheKey, waypoints);
+                    foreach (var pt in routePts)
+                        line.Geopath.Add(pt);
+                }
+                else
+                {
+                    // Fallback thẳng
+                    foreach (var s in valid)
+                        line.Geopath.Add(new Location(s.Latitude, s.Longitude));
+                }
+            }
+            catch
+            {
+                // Fallback nếu lỗi
+                foreach (var s in valid)
+                    line.Geopath.Add(new Location(s.Latitude, s.Longitude));
+            }
+
             MiniMap.MapElements.Add(line);
         }
-
-        // Auto-zoom
-        var cLat    = valid.Average(s => s.Latitude);
-        var cLon    = valid.Average(s => s.Longitude);
-        var latSpan = Math.Max(valid.Max(s => s.Latitude) - valid.Min(s => s.Latitude) + 0.008, 0.008);
-        var lonSpan = Math.Max(valid.Max(s => s.Longitude) - valid.Min(s => s.Longitude) + 0.008, 0.008);
-
-        try { MiniMap.MoveToRegion(new MapSpan(new Location(cLat, cLon), latSpan, lonSpan)); }
-        catch { /* map not ready yet */ }
     }
 }
