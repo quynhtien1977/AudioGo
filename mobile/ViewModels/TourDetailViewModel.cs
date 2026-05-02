@@ -1,8 +1,6 @@
 using AudioGo.Services.Interfaces;
-using Microsoft.Maui.Maps;
 using Shared.DTOs;
 using System.Collections.ObjectModel;
-using System.Windows.Input;
 
 namespace AudioGo.ViewModels
 {
@@ -14,7 +12,6 @@ namespace AudioGo.ViewModels
         public TourDetailViewModel(IApiService api)
         {
             _api = api;
-            OpenStopCommand = new Command<TourStepVm>(OnOpenStop);
         }
 
         // ── Query parameter ───────────────────────────────────────────
@@ -23,7 +20,6 @@ namespace AudioGo.ViewModels
         {
             get => _tourId;
             set => SetProperty(ref _tourId, value ?? string.Empty);
-            // Không auto-load ở đây — OnAppearing của View gọi LoadAsync
         }
 
         // ── Bindable properties ──────────────────────────────────────
@@ -51,33 +47,20 @@ namespace AudioGo.ViewModels
         // ── Stops collection ─────────────────────────────────────────
         public ObservableCollection<TourStepVm> Stops { get; } = new();
 
-        // ── Progress (placeholder — tracking sẽ làm sprint sau) ──────
+        // ── Progress ──────────────────────────────────────────────────
         public string ProgressText  => $"0/{Stops.Count} điểm";
         public double ProgressRatio => 0d;
-        public string TotalDuration => "--";
 
-        // ── Audio player (placeholder — audio integration sprint sau) ─
-        public bool   IsAudioActive    => false;
-        public string CurrentStopTitle => string.Empty;
-        public string AudioTimeDisplay => "0:00";
-        public string PlayPauseIcon    => "\ue037";  // play_arrow Material
-
-        // ── Commands ─────────────────────────────────────────────────
-        public ICommand OpenStopCommand { get; }
-
-        private void OnOpenStop(TourStepVm? stop)
-        {
-            if (stop is null) return;
-            // Placeholder — audio integration sprint sau
-            System.Diagnostics.Debug.WriteLine($"[TourDetail] Open stop: {stop.Title}");
-        }
+        private int _totalWalkMinutes = 0;
+        public string TotalDuration =>
+            _totalWalkMinutes > 0 ? $"~{_totalWalkMinutes} phút đi bộ" : "--";
 
         // ── UI Strings ───────────────────────────────────────────────
         public string LabelContinue => AudioGo.Helpers.AppStrings.Get("tour_detail_continue");
-        public string LabelMap      => AudioGo.Helpers.AppStrings.Get("tour_detail_map");
         public string LabelStopList => AudioGo.Helpers.AppStrings.Get("tour_detail_stop_list");
+        public string LabelOpenMap  => AudioGo.Helpers.AppStrings.Get("tour_detail_open_map");
 
-        // ── Load ─────────────────────────────────────────────────────
+        // ── Load từ API (không mock) ──────────────────────────────────
         public async Task LoadAsync(string tourId)
         {
             if (IsLoading || string.IsNullOrEmpty(tourId)) return;
@@ -92,7 +75,6 @@ namespace AudioGo.ViewModels
                 if (detail is null)
                 {
                     ErrorMessage = AudioGo.Helpers.AppStrings.Get("tour_load_err");
-                    LoadMockData(tourId);
                     return;
                 }
 
@@ -102,7 +84,17 @@ namespace AudioGo.ViewModels
                 Stops.Clear();
                 var steps = detail.Steps.OrderBy(s => s.StepOrder).ToList();
                 for (int i = 0; i < steps.Count; i++)
-                    Stops.Add(new TourStepVm(steps[i], isLast: i == steps.Count - 1));
+                {
+                    int walkToNext = 0;
+                    if (i < steps.Count - 1)
+                        walkToNext = WalkMinutes(steps[i].Latitude, steps[i].Longitude,
+                                                 steps[i + 1].Latitude, steps[i + 1].Longitude);
+
+                    Stops.Add(new TourStepVm(steps[i], isLast: i == steps.Count - 1,
+                                             walkMinutesToNext: walkToNext));
+                }
+
+                _totalWalkMinutes = Stops.Sum(s => s.WalkMinutesToNext);
 
                 OnPropertyChanged(nameof(ProgressText));
                 OnPropertyChanged(nameof(ProgressRatio));
@@ -111,7 +103,7 @@ namespace AudioGo.ViewModels
             catch (Exception ex)
             {
                 ErrorMessage = $"{AudioGo.Helpers.AppStrings.Get("tour_load_err")}: {ex.Message}";
-                if (Stops.Count == 0) LoadMockData(tourId);
+                System.Diagnostics.Debug.WriteLine($"[TourDetail] Load failed: {ex.Message}");
             }
             finally
             {
@@ -119,90 +111,57 @@ namespace AudioGo.ViewModels
             }
         }
 
-        // ── Mock fallback (khi API lỗi / chưa có data) ───────────────
-        private void LoadMockData(string tourId)
+        // ── Haversine walk-time ───────────────────────────────────────
+        private static int WalkMinutes(double lat1, double lon1, double lat2, double lon2)
         {
-            TourName = tourId switch
-            {
-                "tour-1" => "Tour Ẩm Thực Vĩnh Khánh",
-                "tour-2" => "Tour Hải Sản Quận 4",
-                "tour-3" => "Tour Di Tích Lịch Sử",
-                _        => "Tour Khám Phá Quận 4"
-            };
-            Description = "Khám phá hơn 20 điểm ẩm thực nổi tiếng tại phố Vĩnh Khánh, Quận 4.";
-
-            Stops.Clear();
-            // Mock steps với tọa độ thật ở khu vực Quận 4 HCM
-            Stops.Add(new TourStepVm("1", "Hải Sản Bã Tư",        "Hải sản tươi sống",       false, 10.763, 106.700, 1));
-            Stops.Add(new TourStepVm("2", "Bánh Canh Cua Bà Hai", "Bánh canh cua đặc sản",   false, 10.762, 106.701, 2));
-            Stops.Add(new TourStepVm("3", "Ốc Đêm Vĩnh Khánh",   "Các loại ốc đặc sản",     false, 10.761, 106.702, 3));
-            Stops.Add(new TourStepVm("4", "Cà Phê Vĩnh Khánh",   "Cà phê sáng truyền thống", true,  10.760, 106.703, 4));
-
-            OnPropertyChanged(nameof(ProgressText));
+            const double R = 6371e3;
+            var dLat = (lat2 - lat1) * Math.PI / 180;
+            var dLon = (lon2 - lon1) * Math.PI / 180;
+            var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2)
+                  + Math.Cos(lat1 * Math.PI / 180) * Math.Cos(lat2 * Math.PI / 180)
+                  * Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+            var dist = R * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            return Math.Max(1, (int)Math.Ceiling(dist / 66.67));
         }
-
-        // Audio controls (placeholder)
-        public void TogglePlay() { }
-        public void Stop()       { }
     }
 
-    /// <summary>Dữ liệu một điểm dừng trong tour — bind vào XAML CollectionView.</summary>
+    // ─────────────────────────────────────────────────────────────────
     public class TourStepVm
     {
-        // ── Core data ──────────────────────────────────────────────
-        public string  PoiId        { get; }
-        public int     StepOrder    { get; }
-        public string  StepNumber   { get; }   // "1", "2", ...
-        public string  Title        { get; }
-        public string  Description  { get; }
-        public string  DurationLabel { get; } = "~-- phút";
-        public string  AudioUrl     { get; }
-        public double  Latitude     { get; }
-        public double  Longitude    { get; }
+        public string PoiId        { get; }
+        public int    StepOrder    { get; }
+        public string StepNumber   { get; }
+        public string Title        { get; }
+        public string Description  { get; }
+        public string AudioUrl     { get; }
+        public double Latitude     { get; }
+        public double Longitude    { get; }
+        public int    WalkMinutesToNext { get; }
 
-        // ── XAML bindings (style + state) ─────────────────────────
+        // Timeline styling
         public bool   IsNotLast    { get; }
-        public Color  StatusColor  { get; } = Colors.Gray;
-        public string StatusIcon   { get; }   // số thứ tự hoặc icon
+        public Color  StatusColor  { get; } = Color.FromArgb("#E53935");
         public Color  CardBgColor  { get; } = Colors.White;
-        public Color  PlayBgColor  { get; } = Color.FromArgb("#FFF0F5");
-        public string PlayIcon     { get; } = "\ue037";   // play_arrow
-        public Color  PlayIconColor { get; } = Color.FromArgb("#D15993");
+        public string DurationLabel { get; }
 
-        // ── Constructor từ DTO (API thật) ─────────────────────────
-        public TourStepVm(TourStepDto dto, bool isLast, string? baseUrl = null)
+        // Constructor từ DTO (duy nhất — không có mock constructor)
+        public TourStepVm(TourStepDto dto, bool isLast, int walkMinutesToNext = 0, string? baseUrl = null)
         {
-            PoiId       = dto.PoiId;
-            StepOrder   = dto.StepOrder;
-            StepNumber  = dto.StepOrder.ToString();
-            Title       = dto.Title;
-            Description = dto.Description;
-            IsNotLast   = !isLast;
-            StatusIcon  = dto.StepOrder.ToString();
-            Latitude    = dto.Latitude;
-            Longitude   = dto.Longitude;
+            PoiId             = dto.PoiId;
+            StepOrder         = dto.StepOrder;
+            StepNumber        = dto.StepOrder.ToString();
+            Title             = dto.Title;
+            Description       = dto.Description;
+            IsNotLast         = !isLast;
+            Latitude          = dto.Latitude;
+            Longitude         = dto.Longitude;
+            WalkMinutesToNext = walkMinutesToNext;
+            DurationLabel     = isLast ? "" : $"~{walkMinutesToNext} phút đi bộ tiếp theo";
 
-            // Patch relative audio URL
             var au = dto.AudioUrl ?? string.Empty;
             AudioUrl = (!string.IsNullOrEmpty(baseUrl) && !au.StartsWith("http") && !string.IsNullOrEmpty(au))
                 ? $"{baseUrl}/{au.TrimStart('/')}"
                 : au;
-        }
-
-        // ── Constructor mock (fallback data) ──────────────────────
-        public TourStepVm(string stepNumber, string title, string description,
-                          bool isLast, double lat, double lon, int stepOrder)
-        {
-            PoiId       = $"mock-{stepOrder}";
-            StepOrder   = stepOrder;
-            StepNumber  = stepNumber;
-            Title       = title;
-            Description = description;
-            IsNotLast   = !isLast;
-            StatusIcon  = stepNumber;
-            Latitude    = lat;
-            Longitude   = lon;
-            AudioUrl    = string.Empty;
         }
     }
 }

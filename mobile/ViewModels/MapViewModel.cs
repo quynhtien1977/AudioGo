@@ -224,6 +224,19 @@ namespace AudioGo.ViewModels
         private int _geofenceSourceHash = -1;
 
         /// <summary>
+        /// Xóa cache Polygon/Polyline và reset hash, buộc BuildGeofenceCircles
+        /// tạo brand-new objects trong lần gọi tiếp theo.
+        /// Gọi khi chuyển tour-mode ↔ normal-mode để differential sync
+        /// remove objects CŨ và add objects MỚI (khác C# reference = không ghost overlay).
+        /// </summary>
+        public void ResetGeofenceCache()
+        {
+            _fillByPoiId.Clear();
+            _linesByPoiId.Clear();
+            _geofenceSourceHash = -1;
+        }
+
+        /// <summary>
         /// Tăng mỗi khi geofence thay đổi — MapPage subscribe để gọi RefreshGeofenceOverlays.
         /// </summary>
         public int GeofenceVersion { get; private set; }
