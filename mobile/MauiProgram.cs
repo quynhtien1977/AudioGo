@@ -79,6 +79,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<ILocationService, LocationService>();
         builder.Services.AddSingleton<ISignalRService, SignalRService>();
         builder.Services.AddSingleton<IDirectionsService, DirectionsService>(); // Google Directions
+        builder.Services.AddSingleton<ITourSessionManager, TourSessionManager>();
 
         // ── ViewModels ────────────────────────────────────────────
         builder.Services.AddSingleton<MainViewModel>();

@@ -8,10 +8,15 @@ namespace AudioGo.ViewModels
     public class TourDetailViewModel : BaseViewModel
     {
         private readonly IApiService _api;
+        private readonly ITourSessionManager _session;
 
-        public TourDetailViewModel(IApiService api)
+        public TourDetailViewModel(IApiService api, ITourSessionManager session)
         {
             _api = api;
+            _session = session;
+
+            _session.PoiVisited += OnPoiVisited;
+            _session.SessionCompleted += OnSessionCompleted;
         }
 
         // ── Query parameter ───────────────────────────────────────────
@@ -48,8 +53,22 @@ namespace AudioGo.ViewModels
         public ObservableCollection<TourStepVm> Stops { get; } = new();
 
         // ── Progress ──────────────────────────────────────────────────
-        public string ProgressText  => $"0/{Stops.Count} điểm";
-        public double ProgressRatio => 0d;
+        private bool _isTourActive;
+        public bool IsTourActive
+        {
+            get => _isTourActive;
+            set => SetProperty(ref _isTourActive, value);
+        }
+
+        public string ProgressText =>
+            _session.ActiveSession?.TourId == TourId
+                ? $"{_session.ActiveSession.VisitedCount}/{Stops.Count} điểm"
+                : $"0/{Stops.Count} điểm";
+
+        public double ProgressRatio =>
+            Stops.Count > 0 && _session.ActiveSession?.TourId == TourId
+                ? (double)_session.ActiveSession.VisitedCount / Stops.Count
+                : 0d;
 
         private int _totalWalkMinutes = 0;
         public string TotalDuration =>
@@ -59,6 +78,12 @@ namespace AudioGo.ViewModels
         public string LabelContinue => AudioGo.Helpers.AppStrings.Get("tour_detail_continue");
         public string LabelStopList => AudioGo.Helpers.AppStrings.Get("tour_detail_stop_list");
         public string LabelOpenMap  => AudioGo.Helpers.AppStrings.Get("tour_detail_open_map");
+
+        public string StartStopLabel => IsTourActive
+            ? AudioGo.Helpers.AppStrings.Get("tour_stop")       // "Dừng Tour"
+            : AudioGo.Helpers.AppStrings.Get("tour_start");     // "Khám phá"
+
+        public string ResetLabel => AudioGo.Helpers.AppStrings.Get("tour_reset"); // "Bắt đầu lại"
 
         // ── Load từ API (không mock) ──────────────────────────────────
         public async Task LoadAsync(string tourId)
@@ -123,10 +148,69 @@ namespace AudioGo.ViewModels
             var dist = R * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
             return Math.Max(1, (int)Math.Ceiling(dist / 66.67));
         }
+
+        public void StartTour()
+        {
+            var orderedIds = Stops.OrderBy(s => s.StepOrder)
+                                  .Select(s => s.PoiId)
+                                  .ToList();
+            _session.StartSession(TourId!, orderedIds);
+            IsTourActive = true;
+            OnPropertyChanged(nameof(StartStopLabel));
+            OnPropertyChanged(nameof(ResetLabel));
+            OnPropertyChanged(nameof(ProgressText));
+            OnPropertyChanged(nameof(ProgressRatio));
+        }
+
+        public void StopTour()
+        {
+            _session.EndSession();
+            IsTourActive = false;
+            OnPropertyChanged(nameof(StartStopLabel));
+            OnPropertyChanged(nameof(ResetLabel));
+        }
+
+        public void ResetTour()
+        {
+            _session.ResetSession();
+            foreach (var stop in Stops)
+                stop.IsVisited = false;
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                OnPropertyChanged(nameof(ProgressText));
+                OnPropertyChanged(nameof(ProgressRatio));
+            });
+        }
+
+        private void OnPoiVisited(object? sender, string poiId)
+        {
+            var step = Stops.FirstOrDefault(s => s.PoiId == poiId);
+            if (step != null) step.IsVisited = true;
+
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                OnPropertyChanged(nameof(ProgressText));
+                OnPropertyChanged(nameof(ProgressRatio));
+            });
+        }
+
+        private void OnSessionCompleted(object? sender, EventArgs e)
+        {
+            MainThread.BeginInvokeOnMainThread(async () =>
+            {
+                if (Shell.Current != null)
+                {
+                    await Shell.Current.DisplayAlertAsync(
+                        "🎉 " + AudioGo.Helpers.AppStrings.Get("completed"),
+                        AudioGo.Helpers.AppStrings.Get("tour_completed_msg").Replace("{0}", Stops.Count.ToString()),
+                        AudioGo.Helpers.AppStrings.Get("ok"));
+                }
+            });
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────
-    public class TourStepVm
+    public class TourStepVm : CommunityToolkit.Mvvm.ComponentModel.ObservableObject
     {
         public string PoiId        { get; }
         public int    StepOrder    { get; }
@@ -140,9 +224,22 @@ namespace AudioGo.ViewModels
 
         // Timeline styling
         public bool   IsNotLast    { get; }
-        public Color  StatusColor  { get; } = Color.FromArgb("#E53935");
-        public Color  CardBgColor  { get; } = Colors.White;
         public string DurationLabel { get; }
+
+        private bool _isVisited;
+        public bool IsVisited
+        {
+            get => _isVisited;
+            set
+            {
+                SetProperty(ref _isVisited, value);
+                OnPropertyChanged(nameof(StatusColor));
+                OnPropertyChanged(nameof(CardBgColor));
+            }
+        }
+
+        public Color StatusColor => IsVisited ? Color.FromArgb("#4CAF50") : Color.FromArgb("#E53935");
+        public Color CardBgColor => IsVisited ? Color.FromArgb("#F1F8E9") : Colors.White;
 
         // Constructor từ DTO (duy nhất — không có mock constructor)
         public TourStepVm(TourStepDto dto, bool isLast, int walkMinutesToNext = 0, string? baseUrl = null)

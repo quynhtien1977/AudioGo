@@ -12,6 +12,7 @@ public partial class MapPage : ContentPage
     private readonly MapViewModel _vm;
     private readonly MainViewModel _main;
     private readonly IDirectionsService _directions;
+    private readonly ITourSessionManager _sessionManager;
     private string? _activePinPoiId;
     private bool _isSubscribed;
     private List<string>? _tourPoiFilter;
@@ -22,18 +23,20 @@ public partial class MapPage : ContentPage
     // Property wrapper để map MainMap → MapControl
     private Microsoft.Maui.Controls.Maps.Map MapControl => MainMap;
 
-    public MapPage(MapViewModel vm, MainViewModel main, IDirectionsService directions)
+    public MapPage(MapViewModel vm, MainViewModel main, IDirectionsService directions, ITourSessionManager sessionManager)
     {
         InitializeComponent();
         _vm = vm;
         _main = main;
         _directions = directions;
+        _sessionManager = sessionManager;
         BindingContext = vm;
         MiniPlayerGrid.BindingContext = _main;
     }
 
     // ── Tour route state (chỉ polyline, không filter POI) ────────────────
     private Polyline? _tourRoutePolyline;
+    private Polyline? _userToNextPoiPolyline;
 
     protected override void OnAppearing()
     {
@@ -94,31 +97,64 @@ public partial class MapPage : ContentPage
         // cacheKey = tourId nếu có, fallback = hash waypoints
         var cacheKey = string.Join("|", orderedPois.Select(p => p.PoiId));
 
-        var routePoints = await _directions.GetWalkingRouteAsync(cacheKey, waypoints);
+        // 1. Vẽ route tổng của Tour (màu nhạt) - KHÔNG bắt đầu từ vị trí user
+        var routePoints = await _directions.GetWalkingRouteAsync(cacheKey, waypoints, prependUserLocation: false);
 
-        if (routePoints.Count == 0) return;
-
-        var line = new Polyline
+        if (routePoints.Count > 0)
         {
-            StrokeColor = Color.FromArgb("#E53935"),
-            StrokeWidth = 5
-        };
+            var line = new Polyline
+            {
+                StrokeColor = Color.FromArgb("#88D15993"), // Màu nhạt hơn (53% opacity của #D15993)
+                StrokeWidth = 4
+            };
 
-        foreach (var pt in routePoints)
-            line.Geopath.Add(pt);
+            foreach (var pt in routePoints)
+                line.Geopath.Add(pt);
 
-        _tourRoutePolyline = line;
-        MainThread.BeginInvokeOnMainThread(() => MapControl.MapElements.Add(_tourRoutePolyline));
+            _tourRoutePolyline = line;
+            MainThread.BeginInvokeOnMainThread(() => MapControl.MapElements.Add(_tourRoutePolyline));
+        }
 
-        System.Diagnostics.Debug.WriteLine($"[MapPage] Route vẽ xong — {routePoints.Count} điểm");
+        // 2. Vẽ route đậm từ User -> Điểm tiếp theo
+        // Ưu tiên NextPoiId từ session đang chạy, nếu không có thì lấy điểm đầu tiên
+        var nextPoiId = _sessionManager.ActiveSession?.NextPoiId ?? orderedPois.First().PoiId;
+        var nextPoi = orderedPois.FirstOrDefault(p => p.PoiId == nextPoiId);
+        
+        if (nextPoi is not null)
+        {
+            // Call route API for [User, NextPoi]. prependUserLocation = true will handle user location insertion.
+            var nextPoiKey = $"user_to_{nextPoiId}";
+            var userRoutePoints = await _directions.GetWalkingRouteAsync(nextPoiKey, new List<(double Lat, double Lng)> { (nextPoi.Latitude, nextPoi.Longitude) }, prependUserLocation: true);
+            
+            if (userRoutePoints.Count > 0)
+            {
+                var userLine = new Polyline
+                {
+                    StrokeColor = Color.FromArgb("#E53935"), // Màu đỏ đậm
+                    StrokeWidth = 6
+                };
+                foreach (var pt in userRoutePoints) userLine.Geopath.Add(pt);
+                _userToNextPoiPolyline = userLine;
+                MainThread.BeginInvokeOnMainThread(() => MapControl.MapElements.Add(_userToNextPoiPolyline));
+            }
+        }
+
+        System.Diagnostics.Debug.WriteLine($"[MapPage] Route vẽ xong");
     }
 
     /// <summary>Xóa tour route khỏi map (giữ nguyên geofence overlays).</summary>
     private void RemoveTourRoute()
     {
-        if (_tourRoutePolyline is null) return;
-        MapControl.MapElements.Remove(_tourRoutePolyline);
-        _tourRoutePolyline = null;
+        if (_tourRoutePolyline is not null)
+        {
+            MapControl.MapElements.Remove(_tourRoutePolyline);
+            _tourRoutePolyline = null;
+        }
+        if (_userToNextPoiPolyline is not null)
+        {
+            MapControl.MapElements.Remove(_userToNextPoiPolyline);
+            _userToNextPoiPolyline = null;
+        }
     }
 
 
@@ -160,9 +196,9 @@ public partial class MapPage : ContentPage
         var desiredLineSet = desiredLines.ToHashSet();
 
         var currentFills = MapControl.MapElements.OfType<Polygon>().ToHashSet();
-        // Exclude tour route polyline — nó không phải geofence, quản lý riêng
+        // Exclude tour route polylines — nó không phải geofence, quản lý riêng
         var currentLines = MapControl.MapElements.OfType<Polyline>()
-            .Where(l => l != _tourRoutePolyline)
+            .Where(l => l != _tourRoutePolyline && l != _userToNextPoiPolyline)
             .ToHashSet();
 
         // Xóa những gì không còn cần (set difference)
