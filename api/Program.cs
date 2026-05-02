@@ -98,13 +98,6 @@ builder.Services.AddScoped<IPoiRequestService, PoiRequestService>();
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddHttpContextAccessor();
 
-// ── Named HttpClients ─────────────────────────────────────────────────
-builder.Services.AddHttpClient("GoogleMaps", client =>
-{
-    client.Timeout = TimeSpan.FromSeconds(10);
-    client.DefaultRequestHeaders.Add("Accept", "application/json");
-});
-
 // ── Controllers & OpenAPI ─────────────────────────────────────────────
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
