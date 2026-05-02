@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Server.Repositories.Interfaces;
 using Server.Services.Interfaces;
 using Shared.DTOs;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace Server.Controllers.Mobile
 {
@@ -13,11 +15,19 @@ namespace Server.Controllers.Mobile
     {
         private readonly ITourRepository _tourRepo;
         private readonly IContentPipelineService _pipeline;
+        private readonly IHttpClientFactory _httpFactory;
+        private readonly IConfiguration _config;
 
-        public TourMobileController(ITourRepository tourRepo, IContentPipelineService pipeline)
+        public TourMobileController(
+            ITourRepository tourRepo,
+            IContentPipelineService pipeline,
+            IHttpClientFactory httpFactory,
+            IConfiguration config)
         {
             _tourRepo = tourRepo;
             _pipeline = pipeline;
+            _httpFactory = httpFactory;
+            _config = config;
         }
 
         // GET /api/mobile/tours?lang=vi
@@ -96,5 +106,65 @@ namespace Server.Controllers.Mobile
                 Steps:        steps
             ));
         }
+
+        // GET /api/mobile/tours/directions?waypoints=lat1,lng1|lat2,lng2|...&mode=walking
+        // Sử dụng OSRM (Open Source Routing Machine) miễn phí, không cần API Key/Billing
+        [HttpGet("directions")]
+        public async Task<IActionResult> GetDirections(
+            [FromQuery] string waypoints,
+            [FromQuery] string mode = "walking")
+        {
+            var points = waypoints.Split('|', StringSplitOptions.RemoveEmptyEntries);
+            if (points.Length < 2)
+                return BadRequest(new { error = "Cần ít nhất 2 waypoints" });
+
+            // OSRM nhận format: Lng,Lat;Lng,Lat... (Google là Lat,Lng)
+            var osrmCoords = new List<string>();
+            foreach (var p in points)
+            {
+                var parts = p.Split(',');
+                if (parts.Length == 2)
+                {
+                    osrmCoords.Add($"{parts[1]},{parts[0]}"); // lng,lat
+                }
+            }
+
+            var coordinates = string.Join(";", osrmCoords);
+            var osrmMode = mode == "walking" ? "foot" : "car";
+            
+            var url = $"http://router.project-osrm.org/route/v1/{osrmMode}/{coordinates}?overview=full&geometries=polyline";
+
+            try
+            {
+                // Dùng chung IHttpClientFactory, không cần named client GoogleMaps nữa
+                var client = _httpFactory.CreateClient();
+                client.DefaultRequestHeaders.Add("User-Agent", "AudioGo-Backend/1.0"); // OSRM public API yêu cầu User-Agent
+
+                using var response = await client.GetAsync(url);
+                response.EnsureSuccessStatusCode();
+
+                var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+                var code = json.GetProperty("code").GetString();
+
+                if (code != "Ok")
+                {
+                    var msg = json.TryGetProperty("message", out var msgElement) ? msgElement.GetString() : "Lỗi OSRM";
+                    return StatusCode(502, new { error = $"OSRM API: {code}", detail = msg });
+                }
+
+                // Lấy polyline từ routes[0].geometry
+                var encoded = json
+                    .GetProperty("routes")[0]
+                    .GetProperty("geometry")
+                    .GetString();
+
+                return Ok(new { encodedPolyline = encoded });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(502, new { error = ex.Message });
+            }
+        }
     }
 }
+
