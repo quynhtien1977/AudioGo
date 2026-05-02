@@ -91,5 +91,10 @@ namespace Server.Repositories
             await _db.SaveChangesAsync();
             return true;
         }
+
+        // ================= GUARDS =================
+        /// <summary>Đếm Admin đang active (IsLocked = false). Dùng cho Last Admin Rule.</summary>
+        public Task<int> CountActiveAdminsAsync() =>
+            _db.Accounts.CountAsync(a => a.Role == "Admin" && !a.IsLocked);
     }
 }

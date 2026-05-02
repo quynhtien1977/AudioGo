@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { Save, CornerDownLeft } from "lucide-react"
+import { Save, CornerDownLeft, Loader2 } from "lucide-react"
 import toast from "react-hot-toast"
 
 import ConfirmModal from "@/components/ConfirmModal"
-import { getUserByIdApi, updateUserApi } from "@/api/accountApi"
+import { getUserByIdApi, updateMyProfileApi } from "@/api/accountApi"
+import { isValidEmailFormat, isValidPhone, isEmailDomainValid } from "@/utils/validators"
 import useAuth from "@/hooks/useAuth"
 
 const ProfilePage = () => {
@@ -13,10 +14,12 @@ const ProfilePage = () => {
 
   const [user, setUser] = useState(null)
   const [form, setForm] = useState({})
+  const [errors, setErrors] = useState({ email: "", phoneNumber: "" })
   const [loading, setLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false)
 
   // Fetch user profile
   useEffect(() => {
@@ -40,24 +43,52 @@ const ProfilePage = () => {
     }
 
     fetchUserProfile()
-  }, [authUser, navigate])
+  }, [authUser?.accountId, navigate])  // dùng primitive string, tránh object reference trigger vòng lặp
 
+  // Validate inline khi gõ
   const handleChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }))
+
+    if (key === "email") {
+      setErrors((prev) => ({
+        ...prev,
+        email: value && !isValidEmailFormat(value) ? "Email không đúng định dạng (VD: abc@gmail.com)" : "",
+      }))
+    }
+
+    if (key === "phoneNumber") {
+      setErrors((prev) => ({
+        ...prev,
+        phoneNumber: value && !isValidPhone(value) ? "SĐT không hợp lệ. Nhập 10 số bắt đầu bằng 0 (VD: 0901234567)" : "",
+      }))
+    }
   }
 
+  // Validate trước khi mở modal confirm
   const handleSave = async () => {
     if (!form.fullName?.trim()) {
       toast.error("Vui lòng nhập họ tên")
       return
     }
-    if (!form.email?.trim()) {
-      toast.error("Vui lòng nhập email")
+    if (!form.email?.trim() || !isValidEmailFormat(form.email)) {
+      toast.error("Email không đúng định dạng")
       return
     }
-    if (!form.phoneNumber?.trim()) {
-      toast.error("Vui lòng nhập số điện thoại")
+    if (!form.phoneNumber?.trim() || !isValidPhone(form.phoneNumber)) {
+      toast.error("SĐT không hợp lệ. Nhập 10 số bắt đầu bằng 0")
       return
+    }
+
+    // Kiểm tra domain email có tồn tại không (MX lookup)
+    setIsCheckingEmail(true)
+    try {
+      const emailOk = await isEmailDomainValid(form.email)
+      if (!emailOk) {
+        toast.error("Domain email không tồn tại. Dùng email thực (VD: @gmail.com, @company.vn)")
+        return
+      }
+    } finally {
+      setIsCheckingEmail(false)
     }
 
     setShowConfirm(true)
@@ -68,22 +99,43 @@ const ProfilePage = () => {
     try {
       setIsSubmitting(true)
 
-      await updateUserApi(authUser.accountId, {
+      await updateMyProfileApi({
         fullName: form.fullName,
         email: form.email,
         phoneNumber: form.phoneNumber,
       })
 
       setUser(form)
+
+      // ── P1-B: Sync localStorage/sessionStorage → Topbar re-render ──────
+      const currentRaw = localStorage.getItem("user")
+      const currentUser = JSON.parse(currentRaw || sessionStorage.getItem("user") || "{}")
+      const updatedUser = { ...currentUser, fullName: form.fullName }
+
+      if (currentRaw) {
+        localStorage.setItem("user", JSON.stringify(updatedUser))
+      } else {
+        sessionStorage.setItem("user", JSON.stringify(updatedUser))
+      }
+      // Trigger Topbar re-render (storage event không tự fire trong cùng tab)
+      window.dispatchEvent(new Event("storage"))
+
       toast.success("Cập nhật thông tin cá nhân thành công!")
       setIsEditing(false)
       setShowConfirm(false)
     } catch (err) {
       console.error(err)
-      toast.error("Cập nhật thông tin thất bại!")
+      const message = err?.response?.data || "Cập nhật thông tin thất bại!"
+      toast.error(message)
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleCancelEdit = () => {
+    setIsEditing(false)
+    setForm(user) // reset về data ban đầu
+    setErrors({ email: "", phoneNumber: "" })
   }
 
   if (loading) return <div className="p-6">Loading...</div>
@@ -160,12 +212,18 @@ const ProfilePage = () => {
                   Email
                 </label>
                 {isEditing ? (
-                  <input
-                    type="email"
-                    value={form.email || ""}
-                    onChange={(e) => handleChange("email", e.target.value)}
-                    className="w-full bg-transparent border-b-2 border-pink-200 py-3 px-1 outline-none focus:border-pink-500 transition-all font-bold text-gray-700"
-                  />
+                  <>
+                    <input
+                      type="email"
+                      value={form.email || ""}
+                      onChange={(e) => handleChange("email", e.target.value)}
+                      className={`w-full bg-transparent border-b-2 py-3 px-1 outline-none transition-all font-bold text-gray-700
+                        ${errors.email ? "border-red-400 focus:border-red-500" : "border-pink-200 focus:border-pink-500"}`}
+                    />
+                    {errors.email && (
+                      <p className="text-red-400 text-xs mt-1 ml-1">{errors.email}</p>
+                    )}
+                  </>
                 ) : (
                   <div className="w-full bg-gray-50 border-2 border-gray-100 py-3 px-4 rounded-lg text-gray-600 font-medium">
                     {form.email || "N/A"}
@@ -179,12 +237,18 @@ const ProfilePage = () => {
                   Số điện thoại
                 </label>
                 {isEditing ? (
-                  <input
-                    type="tel"
-                    value={form.phoneNumber || ""}
-                    onChange={(e) => handleChange("phoneNumber", e.target.value)}
-                    className="w-full bg-transparent border-b-2 border-pink-200 py-3 px-1 outline-none focus:border-pink-500 transition-all font-bold text-gray-700"
-                  />
+                  <>
+                    <input
+                      type="tel"
+                      value={form.phoneNumber || ""}
+                      onChange={(e) => handleChange("phoneNumber", e.target.value)}
+                      className={`w-full bg-transparent border-b-2 py-3 px-1 outline-none transition-all font-bold text-gray-700
+                        ${errors.phoneNumber ? "border-red-400 focus:border-red-500" : "border-pink-200 focus:border-pink-500"}`}
+                    />
+                    {errors.phoneNumber && (
+                      <p className="text-red-400 text-xs mt-1 ml-1">{errors.phoneNumber}</p>
+                    )}
+                  </>
                 ) : (
                   <div className="w-full bg-gray-50 border-2 border-gray-100 py-3 px-4 rounded-lg text-gray-600 font-medium">
                     {form.phoneNumber || "N/A"}
@@ -209,14 +273,19 @@ const ProfilePage = () => {
               <div className="flex gap-3 pt-6 border-t border-gray-100">
                 <button
                   onClick={handleSave}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isCheckingEmail}
                   className="flex-1 px-4 py-3 bg-pink-500 text-white rounded-lg font-bold hover:bg-pink-600 transition disabled:opacity-60 flex items-center justify-center gap-2"
                 >
-                  <Save size={16} />
-                  {isSubmitting ? "Đang lưu..." : "Lưu thay đổi"}
+                  {isCheckingEmail ? (
+                    <><Loader2 size={16} className="animate-spin" /> Đang xác thực email...</>
+                  ) : isSubmitting ? (
+                    <><Loader2 size={16} className="animate-spin" /> Đang lưu...</>
+                  ) : (
+                    <><Save size={16} /> Lưu thay đổi</>
+                  )}
                 </button>
                 <button
-                  onClick={() => setIsEditing(false)}
+                  onClick={handleCancelEdit}
                   className="flex-1 px-4 py-3 border-2 border-gray-200 text-gray-600 rounded-lg font-bold hover:bg-gray-50 transition"
                 >
                   Hủy bỏ
