@@ -84,6 +84,13 @@ namespace Shared.DTOs
 
     public record TourUpdateRequest(string? Name, string? Description, string? ThumbnailUrl = null);
 
+    /// <summary>DTO cho Owner/Admin tự cập nhật profile của mình. Không cho phép đổi Role hoặc IsLocked.</summary>
+    public record ProfileUpdateRequest(
+        string? FullName,
+        string? Email,
+        string? PhoneNumber
+    );
+
     // ── Delta Sync ──────────────────────────────────────────────────────
     /// <summary>
     /// Response từ GET /api/mobile/pois/delta?since=&amp;lang=
