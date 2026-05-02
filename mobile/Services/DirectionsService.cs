@@ -14,19 +14,38 @@ namespace AudioGo.Services;
 public class DirectionsService : IDirectionsService
 {
     private readonly IHttpClientFactory _httpFactory;
+    private readonly ILocationService _location;
 
     // In-memory cache: cacheKey → decoded route points
     private readonly Dictionary<string, List<Location>> _cache = new();
 
-    public DirectionsService(IHttpClientFactory httpFactory)
+    public DirectionsService(IHttpClientFactory httpFactory, ILocationService location)
     {
         _httpFactory = httpFactory;
+        _location = location;
     }
 
     public async Task<List<Location>> GetWalkingRouteAsync(
         string cacheKey,
-        List<(double Lat, double Lng)> waypoints)
+        List<(double Lat, double Lng)> poiWaypoints,
+        bool prependUserLocation = false)
     {
+        var waypoints = new List<(double Lat, double Lng)>(poiWaypoints);
+
+        if (prependUserLocation)
+        {
+            var userLoc = await _location.GetCurrentLocationAsync();
+            if (userLoc.HasValue && waypoints.Count > 0)
+            {
+                var distToFirst = GeoHelper.HaversineMeters(
+                    userLoc.Value.Lat, userLoc.Value.Lon,
+                    waypoints[0].Lat, waypoints[0].Lng);
+
+                if (distToFirst > 50)
+                    waypoints.Insert(0, userLoc.Value);
+            }
+        }
+
         // 1. Cache hit → trả ngay
         if (_cache.TryGetValue(cacheKey, out var cached))
             return cached;
@@ -66,7 +85,11 @@ public class DirectionsService : IDirectionsService
         var url = $"api/mobile/tours/directions?waypoints={encodedParam}&mode=walking";
 
         using var response = await client.GetAsync(url);
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            throw new Exception($"HTTP {response.StatusCode}: {content}");
+        }
 
         var json = await response.Content.ReadFromJsonAsync<JsonElement>();
 

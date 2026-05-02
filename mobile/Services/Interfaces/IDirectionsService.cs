@@ -11,5 +11,6 @@ public interface IDirectionsService
     /// </summary>
     Task<List<Location>> GetWalkingRouteAsync(
         string cacheKey,
-        List<(double Lat, double Lng)> waypoints);
+        List<(double Lat, double Lng)> waypoints,
+        bool prependUserLocation = false);
 }

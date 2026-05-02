@@ -86,10 +86,23 @@
                 <Label Text="{Binding TourName}"
                        Style="{StaticResource HeadlineLabel}"/>
 
-                <!-- Action: chỉ giữ nút Continue, đã bỏ nút Xem bản đồ (mini map đảm nhận) -->
-                <Button Text="{Binding LabelContinue}"
-                        Style="{StaticResource PrimaryButton}"
-                        Clicked="OnContinueClicked"/>
+                <!-- Action: Nút Khám phá / Dừng + Bắt đầu lại -->
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                    <Button Grid.Column="0"
+                            Text="{Binding StartStopLabel}"
+                            Style="{StaticResource PrimaryButton}"
+                            Clicked="OnStartTourClicked"/>
+                    
+                    <Button Grid.Column="1"
+                            Text="{Binding ResetLabel}"
+                            Clicked="OnResetTourClicked"
+                            IsVisible="{Binding IsTourActive}"
+                            BackgroundColor="Transparent"
+                            TextColor="{StaticResource Primary}"
+                            BorderColor="{StaticResource Primary}"
+                            BorderWidth="1"
+                            Padding="12,0"/>
+                </Grid>
 
                 <!-- POI Stops List -->
                 <Label Text="{Binding LabelStopList}" Style="{StaticResource SectionTitle}"/>
@@ -117,7 +130,13 @@
                                                FontAttributes="Bold"
                                                TextColor="White"
                                                HorizontalOptions="Center"
-                                               VerticalOptions="Center"/>
+                                               VerticalOptions="Center">
+                                            <Label.Triggers>
+                                                <DataTrigger TargetType="Label" Binding="{Binding IsVisited}" Value="True">
+                                                    <Setter Property="Text" Value="✓" />
+                                                </DataTrigger>
+                                            </Label.Triggers>
+                                        </Label>
                                     </Border>
                                     <!-- Vertical line -->
                                     <BoxView WidthRequest="2"

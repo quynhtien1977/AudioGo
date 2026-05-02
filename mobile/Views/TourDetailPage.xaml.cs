@@ -36,6 +36,7 @@ public partial class TourDetailPage : ContentPage
     {
         base.OnDisappearing();
         // Không unsubscribe PropertyChanged vì mini player cần tiếp tục khi quay lại page
+        _vm.StopTour();
     }
 
     // ── MainViewModel property-change → cập nhật mini player ─────────
@@ -132,8 +133,25 @@ public partial class TourDetailPage : ContentPage
     private async void OnBackTapped(object? sender, TappedEventArgs e)
         => await Shell.Current.GoToAsync("..");
 
-    private void OnContinueClicked(object? sender, EventArgs e)
-        => _main.ToggleAudio();
+    // Nút "Khám phá" / "Dừng" (thay thế nút "Continue" cũ)
+    private void OnStartTourClicked(object? sender, EventArgs e)
+    {
+        if (_vm.IsTourActive)
+            _vm.StopTour();
+        else
+            _vm.StartTour();
+    }
+
+    // Nút "Bắt đầu lại" — xóa progress, giữ nguyên tour
+    private async void OnResetTourClicked(object? sender, EventArgs e)
+    {
+        bool confirm = await DisplayAlertAsync(
+            AudioGo.Helpers.AppStrings.Get("tour_reset"),
+            AudioGo.Helpers.AppStrings.Get("tour_reset_confirm"),
+            AudioGo.Helpers.AppStrings.Get("ok"),
+            AudioGo.Helpers.AppStrings.Get("cancel"));
+        if (confirm) _vm.ResetTour();
+    }
 
     /// <summary>
     /// Tap mini map → mở MapPage với POI của tour này + route polyline.
@@ -203,7 +221,7 @@ public partial class TourDetailPage : ContentPage
                 if (dirService is not null)
                 {
                     var cacheKey = $"tour_{_vm.TourId}";
-                    var routePts = await dirService.GetWalkingRouteAsync(cacheKey, waypoints);
+                    var routePts = await dirService.GetWalkingRouteAsync(cacheKey, waypoints, prependUserLocation: true);
                     foreach (var pt in routePts)
                         line.Geopath.Add(pt);
                 }

@@ -108,7 +108,7 @@ namespace Server.Controllers.Mobile
         }
 
         // GET /api/mobile/tours/directions?waypoints=lat1,lng1|lat2,lng2|...&mode=walking
-        // Sử dụng OSRM (Open Source Routing Machine) miễn phí, không cần API Key/Billing
+        // Sử dụng OpenRouteService (ORS) với API Key từ môi trường
         [HttpGet("directions")]
         public async Task<IActionResult> GetDirections(
             [FromQuery] string waypoints,
@@ -118,39 +118,49 @@ namespace Server.Controllers.Mobile
             if (points.Length < 2)
                 return BadRequest(new { error = "Cần ít nhất 2 waypoints" });
 
-            // OSRM nhận format: Lng,Lat;Lng,Lat... (Google là Lat,Lng)
-            var osrmCoords = new List<string>();
+            // Google là Lat,Lng => ORS nhận mảng [Lng, Lat]
+            var orsCoords = new List<double[]>();
             foreach (var p in points)
             {
                 var parts = p.Split(',');
-                if (parts.Length == 2)
+                if (parts.Length == 2 && 
+                    double.TryParse(parts[0], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var lat) && 
+                    double.TryParse(parts[1], System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var lng))
                 {
-                    osrmCoords.Add($"{parts[1]},{parts[0]}"); // lng,lat
+                    orsCoords.Add(new[] { lng, lat });
                 }
             }
 
-            var coordinates = string.Join(";", osrmCoords);
-            var osrmMode = mode == "walking" ? "foot" : "car";
+            var orsProfile = mode == "walking" ? "foot-walking" : "driving-car";
+            var url = $"https://api.openrouteservice.org/v2/directions/{orsProfile}";
             
-            var url = $"http://router.project-osrm.org/route/v1/{osrmMode}/{coordinates}?overview=full&geometries=polyline";
+            var apiKey = _config["ORS_API_KEY"];
+            if (string.IsNullOrEmpty(apiKey))
+                return StatusCode(500, new { error = "Chưa cấu hình ORS_API_KEY trên server" });
 
             try
             {
-                // Dùng chung IHttpClientFactory, không cần named client GoogleMaps nữa
                 var client = _httpFactory.CreateClient();
-                client.DefaultRequestHeaders.Add("User-Agent", "AudioGo-Backend/1.0"); // OSRM public API yêu cầu User-Agent
+                client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", apiKey);
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
 
-                using var response = await client.GetAsync(url);
-                response.EnsureSuccessStatusCode();
+                // Payload cho ORS POST endpoint
+                var requestBody = new
+                {
+                    coordinates = orsCoords,
+                    instructions = false, // Tiết kiệm dung lượng, mobile không dùng text directions
+                    elevation = false
+                };
+
+                using var response = await client.PostAsJsonAsync(url, requestBody);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorJson = await response.Content.ReadAsStringAsync();
+                    return StatusCode(502, new { error = $"ORS API Error: {response.StatusCode}", detail = errorJson });
+                }
 
                 var json = await response.Content.ReadFromJsonAsync<JsonElement>();
-                var code = json.GetProperty("code").GetString();
-
-                if (code != "Ok")
-                {
-                    var msg = json.TryGetProperty("message", out var msgElement) ? msgElement.GetString() : "Lỗi OSRM";
-                    return StatusCode(502, new { error = $"OSRM API: {code}", detail = msg });
-                }
 
                 // Lấy polyline từ routes[0].geometry
                 var encoded = json

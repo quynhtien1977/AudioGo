@@ -676,6 +676,51 @@ public static class AppStrings
             ["vi"] = "Không tải được tour", ["en"] = "Failed to load tour", ["ja"] = "ツアーを読み込めませんでした",
             ["ko"] = "투어를 불러오지 못했습니다", ["zh-Hans"] = "无法加载游览", ["fr"] = "Échec du chargement du circuit", ["th"] = "ไม่สามารถโหลดทัวร์ได้"
         },
+        ["tour_start"] = new()
+        {
+            ["vi"] = "Khám phá", ["en"] = "Start Exploring", ["ja"] = "探索を開始",
+            ["ko"] = "탐색 시작", ["zh-Hans"] = "开始探索", ["fr"] = "Commencer", ["th"] = "เริ่มสำรวจ"
+        },
+        ["tour_stop"] = new()
+        {
+            ["vi"] = "Dừng Tour", ["en"] = "Stop Tour", ["ja"] = "ツアーを停止",
+            ["ko"] = "투어 중지", ["zh-Hans"] = "停止游览", ["fr"] = "Arrêter", ["th"] = "หยุดทัวร์"
+        },
+        ["tour_reset"] = new()
+        {
+            ["vi"] = "Bắt đầu lại", ["en"] = "Restart", ["ja"] = "やり直す",
+            ["ko"] = "다시 시작", ["zh-Hans"] = "重新开始", ["fr"] = "Recommencer", ["th"] = "เริ่มใหม่"
+        },
+        ["tour_reset_confirm"] = new()
+        {
+            ["vi"] = "Bạn có chắc muốn bắt đầu lại tour này không? Tiến trình hiện tại sẽ bị xóa.",
+            ["en"] = "Are you sure you want to restart this tour? Current progress will be lost.",
+            ["ja"] = "このツアーをやり直しますか？現在の進捗は削除されます。",
+            ["ko"] = "이 투어를 다시 시작하시겠습니까? 현재 진행 상황이 삭제됩니다.",
+            ["zh-Hans"] = "您确定要重新开始此游览吗？当前进度将丢失。",
+            ["fr"] = "Voulez-vous vraiment recommencer ce circuit ? La progression actuelle sera perdue.",
+            ["th"] = "คุณแน่ใจหรือไม่ว่าต้องการเริ่มทัวร์นี้ใหม่ ความคืบหน้าปัจจุบันจะถูกลบ"
+        },
+        ["tour_completed_msg"] = new()
+        {
+            ["vi"] = "Chúc mừng! Bạn đã hoàn thành {0} điểm dừng của tour.",
+            ["en"] = "Congratulations! You have completed {0} stops of the tour.",
+            ["ja"] = "おめでとうございます！ツアーの{0}の停留所を完了しました。",
+            ["ko"] = "축하합니다! 투어의 {0}개 정류장을 모두 방문했습니다.",
+            ["zh-Hans"] = "恭喜！您已完成游览的{0}个停靠点。",
+            ["fr"] = "Félicitations ! Vous avez terminé {0} arrêts du circuit.",
+            ["th"] = "ยินดีด้วย! คุณได้ทำครบ {0} จุดหยุดของทัวร์แล้ว"
+        },
+        ["completed"] = new()
+        {
+            ["vi"] = "Hoàn thành", ["en"] = "Completed", ["ja"] = "完了",
+            ["ko"] = "완료", ["zh-Hans"] = "已完成", ["fr"] = "Terminé", ["th"] = "เสร็จสิ้น"
+        },
+        ["cancel"] = new()
+        {
+            ["vi"] = "Hủy", ["en"] = "Cancel", ["ja"] = "キャンセル",
+            ["ko"] = "취소", ["zh-Hans"] = "取消", ["fr"] = "Annuler", ["th"] = "ยกเลิก"
+        },
 
 
         // ── Shared button labels ──────────────────────────────────────────
