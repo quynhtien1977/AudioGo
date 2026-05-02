@@ -29,40 +29,75 @@ public partial class MapPage : ContentPage
         MiniPlayerGrid.BindingContext = _main;
     }
 
+    // ── Tour route state (chỉ polyline, không filter POI) ────────────────
+    private Polyline? _tourRoutePolyline;
+
     protected override void OnAppearing()
     {
         base.OnAppearing();
 
-        // Chế độ tour: chỉ hiển thị POI thuộc tour và auto-zoom vừa khung
+        // Luôn load TOÀN BỘ POI — không ẩn, không filter
+        // → geofence boundary KHÔNG BAO GIỜ bị thay đổi → không có bug fill đậm
+        _vm.LoadPois(_main.Pois);
+
         var filter = TourMapContext.PendingTourPoiIds;
         if (filter != null)
         {
-            TourMapContext.PendingTourPoiIds = null;  // reset ngay sau khi nhận
-            var tourPois = _main.Pois.Where(p => filter.Contains(p.PoiId)).ToList();
-            _vm.LoadPois(tourPois);
+            // Từ TourDetail: chỉ vẽ route + zoom vào tour POIs
+            var stepOrders = TourMapContext.PendingTourStepOrders ?? new();
+            TourMapContext.Clear();
+
+            var tourPois = _main.Pois
+                .Where(p => filter.Contains(p.PoiId))
+                .OrderBy(p => stepOrders.TryGetValue(p.PoiId, out var o) ? o : 999)
+                .ToList();
+
+            DrawTourRoute(tourPois);
+
             if (tourPois.Count > 0)
                 _vm.FitToPoints(tourPois.Select(p => new Location(p.Latitude, p.Longitude)));
         }
         else
         {
-            // Chế độ bình thường: hiển thị tất cả POI
-            _vm.LoadPois(_main.Pois);
+            // MapPage bình thường: xóa tour route nếu còn
+            RemoveTourRoute();
         }
 
         RefreshPins();
 
-        // Subscribe to map clicks to dismiss banner
         if (!_isSubscribed)
         {
             MapControl.MapClicked += OnMapClicked;
             _main.PropertyChanged += OnMainPropertyChanged;
-            _vm.PropertyChanged += OnVmPropertyChanged;
+            _vm.PropertyChanged   += OnVmPropertyChanged;
             _isSubscribed = true;
         }
     }
 
-        // Location sẽ được cập nhật tự động qua MapViewModel (lắng nghe ILocationService)
-        // tránh gọi trực tiếp RequestInitialLocationAsync() lúc load page để không xung đột với MainViewModel.
+    /// <summary>Vẽ route Polyline màu Primary, z-order trên geofence.</summary>
+    private void DrawTourRoute(List<Shared.POI> orderedPois)
+    {
+        RemoveTourRoute();
+        if (orderedPois.Count < 2) return;
+
+        var line = new Polyline { StrokeColor = Color.FromArgb("#E53935"), StrokeWidth = 5 };
+        foreach (var p in orderedPois)
+            line.Geopath.Add(new Location(p.Latitude, p.Longitude));
+
+        _tourRoutePolyline = line;
+        MapControl.MapElements.Add(_tourRoutePolyline);
+    }
+
+    /// <summary>Xóa tour route khỏi map (giữ nguyên geofence overlays).</summary>
+    private void RemoveTourRoute()
+    {
+        if (_tourRoutePolyline is null) return;
+        MapControl.MapElements.Remove(_tourRoutePolyline);
+        _tourRoutePolyline = null;
+    }
+
+
+
 
     protected override void OnDisappearing()
     {
@@ -100,7 +135,10 @@ public partial class MapPage : ContentPage
         var desiredLineSet = desiredLines.ToHashSet();
 
         var currentFills = MapControl.MapElements.OfType<Polygon>().ToHashSet();
-        var currentLines = MapControl.MapElements.OfType<Polyline>().ToHashSet();
+        // Exclude tour route polyline — nó không phải geofence, quản lý riêng
+        var currentLines = MapControl.MapElements.OfType<Polyline>()
+            .Where(l => l != _tourRoutePolyline)
+            .ToHashSet();
 
         // Xóa những gì không còn cần (set difference)
         foreach (var p in currentFills.Except(desiredFillSet))

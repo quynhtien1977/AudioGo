@@ -529,6 +529,16 @@ public static class AppStrings
             ["fr"] = "Créez votre premier circuit pour explorer la rue gastronomique Vinh Khanh",
             ["th"] = "สร้างทัวร์แรกของคุณเพื่อเริ่มสำรวจถนนอาหารวิญคานห์"
         },
+        ["tour_list_empty_desc_mobile"] = new()
+        {
+            ["vi"] = "Chưa có tour nào trong khu vực. Vui lòng thử lại sau.",
+            ["en"] = "No tours available in this area. Please try again later.",
+            ["ja"] = "このエリアにはツアーがありません。後でもう一度お試しください。",
+            ["ko"] = "이 지역에는 투어가 없습니다. 나중에 다시 시도해주세요.",
+            ["zh-Hans"] = "该区域暂无游览。请稍后再试。",
+            ["fr"] = "Aucun circuit disponible dans cette zone. Veuillez réessayer plus tard.",
+            ["th"] = "ไม่มีทัวร์ในพื้นที่นี้ กรุณาลองใหม่ภายหลัง"
+        },
         ["tour_list_create_btn"] = new()
         {
             ["vi"] = "Tạo Tour Mới", ["en"] = "Create New Tour", ["ja"] = "新しいツアーを作成",
@@ -544,10 +554,15 @@ public static class AppStrings
             ["vi"] = "điểm", ["en"] = "points", ["ja"] = "ポイント",
             ["ko"] = "포인트", ["zh-Hans"] = "点数", ["fr"] = "points", ["th"] = "จุด"
         },
-        ["tour_minutes"] = new()
+        ["tour_walk"] = new()
+        {
+            ["vi"] = "di chuyển", ["en"] = "walk", ["ja"] = "徒歩",
+            ["ko"] = "도보", ["zh-Hans"] = "步行", ["fr"] = "marche", ["th"] = "เดิน"
+        },
+        ["tour_walk_min"] = new()
         {
             ["vi"] = "phút", ["en"] = "mins", ["ja"] = "分",
-            ["ko"] = "분", ["zh-Hans"] = "分钟", ["fr"] = "mins", ["th"] = "นาที"
+            ["ko"] = "분", ["zh-Hans"] = "分钟", ["fr"] = "min", ["th"] = "นาที"
         },
         ["tour_lang"] = new()
         {
@@ -635,6 +650,11 @@ public static class AppStrings
         {
             ["vi"] = "Danh sách điểm dừng", ["en"] = "Stop List", ["ja"] = "停留所リスト",
             ["ko"] = "정류장 목록", ["zh-Hans"] = "停靠点列表", ["fr"] = "Liste des arrêts", ["th"] = "รายการจุดหยุด"
+        },
+        ["tour_detail_open_map"] = new()
+        {
+            ["vi"] = "Nhấn để xem bản đồ đầy đủ", ["en"] = "Tap to view full map", ["ja"] = "タップして地図を表示",
+            ["ko"] = "탭하여 전체 지도 보기", ["zh-Hans"] = "点击查看完整地图", ["fr"] = "Appuyer pour voir la carte", ["th"] = "แตะเพื่อดูแผนที่เต็ม"
         },
         ["tour_load_err"] = new()
         {
