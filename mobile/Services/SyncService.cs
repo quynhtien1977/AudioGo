@@ -133,10 +133,18 @@ namespace AudioGo.Services
                 if (pending.Count == 0) return;
 
                 await DownloadAllAssetsAsync(pending, ct);
+                var allTours = await _db.GetAllToursAsync();
+                var pendingTours = allTours.Where(t => !string.IsNullOrEmpty(t.ThumbnailUrl) && 
+                                                      (string.IsNullOrEmpty(t.LocalThumbnailPath) || !File.Exists(t.LocalThumbnailPath))).ToList();
+                
+                if (pendingTours.Count > 0)
+                {
+                    await DownloadTourThumbnailsAsync(pendingTours, ct);
+                }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[SyncService] RetryPending error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[SyncService] Retry pending failed: {ex.Message}");
             }
         }
 
@@ -278,6 +286,156 @@ namespace AudioGo.Services
                 .Select(cName => new CategoryDto("", cName, 0, DateTime.MinValue, DateTime.MinValue))
                 .ToList();
         }
+
+        // ── Tours ─────────────────────────────────────────────────────────
+
+        public async Task<List<TourSummaryDto>> GetToursAsync(string languageCode = "vi", CancellationToken ct = default)
+        {
+            var normalizedLang = LanguageHelper.NormalizeToSupported(languageCode);
+            var cachedEntities = await _db.GetToursAsync(normalizedLang);
+            var cached = cachedEntities.Select(MapToTourSummaryDto).ToList();
+
+            if (cached.Count > 0)
+            {
+                if (NetworkHelper.HasInternet())
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await RefreshToursFromServerAsync(normalizedLang, CancellationToken.None);
+                            NotifyPoisUpdated(); // Notify UI to refresh
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"[SyncService] Background refresh tours error: {ex.Message}");
+                        }
+                    });
+                }
+                return cached;
+            }
+
+            if (!NetworkHelper.HasInternet())
+                return cached;
+
+            try
+            {
+                await RefreshToursFromServerAsync(normalizedLang, ct);
+                return (await _db.GetToursAsync(normalizedLang)).Select(MapToTourSummaryDto).ToList();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[SyncService] GetToursAsync server fetch failed: {ex.Message}");
+                return cached;
+            }
+        }
+
+        private async Task RefreshToursFromServerAsync(string normalizedLang, CancellationToken ct)
+        {
+            var serverTours = await _api.GetToursAsync(languageCode: normalizedLang, ct: ct);
+            
+            var existingTours = await _db.GetToursAsync(normalizedLang);
+            var incomingIds = new HashSet<string>(serverTours.Select(t => t.TourId));
+            
+            var updatedToursForDownload = new List<TourEntity>();
+
+            foreach (var existing in existingTours.Where(t => !incomingIds.Contains(t.TourId)))
+            {
+                TryDeleteFile(existing.LocalThumbnailPath);
+                await _db.DeleteTourAsync(existing.TourId);
+            }
+
+            foreach (var t in serverTours)
+            {
+                var detail = await _api.GetTourByIdAsync(t.TourId, normalizedLang, ct);
+                if (detail != null)
+                {
+                    var existing = existingTours.FirstOrDefault(x => x.TourId == t.TourId);
+                    var localThumb = (existing?.ThumbnailUrl == detail.ThumbnailUrl) ? existing?.LocalThumbnailPath : null;
+                    if (existing?.ThumbnailUrl != detail.ThumbnailUrl)
+                    {
+                        TryDeleteFile(existing?.LocalThumbnailPath);
+                    }
+
+                    var entity = new TourEntity
+                    {
+                        TourId = detail.TourId,
+                        Name = detail.Name,
+                        Description = detail.Description,
+                        ThumbnailUrl = detail.ThumbnailUrl,
+                        LocalThumbnailPath = localThumb,
+                        PoiCount = detail.PoiCount,
+                        StepsJson = JsonSerializer.Serialize(detail.Steps.OrderBy(s => s.StepOrder).Select(s => s.PoiId).ToList()),
+                        CreatedAt = detail.CreatedAt,
+                        LanguageCode = normalizedLang,
+                        LastSyncedAt = DateTime.UtcNow
+                    };
+
+                    await _db.SaveTourAsync(entity);
+                    updatedToursForDownload.Add(entity);
+                }
+            }
+
+            if (CanDownloadAssetsNow() && updatedToursForDownload.Count > 0)
+            {
+                _ = Task.Run(() => DownloadTourThumbnailsAsync(updatedToursForDownload, CancellationToken.None));
+            }
+        }
+
+        public async Task<TourDetailDto?> GetTourDetailAsync(string tourId, string languageCode = "vi", CancellationToken ct = default)
+        {
+            var entity = await _db.GetTourAsync(tourId);
+            if (entity != null)
+            {
+                var poiIds = SafeDeserializeList(entity.StepsJson);
+                var allPois = await _db.GetAllPoisAsync();
+                var poiDict = allPois.ToDictionary(p => p.PoiId);
+
+                var steps = new List<TourStepDto>();
+                for (int i = 0; i < poiIds.Count; i++)
+                {
+                    if (poiDict.TryGetValue(poiIds[i], out var poi))
+                    {
+                        steps.Add(new TourStepDto(
+                            poi.PoiId,
+                            poi.Title ?? "",
+                            poi.Description ?? "",
+                            poi.LocalLogoPath ?? poi.LogoUrl ?? "",
+                            poi.Latitude,
+                            poi.Longitude,
+                            poi.ActivationRadius,
+                            i + 1,
+                            poi.LocalAudioPath ?? poi.AudioUrl ?? "",
+                            SafeDeserializeList(poi.CategoriesJson)
+                        ));
+                    }
+                }
+
+                return new TourDetailDto(
+                    entity.TourId,
+                    entity.Name,
+                    entity.Description,
+                    entity.PoiCount,
+                    entity.LocalThumbnailPath ?? entity.ThumbnailUrl,
+                    entity.CreatedAt,
+                    steps
+                );
+            }
+
+            if (NetworkHelper.HasInternet())
+            {
+                try
+                {
+                    return await _api.GetTourByIdAsync(tourId, languageCode, ct);
+                }
+                catch { }
+            }
+            return null;
+        }
+
+        private static TourSummaryDto MapToTourSummaryDto(TourEntity e) => new(
+            e.TourId, e.Name, e.Description, e.PoiCount, e.LocalThumbnailPath ?? e.ThumbnailUrl, e.CreatedAt
+        );
 
         /// <summary>
         /// Delta polling: gọi server để lấy thay đổi kể từ lần sync cuối.
@@ -545,6 +703,46 @@ namespace AudioGo.Services
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"[SyncService] Download audio failed for {poi.PoiId}: {ex.Message}");
+                }
+            }
+        }
+
+        private async Task DownloadTourThumbnailsAsync(List<TourEntity> tours, CancellationToken ct)
+        {
+            var imgDir = Path.Combine(FileSystem.AppDataDirectory, "images");
+            Directory.CreateDirectory(imgDir);
+
+            using var http = _httpFactory.CreateClient("downloader");
+
+            foreach (var tour in tours)
+            {
+                if (ct.IsCancellationRequested) break;
+                if (string.IsNullOrEmpty(tour.ThumbnailUrl)) continue;
+
+                try
+                {
+                    var existing = await _db.GetTourAsync(tour.TourId);
+                    if (existing != null && !string.IsNullOrEmpty(existing.LocalThumbnailPath) && File.Exists(existing.LocalThumbnailPath))
+                        continue;
+
+                    var uri = new Uri(tour.ThumbnailUrl);
+                    var ext = Path.GetExtension(uri.LocalPath);
+                    if (string.IsNullOrEmpty(ext)) ext = ".jpg";
+                    var filename = $"tour_thumb_{tour.TourId}{ext}";
+                    var localPath = Path.Combine(imgDir, filename);
+
+                    var bytes = await http.GetByteArrayAsync(uri, ct);
+                    await File.WriteAllBytesAsync(localPath, bytes, ct);
+
+                    if (existing != null)
+                    {
+                        existing.LocalThumbnailPath = localPath;
+                        await _db.SaveTourAsync(existing);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[SyncService] Download tour thumb failed for {tour.TourId}: {ex.Message}");
                 }
             }
         }

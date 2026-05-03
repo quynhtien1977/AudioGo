@@ -7,7 +7,7 @@ namespace AudioGo.Helpers
     {
         public string TourId { get; init; } = string.Empty;
         public List<string> OrderedPoiIds { get; init; } = new();
-        public HashSet<string> VisitedPoiIds { get; } = new();
+        public HashSet<string> VisitedPoiIds { get; init; } = new();
 
         public int TotalCount => OrderedPoiIds.Count;
         public int VisitedCount => VisitedPoiIds.Count;
