@@ -40,8 +40,14 @@ namespace AudioGo.ViewModels
         public string Description
         {
             get => _description;
-            private set => SetProperty(ref _description, value);
+            private set
+            {
+                SetProperty(ref _description, value);
+                OnPropertyChanged(nameof(HasDescription));
+            }
         }
+
+        public bool HasDescription => !string.IsNullOrWhiteSpace(Description);
 
         private string _errorMessage = string.Empty;
         public string ErrorMessage

@@ -86,6 +86,13 @@
                 <Label Text="{Binding TourName}"
                        Style="{StaticResource HeadlineLabel}"/>
 
+                <!-- Description -->
+                <Label Text="{Binding Description}"
+                       Style="{StaticResource BodyLabel}"
+                       MaxLines="4"
+                       LineBreakMode="TailTruncation"
+                       IsVisible="{Binding HasDescription}"/>
+
                 <!-- Action: Nút Khám phá / Dừng + Bắt đầu lại -->
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
                     <Button Grid.Column="0"
