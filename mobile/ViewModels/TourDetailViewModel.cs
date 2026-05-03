@@ -1,18 +1,19 @@
 using AudioGo.Services.Interfaces;
 using Shared.DTOs;
 using System.Collections.ObjectModel;
+using AudioGo.Services;
 
 namespace AudioGo.ViewModels
 {
     [QueryProperty(nameof(TourId), "tourId")]
     public class TourDetailViewModel : BaseViewModel
     {
-        private readonly IApiService _api;
+        private readonly SyncService _sync;
         private readonly ITourSessionManager _session;
 
-        public TourDetailViewModel(IApiService api, ITourSessionManager session)
+        public TourDetailViewModel(SyncService sync, ITourSessionManager session)
         {
-            _api = api;
+            _sync = sync;
             _session = session;
 
             _session.PoiVisited += OnPoiVisited;
@@ -95,7 +96,7 @@ namespace AudioGo.ViewModels
             try
             {
                 var lang   = AudioGo.Helpers.AppSettings.GetAppLanguage();
-                var detail = await _api.GetTourByIdAsync(tourId, lang);
+                var detail = await _sync.GetTourDetailAsync(tourId, lang);
 
                 if (detail is null)
                 {
@@ -115,8 +116,21 @@ namespace AudioGo.ViewModels
                         walkToNext = WalkMinutes(steps[i].Latitude, steps[i].Longitude,
                                                  steps[i + 1].Latitude, steps[i + 1].Longitude);
 
-                    Stops.Add(new TourStepVm(steps[i], isLast: i == steps.Count - 1,
-                                             walkMinutesToNext: walkToNext));
+                    var stepVm = new TourStepVm(steps[i], isLast: i == steps.Count - 1, walkMinutesToNext: walkToNext);
+                    
+                    if (_session.ActiveSession?.TourId == tourId && _session.ActiveSession.VisitedPoiIds.Contains(steps[i].PoiId))
+                    {
+                        stepVm.IsVisited = true;
+                    }
+
+                    Stops.Add(stepVm);
+                }
+
+                if (_session.ActiveSession?.TourId == tourId)
+                {
+                    IsTourActive = true;
+                    OnPropertyChanged(nameof(StartStopLabel));
+                    OnPropertyChanged(nameof(ResetLabel));
                 }
 
                 _totalWalkMinutes = Stops.Sum(s => s.WalkMinutesToNext);
