@@ -92,7 +92,7 @@ namespace Server.Controllers.Mobile
                 ));
             }
 
-            var thumbnailUrl = tour.TourPois
+            var thumbnailUrl = tour.ThumbnailUrl ?? tour.TourPois
                 .OrderBy(tp => tp.StepOrder)
                 .FirstOrDefault()?.Poi?.LogoUrl;
 
