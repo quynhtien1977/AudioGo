@@ -4,12 +4,13 @@ using Shared.DTOs;
 using System.Collections.ObjectModel;
 using System.Net.Http.Json;
 using System.Windows.Input;
+using AudioGo.Services;
 
 namespace AudioGo.ViewModels
 {
     public class TourListViewModel : BaseViewModel
     {
-        private readonly IApiService _api;
+        private readonly SyncService _sync;
 
         // Override setter to also notify HasTours when loading changes
         public new bool IsLoading
@@ -42,9 +43,9 @@ namespace AudioGo.ViewModels
         public ICommand ContinueTourCommand { get; }
 
 
-        public TourListViewModel(IApiService api)
+        public TourListViewModel(SyncService sync)
         {
-            _api = api;
+            _sync = sync;
 
             OpenTourCommand = new Command<TourRowVm>(async tour =>
             {
@@ -66,7 +67,7 @@ namespace AudioGo.ViewModels
             IsLoading = true;
             try
             {
-                var result = await _api.GetToursAsync(languageCode: lang);
+                var result = await _sync.GetToursAsync(languageCode: lang);
                 _allTours = result?.Select(t => new TourRowVm(t)).ToList() ?? new();
                 FilterTours(SearchText);
             }

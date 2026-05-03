@@ -23,6 +23,9 @@ if (File.Exists(envPath))
 // ── CORS ──────────────────────────────────────────────────────────────
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
                      ?? ["http://localhost:5173"];
+
+builder.Services.AddHttpClient();
+
 builder.Services.AddCors(opt =>
 {
     opt.AddPolicy("MobilePolicy", p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
