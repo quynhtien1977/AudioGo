@@ -80,9 +80,9 @@ namespace AudioGo.ViewModels
             _api = api;
             _sync = sync;
 
-            // Start with "All" chip while API loads
+            // Start with default chips while API loads
             CategoryChips = new ObservableCollection<CategoryChipVm>(
-                CategoryChipVm.GetDefaultChips().Select(c => new CategoryChipVm(c.label, c.icon, c.value)));
+                CategoryChipVm.GetDefaultChips().Select(c => new CategoryChipVm(c.label, c.value)));
             CategoryChips[0].IsActive = true;
 
             FilterCommand = new Command<CategoryChipVm>(chip =>
