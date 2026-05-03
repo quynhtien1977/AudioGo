@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:helpers="clr-namespace:AudioGo.Helpers"
              x:Class="AudioGo_Mobile.Views.WelcomePage"
              Shell.NavBarIsVisible="False"
              NavigationPage.HasNavigationBar="False"
@@ -43,7 +44,7 @@
                        TextColor="White" 
                        HorizontalTextAlignment="Center" />
                 
-                <Label Text="Khám phá Khu phố Vĩnh Khánh qua giọng thuyết minh tự động." 
+                <Label Text="{helpers:Translate welcome_desc1}" 
                        FontSize="16" 
                        FontFamily="InterMedium"
                        TextColor="White" 
@@ -66,12 +67,12 @@
                     <!-- Handle -->
                     <BoxView Color="#E0E0E0" HeightRequest="4" WidthRequest="40" CornerRadius="2" HorizontalOptions="Center" Margin="0,0,0,8" />
                     
-                    <Label Text="Chào mừng!" 
+                    <Label Text="{helpers:Translate welcome_greeting}" 
                            FontSize="28" 
                            FontFamily="InterBold"
                            TextColor="#1E1E1E" />
                     
-                    <Label Text="Trải nghiệm tinh hoa ẩm thực đường phố và lịch sử Vĩnh Khánh với hướng dẫn viên ảo." 
+                    <Label Text="{helpers:Translate welcome_desc2}" 
                            FontSize="15" 
                            FontFamily="InterRegular"
                            TextColor="#666666" 
@@ -85,23 +86,23 @@
                         <Border Grid.Row="0" Grid.Column="0" WidthRequest="40" HeightRequest="40" StrokeShape="Ellipse" BackgroundColor="#FCE4E4" StrokeThickness="0">
                             <Label Text="&#xe310;" FontFamily="MaterialIcons" TextColor="#EA4335" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center"/>
                         </Border>
-                        <Label Grid.Row="0" Grid.Column="1" Text="Thuyết minh đa ngôn ngữ" FontFamily="InterMedium" TextColor="#333333" VerticalOptions="Center"/>
+                        <Label Grid.Row="0" Grid.Column="1" Text="{helpers:Translate welcome_feat1}" FontFamily="InterMedium" TextColor="#333333" VerticalOptions="Center"/>
                         
                         <!-- 2 -->
                         <Border Grid.Row="1" Grid.Column="0" WidthRequest="40" HeightRequest="40" StrokeShape="Ellipse" BackgroundColor="#FCE4E4" StrokeThickness="0">
                             <Label Text="&#xe55b;" FontFamily="MaterialIcons" TextColor="#EA4335" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center"/>
                         </Border>
-                        <Label Grid.Row="1" Grid.Column="1" Text="Bản đồ tương tác" FontFamily="InterMedium" TextColor="#333333" VerticalOptions="Center"/>
+                        <Label Grid.Row="1" Grid.Column="1" Text="{helpers:Translate welcome_feat2}" FontFamily="InterMedium" TextColor="#333333" VerticalOptions="Center"/>
                         
                         <!-- 3 -->
                         <Border Grid.Row="2" Grid.Column="0" WidthRequest="40" HeightRequest="40" StrokeShape="Ellipse" BackgroundColor="#FCE4E4" StrokeThickness="0">
                             <Label Text="&#xe2c4;" FontFamily="MaterialIcons" TextColor="#EA4335" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center"/>
                         </Border>
-                        <Label Grid.Row="2" Grid.Column="1" Text="Tải về offline" FontFamily="InterMedium" TextColor="#333333" VerticalOptions="Center"/>
+                        <Label Grid.Row="2" Grid.Column="1" Text="{helpers:Translate welcome_feat3}" FontFamily="InterMedium" TextColor="#333333" VerticalOptions="Center"/>
                     </Grid>
 
                     <!-- Primary Button -->
-                    <Button Text="Bắt đầu khám phá"
+                    <Button Text="{helpers:Translate welcome_start}"
                             FontSize="16"
                             FontFamily="InterBold"
                             BackgroundColor="#EE4D2D"
@@ -121,7 +122,7 @@
               VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand">
             <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="16">
                 <ActivityIndicator IsRunning="True" Color="{StaticResource Primary}" HorizontalOptions="Center"/>
-                <Label Text="Đang vào ứng dụng..." TextColor="White" FontFamily="InterMedium" HorizontalOptions="Center"/>
+                <Label Text="{helpers:Translate welcome_loading}" TextColor="White" FontFamily="InterMedium" HorizontalOptions="Center"/>
             </VerticalStackLayout>
         </Grid>
     </Grid>
