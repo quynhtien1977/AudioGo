@@ -584,6 +584,16 @@ public static class AppStrings
             ["vi"] = "ngôn ngữ", ["en"] = "lang", ["ja"] = "言語",
             ["ko"] = "언어", ["zh-Hans"] = "语言", ["fr"] = "lang", ["th"] = "ภาษา"
         },
+        ["tour_progress_format"] = new()
+        {
+            ["vi"] = "{0}/{1} điểm", ["en"] = "{0}/{1} spots", ["ja"] = "{0}/{1} スポット",
+            ["ko"] = "{0}/{1} 장소", ["zh-Hans"] = "{0}/{1} 地点", ["fr"] = "{0}/{1} points", ["th"] = "{0}/{1} จุด"
+        },
+        ["tour_next_walk"] = new()
+        {
+            ["vi"] = "~{0} phút đi bộ tiếp theo", ["en"] = "~{0} min walk to next", ["ja"] = "次まで徒歩約{0}分",
+            ["ko"] = "다음까지 도보 약 {0}분", ["zh-Hans"] = "下一点步行约{0}分钟", ["fr"] = "~{0} min de marche pour le suivant", ["th"] = "เดินไปจุดต่อไป {0} นาที"
+        },
         ["tour_continue"] = new()
         {
             ["vi"] = "Tiếp tục Tour", ["en"] = "Continue Tour", ["ja"] = "ツアーを続ける",
@@ -715,6 +725,121 @@ public static class AppStrings
         {
             ["vi"] = "Hoàn thành", ["en"] = "Completed", ["ja"] = "完了",
             ["ko"] = "완료", ["zh-Hans"] = "已完成", ["fr"] = "Terminé", ["th"] = "เสร็จสิ้น"
+        },
+        ["welcome_desc1"] = new()
+        {
+            ["vi"] = "Khám phá Khu phố Vĩnh Khánh qua giọng thuyết minh tự động.",
+            ["en"] = "Explore Vinh Khanh Street with an automated audio guide.",
+            ["ja"] = "自動音声ガイドでヴィンカイン通りを探索しましょう。",
+            ["ko"] = "자동 오디오 가이드와 함께 빈카인 거리를 탐험하세요.",
+            ["zh-Hans"] = "通过自动语音导览探索永庆街。",
+            ["fr"] = "Explorez la rue Vinh Khanh avec un guide audio automatique.",
+            ["th"] = "สำรวจถนนวิญคานห์พร้อมไกด์เสียงอัตโนมัติ"
+        },
+        ["welcome_greeting"] = new()
+        {
+            ["vi"] = "Chào mừng!", ["en"] = "Welcome!", ["ja"] = "ようこそ！",
+            ["ko"] = "환영합니다!", ["zh-Hans"] = "欢迎！", ["fr"] = "Bienvenue !", ["th"] = "ยินดีต้อนรับ!"
+        },
+        ["welcome_desc2"] = new()
+        {
+            ["vi"] = "Trải nghiệm tinh hoa ẩm thực đường phố và lịch sử Vĩnh Khánh với hướng dẫn viên ảo.",
+            ["en"] = "Experience the essence of street food and the history of Vinh Khanh with a virtual guide.",
+            ["ja"] = "バーチャルガイドと一緒に、ヴィンカインの屋台の味と歴史を体験してください。",
+            ["ko"] = "가상 가이드와 함께 빈카인의 길거리 음식의 정수와 역사를 경험해보세요.",
+            ["zh-Hans"] = "与虚拟导游一起体验永庆的街头美食精髓和历史。",
+            ["fr"] = "Découvrez l'essence de la cuisine de rue et l'histoire de Vinh Khanh avec un guide virtuel.",
+            ["th"] = "สัมผัสแก่นแท้ของอาหารริมทางและประวัติศาสตร์ของวิญคานห์พร้อมไกด์เสมือนจริง"
+        },
+        ["welcome_feat1"] = new()
+        {
+            ["vi"] = "Thuyết minh đa ngôn ngữ", ["en"] = "Multilingual Audio Guide", ["ja"] = "多言語音声ガイド",
+            ["ko"] = "다국어 오디오 가이드", ["zh-Hans"] = "多语言语音导览", ["fr"] = "Guide audio multilingue", ["th"] = "ไกด์เสียงหลายภาษา"
+        },
+        ["welcome_feat2"] = new()
+        {
+            ["vi"] = "Bản đồ tương tác", ["en"] = "Interactive Map", ["ja"] = "インタラクティブマップ",
+            ["ko"] = "대화형 지도", ["zh-Hans"] = "互动地图", ["fr"] = "Carte interactive", ["th"] = "แผนที่แบบโต้ตอบ"
+        },
+        ["welcome_feat3"] = new()
+        {
+            ["vi"] = "Tải về offline", ["en"] = "Download for Offline Use", ["ja"] = "オフライン用にダウンロード",
+            ["ko"] = "오프라인용 다운로드", ["zh-Hans"] = "下载以供离线使用", ["fr"] = "Télécharger pour une utilisation hors ligne", ["th"] = "ดาวน์โหลดสำหรับออฟไลน์"
+        },
+        ["welcome_start"] = new()
+        {
+            ["vi"] = "Bắt đầu khám phá", ["en"] = "Start Exploring", ["ja"] = "探索を開始",
+            ["ko"] = "탐색 시작", ["zh-Hans"] = "开始探索", ["fr"] = "Commencer l'exploration", ["th"] = "เริ่มสำรวจ"
+        },
+        ["welcome_loading"] = new()
+        {
+            ["vi"] = "Đang vào ứng dụng...", ["en"] = "Entering the app...", ["ja"] = "アプリを起動中...",
+            ["ko"] = "앱 시작 중...", ["zh-Hans"] = "正在进入应用...", ["fr"] = "Lancement de l'application...", ["th"] = "กำลังเข้าสู่แอป..."
+        },
+        ["qr_title"] = new()
+        {
+            ["vi"] = "Quét mã QR", ["en"] = "Scan QR Code", ["ja"] = "QRコードをスキャン",
+            ["ko"] = "QR 코드 스캔", ["zh-Hans"] = "扫描二维码", ["fr"] = "Scanner le code QR", ["th"] = "สแกนรหัส QR"
+        },
+        ["qr_subtitle"] = new()
+        {
+            ["vi"] = "Hãy quét mã QR tại điểm tham quan để bắt đầu", ["en"] = "Please scan the QR code at the attraction to start",
+            ["ja"] = "開始するにはアトラクションのQRコードをスキャンしてください",
+            ["ko"] = "시작하려면 관광지의 QR 코드를 스캔하세요",
+            ["zh-Hans"] = "请扫描景点处的二维码以开始",
+            ["fr"] = "Veuillez scanner le code QR à l'attraction pour commencer",
+            ["th"] = "กรุณาสแกนรหัส QR ที่สถานที่ท่องเที่ยวเพื่อเริ่มต้น"
+        },
+        ["qr_instruction"] = new()
+        {
+            ["vi"] = "Đưa mã QR vào khung để quét tự động", ["en"] = "Place the QR code within the frame to scan automatically",
+            ["ja"] = "自動的にスキャンするには、QRコードをフレーム内に配置してください",
+            ["ko"] = "자동으로 스캔하려면 QR 코드를 프레임 안에 맞추세요",
+            ["zh-Hans"] = "将二维码放入框内即可自动扫描",
+            ["fr"] = "Placez le code QR dans le cadre pour le scanner automatiquement",
+            ["th"] = "วางรหัส QR ไว้ในกรอบเพื่อสแกนอัตโนมัติ"
+        },
+        ["qr_processing"] = new()
+        {
+            ["vi"] = "Đang xử lý mã QR...", ["en"] = "Processing QR code...", ["ja"] = "QRコードを処理中...",
+            ["ko"] = "QR 코드 처리 중...", ["zh-Hans"] = "正在处理二维码...", ["fr"] = "Traitement du code QR...", ["th"] = "กำลังประมวลผลรหัส QR..."
+        },
+        ["qr_cam_error_title"] = new()
+        {
+            ["vi"] = "Lỗi", ["en"] = "Error", ["ja"] = "エラー",
+            ["ko"] = "오류", ["zh-Hans"] = "错误", ["fr"] = "Erreur", ["th"] = "ข้อผิดพลาด"
+        },
+        ["qr_cam_error_msg"] = new()
+        {
+            ["vi"] = "Chưa cấp quyền Camera. Không thể quét mã QR.", ["en"] = "Camera permission not granted. Cannot scan QR code.",
+            ["ja"] = "カメラの権限が付与されていません。QRコードをスキャンできません。",
+            ["ko"] = "카메라 권한이 부여되지 않았습니다. QR 코드를 스캔할 수 없습니다.",
+            ["zh-Hans"] = "未授予相机权限。无法扫描二维码。",
+            ["fr"] = "L'autorisation de l'appareil photo n'est pas accordée. Impossible de scanner le code QR.",
+            ["th"] = "ยังไม่ได้ให้สิทธิ์กล้อง ไม่สามารถสแกนรหัส QR ได้"
+        },
+        ["qr_img_support_title"] = new()
+        {
+            ["vi"] = "Thông báo", ["en"] = "Notice", ["ja"] = "通知",
+            ["ko"] = "알림", ["zh-Hans"] = "通知", ["fr"] = "Avis", ["th"] = "ประกาศ"
+        },
+        ["qr_img_support_msg"] = new()
+        {
+            ["vi"] = "Chức năng quét ảnh hiện chỉ hỗ trợ trên Android.", ["en"] = "Image scanning is currently only supported on Android.",
+            ["ja"] = "画像スキャンは現在Androidのみでサポートされています。",
+            ["ko"] = "이미지 스캔은 현재 Android에서만 지원됩니다.",
+            ["zh-Hans"] = "图像扫描目前仅支持Android。",
+            ["fr"] = "La numérisation d'images n'est actuellement prise en charge que sur Android.",
+            ["th"] = "การสแกนรูปภาพรองรับเฉพาะบน Android เท่านั้นในขณะนี้"
+        },
+        ["qr_img_invalid_msg"] = new()
+        {
+            ["vi"] = "Không tìm thấy mã QR hợp lệ trong ảnh.", ["en"] = "No valid QR code found in the image.",
+            ["ja"] = "画像内に有効なQRコードが見つかりません。",
+            ["ko"] = "이미지에서 유효한 QR 코드를 찾을 수 없습니다.",
+            ["zh-Hans"] = "在图像中未找到有效的二维码。",
+            ["fr"] = "Aucun code QR valide n'a été trouvé dans l'image.",
+            ["th"] = "ไม่พบรหัส QR ที่ถูกต้องในรูปภาพ"
         },
         ["cancel"] = new()
         {

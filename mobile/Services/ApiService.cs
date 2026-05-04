@@ -105,11 +105,11 @@ namespace AudioGo.Services
                 }, ct);
         }
 
-        public async Task<List<Shared.DTOs.CategoryDto>> GetCategoriesAsync(CancellationToken ct = default)
+        public async Task<List<Shared.DTOs.CategoryDto>> GetCategoriesAsync(string languageCode = "vi", CancellationToken ct = default)
         {
             try
             {
-                var result = await _http.GetFromJsonAsync<List<Shared.DTOs.CategoryDto>>("api/mobile/categories", ct);
+                var result = await _http.GetFromJsonAsync<List<Shared.DTOs.CategoryDto>>($"api/mobile/categories?lang={languageCode}", ct);
                 return result ?? new List<Shared.DTOs.CategoryDto>();
             }
             catch

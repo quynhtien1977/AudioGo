@@ -40,8 +40,14 @@ namespace AudioGo.ViewModels
         public string Description
         {
             get => _description;
-            private set => SetProperty(ref _description, value);
+            private set
+            {
+                SetProperty(ref _description, value);
+                OnPropertyChanged(nameof(HasDescription));
+            }
         }
+
+        public bool HasDescription => !string.IsNullOrWhiteSpace(Description);
 
         private string _errorMessage = string.Empty;
         public string ErrorMessage
@@ -63,8 +69,8 @@ namespace AudioGo.ViewModels
 
         public string ProgressText =>
             _session.ActiveSession?.TourId == TourId
-                ? $"{_session.ActiveSession.VisitedCount}/{Stops.Count} điểm"
-                : $"0/{Stops.Count} điểm";
+                ? AudioGo.Helpers.AppStrings.Get("tour_progress_format", _session.ActiveSession.VisitedCount, Stops.Count)
+                : AudioGo.Helpers.AppStrings.Get("tour_progress_format", 0, Stops.Count);
 
         public double ProgressRatio =>
             Stops.Count > 0 && _session.ActiveSession?.TourId == TourId
@@ -73,7 +79,7 @@ namespace AudioGo.ViewModels
 
         private int _totalWalkMinutes = 0;
         public string TotalDuration =>
-            _totalWalkMinutes > 0 ? $"~{_totalWalkMinutes} phút đi bộ" : "--";
+            _totalWalkMinutes > 0 ? AudioGo.Helpers.AppStrings.Get("map_walk_time", _totalWalkMinutes) : "--";
 
         // ── UI Strings ───────────────────────────────────────────────
         public string LabelContinue => AudioGo.Helpers.AppStrings.Get("tour_detail_continue");
@@ -267,7 +273,7 @@ namespace AudioGo.ViewModels
             Latitude          = dto.Latitude;
             Longitude         = dto.Longitude;
             WalkMinutesToNext = walkMinutesToNext;
-            DurationLabel     = isLast ? "" : $"~{walkMinutesToNext} phút đi bộ tiếp theo";
+            DurationLabel     = isLast ? "" : AudioGo.Helpers.AppStrings.Get("tour_next_walk", walkMinutesToNext);
 
             var au = dto.AudioUrl ?? string.Empty;
             AudioUrl = (!string.IsNullOrEmpty(baseUrl) && !au.StartsWith("http") && !string.IsNullOrEmpty(au))

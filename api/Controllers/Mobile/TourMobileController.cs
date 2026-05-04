@@ -42,13 +42,13 @@ namespace Server.Controllers.Mobile
             // Filter theo tên tour nếu có search query
             if (!string.IsNullOrWhiteSpace(q))
                 tours = tours.Where(t =>
-                    t.Name.Contains(q, StringComparison.OrdinalIgnoreCase)
+                    t.GetLocalizedName(lang).Contains(q, StringComparison.OrdinalIgnoreCase)
                 ).ToList();
 
             var result = tours.Select(t => new TourSummaryDto(
                 TourId:       t.TourId,
-                Name:         t.Name,
-                Description:  t.Description ?? string.Empty,
+                Name:         t.GetLocalizedName(lang),
+                Description:  t.GetLocalizedDescription(lang) ?? string.Empty,
                 PoiCount:     t.TourPois.Count,
                 // Ưu tiên ThumbnailUrl của tour, fallback sang LogoUrl của POI đầu tiên
                 ThumbnailUrl: t.ThumbnailUrl
@@ -86,7 +86,7 @@ namespace Server.Controllers.Mobile
                     StepOrder:       tp.StepOrder,
                     AudioUrl:        content.AudioUrl ?? string.Empty,
                     Categories:      tp.Poi.CategoryPois
-                                        .Select(cp => cp.Category?.Name ?? string.Empty)
+                                        .Select(cp => cp.Category?.GetLocalizedName(lang) ?? string.Empty)
                                         .Where(n => !string.IsNullOrEmpty(n))
                                         .ToList()
                 ));
@@ -98,8 +98,8 @@ namespace Server.Controllers.Mobile
 
             return Ok(new TourDetailDto(
                 TourId:       tour.TourId,
-                Name:         tour.Name,
-                Description:  tour.Description ?? string.Empty,
+                Name:         tour.GetLocalizedName(lang),
+                Description:  tour.GetLocalizedDescription(lang) ?? string.Empty,
                 PoiCount:     steps.Count,
                 ThumbnailUrl: thumbnailUrl,
                 CreatedAt:    tour.CreatedAt,

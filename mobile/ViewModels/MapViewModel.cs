@@ -85,7 +85,7 @@ namespace AudioGo.ViewModels
 
             // Start with defaults while API loads
             CategoryChips = new ObservableCollection<CategoryChipVm>(
-                CategoryChipVm.GetDefaultChips().Select(c => new CategoryChipVm(c.label, c.icon, c.value)));
+                CategoryChipVm.GetDefaultChips().Select(c => new CategoryChipVm(c.label, c.value)));
 
             if (CategoryChips.Count > 0)
                 CategoryChips[0].IsActive = true;
