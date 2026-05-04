@@ -103,6 +103,7 @@ namespace AudioGo.Services
                 try
                 {
                     await DownloadAllAssetsAsync(serverPois, CancellationToken.None);
+                    await RefreshToursFromServerAsync(normalizedLang, CancellationToken.None);
                 }
                 catch (Exception ex)
                 {
@@ -263,13 +264,14 @@ namespace AudioGo.Services
             }
         }
 
-        public async Task<List<CategoryDto>> GetCategoriesAsync(CancellationToken ct = default)
+        public async Task<List<CategoryDto>> GetCategoriesAsync(string languageCode = "vi", CancellationToken ct = default)
         {
             if (NetworkHelper.HasInternet())
             {
                 try
                 {
-                    var apiCategories = await _api.GetCategoriesAsync(ct);
+                    var normalizedLang = LanguageHelper.NormalizeToSupported(languageCode);
+                    var apiCategories = await _api.GetCategoriesAsync(normalizedLang, ct);
                     if (apiCategories.Count > 0) return apiCategories;
                 }
                 catch
@@ -303,8 +305,8 @@ namespace AudioGo.Services
                     {
                         try
                         {
-                            await RefreshToursFromServerAsync(normalizedLang, CancellationToken.None);
-                            NotifyPoisUpdated(); // Notify UI to refresh
+                            bool hasChanges = await RefreshToursFromServerAsync(normalizedLang, CancellationToken.None);
+                            if (hasChanges) NotifyPoisUpdated(); // Notify UI to refresh
                         }
                         catch (Exception ex)
                         {
@@ -330,7 +332,7 @@ namespace AudioGo.Services
             }
         }
 
-        private async Task RefreshToursFromServerAsync(string normalizedLang, CancellationToken ct)
+        private async Task<bool> RefreshToursFromServerAsync(string normalizedLang, CancellationToken ct)
         {
             var serverTours = await _api.GetToursAsync(languageCode: normalizedLang, ct: ct);
             
@@ -338,11 +340,13 @@ namespace AudioGo.Services
             var incomingIds = new HashSet<string>(serverTours.Select(t => t.TourId));
             
             var updatedToursForDownload = new List<TourEntity>();
+            bool hasChanges = false;
 
             foreach (var existing in existingTours.Where(t => !incomingIds.Contains(t.TourId)))
             {
                 TryDeleteFile(existing.LocalThumbnailPath);
                 await _db.DeleteTourAsync(existing.TourId);
+                hasChanges = true;
             }
 
             foreach (var t in serverTours)
@@ -351,6 +355,18 @@ namespace AudioGo.Services
                 if (detail != null)
                 {
                     var existing = existingTours.FirstOrDefault(x => x.TourId == t.TourId);
+                    
+                    // Kiểm tra xem có thực sự thay đổi gì không
+                    if (existing == null || 
+                        existing.Name != detail.Name || 
+                        existing.Description != detail.Description || 
+                        existing.ThumbnailUrl != detail.ThumbnailUrl ||
+                        existing.PoiCount != detail.PoiCount ||
+                        existing.StepsJson != JsonSerializer.Serialize(detail.Steps.OrderBy(s => s.StepOrder).Select(s => s.PoiId).ToList()))
+                    {
+                        hasChanges = true;
+                    }
+
                     var localThumb = (existing?.ThumbnailUrl == detail.ThumbnailUrl) ? existing?.LocalThumbnailPath : null;
                     if (existing?.ThumbnailUrl != detail.ThumbnailUrl)
                     {
@@ -380,12 +396,14 @@ namespace AudioGo.Services
             {
                 _ = Task.Run(() => DownloadTourThumbnailsAsync(updatedToursForDownload, CancellationToken.None));
             }
+            
+            return hasChanges;
         }
 
         public async Task<TourDetailDto?> GetTourDetailAsync(string tourId, string languageCode = "vi", CancellationToken ct = default)
         {
             var entity = await _db.GetTourAsync(tourId);
-            if (entity != null)
+            if (entity != null && entity.LanguageCode == languageCode)
             {
                 var poiIds = SafeDeserializeList(entity.StepsJson);
                 var allPois = await _db.GetAllPoisAsync();

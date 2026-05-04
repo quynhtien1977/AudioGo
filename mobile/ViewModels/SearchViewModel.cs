@@ -99,9 +99,10 @@ namespace AudioGo.ViewModels
                 await Shell.Current.GoToAsync($"{nameof(PoiDetailPage)}?poiId={vm.PoiId}");
             });
 
-            OpenTourCommand = new Command<TourSearchVm>(_ =>
+            OpenTourCommand = new Command<TourSearchVm>(async vm =>
             {
-                // Tour tam an de ship som
+                if (vm is null) return;
+                await Shell.Current.GoToAsync($"{nameof(TourDetailPage)}?tourId={vm.TourId}");
             });
 
             // Load real categories from API asynchronously
@@ -139,10 +140,10 @@ namespace AudioGo.ViewModels
         {
             try
             {
-                var apiCategories = await _sync.GetCategoriesAsync();
+                var lang = AppSettings.GetAppLanguage();
+                var apiCategories = await _sync.GetCategoriesAsync(lang);
                 if (apiCategories.Count == 0) return;
 
-                var lang = AppSettings.GetAppLanguage();
                 var newChips = CategoryChipVm.BuildFromApiCategories(apiCategories, lang);
 
                 // Preserve active category if any
@@ -212,7 +213,13 @@ namespace AudioGo.ViewModels
                 if (pois is not null)
                     foreach (var p in pois) Pois.Add(new PoiSearchVm(p));
 
-                // Tour tam an de ship som
+                var allTours = await _sync.GetToursAsync(languageCode: lang);
+                var filteredTours = allTours.Where(t => 
+                    string.IsNullOrEmpty(query) || 
+                    t.Name.Contains(query, StringComparison.OrdinalIgnoreCase) || 
+                    (t.Description != null && t.Description.Contains(query, StringComparison.OrdinalIgnoreCase))
+                );
+                foreach (var t in filteredTours) Tours.Add(new TourSearchVm(t));
             }
             catch 
             { 
@@ -238,6 +245,14 @@ namespace AudioGo.ViewModels
             );
             
             foreach (var p in filtered) Pois.Add(new PoiSearchVm(p));
+
+            var allTours = await _sync.GetToursAsync(languageCode: lang);
+            var filteredTours = allTours.Where(t => 
+                string.IsNullOrEmpty(query) || 
+                t.Name.Contains(query, StringComparison.OrdinalIgnoreCase) || 
+                (t.Description != null && t.Description.Contains(query, StringComparison.OrdinalIgnoreCase))
+            );
+            foreach (var t in filteredTours) Tours.Add(new TourSearchVm(t));
         }
 
         private string _emptyTitle = AppStrings.Get("search_empty_title");
@@ -249,7 +264,7 @@ namespace AudioGo.ViewModels
         private void UpdateStates()
         {
             HasResults  = Pois.Count > 0;
-            HasTours    = false;
+            HasTours    = Tours.Count > 0;
             
             bool isSearching = !string.IsNullOrEmpty(Query) || (!string.IsNullOrEmpty(ActiveCategory) && ActiveCategory != "all");
             
