@@ -46,6 +46,8 @@ namespace AudioGo.ViewModels
         public TourListViewModel(SyncService sync)
         {
             _sync = sync;
+            
+            _sync.LanguageChanged += (_, _) => RefreshLocalization();
 
             OpenTourCommand = new Command<TourRowVm>(async tour =>
             {
@@ -62,11 +64,23 @@ namespace AudioGo.ViewModels
             RefreshCommand = new Command(async () => await LoadToursAsync());
         }
 
-        public async Task LoadToursAsync(string lang = "vi")
+        private void RefreshLocalization()
+        {
+            OnPropertyChanged(nameof(LabelTours));
+            OnPropertyChanged(nameof(LabelEmptyTitle));
+            OnPropertyChanged(nameof(LabelEmptyDesc));
+            OnPropertyChanged(nameof(CountLabel));
+            
+            // Reload if we want tours to refresh language
+            _ = LoadToursAsync();
+        }
+
+        public async Task LoadToursAsync()
         {
             IsLoading = true;
             try
             {
+                var lang = AudioGo.Helpers.AppSettings.GetAppLanguage();
                 var result = await _sync.GetToursAsync(languageCode: lang);
                 _allTours = result?.Select(t => new TourRowVm(t)).ToList() ?? new();
                 FilterTours(SearchText);
