@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Server.Models;
 using Server.Repositories.Interfaces;
 using Shared.DTOs;
+using System.Text.Json;
 
 namespace Server.Controllers.Cms
 {
@@ -12,7 +13,13 @@ namespace Server.Controllers.Cms
     public class CmsCategoryController : ControllerBase
     {
         private readonly ICategoryRepository _repo;
-        public CmsCategoryController(ICategoryRepository repo) => _repo = repo;
+        private readonly Server.Services.Interfaces.ITranslationService _translationService;
+
+        public CmsCategoryController(ICategoryRepository repo, Server.Services.Interfaces.ITranslationService translationService)
+        {
+            _repo = repo;
+            _translationService = translationService;
+        }
 
         [HttpGet]
         public async Task<ActionResult<List<CategoryDto>>> GetAll()
@@ -32,14 +39,17 @@ namespace Server.Controllers.Cms
         [HttpPost]
         public async Task<ActionResult<CategoryDto>> Create([FromBody] CategoryCreateRequest req)
         {
+            // Dịch Name sang 7 ngôn ngữ cố định
+            var nameDict = await _translationService.TranslateToAllLanguagesAsync(req.Name, "vi");
+
             var cat = new Category
             {
-                CategoryId = Guid.NewGuid().ToString(),
-                Name       = req.Name
+                CategoryId    = Guid.NewGuid().ToString(),
+                Name          = req.Name,                                // plain vi (CMS display/search)
+                LocalizedName = JsonSerializer.Serialize(nameDict)       // JSON 7 langs
             };
             var created = await _repo.CreateAsync(cat);
-            return CreatedAtAction(nameof(GetById), new { id = created.CategoryId },
-                ToDto(created));
+            return CreatedAtAction(nameof(GetById), new { id = created.CategoryId }, ToDto(created));
         }
 
         [HttpPut("{id}")]
@@ -49,7 +59,16 @@ namespace Server.Controllers.Cms
             var existing = await _repo.GetByIdAsync(id);
             if (existing is null) return NotFound();
 
-            existing.Name = req.Name;
+            bool needsNameTrans = req.Name != null && 
+                (req.Name != existing.Name || string.IsNullOrWhiteSpace(existing.LocalizedName) || !existing.LocalizedName.TrimStart().StartsWith("{"));
+
+            if (needsNameTrans)
+            {
+                var newNameDict = await _translationService.TranslateToAllLanguagesAsync(req.Name!, "vi");
+                existing.Name         = req.Name!;  // cập nhật plain vi
+                existing.LocalizedName = MergeLocalizedJson(existing.LocalizedName, newNameDict);
+            }
+
             var updated = await _repo.UpdateAsync(existing);
             return Ok(ToDto(updated!));
         }
@@ -78,6 +97,31 @@ namespace Server.Controllers.Cms
         {
             await _repo.RemovePoiAsync(id, poiId);
             return NoContent();
+        }
+
+        // ── Helpers ──────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Merge 7 ngôn ngữ mới vào JSON hiện có.
+        /// Giữ nguyên các key ngoài 7 ngôn ngữ cố định (vd: custom lang keys).
+        /// </summary>
+        private static string MergeLocalizedJson(string? existingJson, Dictionary<string, string> newValues)
+        {
+            var existing = new Dictionary<string, string>();
+            if (!string.IsNullOrWhiteSpace(existingJson))
+            {
+                try
+                {
+                    var parsed = JsonSerializer.Deserialize<Dictionary<string, string>>(existingJson);
+                    if (parsed != null) existing = parsed;
+                }
+                catch { }
+            }
+
+            foreach (var (lang, val) in newValues)
+                existing[lang] = val;
+
+            return JsonSerializer.Serialize(existing);
         }
     }
 }

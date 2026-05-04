@@ -17,12 +17,12 @@ namespace Shared.DTOs
     // ── Category ────────────────────────────────────────────────────────
     public record CategoryDto(
         string CategoryId,
-        string Name,
-        int PoiCount,           // Mới thêm: Cho mobile hiển thị số lượng
-        DateTime CreatedAt,     // Cũ: CMS cần
-        DateTime UpdatedAt      // Cũ: CMS cần
+        string Name,            // LocalizedName cho mobile, Plain name cho CMS
+        int PoiCount,           // Cho mobile hiển thị số lượng
+        DateTime CreatedAt,     // CMS cần
+        DateTime UpdatedAt,     // CMS cần
+        string PlainName = ""   // ID text gốc để query API filter
     );
-
     public record CategoryCreateRequest(string Name);
 
     // ── Tour ────────────────────────────────────────────────────────────
