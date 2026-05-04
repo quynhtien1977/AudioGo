@@ -142,7 +142,7 @@ namespace AudioGo.ViewModels
         // Walk time: tính Haversine giữa các POI theo thứ tự — ô bình thường 4 km/h
         // Tạm dùng PoiCount * 8 phút/POI (bao gồm cả nghe + đi lại) đến khi có toạ độ đầy đủ từ API detail
         public string DurationText  => $"{_dto.PoiCount * 8}";
-        public string Language      => "VI";
+        public string Language      => AudioGo.Helpers.AppSettings.GetAppLanguage().ToUpper();
         // Progress — no real data yet, keep at 0
         public string ProgressText  => $"0/{_dto.PoiCount}";
         public double ProgressRatio => 0d;

@@ -584,6 +584,16 @@ public static class AppStrings
             ["vi"] = "ngôn ngữ", ["en"] = "lang", ["ja"] = "言語",
             ["ko"] = "언어", ["zh-Hans"] = "语言", ["fr"] = "lang", ["th"] = "ภาษา"
         },
+        ["tour_progress_format"] = new()
+        {
+            ["vi"] = "{0}/{1} điểm", ["en"] = "{0}/{1} spots", ["ja"] = "{0}/{1} スポット",
+            ["ko"] = "{0}/{1} 장소", ["zh-Hans"] = "{0}/{1} 地点", ["fr"] = "{0}/{1} points", ["th"] = "{0}/{1} จุด"
+        },
+        ["tour_next_walk"] = new()
+        {
+            ["vi"] = "~{0} phút đi bộ tiếp theo", ["en"] = "~{0} min walk to next", ["ja"] = "次まで徒歩約{0}分",
+            ["ko"] = "다음까지 도보 약 {0}분", ["zh-Hans"] = "下一点步行约{0}分钟", ["fr"] = "~{0} min de marche pour le suivant", ["th"] = "เดินไปจุดต่อไป {0} นาที"
+        },
         ["tour_continue"] = new()
         {
             ["vi"] = "Tiếp tục Tour", ["en"] = "Continue Tour", ["ja"] = "ツアーを続ける",
