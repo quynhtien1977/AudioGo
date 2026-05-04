@@ -57,6 +57,8 @@ namespace Server.Repositories
             if (existing is null) return null;
             existing.Name = tour.Name;
             existing.Description = tour.Description;
+            existing.LocalizedName = tour.LocalizedName;
+            existing.LocalizedDescription = tour.LocalizedDescription;
             existing.ThumbnailUrl = tour.ThumbnailUrl;
             existing.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();

@@ -18,21 +18,22 @@ namespace Server.Controllers.Mobile
         }
 
         /// <summary>
-        /// GET /api/mobile/categories
+        /// GET /api/mobile/categories?lang=vi
         /// Returns all categories with poi count for chip display.
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CategoryDto>>> GetAll()
+        public async Task<ActionResult<IEnumerable<CategoryDto>>> GetAll([FromQuery] string lang = "vi")
         {
             var categories = await _repo.GetAllAsync();
             var dtos = categories
                 .OrderBy(c => c.Name)
                 .Select(c => new CategoryDto(
                     c.CategoryId,
-                    c.Name,
+                    c.GetLocalizedName(lang),
                     c.CategoryPois.Count,
                     c.CreatedAt,
-                    c.UpdatedAt ?? c.CreatedAt))
+                    c.UpdatedAt ?? c.CreatedAt,
+                    c.Name)) // PlainName
                 .ToList();
             return Ok(dtos);
         }

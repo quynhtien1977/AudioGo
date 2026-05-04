@@ -46,6 +46,8 @@ namespace AudioGo.ViewModels
         public TourListViewModel(SyncService sync)
         {
             _sync = sync;
+            
+            _sync.LanguageChanged += (_, _) => RefreshLocalization();
 
             OpenTourCommand = new Command<TourRowVm>(async tour =>
             {
@@ -62,11 +64,23 @@ namespace AudioGo.ViewModels
             RefreshCommand = new Command(async () => await LoadToursAsync());
         }
 
-        public async Task LoadToursAsync(string lang = "vi")
+        private void RefreshLocalization()
+        {
+            OnPropertyChanged(nameof(LabelTours));
+            OnPropertyChanged(nameof(LabelEmptyTitle));
+            OnPropertyChanged(nameof(LabelEmptyDesc));
+            OnPropertyChanged(nameof(CountLabel));
+            
+            // Reload if we want tours to refresh language
+            _ = LoadToursAsync();
+        }
+
+        public async Task LoadToursAsync()
         {
             IsLoading = true;
             try
             {
+                var lang = AudioGo.Helpers.AppSettings.GetAppLanguage();
                 var result = await _sync.GetToursAsync(languageCode: lang);
                 _allTours = result?.Select(t => new TourRowVm(t)).ToList() ?? new();
                 FilterTours(SearchText);
@@ -128,7 +142,7 @@ namespace AudioGo.ViewModels
         // Walk time: tính Haversine giữa các POI theo thứ tự — ô bình thường 4 km/h
         // Tạm dùng PoiCount * 8 phút/POI (bao gồm cả nghe + đi lại) đến khi có toạ độ đầy đủ từ API detail
         public string DurationText  => $"{_dto.PoiCount * 8}";
-        public string Language      => "VI";
+        public string Language      => AudioGo.Helpers.AppSettings.GetAppLanguage().ToUpper();
         // Progress — no real data yet, keep at 0
         public string ProgressText  => $"0/{_dto.PoiCount}";
         public double ProgressRatio => 0d;
