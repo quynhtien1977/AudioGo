@@ -48,9 +48,11 @@ namespace AudioGo.ViewModels
 
             foreach (var cat in apiCategories)
             {
-                // Translate category name from Vietnamese (DB key) to current language
-                var displayLabel = AudioGo.Helpers.AppStrings.TranslateCategory(cat.Name);
-                list.Add(new CategoryChipVm(displayLabel, cat.Name));
+                // Tên hiển thị là Name (đã được backend localized theo request ?lang=)
+                // Giá trị dùng để filter (query param category=) là PlainName (tiếng Việt không dấu / key gốc)
+                var displayLabel = cat.Name;
+                var filterValue = !string.IsNullOrEmpty(cat.PlainName) ? cat.PlainName : cat.Name;
+                list.Add(new CategoryChipVm(displayLabel, filterValue));
             }
 
             // If nothing from API, use hardcoded defaults (text only, no icons)
