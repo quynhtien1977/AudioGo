@@ -8,6 +8,9 @@ const getToken = () =>
 // 🔧 AXIOS INSTANCE
 const client = axios.create({
   baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json'
+  }
 })
 
 // 🔐 attach token
@@ -90,4 +93,17 @@ export const addPoiToTourApi = async (tourId, data) => {
 // ======================
 export const removePoiFromTourApi = async (tourId, poiId) => {
   await client.delete(`/${tourId}/pois/${poiId}`)
+}
+
+// ======================
+// 🟢 REORDER POI IN TOUR
+// ======================
+export const reorderPoiInTourApi = async (tourId, pois) => {
+  // Gọi API reorder cho mỗi POI với stepOrder mới
+  for (const poi of pois) {
+    await client.put(
+      `/${tourId}/pois/${poi.poiId}/order`,
+      poi.stepOrder
+    )
+  }
 }
