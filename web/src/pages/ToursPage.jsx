@@ -134,7 +134,7 @@ const ToursPage = () => {
           <p className="text-gray-500 mt-1 font-medium">Thiết kế và quản lý tour trải nghiệm ẩm thực.</p>
         </div>
         <button 
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => navigate('/tours/create')}
           className="flex items-center gap-2 bg-gradient-to-r from-[#D81B60] to-[#EC4899] text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-pink-100 hover:scale-105 transition-all active:scale-95"
         >
           <Plus size={20} /> Tạo Tour Mới
