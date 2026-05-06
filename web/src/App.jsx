@@ -19,6 +19,7 @@ import AddPOIPage from "@/pages/AddPOIPage";
 import AudioContentPage from "@/pages/AudioContentPage";
 import ToursPage from "@/pages/ToursPage";
 import TourDetailPage from "@/pages/TourDetailPage";
+import CreateTourPage from "@/pages/CreateTourPage";
 import ProfilePage from "@/pages/ProfilePage";
 import DeviceTrackingPage from "@/pages/DeviceTrackingPage";
 import AccessCodePage from "@/pages/AccessCodePage";
@@ -247,6 +248,17 @@ export default function App() {
             <ProtectedRoute roles={["Admin"]}>
               <MainLayout>
                 <ToursPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/tours/create"
+          element={
+            <ProtectedRoute roles={["Admin"]}>
+              <MainLayout>
+                <CreateTourPage />
               </MainLayout>
             </ProtectedRoute>
           }

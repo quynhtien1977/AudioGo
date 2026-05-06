@@ -9,7 +9,7 @@ import toast from "react-hot-toast";
 
 import TourRouteMap from "@/components/TourRouteMap";
 import ConfirmModal from "@/components/ConfirmModal";
-import { getTourByIdApi, updateTourApi, addPoiToTourApi, removePoiFromTourApi } from "@/api/tourApi";
+import { getTourByIdApi, updateTourApi, addPoiToTourApi, removePoiFromTourApi, reorderPoiInTourApi } from "@/api/tourApi";
 import { getAllPOIs, updatePOI } from "@/api/poiApi";
 import { uploadImage } from "@/api/mediaApi";
 
@@ -30,6 +30,7 @@ const TourDetailPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [editFormData, setEditFormData] = useState(null);
   const [deleteConfirmPoiId, setDeleteConfirmPoiId] = useState(null);
+  const [draggedIndex, setDraggedIndex] = useState(null);
 
   // Fetch tour data from API
   useEffect(() => {
@@ -218,6 +219,56 @@ const TourDetailPage = () => {
     }
   };
 
+  // === LOGIC DRAG-AND-DROP ===
+  const handleDragStart = (index) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = async (targetIndex) => {
+    if (draggedIndex === null || draggedIndex === targetIndex) {
+      setDraggedIndex(null);
+      return;
+    }
+
+    const newPois = [...tour.pois];
+    const draggedPoi = newPois[draggedIndex];
+    
+    // Remove from old position
+    newPois.splice(draggedIndex, 1);
+    // Insert at new position
+    newPois.splice(targetIndex, 0, draggedPoi);
+    
+    // Update stepOrder
+    const updatedPois = newPois.map((poi, index) => ({
+      ...poi,
+      stepOrder: index + 1
+    }));
+
+    setTour(prev => ({
+      ...prev,
+      pois: updatedPois
+    }));
+    
+    setDraggedIndex(null);
+
+    // Save to database
+    try {
+      await reorderPoiInTourApi(tourId, updatedPois);
+      toast.success("Cập nhật thứ tự POI thành công!");
+    } catch (err) {
+      console.error("Error reordering POI:", err);
+      toast.error("Lỗi khi cập nhật thứ tự POI");
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+  };
+
   return (
     <div className="p-8 bg-[#FDF8FA]/50 min-h-screen space-y-8 font-sans">
       {isLoading ? (
@@ -249,7 +300,7 @@ const TourDetailPage = () => {
             onClick={handleOpenEdit}
             className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 text-gray-600 rounded-2xl font-bold hover:bg-gray-50 transition-all shadow-sm"
           >
-            <Edit3 size={18} /> Chỉnh sửa Tour
+            <Edit3 size={18} /> Chỉnh sửa thông tin Tour
           </button>
         </div>
       </div>
@@ -300,8 +351,18 @@ const TourDetailPage = () => {
             </div>
             <div className="space-y-4">
               {tour.pois && tour.pois.map((poi, index) => (
-                <div key={poi.poiId} className="group flex items-center gap-4 p-5 bg-gray-50 rounded-[1.5rem] border border-transparent hover:border-pink-200 hover:bg-pink-50/30 transition-all">
-                  <div className="cursor-grab text-gray-300 group-hover:text-pink-400"><GripVertical size={20} /></div>
+                <div 
+                  key={poi.poiId}
+                  draggable
+                  onDragStart={() => handleDragStart(index)}
+                  onDragOver={handleDragOver}
+                  onDrop={() => handleDrop(index)}
+                  onDragEnd={handleDragEnd}
+                  className={`group flex items-center gap-4 p-5 bg-gray-50 rounded-[1.5rem] border border-transparent hover:border-pink-200 hover:bg-pink-50/30 transition-all cursor-move ${
+                    draggedIndex === index ? 'opacity-50 border-pink-400' : ''
+                  }`}
+                >
+                  <div className="cursor-grab active:cursor-grabbing text-gray-300 group-hover:text-pink-400"><GripVertical size={20} /></div>
                   <div className="w-10 h-10 bg-white border border-gray-100 rounded-full flex items-center justify-center font-black text-pink-500 shadow-sm">{poi.stepOrder}</div>
                   <div className="flex-1">
                     <h4 className="font-bold text-gray-800">{poi.title}</h4>
