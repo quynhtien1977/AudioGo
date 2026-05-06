@@ -204,9 +204,8 @@ export default function CreateAccountModal({ onClose, onCreated }) {
               onChange={(e) => handleChange("role", e.target.value)}
               className={inputStyle}
             >
-              <option value="" disabled>Chọn vai trò...</option>
-              <option value="Admin">ADMIN</option>
               <option value="Owner">QUẢN LÝ NHÀ HÀNG</option>
+              <option value="Admin">ADMIN</option>
             </select>
           </div>
 
