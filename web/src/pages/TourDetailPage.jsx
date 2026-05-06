@@ -171,8 +171,12 @@ const TourDetailPage = () => {
   };
 
   // === LOGIC QUẢN LÝ POI ===
+  const [isDeletingPOI, setIsDeletingPOI] = useState(false);
+
   const handleDeletePOI = async (poiId) => {
+    if (isDeletingPOI) return;
     try {
+      setIsDeletingPOI(true);
       // Remove POI from tour
       await removePoiFromTourApi(tourId, poiId);
       
@@ -183,10 +187,13 @@ const TourDetailPage = () => {
         ...prev,
         pois: prev.pois.filter(p => p.poiId !== poiId)
       }));
+      setDeleteConfirmPoiId(null);
       toast.success("Xóa POI khỏi Tour và ẩn POI thành công!");
     } catch (err) {
       console.error("Error deleting POI:", err);
       toast.error("Lỗi khi xóa POI");
+    } finally {
+      setIsDeletingPOI(false);
     }
   };
 
@@ -519,6 +526,7 @@ const TourDetailPage = () => {
         onCancel={() => setDeleteConfirmPoiId(null)}
         confirmText="Xóa"
         cancelText="Hủy"
+        isLoading={isDeletingPOI}
         message="Bạn có chắc chắn muốn xóa địa điểm này khỏi Tour? Hành động này không thể hoàn tác."
       />
         </>

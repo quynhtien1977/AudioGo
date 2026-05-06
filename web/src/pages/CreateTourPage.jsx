@@ -154,6 +154,7 @@ const CreateTourPage = () => {
         ...prev,
         pois: prev.pois.filter(p => p.poiId !== poiId)
       }));
+      setDeleteConfirmPoiId(null);
       toast.success("Xóa POI khỏi Tour thành công!");
     } catch (err) {
       console.error("Error deleting POI:", err);
