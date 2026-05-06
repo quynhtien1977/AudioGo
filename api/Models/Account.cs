@@ -12,5 +12,18 @@ namespace Server.Models
         public bool IsLocked { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
+        /// Cột shortcut — gói đăng ký hiện tại của Owner.
+        /// Mặc định 'basic' vì Admin luôn gán gói khi tạo tài khoản (không có free tier).
+        /// Được cập nhật đồng bộ mỗi khi OwnerSubscription thay đổi.
+        /// Chỉ có ý nghĩa với Role = 'Owner'.
+        /// </summary>
+        public string SubscriptionPlanId { get; set; } = "basic";
+
+        // ── Navigation Properties ────────────────────────────────────────────
+        public SubscriptionPlan?              SubscriptionPlan  { get; set; }
+        public ICollection<OwnerSubscription> Subscriptions     { get; set; } = [];
+        public ICollection<PaymentTransaction> Transactions     { get; set; } = [];
     }
 }
