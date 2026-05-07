@@ -14,23 +14,27 @@ import {
   BarChart3,
   CreditCard,
   DollarSign,
+  Sparkles,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { useState } from "react";
 
 import useAuth from "@/hooks/useAuth";
+import SubscriptionPlansBanner from "./SubscriptionPlansBanner";
 
 export default function Sidebar() {
   const { user } = useAuth();
   const role = user?.role;
+  const [showPlansBanner, setShowPlansBanner] = useState(false);
 
   return (
-    <div className="h-screen w-64 border-r bg-white p-4">
+    <div className="sticky top-0 h-screen w-64 border-r bg-white p-4 flex flex-col">
       <h1 className="mb-6 flex items-center text-lg font-bold text-pink-500">
         <Map size={20} className="mr-2" />
         AudioGo
       </h1>
 
-      <div className="space-y-2">
+      <div className="space-y-2 flex-1 overflow-y-auto">
         <MenuItem to="/dashboard" icon={<LayoutDashboard size={18} />}>
           Tổng quan
         </MenuItem>
@@ -104,6 +108,23 @@ export default function Sidebar() {
           </>
         )}
       </div>
+
+      {role === "Owner" && (
+        <div className="mt-auto pt-3">
+          <button
+            onClick={() => setShowPlansBanner(true)}
+            className="w-full flex items-center gap-3 rounded-lg p-3 bg-pink-50 text-pink-600 hover:bg-pink-100 transition-all font-medium"
+          >
+            <Sparkles size={18} />
+            <span>Xem gói nâng cấp</span>
+          </button>
+        </div>
+      )}
+
+      <SubscriptionPlansBanner
+        isOpen={showPlansBanner}
+        onClose={() => setShowPlansBanner(false)}
+      />
     </div>
   );
 
@@ -117,7 +138,7 @@ export default function Sidebar() {
           }
         }}
         className={({ isActive }) =>
-          `flex items-center gap-3 rounded-lg p-2 transition-all ${
+          `flex items-center gap-3 rounded-lg p-2 transition-colors duration-150 ${
             isDisabled
               ? "cursor-not-allowed text-gray-400 opacity-50"
               : isActive

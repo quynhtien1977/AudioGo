@@ -20,14 +20,17 @@ namespace Server.Controllers.Cms
     {
         private readonly AppDbContext _db;
         private readonly SubscriptionService _subscription;
+        private readonly IConfiguration _config;
 
         public CmsSubscriptionController(
             AppDbContext db,
-            SubscriptionService subscription
+            SubscriptionService subscription,
+            IConfiguration config
         )
         {
             _db = db;
             _subscription = subscription;
+            _config = config;
         }
 
         private string CurrentUserId() =>
@@ -359,6 +362,28 @@ namespace Server.Controllers.Cms
             }
 
             var txId = GenerateTransactionId();
+            var useTestAmount = _config.GetValue<bool>("SubscriptionPayment:UseTestAmount");
+            var testAmountVnd = _config.GetValue<decimal>("SubscriptionPayment:TestAmountVnd", 2000);
+            var chargeAmount = useTestAmount
+                ? (testAmountVnd > 0 ? testAmountVnd : 2000)
+                : plan.Price;
+            var bankAccount =
+                FirstNonEmpty(
+                    _config["SubscriptionPayment:BankAccountNo"],
+                    _config["TouristAccess:BankAccountNo"],
+                    "24200502218"
+                );
+            var bankName =
+                FirstNonEmpty(
+                    _config["SubscriptionPayment:BankName"],
+                    "TP Bank"
+                );
+            var transferContent = $"Nang goi AudioGo {txId}";
+            var encodedContent = Uri.EscapeDataString(transferContent);
+            var vietQrUrl = $"https://img.vietqr.io/image/TPB-{bankAccount}-compact2.png" +
+                            $"?amount={chargeAmount:F0}" +
+                            $"&addInfo={encodedContent}" +
+                            $"&accountName=AUDIOGO";
 
             var tx = new PaymentTransaction
             {
@@ -366,7 +391,7 @@ namespace Server.Controllers.Cms
                 PaymentType = "OWNER_SUBSCRIPTION",
                 AccountId = accountId,
                 PlanId = req.PlanId,
-                Amount = plan.Price,
+                Amount = chargeAmount,
                 Currency = "VND",
                 Gateway = req.Gateway,
                 Status = "PENDING",
@@ -380,11 +405,15 @@ namespace Server.Controllers.Cms
             return Ok(new
             {
                 transactionId = txId,
-                amount = plan.Price,
+                amount = chargeAmount,
+                originalPlanAmount = plan.Price,
+                isTestAmount = useTestAmount,
                 planName = plan.Name,
                 gateway = req.Gateway,
-                transferContent =
-                    $"Nang goi AudioGo {txId}",
+                bankAccount,
+                bankName,
+                transferContent,
+                vietQrUrl,
                 expireInMinutes = 15
             });
         }
@@ -503,6 +532,19 @@ namespace Server.Controllers.Cms
                     .ToUpper();
 
             return $"AG-{timestamp}-{random}";
+        }
+
+        private static string FirstNonEmpty(params string[] values)
+        {
+            foreach (var value in values)
+            {
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    return value.Trim();
+                }
+            }
+
+            return string.Empty;
         }
     }
 }

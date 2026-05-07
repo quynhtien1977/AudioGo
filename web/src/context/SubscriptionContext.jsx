@@ -163,10 +163,7 @@ export function SubscriptionProvider({ children }) {
   const createSubscription = async (planId) => {
     try {
       setLoading(true);
-      const result = await subscriptionApi.createSubscriptionApi({
-        subscriptionPlanId: planId,
-      });
-      await fetchMySubscription();
+      const result = await subscriptionApi.initUpgradeSubscriptionApi(planId, "SEPAY");
       return result;
     } catch (err) {
       console.error("Error creating subscription:", err);
@@ -180,8 +177,7 @@ export function SubscriptionProvider({ children }) {
   const upgradeSubscription = async (newPlanId) => {
     try {
       setLoading(true);
-      const result = await subscriptionApi.upgradeSubscriptionApi(newPlanId);
-      await fetchMySubscription();
+      const result = await subscriptionApi.initUpgradeSubscriptionApi(newPlanId, "SEPAY");
       return result;
     } catch (err) {
       console.error("Error upgrading subscription:", err);

@@ -85,7 +85,8 @@ useEffect(() => {
         }
       })
 
-      setChartData(statsRes.dailyListens || [])
+      const ownerHasNoPoi = userRole === "Owner" && filteredPois.length === 0
+      setChartData(ownerHasNoPoi ? [] : (statsRes.dailyListens || []))
       setPois(merged)
 
     } catch (err) {
