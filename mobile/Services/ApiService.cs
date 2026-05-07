@@ -228,5 +228,76 @@ namespace AudioGo.Services
             public string? Token { get; set; }
             public DateTime? ExpireAt { get; set; }
         }
+
+        // ── Tourist Access Payment ────────────────────────────────────────────
+
+        public async Task<TouristPaymentInitResult?> InitTouristPaymentAsync(
+            string deviceId, CancellationToken ct = default)
+        {
+            try
+            {
+                var resp = await _http.PostAsJsonAsync("api/mobile/payment/init", new
+                {
+                    DeviceId = deviceId
+                }, ct);
+
+                if (!resp.IsSuccessStatusCode) return null;
+
+                var raw = await resp.Content.ReadFromJsonAsync<InitRawResponse>(cancellationToken: ct);
+                if (raw is null) return null;
+
+                return new TouristPaymentInitResult(
+                    TransactionId:   raw.TransactionId   ?? "",
+                    Amount:          raw.Amount,
+                    DurationDays:    raw.DurationDays,
+                    BankAccount:     raw.BankAccount     ?? "",
+                    BankName:        raw.BankName        ?? "TP Bank",
+                    TransferContent: raw.TransferContent ?? "",
+                    VietQrUrl:       raw.VietQrUrl       ?? "",
+                    ExpireInMinutes: raw.ExpireInMinutes
+                );
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ApiService] InitTouristPaymentAsync: {ex.Message}");
+                return null;
+            }
+        }
+
+        public async Task<TouristPaymentVerifyResult?> VerifyTouristPaymentAsync(
+            string transactionId, string deviceId, CancellationToken ct = default)
+        {
+            try
+            {
+                var url  = $"api/mobile/payment/verify?transactionId={Uri.EscapeDataString(transactionId)}&deviceId={Uri.EscapeDataString(deviceId)}";
+                var raw  = await _http.GetFromJsonAsync<VerifyRawResponse>(url, ct);
+                if (raw is null) return null;
+                return new TouristPaymentVerifyResult(raw.Status ?? "PENDING", raw.Message ?? "", raw.Token);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ApiService] VerifyTouristPaymentAsync: {ex.Message}");
+                return null;
+            }
+        }
+
+        private class InitRawResponse
+        {
+            public string?  TransactionId   { get; set; }
+            public decimal  Amount          { get; set; }
+            public int      DurationDays    { get; set; }
+            public string?  BankAccount     { get; set; }
+            public string?  BankName        { get; set; }
+            public string?  TransferContent { get; set; }
+            public string?  VietQrUrl       { get; set; }
+            public int      ExpireInMinutes { get; set; }
+        }
+
+        private class VerifyRawResponse
+        {
+            public string? Status  { get; set; }
+            public string? Message { get; set; }
+            public string? Token   { get; set; }
+        }
     }
 }

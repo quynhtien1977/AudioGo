@@ -88,6 +88,7 @@ public static class MauiProgram
         builder.Services.AddTransient<SettingsViewModel>();
         builder.Services.AddTransient<SearchViewModel>();
         builder.Services.AddTransient<WelcomeQrScanViewModel>();
+        builder.Services.AddTransient<TouristPaymentViewModel>();  // Tourist payment flow
         // Tour ViewModels
         builder.Services.AddSingleton<TourListViewModel>();   // Singleton vì là tab page
         builder.Services.AddTransient<TourDetailViewModel>();  // Transient vì dùng QueryProperty
@@ -103,6 +104,7 @@ public static class MauiProgram
         builder.Services.AddTransient<SearchPage>();
         builder.Services.AddTransient<WelcomePage>();
         builder.Services.AddTransient<WelcomeQrScanPage>();
+        builder.Services.AddTransient<TouristPaymentPage>();       // Tourist payment flow
         // Tour Pages
         builder.Services.AddSingleton<TourListPage>();    // Singleton vì là tab page
         builder.Services.AddTransient<TourDetailPage>();   // Transient vì navigate bằng route + QueryProperty

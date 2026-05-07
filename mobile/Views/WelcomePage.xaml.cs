@@ -16,6 +16,12 @@ public partial class WelcomePage : ContentPage
         await Navigation.PushAsync(scanPage);
     }
 
+    private async void OnPayOnlineClicked(object sender, EventArgs e)
+    {
+        var payPage = Handler.MauiContext.Services.GetRequiredService<TouristPaymentPage>();
+        await Navigation.PushAsync(payPage);
+    }
+
     private double _sheetTranslationY;
 
     private void OnBottomSheetPanUpdated(object sender, PanUpdatedEventArgs e)
