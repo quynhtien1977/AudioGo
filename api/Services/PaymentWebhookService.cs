@@ -103,7 +103,9 @@ namespace Server.Services
             string txId, string gateway, string? gatewayTransId, decimal amount, string rawPayload)
         {
             // Idempotency: nếu đã SUCCESS thì bỏ qua (webhook có thể gửi nhiều lần)
-            var tx = await _db.PaymentTransactions.FirstOrDefaultAsync(t => t.TransactionId == txId);
+            // Thay thế "-" trong DB và txId để khớp cả trường hợp bank tự động xoá "-"
+            var tx = await _db.PaymentTransactions
+                .FirstOrDefaultAsync(t => t.TransactionId.Replace("-", "") == txId.Replace("-", ""));
             if (tx == null)
             {
                 _logger.LogWarning("Webhook {Gateway}: TransactionId={TxId} không tồn tại trong DB", gateway, txId);
@@ -171,7 +173,7 @@ namespace Server.Services
         private static string? ExtractTransactionId(string? referenceCode, string? transferContent)
         {
             // Ưu tiên ReferenceCode nếu có
-            if (!string.IsNullOrEmpty(referenceCode) && referenceCode.StartsWith("AG-"))
+            if (!string.IsNullOrEmpty(referenceCode) && referenceCode.StartsWith("AG"))
                 return referenceCode;
 
             // Parse từ nội dung CK
@@ -179,7 +181,7 @@ namespace Server.Services
                 return null;
 
             var parts = transferContent.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            return parts.FirstOrDefault(p => p.StartsWith("AG-"));
+            return parts.FirstOrDefault(p => p.StartsWith("AG"));
         }
     }
 

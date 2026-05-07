@@ -10,18 +10,25 @@ using System.Text;
 namespace Server.Controllers.Mobile
 {
     /// <summary>
-    /// Luồng A: Du khách thanh toán online để vào app.
+    /// Luồng: Du khách thanh toán online (SePay) để vào app — thay thế quét QR vật lý.
     ///
-    ///   1. POST /api/mobile/payment/init   — Khởi tạo giao dịch PENDING, trả về thông tin QR
-    ///   2. [Webhook SePay/MoMo gọi về backend] → PaymentWebhookService.HandleSePayAsync/HandleMoMoAsync
-    ///   3. GET  /api/mobile/payment/verify  — App poll hoặc gọi sau redirect để lấy JWT
+    ///   1. POST /api/mobile/payment/init   — Tạo giao dịch PENDING, trả về TxId + nội dung CK + VietQR URL
+    ///   2. [SePay gọi webhook] → PaymentWebhookService.HandleSePayAsync() → mark SUCCESS
+    ///   3. GET  /api/mobile/payment/verify — App poll mỗi 5s → khi SUCCESS trả JWT
+    ///
+    /// Giá vào app (TouristAccess:PriceVnd) có thể admin đổi trong appsettings mà không cần redeploy.
     /// </summary>
     [ApiController]
     [Route("api/mobile/payment")]
     public class TouristPaymentController : ControllerBase
     {
-        private readonly AppDbContext  _db;
+        private readonly AppDbContext   _db;
         private readonly IConfiguration _config;
+
+        // ── Đọc từ appsettings — admin có thể thay đổi giá ──────────────────
+        private decimal PriceVnd     => _config.GetValue<decimal>("TouristAccess:PriceVnd",   10000);
+        private int     DurationDays => _config.GetValue<int>    ("TouristAccess:DurationDays", 365);
+        private string  BankAccount  => _config["TouristAccess:BankAccountNo"] ?? "24200502218";
 
         public TouristPaymentController(AppDbContext db, IConfiguration config)
         {
@@ -29,54 +36,40 @@ namespace Server.Controllers.Mobile
             _config = config;
         }
 
-        // ══════════════════════════════════════════════════════════════════
+        // ══════════════════════════════════════════════════════════════════════
         //  1. KHỞI TẠO GIAO DỊCH
-        // ══════════════════════════════════════════════════════════════════
+        // ══════════════════════════════════════════════════════════════════════
 
         public record InitTouristPaymentRequest(
-            string PlanId,      // Gói du khách muốn mua (thường là 'basic' = 1 ngày xài app)
-            string Gateway,     // 'SEPAY' | 'MOMO'
-            string ContactInfo, // SĐT hoặc email du khách (để verify sau)
             string DeviceId     // Định danh thiết bị
         );
 
         /// <summary>
         /// POST /api/mobile/payment/init
-        /// App gọi khi du khách chọn thanh toán online.
-        /// Trả về TransactionId + thông tin để app hiển thị QR.
+        /// Tạo PaymentTransaction PENDING.
+        /// Trả về TxId, số tiền, nội dung CK, và URL ảnh VietQR (TPBank).
         /// </summary>
         [HttpPost("init")]
         public async Task<IActionResult> Init([FromBody] InitTouristPaymentRequest req)
         {
-            if (string.IsNullOrWhiteSpace(req.ContactInfo))
-                return BadRequest("ContactInfo (SĐT hoặc email) là bắt buộc để xác minh sau thanh toán.");
-
-            if (string.IsNullOrWhiteSpace(req.DeviceId))
+            if (string.IsNullOrEmpty(req.DeviceId))
                 return BadRequest("DeviceId là bắt buộc.");
 
-            if (req.Gateway != "SEPAY" && req.Gateway != "MOMO")
-                return BadRequest("Gateway phải là 'SEPAY' hoặc 'MOMO'.");
+            // Với khách du lịch, dùng DeviceId làm ContactInfo để lưu vào DB
+            var contactInfo = req.DeviceId;
 
-            var plan = await _db.SubscriptionPlans
-                .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.PlanId == req.PlanId && p.IsActive);
-
-            if (plan == null)
-                return BadRequest($"Gói '{req.PlanId}' không hợp lệ.");
-
-            // Kiểm tra thiết bị này đã có giao dịch PENDING chưa (tránh tạo trùng)
-            var existingPending = await _db.PaymentTransactions
-                .Where(t => t.ContactInfo == req.ContactInfo
-                         && t.Status == "PENDING"
-                         && t.PaymentType == "TOURIST_ACCESS")
+            // Idempotency: Kiểm tra xem thiết bị này có giao dịch PENDING nào trong 15 phút qua không
+            // để tránh rác DB khi user spam nút "Thử lại".
+            var existing = await _db.PaymentTransactions
+                .Where(p => p.ContactInfo == contactInfo 
+                         && p.Status == "PENDING"
+                         && p.PaymentType == "TOURIST_ACCESS"
+                         && p.CreatedAt >= DateTime.UtcNow.AddMinutes(-15))
                 .OrderByDescending(t => t.CreatedAt)
                 .FirstOrDefaultAsync();
 
-            if (existingPending != null && existingPending.CreatedAt > DateTime.UtcNow.AddMinutes(-15))
-            {
-                // Trả lại giao dịch cũ còn trong hạn 15 phút
-                return Ok(BuildInitResponse(existingPending, plan));
-            }
+            if (existing != null)
+                return Ok(BuildInitResponse(existing));
 
             var txId = GenerateTransactionId();
             var tx = new PaymentTransaction
@@ -84,29 +77,28 @@ namespace Server.Controllers.Mobile
                 TransactionId = txId,
                 PaymentType   = "TOURIST_ACCESS",
                 AccountId     = null,
-                PlanId        = req.PlanId,
-                Amount        = plan.Price,
+                PlanId        = null,                // Không dùng plan — giá cố định từ config
+                Amount        = PriceVnd,
                 Currency      = "VND",
-                Gateway       = req.Gateway,
+                Gateway       = "SEPAY",
                 Status        = "PENDING",
-                ContactInfo   = req.ContactInfo,
+                ContactInfo   = contactInfo,
                 CreatedAt     = DateTime.UtcNow
             };
 
             _db.PaymentTransactions.Add(tx);
             await _db.SaveChangesAsync();
 
-            return Ok(BuildInitResponse(tx, plan));
+            return Ok(BuildInitResponse(tx));
         }
 
-        // ══════════════════════════════════════════════════════════════════
+        // ══════════════════════════════════════════════════════════════════════
         //  2. VERIFY & LẤY JWT
-        // ══════════════════════════════════════════════════════════════════
+        // ══════════════════════════════════════════════════════════════════════
 
         /// <summary>
-        /// GET /api/mobile/payment/verify?transactionId=AG-...&deviceId=...
-        /// App poll sau khi thanh toán (hoặc gọi khi MoMo redirect về app).
-        /// Nếu SUCCESS → trả về JWT để vào app.
+        /// GET /api/mobile/payment/verify?transactionId=AG-...&amp;deviceId=...
+        /// App poll sau khi hiển thị QR. Khi SePay xác nhận → trả JWT GuestApp.
         /// </summary>
         [HttpGet("verify")]
         public async Task<IActionResult> Verify(
@@ -117,7 +109,6 @@ namespace Server.Controllers.Mobile
                 return BadRequest("transactionId và deviceId là bắt buộc.");
 
             var tx = await _db.PaymentTransactions
-                .Include(t => t.Plan)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(t => t.TransactionId == transactionId
                                        && t.PaymentType   == "TOURIST_ACCESS");
@@ -125,46 +116,71 @@ namespace Server.Controllers.Mobile
             if (tx == null)
                 return NotFound("Không tìm thấy giao dịch.");
 
+            // Tự động fallback: nếu giao dịch này đang PENDING, thử kiểm tra xem thiết bị
+            // này đã có giao dịch SUCCESS nào trong vòng 30 phút qua chưa (trường hợp app 
+            // bị reload tạo mã mới nhưng user đã lỡ chuyển tiền vào mã cũ).
+            if (tx.Status == "PENDING")
+            {
+                var recentSuccess = await _db.PaymentTransactions
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.ContactInfo == deviceId
+                                           && t.PaymentType == "TOURIST_ACCESS"
+                                           && t.Status      == "SUCCESS"
+                                           && t.CompletedAt >= DateTime.UtcNow.AddMinutes(-30));
+                
+                if (recentSuccess != null)
+                {
+                    tx = recentSuccess;
+                }
+            }
+
             return tx.Status switch
             {
                 "SUCCESS" => Ok(new
                 {
-                    status  = "SUCCESS",
-                    message = "Thanh toán thành công. Chào mừng đến với AudioGo!",
-                    token   = GenerateGuestToken(deviceId, tx.Plan!.DurationDay),
-                    expireAt = DateTime.UtcNow.AddDays(tx.Plan!.DurationDay),
-                    plan    = new { tx.Plan.PlanId, tx.Plan.Name, tx.Plan.DurationDay }
+                    status   = "SUCCESS",
+                    message  = "Thanh toán thành công. Chào mừng đến với AudioGo!",
+                    token    = GenerateGuestToken(deviceId),
+                    expireAt = DateTime.UtcNow.AddDays(DurationDays)
                 }),
-                "PENDING" => Ok(new { status = "PENDING", message = "Đang chờ xác nhận thanh toán..." }),
-                "FAILED"  => BadRequest(new { status = "FAILED",  message = "Giao dịch thất bại. Vui lòng thử lại." }),
-                _         => BadRequest(new { status = tx.Status })
+                "PENDING" => Ok(new  { status = "PENDING", message = "Đang chờ xác nhận..." }),
+                "FAILED"  => Ok(new  { status = "FAILED",  message = "Giao dịch thất bại. Vui lòng thử lại." }),
+                _         => Ok(new  { status = tx.Status })
             };
         }
 
-        // ══════════════════════════════════════════════════════════════════
-        //  HELPER
-        // ══════════════════════════════════════════════════════════════════
+        // ══════════════════════════════════════════════════════════════════════
+        //  HELPERS
+        // ══════════════════════════════════════════════════════════════════════
 
-        private static object BuildInitResponse(PaymentTransaction tx, SubscriptionPlan plan) => new
+        private object BuildInitResponse(PaymentTransaction tx)
         {
-            transactionId   = tx.TransactionId,
-            amount          = tx.Amount,
-            planName        = plan.Name,
-            durationDay     = plan.DurationDay,
-            gateway         = tx.Gateway,
-            // SePay: embed TransactionId vào nội dung chuyển khoản
-            transferContent = $"AudioGo {tx.TransactionId}",
-            // MoMo: orderId = TransactionId khi tạo payment request phía app
-            orderId         = tx.TransactionId,
-            expireInMinutes = 15
-        };
+            var transferContent = $"AudioGo {tx.TransactionId}";
+            var encodedContent  = Uri.EscapeDataString(transferContent);
+            var vietQrUrl       = $"https://img.vietqr.io/image/TPB-{BankAccount}-compact2.png" +
+                                  $"?amount={tx.Amount:F0}" +
+                                  $"&addInfo={encodedContent}" +
+                                  $"&accountName=AUDIOGO";
 
-        private string GenerateGuestToken(string deviceId, int durationDay)
+            return new
+            {
+                transactionId   = tx.TransactionId,
+                amount          = tx.Amount,
+                durationDays    = DurationDays,
+                gateway         = tx.Gateway,
+                bankAccount     = BankAccount,
+                bankName        = "TP Bank",
+                transferContent,
+                vietQrUrl,                          // App hiển thị ảnh QR từ URL này
+                expireInMinutes = 15
+            };
+        }
+
+        private string GenerateGuestToken(string deviceId)
         {
-            var keyStr  = _config["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key chưa cấu hình");
-            var key     = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyStr));
-            var creds   = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var expiry  = DateTime.UtcNow.AddDays(durationDay);
+            var keyStr = _config["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key chưa cấu hình");
+            var key    = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyStr));
+            var creds  = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var claims = new[]
             {
@@ -176,7 +192,7 @@ namespace Server.Controllers.Mobile
                 issuer:             _config["Jwt:Issuer"],
                 audience:           _config["Jwt:Audience"],
                 claims:             claims,
-                expires:            expiry,
+                expires:            DateTime.UtcNow.AddDays(DurationDays),
                 signingCredentials: creds
             );
 
@@ -185,9 +201,9 @@ namespace Server.Controllers.Mobile
 
         private static string GenerateTransactionId()
         {
-            var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
-            var random    = Guid.NewGuid().ToString("N")[..6].ToUpper();
-            return $"AG-{timestamp}-{random}";
+            var ts     = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+            var random = Guid.NewGuid().ToString("N")[..6].ToUpper();
+            return $"AG{ts}{random}";
         }
     }
 }
