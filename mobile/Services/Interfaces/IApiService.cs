@@ -15,6 +15,31 @@ namespace AudioGo.Services.Interfaces
 
         /// <summary>Lấy delta thay đổi kể từ <paramref name="since"/> (UTC). Trả null nếu lỗi network.</summary>
         Task<PoiDeltaDto?> GetDeltaAsync(DateTime since, string languageCode, CancellationToken ct = default);
+
+        // ── Tourist Access Payment ─────────────────────────────────────────────
+        /// <summary>Khởi tạo giao dịch thanh toán du khách. Trả null nếu lỗi network.</summary>
+        Task<TouristPaymentInitResult?> InitTouristPaymentAsync(string deviceId, CancellationToken ct = default);
+
+        /// <summary>Kiểm tra trạng thái thanh toán (poll mỗi 5s). Trả null nếu lỗi network.</summary>
+        Task<TouristPaymentVerifyResult?> VerifyTouristPaymentAsync(string transactionId, string deviceId, CancellationToken ct = default);
     }
+
+    // ── DTOs ────────────────────────────────────────────────────────────────
+    public record TouristPaymentInitResult(
+        string  TransactionId,
+        decimal Amount,
+        int     DurationDays,
+        string  BankAccount,
+        string  BankName,
+        string  TransferContent,
+        string  VietQrUrl,
+        int     ExpireInMinutes
+    );
+
+    public record TouristPaymentVerifyResult(
+        string  Status,     // "PENDING" | "SUCCESS" | "FAILED"
+        string  Message,
+        string? Token       // JWT — chỉ có khi Status == "SUCCESS"
+    );
 }
 

@@ -38,7 +38,10 @@ namespace Server.Controllers.Payment
         public async Task<IActionResult> Receive([FromBody] JsonElement body)
         {
             // ── Verify API key từ SePay (header Authorization hoặc query param) ──
-            var apiKey = Request.Headers["Authorization"].ToString().Replace("Bearer ", "").Trim();
+            var authHeader = Request.Headers["Authorization"].ToString();
+            var apiKey = authHeader.Replace("Bearer ", "", StringComparison.OrdinalIgnoreCase)
+                                   .Replace("Apikey ", "", StringComparison.OrdinalIgnoreCase).Trim();
+            
             if (string.IsNullOrEmpty(apiKey) || apiKey != _config["Payment:SePay:ApiKey"])
             {
                 _logger.LogWarning("SePay webhook: API key không hợp lệ từ IP={IP}", HttpContext.Connection.RemoteIpAddress);
