@@ -101,15 +101,29 @@
                         <Label Grid.Row="2" Grid.Column="1" Text="{helpers:Translate welcome_feat3}" FontFamily="InterMedium" TextColor="#333333" VerticalOptions="Center"/>
                     </Grid>
 
-                    <!-- Primary Button -->
-                    <Button Text="{helpers:Translate welcome_start}"
+                    <!-- Primary Button: Thanh toán online -->
+                    <Button Text="{helpers:Translate welcome_pay_online}"
                             FontSize="16"
                             FontFamily="InterBold"
                             BackgroundColor="#EE4D2D"
                             TextColor="White"
                             CornerRadius="25"
                             HeightRequest="56"
+                            Clicked="OnPayOnlineClicked"/>
+
+                    <!-- Secondary Button: Đã có mã QR -->
+                    <Button Text="{helpers:Translate welcome_scan_qr_alt}"
+                            FontSize="15"
+                            FontFamily="InterMedium"
+                            BackgroundColor="Transparent"
+                            TextColor="#EE4D2D"
+                            BorderColor="#EE4D2D"
+                            BorderWidth="1.5"
+                            CornerRadius="25"
+                            HeightRequest="50"
+                            Margin="0,4,0,0"
                             Clicked="OnScanQrClicked"/>
+
 
                 </VerticalStackLayout>
             </Border>
