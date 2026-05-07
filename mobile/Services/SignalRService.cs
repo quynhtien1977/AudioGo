@@ -1,4 +1,5 @@
 using AudioGo.Services.Interfaces;
+using AudioGo_Mobile.Config;
 using Microsoft.AspNetCore.SignalR.Client;
 
 namespace AudioGo.Services
@@ -19,9 +20,7 @@ namespace AudioGo.Services
 
         // URL hub — đồng bộ với MauiProgram HttpClient base address
         private static string HubUrl =>
-            DeviceInfo.DeviceType == DeviceType.Virtual
-                ? "http://10.0.2.2:5086/deviceHub"
-                : "http://192.168.1.12:5086/deviceHub";
+            EndpointConfig.GetHubUrl(DeviceInfo.DeviceType);
 
         // ── State ──────────────────────────────────────────────────────────
         public bool IsConnected =>
