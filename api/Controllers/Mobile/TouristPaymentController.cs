@@ -5,6 +5,7 @@ using Server.Data;
 using Server.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Diagnostics;
 using System.Text;
 
 namespace Server.Controllers.Mobile
@@ -24,16 +25,21 @@ namespace Server.Controllers.Mobile
     {
         private readonly AppDbContext   _db;
         private readonly IConfiguration _config;
+        private readonly ILogger<TouristPaymentController> _logger;
 
         // ── Đọc từ appsettings — admin có thể thay đổi giá ──────────────────
         private decimal PriceVnd     => _config.GetValue<decimal>("TouristAccess:PriceVnd",   10000);
         private int     DurationDays => _config.GetValue<int>    ("TouristAccess:DurationDays", 365);
         private string  BankAccount  => _config["TouristAccess:BankAccountNo"] ?? "24200502218";
 
-        public TouristPaymentController(AppDbContext db, IConfiguration config)
+        public TouristPaymentController(
+            AppDbContext db,
+            IConfiguration config,
+            ILogger<TouristPaymentController> logger)
         {
             _db     = db;
             _config = config;
+            _logger = logger;
         }
 
         // ══════════════════════════════════════════════════════════════════════
@@ -52,8 +58,17 @@ namespace Server.Controllers.Mobile
         [HttpPost("init")]
         public async Task<IActionResult> Init([FromBody] InitTouristPaymentRequest req)
         {
+            var sw = Stopwatch.StartNew();
+            var maskedDeviceId = MaskDeviceId(req.DeviceId);
+            _logger.LogInformation(
+                "Tourist payment init requested. Device={DeviceId}",
+                maskedDeviceId);
+
             if (string.IsNullOrEmpty(req.DeviceId))
+            {
+                _logger.LogWarning("Tourist payment init rejected: missing DeviceId");
                 return BadRequest("DeviceId là bắt buộc.");
+            }
 
             // Với khách du lịch, dùng DeviceId làm ContactInfo để lưu vào DB
             var contactInfo = req.DeviceId;
@@ -69,7 +84,13 @@ namespace Server.Controllers.Mobile
                 .FirstOrDefaultAsync();
 
             if (existing != null)
+            {
+                sw.Stop();
+                _logger.LogInformation(
+                    "Tourist payment init reused pending transaction. Device={DeviceId} Tx={TransactionId} ElapsedMs={ElapsedMs}",
+                    maskedDeviceId, existing.TransactionId, sw.ElapsedMilliseconds);
                 return Ok(BuildInitResponse(existing));
+            }
 
             var txId = GenerateTransactionId();
             var tx = new PaymentTransaction
@@ -88,6 +109,11 @@ namespace Server.Controllers.Mobile
 
             _db.PaymentTransactions.Add(tx);
             await _db.SaveChangesAsync();
+            sw.Stop();
+
+            _logger.LogInformation(
+                "Tourist payment init created transaction. Device={DeviceId} Tx={TransactionId} ElapsedMs={ElapsedMs}",
+                maskedDeviceId, tx.TransactionId, sw.ElapsedMilliseconds);
 
             return Ok(BuildInitResponse(tx));
         }
@@ -204,6 +230,13 @@ namespace Server.Controllers.Mobile
             var ts     = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
             var random = Guid.NewGuid().ToString("N")[..6].ToUpper();
             return $"AG{ts}{random}";
+        }
+
+        private static string MaskDeviceId(string? deviceId)
+        {
+            if (string.IsNullOrWhiteSpace(deviceId)) return "(empty)";
+            if (deviceId.Length <= 6) return "***";
+            return $"{deviceId[..3]}***{deviceId[^3..]}";
         }
     }
 }
