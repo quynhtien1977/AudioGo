@@ -69,6 +69,14 @@ export default function Sidebar() {
               Mã Truy Cập
             </MenuItem>
 
+            <MenuItem to="/admin/subscriptions" icon={<CreditCard size={18} />}>
+              Quản lý gói
+            </MenuItem>
+
+            <MenuItem to="/admin/transactions" icon={<DollarSign size={18} />}>
+              Quản lý giao dịch
+            </MenuItem>
+
             <MenuItem to="/tracking" icon={<Smartphone size={18} />}>
               Quản lý thiết bị
             </MenuItem>
@@ -81,13 +89,6 @@ export default function Sidebar() {
               Giả lập thiết bị
             </MenuItem>
 
-            <MenuItem to="/admin/subscriptions" icon={<CreditCard size={18} />}>
-              Quản lý gói đăng ký
-            </MenuItem>
-
-            <MenuItem to="/admin/transactions" icon={<DollarSign size={18} />}>
-              Quản lý giao dịch
-            </MenuItem>
           </>
         )}
 
