@@ -214,6 +214,7 @@ namespace Server.Controllers.Cms
                 a.Email,
                 a.PhoneNumber,
                 a.IsLocked,
+                a.SubscriptionPlanId,
 
                 a.CreatedAt,
                 a.UpdatedAt
