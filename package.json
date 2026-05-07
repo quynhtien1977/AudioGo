@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "framer-motion": "^12.38.0",
     "qrcode": "^1.5.4"
   }
 }

@@ -7,11 +7,14 @@ import { getAllToursApi } from "../api/tourApi"
 import { getUsersApi } from "../api/accountApi"
 import { audioContentApi } from "../api/audioContentApi"
 import { SearchContext } from "../context/SearchContext"
+import { useSubscription } from "../context/SubscriptionContext"
+import SubscriptionPlansBanner from "./SubscriptionPlansBanner"
 
 export default function Topbar() {
   const navigate = useNavigate()
   const location = useLocation()
   const { updateSearch, clearSearch } = useContext(SearchContext)
+  const { currentSubscription, fetchMySubscription } = useSubscription()
   const [user, setUser] = useState(
     JSON.parse(localStorage.getItem("user")) ||
     JSON.parse(sessionStorage.getItem("user"))
@@ -21,6 +24,7 @@ export default function Topbar() {
   const [isLoading, setIsLoading] = useState(false)
   const [allData, setAllData] = useState([])
   const [showResults, setShowResults] = useState(false)
+  const [showPlansBanner, setShowPlansBanner] = useState(false)
   const searchRef = useRef(null)
 
   const role = user?.role
@@ -36,6 +40,13 @@ export default function Topbar() {
     window.addEventListener("storage", syncUser)
     return () => window.removeEventListener("storage", syncUser)
   }, [])
+
+  // Fetch subscription info for owner
+  useEffect(() => {
+    if (user?.role === "Owner") {
+      fetchMySubscription()
+    }
+  }, [user?.role])
 
   // logout
   const handleLogout = () => {
@@ -303,8 +314,6 @@ export default function Topbar() {
       {/* Right */}
       <div className="flex items-center gap-4 ml-auto">
 
-        {/* ROLE SWITCH */}
-      
         {/*  Logout */}
         <button
           onClick={handleLogout}
@@ -315,22 +324,37 @@ export default function Topbar() {
 
         {/*  User Info */}
         {role === "Owner" ? (
-          <button
-            onClick={() => navigate("/profile")}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-pink-50 transition"
-          >
-            <User size={16} className="text-pink-500" />
-            <div className="text-right">
-              <p className="font-semibold text-sm">{user.fullName || user.username}</p>
-              <p className="text-xs text-gray-400">{user.role}</p>
-            </div>
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate("/profile")}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-pink-50 transition"
+            >
+              <User size={16} className="text-pink-500" />
+              <div className="text-right">
+                <p className="font-semibold text-sm">{user.fullName || user.username}</p>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowPlansBanner(true)
+                  }}
+                  className="text-xs text-teal-600 hover:text-teal-700 font-medium cursor-pointer"
+                >
+                  {currentSubscription?.planName || "Xem gói"}
+                </button>
+              </div>
+            </button>
+          </div>
         ) : (
           <div className="text-right">
             <p className="font-semibold">{user.fullName || user.username}</p>
             <p className="text-xs text-gray-400">{user.role}</p>
           </div>
         )}
+
+        <SubscriptionPlansBanner
+          isOpen={showPlansBanner}
+          onClose={() => setShowPlansBanner(false)}
+        />
 
       </div>
 
