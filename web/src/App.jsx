@@ -3,6 +3,7 @@ import { Toaster } from "react-hot-toast";
 
 import MainLayout from "@/layouts/MainLayout";
 import { SearchProvider } from "@/context/SearchContext";
+import { SubscriptionProvider } from "@/context/SubscriptionContext";
 
 import DashboardPage from "@/pages/DashboardPage";
 import POIPage from "@/pages/POIPage";
@@ -26,6 +27,9 @@ import AccessCodePage from "@/pages/AccessCodePage";
 import QueueDemoPage from "@/pages/QueueDemoPage";
 import DeviceActivityPage from "@/pages/DeviceActivityPage";
 import AnalyticsPage from "@/pages/AnalyticsPage";
+import SubscriptionCheckoutPage from "@/pages/SubscriptionCheckoutPage";
+import AdminSubscriptionDashboard from "@/pages/AdminSubscriptionDashboard";
+import AdminTransactionDashboard from "@/pages/AdminTransactionDashboard";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 
@@ -33,7 +37,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <SearchProvider>
-        <Toaster
+        <SubscriptionProvider>
+          <Toaster
           position="top-right"
           reverseOrder={false}
           gutter={8}
@@ -319,9 +324,50 @@ export default function App() {
           }
         />
 
+        {/* SUBSCRIPTION - OWNER */}
+        <Route
+          path="/pricing-plans"
+          element={<Navigate to="/dashboard" />}
+        />
+
+        <Route
+          path="/subscription/checkout"
+          element={
+            <ProtectedRoute roles={["Owner"]}>
+              <MainLayout>
+                <SubscriptionCheckoutPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* SUBSCRIPTION - ADMIN */}
+        <Route
+          path="/admin/subscriptions"
+          element={
+            <ProtectedRoute roles={["Admin"]}>
+              <MainLayout>
+                <AdminSubscriptionDashboard />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin/transactions"
+          element={
+            <ProtectedRoute roles={["Admin"]}>
+              <MainLayout>
+                <AdminTransactionDashboard />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
         {/* fallback */}
         <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+        </Routes>
+        </SubscriptionProvider>
       </SearchProvider>
     </BrowserRouter>
   );

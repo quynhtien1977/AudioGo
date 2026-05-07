@@ -3,7 +3,6 @@ import {
   MapPin,
   Route as RouteIcon,
   Layers,
-  BarChart,
   Users,
   Map,
   Headphones,
@@ -12,7 +11,9 @@ import {
   Smartphone,
   Rocket,
   Route as RouteIcon2,
-  BarChart3
+  BarChart3,
+  CreditCard,
+  DollarSign,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
@@ -20,27 +21,22 @@ import useAuth from "@/hooks/useAuth";
 
 export default function Sidebar() {
   const { user } = useAuth();
-
   const role = user?.role;
 
   return (
-    <div className="w-64 bg-white border-r p-4 h-screen">
-      
-      <h1 className="text-lg font-bold text-pink-500 mb-6 flex items-center">
+    <div className="h-screen w-64 border-r bg-white p-4">
+      <h1 className="mb-6 flex items-center text-lg font-bold text-pink-500">
         <Map size={20} className="mr-2" />
-        AudioGo 
+        AudioGo
       </h1>
 
       <div className="space-y-2">
-
         <MenuItem to="/dashboard" icon={<LayoutDashboard size={18} />}>
           Tổng quan
         </MenuItem>
-        
-        {/* ADMIN */}
+
         {role === "Admin" && (
           <>
-
             <MenuItem to="/pois" icon={<MapPin size={18} />}>
               POIs
             </MenuItem>
@@ -72,7 +68,7 @@ export default function Sidebar() {
             <MenuItem to="/access-codes" icon={<QrCode size={18} />}>
               Mã Truy Cập
             </MenuItem>
-            
+
             <MenuItem to="/tracking" icon={<Smartphone size={18} />}>
               Quản lý thiết bị
             </MenuItem>
@@ -85,10 +81,16 @@ export default function Sidebar() {
               Giả lập thiết bị
             </MenuItem>
 
+            <MenuItem to="/admin/subscriptions" icon={<CreditCard size={18} />}>
+              Quản lý gói đăng ký
+            </MenuItem>
+
+            <MenuItem to="/admin/transactions" icon={<DollarSign size={18} />}>
+              Quản lý giao dịch
+            </MenuItem>
           </>
         )}
 
-        {/* OWNER */}
         {role === "Owner" && (
           <>
             <MenuItem to="/pois" icon={<MapPin size={18} />}>
@@ -100,34 +102,32 @@ export default function Sidebar() {
             </MenuItem>
           </>
         )}
-
       </div>
     </div>
   );
 
   function MenuItem({ to, icon, children, isDisabled = false }) {
-
-  return (
-    // NavLink tự thêm class active khi đường dẫn trùng với to, nhưng nếu isDisabled thì sẽ không điều hướng và có style khác
-    <NavLink
-      to={isDisabled ? "#" : to} // Nếu disabled thì trỏ về #
-      onClick={(e) => {
-        if (isDisabled) {
-          e.preventDefault(); // Chặn điều hướng
+    return (
+      <NavLink
+        to={isDisabled ? "#" : to}
+        onClick={(e) => {
+          if (isDisabled) {
+            e.preventDefault();
+          }
+        }}
+        className={({ isActive }) =>
+          `flex items-center gap-3 rounded-lg p-2 transition-all ${
+            isDisabled
+              ? "cursor-not-allowed text-gray-400 opacity-50"
+              : isActive
+                ? "bg-pink-100 text-pink-500"
+                : "text-gray-600 hover:bg-pink-50 hover:text-pink-500"
+          }`
         }
-      }}
-      className={({ isActive }) =>
-        `flex items-center gap-3 p-2 rounded-lg transition-all ${
-          isDisabled 
-            ? "opacity-50 cursor-not-allowed text-gray-400" // Style cho mục chưa làm
-            : isActive
-              ? "bg-pink-100 text-pink-500"
-              : "text-gray-600 hover:bg-pink-50 hover:text-pink-500"
-        }`
-      }
-    >
-      {icon}
-      <span className="font-medium">{children}</span>
-    </NavLink>
-  )}
+      >
+        {icon}
+        <span className="font-medium">{children}</span>
+      </NavLink>
+    );
+  }
 }
