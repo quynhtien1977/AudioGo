@@ -15,13 +15,20 @@ namespace Server.Services
         private readonly IPoiRepository _pois;
         private readonly IServiceProvider _serviceProvider;
         private readonly IContentPipelineQueue _pipelineQueue;
+        private readonly SubscriptionService _subscription;
 
-        public PoiRequestService(AppDbContext db, IPoiRepository pois, IServiceProvider serviceProvider, IContentPipelineQueue pipelineQueue)
+        public PoiRequestService(
+            AppDbContext db,
+            IPoiRepository pois,
+            IServiceProvider serviceProvider,
+            IContentPipelineQueue pipelineQueue,
+            SubscriptionService subscription)
         {
-            _db = db;
-            _pois = pois;
+            _db           = db;
+            _pois         = pois;
             _serviceProvider = serviceProvider;
-            _pipelineQueue = pipelineQueue;
+            _pipelineQueue   = pipelineQueue;
+            _subscription    = subscription;
         }
 
         public async Task<List<PoiRequestListDto>> GetMyPoiRequestsAsync(string accountId, string? status = null)
@@ -103,6 +110,15 @@ namespace Server.Services
 
             if (req.ActionType != "DELETE" && req.Draft is null)
                 throw new ArgumentException("Draft is required for CREATE or UPDATE");
+
+            // ── Kiểm tra giới hạn POI trước khi tạo mới ─────────────────────
+            if (req.ActionType.ToUpper() == "CREATE")
+            {
+                var limitError = await _subscription.CheckPoiLimitAsync(accountId);
+                if (limitError != null)
+                    throw new InvalidOperationException(limitError);
+            }
+
 
             string? proposedData = null;
             if (req.Draft != null)
