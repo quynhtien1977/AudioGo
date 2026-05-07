@@ -2,6 +2,8 @@ using AudioGo.Services.Interfaces;
 using Shared;
 using Shared.DTOs;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Net;
 using System.Net.Http.Json;
 using Shared.DTOs;
 
@@ -234,12 +236,40 @@ namespace AudioGo.Services
         public async Task<TouristPaymentInitResult?> InitTouristPaymentAsync(
             string deviceId, CancellationToken ct = default)
         {
+            var sw = Stopwatch.StartNew();
+            var endpoint = "api/mobile/payment/init";
             try
             {
-                var resp = await _http.PostAsJsonAsync("api/mobile/payment/init", new
+                var req = BuildInitPaymentRequest(endpoint, deviceId);
+
+                System.Diagnostics.Debug.WriteLine(
+                    $"[ApiService] InitTouristPaymentAsync START => {_http.BaseAddress}{endpoint} | Timeout={_http.Timeout.TotalSeconds}s");
+
+                HttpResponseMessage? resp = null;
+                for (var attempt = 1; attempt <= 2; attempt++)
                 {
-                    DeviceId = deviceId
-                }, ct);
+                    using var sendReq = attempt == 1 ? req : BuildInitPaymentRequest(endpoint, deviceId);
+                    try
+                    {
+                        resp = await _http.SendAsync(sendReq, ct);
+                        break;
+                    }
+                    catch (HttpRequestException ex) when (IsTransientInitTransportError(ex) && !ct.IsCancellationRequested && attempt == 1)
+                    {
+                        // Tunnel có thể đóng sớm ở lần đầu (Broken pipe/ResponseEnded).
+                        // Retry một lần với request mới để tạo kết nối mới.
+                        System.Diagnostics.Debug.WriteLine(
+                            $"[ApiService] InitTouristPaymentAsync RETRY => transient transport error ({ex.InnerException?.GetType().Name}), retrying once...");
+                        await Task.Delay(300, ct);
+                    }
+                }
+
+                if (resp is null) throw new HttpRequestException("Init payment request failed with no response.");
+
+                sw.Stop();
+
+                System.Diagnostics.Debug.WriteLine(
+                    $"[ApiService] InitTouristPaymentAsync RESPONSE => {(int)resp.StatusCode} {resp.StatusCode} | Elapsed={sw.ElapsedMilliseconds}ms");
 
                 if (!resp.IsSuccessStatusCode) return null;
 
@@ -259,9 +289,45 @@ namespace AudioGo.Services
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"[ApiService] InitTouristPaymentAsync: {ex.Message}");
+                sw.Stop();
+                System.Diagnostics.Debug.WriteLine(
+                    $"[ApiService] InitTouristPaymentAsync ERROR => {ex.GetType().Name}: {ex.Message} | Inner={ex.InnerException?.GetType().Name}: {ex.InnerException?.Message} | Elapsed={sw.ElapsedMilliseconds}ms");
                 return null;
             }
+        }
+
+        private static HttpRequestMessage BuildInitPaymentRequest(string endpoint, string deviceId)
+        {
+            var req = new HttpRequestMessage(HttpMethod.Post, endpoint)
+            {
+                Version = new Version(1, 1),
+                VersionPolicy = HttpVersionPolicy.RequestVersionOrLower,
+                Content = JsonContent.Create(new
+                {
+                    DeviceId = deviceId
+                })
+            };
+            req.Headers.ConnectionClose = true;
+            return req;
+        }
+
+        private static bool IsTransientInitTransportError(HttpRequestException ex)
+        {
+            // Case 1: socket bị đóng khi đang ghi body request
+            if (ex.InnerException is IOException ioEx)
+            {
+                var socketEx = ioEx.InnerException as System.Net.Sockets.SocketException;
+                if (socketEx != null &&
+                    (socketEx.Message.Contains("Broken pipe", StringComparison.OrdinalIgnoreCase) || socketEx.ErrorCode == 32))
+                    return true;
+            }
+
+            // Case 2: phía tunnel đóng response stream sớm
+            if (ex.InnerException is HttpIOException httpIoEx &&
+                httpIoEx.Message.Contains("Response ended prematurely", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            return false;
         }
 
         public async Task<TouristPaymentVerifyResult?> VerifyTouristPaymentAsync(
