@@ -29,8 +29,8 @@ namespace Server.Models
         /// </summary>
         public string? AccountId { get; set; }
 
-        /// <summary>FK → SubscriptionPlan.PlanId (gói được mua)</summary>
-        public string PlanId { get; set; } = string.Empty;
+        /// <summary>FK → SubscriptionPlan.PlanId (gói được mua). NULL với TOURIST_ACCESS</summary>
+        public string? PlanId { get; set; }
 
         /// <summary>
         /// FK → OwnerSubscription.SubscriptionId.

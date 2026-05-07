@@ -223,6 +223,7 @@ namespace Server.Data
                 .HasOne(t => t.Plan)
                 .WithMany()
                 .HasForeignKey(t => t.PlanId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // PaymentTransaction → OwnerSubscription (nullable)
