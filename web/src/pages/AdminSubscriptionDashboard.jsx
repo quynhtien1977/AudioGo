@@ -423,7 +423,11 @@ export const AdminSubscriptionDashboard = () => {
           ).map((plan) => (
             <div
               key={plan.planId}
-              className="bg-white rounded-[2.5rem] border shadow-sm overflow-hidden group hover:shadow-xl transition-all border-gray-100"
+              className={`bg-white rounded-[2.5rem] border shadow-sm overflow-hidden group transition-all ${
+                plan.isActive
+                  ? "border-gray-100 hover:shadow-xl"
+                  : "border-gray-200 opacity-60 grayscale"
+              }`}
             >
               <div className="p-8 pt-6 space-y-4">
                 {editingPlanId ===

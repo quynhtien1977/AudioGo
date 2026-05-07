@@ -81,7 +81,7 @@ export const createSubscriptionPlanApi =
       payload,
     )
 
-    return res.data
+    return res.data?.plan || res.data
   }
 
 // ======================
@@ -99,7 +99,7 @@ export const updateSubscriptionPlanApi =
       payload,
     )
 
-    return res.data
+    return res.data?.plan || res.data
   }
 
 /**
@@ -136,9 +136,16 @@ export const getMySubscriptionApi =
  */
 export const createSubscriptionApi =
   async (payload) => {
+    const planId =
+      payload?.subscriptionPlanId ||
+      payload?.planId ||
+      payload?.PlanId
     const res = await client.post(
-      "/subscription/create",
-      payload,
+      "/cms/subscriptions/upgrade/init",
+      {
+        planId,
+        gateway: "SEPAY",
+      },
     )
 
     return res.data
@@ -149,13 +156,39 @@ export const createSubscriptionApi =
  */
 export const upgradeSubscriptionApi =
   async (payload) => {
+    const planId =
+      typeof payload === "string"
+        ? payload
+        : (payload?.subscriptionPlanId || payload?.planId || payload?.PlanId)
     const res = await client.post(
-      "/subscription/upgrade",
-      payload,
+      "/cms/subscriptions/upgrade/init",
+      {
+        planId,
+        gateway: "SEPAY",
+      },
     )
 
     return res.data
   }
+
+/**
+ * Init owner upgrade transaction (gateway payment)
+ * OWNER ONLY
+ */
+export const initUpgradeSubscriptionApi = async (
+  planId,
+  gateway = "SEPAY",
+) => {
+  const res = await client.post(
+    "/cms/subscriptions/upgrade/init",
+    {
+      planId,
+      gateway,
+    },
+  )
+
+  return res.data
+}
 
 // ======================
 // ADMIN - SUBSCRIPTIONS
@@ -238,7 +271,7 @@ export const getAllTransactionsApi =
       params.accountId = accountId
 
     const res = await client.get(
-      "/admin/transactions",
+      "/cms/payments",
       { params },
     )
 
@@ -248,7 +281,7 @@ export const getAllTransactionsApi =
 export const getTransactionDetailsApi =
   async (transactionId) => {
     const res = await client.get(
-      `/admin/transactions/${transactionId}`,
+      `/cms/payments/${transactionId}`,
     )
 
     return res.data
@@ -283,6 +316,7 @@ export default {
   getMySubscriptionApi,
   createSubscriptionApi,
   upgradeSubscriptionApi,
+  initUpgradeSubscriptionApi,
 
   // Admin subscriptions
   getAllSubscriptionsApi,
