@@ -33,6 +33,8 @@ builder.Services.AddCors(opt =>
                                         .AllowAnyHeader()
                                         .AllowAnyMethod()
                                         .AllowCredentials()); // ✅ REQUIRED FOR SIGNALR WEBSOCKET
+    // Webhook từ SePay/MoMo server gọi vào — không cần CORS restrict
+    opt.AddPolicy("PaymentWebhookPolicy", p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 });
 
 // ── Database ──────────────────────────────────────────────────────────
@@ -100,6 +102,11 @@ builder.Services.AddScoped<ICmsPoiService, CmsPoiService>();
 builder.Services.AddScoped<IPoiRequestService, PoiRequestService>();
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddHttpContextAccessor();
+
+// ── Subscription & Payment ────────────────────────────────────────────
+builder.Services.AddScoped<SubscriptionService>();
+builder.Services.AddScoped<PaymentWebhookService>();
+
 
 // ── Controllers & OpenAPI ─────────────────────────────────────────────
 builder.Services.AddControllers();
