@@ -75,6 +75,110 @@ namespace Server.Controllers.Cms
         }
 
         // ══════════════════════════════════════════════════════════════════
+        //  CREATE PLAN
+        // ══════════════════════════════════════════════════════════════════
+
+        public class CreatePlanRequest
+        {
+            public string PlanId { get; set; } = "";
+
+            public string Name { get; set; } = "";
+
+            public decimal Price { get; set; }
+
+            public int DurationDay { get; set; }
+
+            public int MaxPoiCount { get; set; }
+
+            public int AutoPriority { get; set; }
+
+            public List<string> Features { get; set; } = [];
+        }
+
+        /// <summary>
+        /// POST /api/cms/subscriptions/plans
+        /// Admin tạo gói subscription mới
+        /// </summary>
+        [HttpPost("plans")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CreatePlan(
+            [FromBody] CreatePlanRequest req
+        )
+        {
+            if (string.IsNullOrWhiteSpace(req.PlanId))
+            {
+                return BadRequest(
+                    "PlanId không được để trống."
+                );
+            }
+
+            if (string.IsNullOrWhiteSpace(req.Name))
+            {
+                return BadRequest(
+                    "Tên gói không được để trống."
+                );
+            }
+
+            var existed = await _db.SubscriptionPlans
+                .AnyAsync(p => p.PlanId == req.PlanId);
+
+            if (existed)
+            {
+                return BadRequest(
+                    $"PlanId '{req.PlanId}' đã tồn tại."
+                );
+            }
+
+            var plan = new SubscriptionPlan
+            {
+                PlanId = req.PlanId.Trim(),
+
+                Name = req.Name.Trim(),
+
+                Price = req.Price < 0
+                    ? 0
+                    : req.Price,
+
+                DurationDay = req.DurationDay <= 0
+                    ? 30
+                    : req.DurationDay,
+
+                MaxPoiCount = req.MaxPoiCount < 0
+                    ? 0
+                    : req.MaxPoiCount,
+
+                AutoPriority =
+                    Math.Clamp(req.AutoPriority, 1, 4),
+
+                Features = System.Text.Json.JsonSerializer
+                    .Serialize(req.Features),
+
+                IsActive = true
+            };
+
+            _db.SubscriptionPlans.Add(plan);
+
+            await _db.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "Tạo gói thành công.",
+
+                plan = new
+                {
+                    plan.PlanId,
+                    plan.Name,
+                    plan.Price,
+                    plan.DurationDay,
+                    plan.MaxPoiCount,
+                    plan.AutoPriority,
+                    plan.Features,
+                    plan.IsActive
+                }
+            });
+        }
+
+        // ══════════════════════════════════════════════════════════════════
         //  ADMIN UPDATE PLAN
         // ══════════════════════════════════════════════════════════════════
 
@@ -126,7 +230,18 @@ namespace Server.Controllers.Cms
             return Ok(new
             {
                 message = "Cập nhật gói thành công.",
-                plan.PlanId
+
+                plan = new
+                {
+                    plan.PlanId,
+                    plan.Name,
+                    plan.Price,
+                    plan.DurationDay,
+                    plan.MaxPoiCount,
+                    plan.AutoPriority,
+                    plan.Features,
+                    plan.IsActive
+                }
             });
         }
 

@@ -27,17 +27,19 @@ namespace Shared.DTOs
     }
 
     // RESPONSE DTO
-    public record AccountDto(
-        string AccountId,
-        string Username,
-        string Role,
+   public record AccountDto(
+    string AccountId,
+    string Username,
+    string Role,
 
-        string? FullName,
-        string? Email,
-        string? PhoneNumber,
-        bool IsLocked,
+    string? FullName,
+    string? Email,
+    string? PhoneNumber,
+    bool IsLocked,
 
-        DateTime CreatedAt,
-        DateTime? UpdatedAt
-    );
+    string? SubscriptionPlanId,   // ✅ ADD THIS
+
+    DateTime CreatedAt,
+    DateTime? UpdatedAt
+);
 }
