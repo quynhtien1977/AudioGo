@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:helpers="clr-namespace:AudioGo.Helpers"
+             xmlns:vm="clr-namespace:AudioGo_Mobile.ViewModels"
+             x:Class="AudioGo_Mobile.Views.TouristPaymentPage"
+             x:DataType="vm:TouristPaymentViewModel"
+             Shell.NavBarIsVisible="False"
+             NavigationPage.HasNavigationBar="False"
+             BackgroundColor="#F5F5F5">
+
+    <Grid RowDefinitions="Auto, *">
+
+        <!-- ── Header ─────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0"
+                BackgroundColor="White"
+                StrokeThickness="0"
+                Padding="16,52,16,16">
+            <Grid ColumnDefinitions="44, *, 44">
+                <!-- Back button -->
+                <Border Grid.Column="0"
+                        StrokeShape="RoundRectangle 12"
+                        StrokeThickness="0"
+                        BackgroundColor="#F5F5F5"
+                        WidthRequest="44" HeightRequest="44">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnBackTapped"/>
+                    </Border.GestureRecognizers>
+                    <Label Text="&#xe5c4;" FontFamily="MaterialIcons"
+                           FontSize="22" TextColor="#333"
+                           HorizontalOptions="Center" VerticalOptions="Center"/>
+                </Border>
+
+                <!-- Title -->
+                <Label Grid.Column="1"
+                       Text="{helpers:Translate pay_title}"
+                       FontFamily="InterBold" FontSize="18"
+                       TextColor="#1E1E1E"
+                       HorizontalTextAlignment="Center"
+                       VerticalOptions="Center"/>
+            </Grid>
+        </Border>
+
+        <!-- ── Content ────────────────────────────────────────────────────── -->
+        <ScrollView Grid.Row="1">
+            <Grid>
+
+                <!-- ══ STATE: INITIALIZING ════════════════════════════════════ -->
+                <VerticalStackLayout IsVisible="{Binding IsInitializingState}"
+                                     Spacing="16" Padding="24,80,24,24"
+                                     HorizontalOptions="Center"
+                                     VerticalOptions="Center">
+                    <ActivityIndicator IsRunning="True"
+                                       Color="#EE4D2D"
+                                       HorizontalOptions="Center" />
+                    <Label Text="Đang tạo mã QR..."
+                           FontFamily="InterMedium" FontSize="15"
+                           TextColor="#666" HorizontalTextAlignment="Center"/>
+                </VerticalStackLayout>
+
+                <!-- ══ STATE: WAITING ═════════════════════════════════════════ -->
+                <VerticalStackLayout IsVisible="{Binding IsWaitingState}"
+                                     Spacing="16" Padding="24,16,24,24">
+
+                    <!-- Tab Bar (Future MoMo support) -->
+                    <Border BackgroundColor="#E0E0E0" StrokeThickness="0" StrokeShape="RoundRectangle 8" Padding="2" Margin="0,0,0,8">
+                        <Grid ColumnDefinitions="*, *">
+                            <Border Grid.Column="0" BackgroundColor="White" StrokeThickness="0" StrokeShape="RoundRectangle 6" Padding="8">
+                                <Label Text="Chuyển khoản" FontFamily="InterBold" FontSize="14" TextColor="#EE4D2D" HorizontalTextAlignment="Center"/>
+                            </Border>
+                            <Border Grid.Column="1" BackgroundColor="Transparent" StrokeThickness="0" Padding="8">
+                                <Label Text="MoMo (Sắp có)" FontFamily="InterMedium" FontSize="14" TextColor="#999" HorizontalTextAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <!-- QR title -->
+                    <Label Text="{helpers:Translate pay_qr_title}"
+                           FontFamily="InterBold" FontSize="20"
+                           TextColor="#1E1E1E" HorizontalTextAlignment="Center"/>
+
+                    <!-- VietQR image card -->
+                    <Border BackgroundColor="White"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 20"
+                            Padding="20"
+                            HorizontalOptions="Center">
+                        <VerticalStackLayout Spacing="12" HorizontalOptions="Center">
+                            <Image Source="{Binding VietQrUrl}"
+                                   WidthRequest="220" HeightRequest="220"
+                                   Aspect="AspectFit"
+                                   HorizontalOptions="Center"/>
+                            <Label Text="{Binding BankInfo}"
+                                   FontFamily="InterMedium" FontSize="13"
+                                   TextColor="#666"
+                                   HorizontalTextAlignment="Center"/>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <!-- Transfer info card -->
+                    <Border BackgroundColor="White"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 16"
+                            Padding="16">
+                        <Grid ColumnDefinitions="*, Auto" RowDefinitions="Auto, Auto" RowSpacing="4">
+
+                            <Label Grid.Row="0" Grid.Column="0"
+                                   Text="{helpers:Translate pay_transfer_content_label}"
+                                   FontFamily="InterMedium" FontSize="12" TextColor="#999"/>
+
+                            <!-- Copy icon -->
+                            <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="1"
+                                    StrokeShape="RoundRectangle 8"
+                                    StrokeThickness="0"
+                                    BackgroundColor="#F5F5F5"
+                                    WidthRequest="40" HeightRequest="40"
+                                    VerticalOptions="Center">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding CopyTransferContentCommand}"/>
+                                </Border.GestureRecognizers>
+                                <Label Text="&#xe14d;" FontFamily="MaterialIcons"
+                                       FontSize="20" TextColor="#EE4D2D"
+                                       HorizontalOptions="Center" VerticalOptions="Center"/>
+                            </Border>
+
+                            <Label Grid.Row="1" Grid.Column="0"
+                                   Text="{Binding TransferContent}"
+                                   FontFamily="InterBold" FontSize="15"
+                                   TextColor="#1E1E1E"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Status -->
+                    <VerticalStackLayout Spacing="8" HorizontalOptions="Center" Margin="0,8,0,0">
+                        <Label Text="Hệ thống sẽ tự động xác nhận sau khi bạn chuyển khoản thành công."
+                               FontFamily="InterRegular" FontSize="14"
+                               TextColor="#666"
+                               HorizontalTextAlignment="Center"/>
+                        <Label Text="{Binding StatusMessage}"
+                               FontFamily="InterMedium" FontSize="14"
+                               TextColor="#EE4D2D"
+                               HorizontalTextAlignment="Center"/>
+                    </VerticalStackLayout>
+
+                    <!-- Action buttons -->
+                    <Grid ColumnDefinitions="*, 16, *" Margin="0,8,0,0">
+                        <Button Grid.Column="0"
+                                Text="{helpers:Translate pay_cancel}"
+                                Command="{Binding CancelCommand}"
+                                FontFamily="InterMedium" FontSize="15"
+                                BackgroundColor="Transparent"
+                                TextColor="#999"
+                                BorderColor="#DDD" BorderWidth="1.5"
+                                CornerRadius="25" HeightRequest="52"/>
+
+                        <Button Grid.Column="2"
+                                Text="{helpers:Translate pay_check_again}"
+                                Command="{Binding ManualVerifyCommand}"
+                                FontFamily="InterMedium" FontSize="15"
+                                BackgroundColor="White"
+                                TextColor="#EE4D2D"
+                                BorderColor="#EE4D2D" BorderWidth="1.5"
+                                CornerRadius="25" HeightRequest="52"/>
+                    </Grid>
+                </VerticalStackLayout>
+
+                <!-- ══ STATE: SUCCESS ══════════════════════════════════════════ -->
+                <VerticalStackLayout IsVisible="{Binding IsSuccessState}"
+                                     Spacing="16" Padding="24,80,24,24"
+                                     HorizontalOptions="Center"
+                                     VerticalOptions="Center">
+
+                    <!-- Success icon -->
+                    <Border StrokeShape="Ellipse"
+                            StrokeThickness="0"
+                            BackgroundColor="#E8F5E9"
+                            WidthRequest="100" HeightRequest="100"
+                            HorizontalOptions="Center">
+                        <Label Text="&#xe876;" FontFamily="MaterialIcons"
+                               FontSize="52" TextColor="#4CAF50"
+                               HorizontalOptions="Center" VerticalOptions="Center"/>
+                    </Border>
+
+                    <Label Text="{helpers:Translate pay_success_title}"
+                           FontFamily="InterBold" FontSize="24"
+                           TextColor="#1E1E1E"
+                           HorizontalTextAlignment="Center"/>
+
+                    <Label Text="{helpers:Translate pay_success_sub}"
+                           FontFamily="InterRegular" FontSize="16"
+                           TextColor="#666"
+                           HorizontalTextAlignment="Center"
+                           Margin="0,0,0,16"/>
+
+                    <Button Text="{helpers:Translate pay_enter_app}"
+                            Command="{Binding EnterAppCommand}"
+                            FontFamily="InterBold" FontSize="16"
+                            BackgroundColor="#4CAF50" TextColor="White"
+                            CornerRadius="25" HeightRequest="56"
+                            HorizontalOptions="FillAndExpand"/>
+                </VerticalStackLayout>
+
+                <!-- ══ STATE: FAILED ══════════════════════════════════════════ -->
+                <VerticalStackLayout IsVisible="{Binding IsFailedState}"
+                                     Spacing="16" Padding="24,80,24,24"
+                                     HorizontalOptions="Center"
+                                     VerticalOptions="Center">
+
+                    <!-- Failed icon -->
+                    <Border StrokeShape="Ellipse"
+                            StrokeThickness="0"
+                            BackgroundColor="#FFF0EE"
+                            WidthRequest="100" HeightRequest="100"
+                            HorizontalOptions="Center">
+                        <Label Text="&#xe000;" FontFamily="MaterialIcons"
+                               FontSize="52" TextColor="#EE4D2D"
+                               HorizontalOptions="Center" VerticalOptions="Center"/>
+                    </Border>
+
+                    <Label Text="{Binding StatusMessage}"
+                           FontFamily="InterMedium" FontSize="16"
+                           TextColor="#666"
+                           HorizontalTextAlignment="Center"
+                           Margin="0,0,0,16"/>
+
+                    <Button Text="{helpers:Translate pay_retry}"
+                            Command="{Binding RetryCommand}"
+                            FontFamily="InterBold" FontSize="16"
+                            BackgroundColor="#EE4D2D" TextColor="White"
+                            CornerRadius="25" HeightRequest="56"
+                            HorizontalOptions="FillAndExpand"/>
+                </VerticalStackLayout>
+
+            </Grid>
+        </ScrollView>
+    </Grid>
+
+</ContentPage>

@@ -881,6 +881,90 @@ public static class AppStrings
             ["vi"] = "Phiên bản ứng dụng", ["en"] = "App Version", ["ja"] = "アプリのバージョン",
             ["ko"] = "앱 버전", ["zh-Hans"] = "应用程序版本", ["fr"] = "Version de l'application", ["th"] = "เวอร์ชันแอป"
         },
+
+        // ═══════════════════════════════════════════════════════════════
+        // Tourist Payment Flow
+        // ═══════════════════════════════════════════════════════════════
+        ["welcome_pay_online"] = new()
+        {
+            ["vi"] = "Thanh toán online", ["en"] = "Pay Online"
+        },
+        ["welcome_scan_qr_alt"] = new()
+        {
+            ["vi"] = "Tôi đã có mã QR", ["en"] = "I have a QR code"
+        },
+        ["pay_title"] = new()
+        {
+            ["vi"] = "Thanh toán vào app", ["en"] = "App Access Payment"
+        },
+        ["pay_subtitle"] = new()
+        {
+            ["vi"] = "Trải nghiệm 1 năm — 10.000đ", ["en"] = "1-year access — 10,000₫"
+        },
+        ["pay_phone_hint"] = new()
+        {
+            ["vi"] = "Số điện thoại của bạn", ["en"] = "Your phone number"
+        },
+        ["pay_continue"] = new()
+        {
+            ["vi"] = "Tiếp tục", ["en"] = "Continue"
+        },
+        ["pay_qr_title"] = new()
+        {
+            ["vi"] = "Quét mã hoặc chuyển khoản", ["en"] = "Scan or Bank Transfer"
+        },
+        ["pay_transfer_content_label"] = new()
+        {
+            ["vi"] = "Nội dung CK", ["en"] = "Transfer note"
+        },
+        ["pay_bank_label"] = new()
+        {
+            ["vi"] = "TP Bank", ["en"] = "TP Bank"
+        },
+        ["pay_waiting"] = new()
+        {
+            ["vi"] = "Đang chờ xác nhận...", ["en"] = "Waiting for confirmation..."
+        },
+        ["pay_waiting_seconds"] = new()
+        {
+            ["vi"] = "Đang chờ... {0}s", ["en"] = "Waiting... {0}s"
+        },
+        ["pay_check_again"] = new()
+        {
+            ["vi"] = "Kiểm tra lại", ["en"] = "Check again"
+        },
+        ["pay_cancel"] = new()
+        {
+            ["vi"] = "Hủy", ["en"] = "Cancel"
+        },
+        ["pay_copy_done"] = new()
+        {
+            ["vi"] = "Đã copy!", ["en"] = "Copied!"
+        },
+        ["pay_success_title"] = new()
+        {
+            ["vi"] = "Thanh toán thành công!", ["en"] = "Payment successful!"
+        },
+        ["pay_success_sub"] = new()
+        {
+            ["vi"] = "Chào mừng đến với AudioGo!", ["en"] = "Welcome to AudioGo!"
+        },
+        ["pay_enter_app"] = new()
+        {
+            ["vi"] = "Vào app", ["en"] = "Enter app"
+        },
+        ["pay_failed"] = new()
+        {
+            ["vi"] = "Giao dịch thất bại. Vui lòng thử lại.", ["en"] = "Transaction failed. Please try again."
+        },
+        ["pay_timeout"] = new()
+        {
+            ["vi"] = "Hết thời gian chờ. Vui lòng thử lại.", ["en"] = "Payment timed out. Please try again."
+        },
+        ["pay_retry"] = new()
+        {
+            ["vi"] = "Thử lại", ["en"] = "Retry"
+        },
     };
 
     /// <summary>
