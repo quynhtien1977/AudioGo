@@ -2,7 +2,7 @@
 
 > **Hệ Thống Thuyết Minh Du Lịch Đa Ngôn Ngữ**  
 > *Dự án kỹ thuật số hóa Phố Ẩm Thực Vĩnh Khánh, Quận 4, TP.HCM*  
-> *Cập nhật: 10/04/2026*
+> *Cập nhật: 08/05/2026*
 
 ---
 
@@ -17,9 +17,8 @@
 7. [Danh Mục API Routes](#-7-danh-mục-api-routes-net-core)
 8. [Web CMS — Cấu Trúc Trang](#%EF%B8%8F-8-web-cms--cấu-trúc-trang-react-routes)
 9. [Sơ Đồ Usecase](#-9-sơ-đồ-usecase-use-case-diagrams)
-10. [Sơ Đồ Lớp (Class Diagrams)](#-10-sơ-đồ-lớp-class-diagrams)
-11. [Sơ Đồ Trình Tự (Sequence Diagrams)](#-11-sơ-đồ-trình-tự-sequence-diagrams)
-12. [Sơ Đồ Hoạt Động (Activity Diagrams)](#-12-sơ-đồ-hoạt-động-activity-diagrams)
+10. [Sơ Đồ Trình Tự (Sequence Diagrams)](#-10-sơ-đồ-trình-tự-sequence-diagrams)
+11. [Sơ Đồ Hoạt Động (Activity Diagrams)](#-11-sơ-đồ-hoạt-động-activity-diagrams)
 
 ---
 
@@ -98,13 +97,14 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 - **AC:**
   - [x] Audio phát mượt mà, thanh progress hiển thị. Gallery ảnh vuốt ngang.
 
-**US 1.6 — Xem Route (Lộ Trình Tham Quan)**
-> *Là Du khách, tôi muốn xem các Route và đi theo lộ trình gợi ý.*
+**US 1.6 — Xem Tour (Lộ Trình Tham Quan)**
+> *Là Du khách, tôi muốn xem các Tour và đi theo lộ trình gợi ý.*
 - **FR:**
-  - `GET /api/mobile/routes?lang=vi` — danh sách route.
-  - `GET /api/mobile/routes/{routeId}?lang=vi` — chi tiết route: steps kèm POI info + audio.
+  - `GET /api/mobile/tours?lang=vi` — danh sách tour (có filter `?q=` tìm kiếm).
+  - `GET /api/mobile/tours/{tourId}?lang=vi` — chi tiết tour: steps kèm POI info + audio.
+  - `GET /api/mobile/tours/directions?waypoints=&mode=` — đường đi ORS.
 - **AC:**
-  - [x] Hiển thị lộ trình theo `StepOrder`. Nội dung đúng ngôn ngữ.
+  - [x] Hiển thị lộ trình theo `StepOrder`. Nội dung đúng ngôn ngữ. `SyncService` cache offline.
 
 **US 1.7 — Đồng Bộ Offline-First**
 > *Là Du khách, tôi muốn ứng dụng vẫn hoạt động khi mất kết nối internet.*
@@ -159,6 +159,25 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 - **AC:**
   - [x] File lên Azure Blob, trả URL. Sai định dạng → 400.
 
+**US 2.5 — Gửi Yêu Cầu Thay Đổi POI (PoiRequest Workflow)**
+> *Là POI Owner, tôi muốn gửi yêu cầu tạo/sửa/xóa POI và chờ Admin duyệt để không ảnh hưởng dữ liệu live.*
+- **FR:**
+  - Owner gửi `POST /api/cms/pois/requests` với `{ actionType: CREATE|UPDATE|DELETE, draft: PoiDraftDto }`.
+  - Request lưu vào bảng `PoiRequest` với `Status = PENDING`, không thay đổi dữ liệu `Poi` live ngay.
+  - Owner xem trạng thái tại `GET /api/cms/pois/requests/my-requests`.
+- **AC:**
+  - [x] Tạo request → PENDING. Admin duyệt → APPROVED → dữ liệu live cập nhật. Admin từ chối → REJECTED + rejectReason.
+
+**US 2.6 — Nâng Gói Subscription**
+> *Là POI Owner, tôi muốn nâng gói dịch vụ để có thêm POI và tính năng.*
+- **FR:**
+  - Owner xem các gói tại `GET /api/cms/subscriptions/plans`.
+  - Owner khởi tạo thanh toán `POST /api/cms/subscriptions/upgrade/init { planId, gateway: SEPAY|MOMO }` → nhận VietQR.
+  - Webhook SePay/MoMo tự động kích hoạt subscription sau khi thanh toán thành công.
+- **AC:**
+  - [x] Thanh toán thành công → `OwnerSubscription` ACTIVE, `Account.SubscriptionPlanId` cập nhật.
+  - [x] Nếu downgrade → POI vượt quota bị hạ priority tự động.
+
 ---
 
 ### Epic 3: Hệ Thống Quản Trị Toàn Diện (Web CMS — Admin)
@@ -186,14 +205,15 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 - **AC:**
   - [x] Hiển thị `PoiCount`. Mobile lấy qua `GET /api/mobile/categories`.
 
-**US 3.4 — Quản Lý Route**
-> *Là Admin, tôi muốn thiết kế Route tham quan.*
+**US 3.4 — Quản Lý Tour (Lộ Trình Tham Quan)**
+> *Là Admin, tôi muốn thiết kế Tour tham quan cho du khách.*
 - **FR:**
-  - `GET/POST/PUT/DELETE /api/cms/routes` — CRUD route.
-  - `POST/DELETE /api/cms/routes/{id}/pois` — thêm/xóa POI.
-  - `PUT /api/cms/routes/{id}/pois/{poiId}/order` — đổi thứ tự bước.
+  - `GET/POST/PUT/DELETE /api/cms/tours` — CRUD tour. Tạo mới tự dịch 7 ngôn ngữ qua `ITranslationService`.
+  - `PATCH /api/cms/tours/{id}/restore` — khôi phục tour bị soft-delete.
+  - `POST/DELETE /api/cms/tours/{id}/pois` — thêm/xóa POI.
+  - `PUT /api/cms/tours/{id}/pois/{poiId}/order` — đổi thứ tự bước.
 - **AC:**
-  - [x] Route hiển thị đúng thứ tự `StepOrder`. Mobile lấy chi tiết kèm audio.
+  - [x] Tour hiển thị đúng thứ tự `StepOrder`. Mobile lấy chi tiết kèm audio qua `TourMobileController`.
 
 **US 3.5 — Content Pipeline: Dịch Thuật & Âm Thanh Tự Động**
 > *Là Admin, tôi muốn hệ thống tự động dịch và tạo audio cho 7 ngôn ngữ.*
@@ -214,6 +234,27 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 - **AC:**
   - [x] 7 ngôn ngữ × N POI đều có content + audio.
   - [x] Response: `{ successCount, failCount, results[] }`.
+
+**US 3.6 — Duyệt Yêu Cầu POI Của Owner**
+> *Là Admin, tôi muốn xem và phê duyệt/từ chối các request thay đổi POI của Owner.*
+- **FR:**
+  - `GET /api/cms/pois/requests?status=PENDING` — danh sách tất cả request.
+  - `GET /api/cms/pois/requests/stats` — thống kê PENDING theo loại.
+  - `PUT /api/cms/pois/requests/{requestId}/review { status: APPROVED|REJECTED, rejectReason? }` — phê duyệt.
+  - Khi APPROVED: `IPoiRequestService.ReviewPoiRequestAsync()` apply `proposedData` JSON vào bảng `Poi`.
+- **AC:**
+  - [x] Admin duyệt CREATE → POI mới xuất hiện trên Mobile. Duyệt UPDATE → POI cập nhật. Duyệt DELETE → POI bị xóa.
+  - [x] Từ chối → Owner thấy REJECTED + lý do.
+
+**US 3.7 — Quản Lý Subscription & Giao Dịch**
+> *Là Admin, tôi muốn xem và quản lý gói dịch vụ của tất cả Owner và lịch sử giao dịch.*
+- **FR:**
+  - `GET /api/cms/subscriptions/owner/{accountId}` — xem subscription history.
+  - `POST /api/cms/subscriptions/owner/{accountId}/assign { planId, gateway: MANUAL }` — gán gói thủ công (0đ).
+  - `GET /api/cms/payments` — lịch sử giao dịch (filter type, status, date).
+- **AC:**
+  - [x] Admin assign gói thủ công → subscription ACTIVE ngay, transaction ghi MANUAL.
+  - [x] Dashboard lịch sử giao dịch hiển thị đúng status (PENDING/SUCCESS/FAILED).
 
 ---
 
@@ -237,7 +278,7 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 | Layer | Công nghệ | Chi tiết |
 | :--- | :--- | :--- |
 | **Backend API** | ASP.NET Core 10 (C#), EF Core 9 | Controllers: `api/cms/*` (🔒 JWT) + `api/mobile/*` |
-| **Database** | SQL Server | 11 bảng |
+| **Database** | SQL Server | 15 bảng (+ Payment, Subscription, PoiRequest) |
 | **Cloud – Audio** | Azure Text-To-Speech | Sinh MP3 từ text theo ngôn ngữ |
 | **Cloud – Dịch** | Azure AI Translator | Dịch từ Master sang 6 ngôn ngữ |
 | **Cloud – Lưu trữ** | Azure Blob Storage | `audiogo-audio`, `audiogo-images` |
@@ -250,7 +291,7 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 
 ### 5.3. Sơ Đồ Cơ Sở Dữ Liệu (Schema & ERD)
 
-![Sơ Đồ Schema](./public/img/Schema.png)
+![Sơ Đồ Schema](./public/img/Schema.jpg)
 
 ![Sơ Đồ ERD](./public/img/ERD.png)
 
@@ -262,21 +303,25 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 
 ## 🗄️ 6. CƠ SỞ DỮ LIỆU (DATABASE SCHEMA)
 
-> 11 bảng trong SQL Server — phản ánh chính xác `api/Models/`.
+> **15 bảng** trong SQL Server — phản ánh chính xác `api/Models/`.
 
 | Bảng | Mô tả | Khóa chính |
 | :--- | :--- | :--- |
-| `Account` | Tài khoản Admin/Owner (username, passwordHash, role, fullName, email, phoneNumber, isLocked) | `AccountId` |
+| `Account` | Tài khoản Admin/Owner (username, passwordHash, role, fullName, email, phoneNumber, isLocked, subscriptionPlanId) | `AccountId` |
 | `AppAccessCode` | Mã QR xác thực Mobile (code, usedByDeviceId, activatedAt, expireAt) | `CodeId` |
-| `Poi` | Điểm quan tâm (lat, lon, activationRadius, priority, status, isActive, logoUrl) | `PoiId` |
+| `Poi` | Điểm quan tâm (lat, lon, activationRadius, priority, isActive, logoUrl) | `PoiId` |
 | `PoiContent` | Nội dung đa ngôn ngữ (languageCode, title, description, audioUrl, isMaster) | `ContentId` |
 | `PoiGallery` | Ảnh gallery (imageUrl, sortOrder) | `ImageId` |
+| `PoiRequest` | Vùng đệm yêu cầu POI của Owner (actionType: CREATE/UPDATE/DELETE, status: PENDING/APPROVED/REJECTED, proposedData JSON) | `RequestId` |
 | `Category` | Danh mục (name) | `CategoryId` |
 | `CategoryPoi` | Bảng nối N-N Category ↔ POI | `CategoryId + PoiId` |
-| `Route` | Route tham quan (name, description, thumbnailUrl) | `RouteId` |
-| `RoutePoi` | Bảng nối Route ↔ POI (stepOrder) | `RouteId + PoiId` |
+| `Tour` | Route tham quan (name, localizedName JSON, localizedDescription JSON, thumbnailUrl, isActive) | `TourId` |
+| `TourPoi` | Bảng nối Tour ↔ POI (stepOrder) | `TourId + PoiId` |
 | `ListenHistory` | Lịch sử nghe (deviceId, poiId, listenDuration, timestamp) | `HistoryId` |
 | `LocationLog` | GPS log (deviceId, lat, lon, timestamp) | `LocationId` |
+| `SubscriptionPlan` | Gói đăng ký cho Owner (planId: basic/professional/enterprise, price, durationDay, maxPoiCount, autoPriority, features JSON) | `PlanId` |
+| `OwnerSubscription` | Gói đang kích hoạt của Owner (accountId FK, planId FK, status: ACTIVE/EXPIRED/CANCELLED, startDate, endDate) | `SubscriptionId` |
+| `PaymentTransaction` | Lịch sử giao dịch thanh toán (paymentType: TOURIST_ACCESS/OWNER_SUBSCRIPTION, gateway: SEPAY/MOMO/MANUAL, status: PENDING/SUCCESS/FAILED/REFUNDED, amount, transactionId: AG-{ts}-{rand6}) | `TransactionId` |
 
 ---
 
@@ -344,17 +389,18 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 | `POST` | `/api/cms/categories/{id}/pois` | Gán POI |
 | `DELETE` | `/api/cms/categories/{id}/pois/{poiId}` | Bỏ POI |
 
-#### Route Management
+#### Tour Management (Lộ Trình Tham Quan)
 | Method | Route | Mô tả |
 | :--- | :--- | :--- |
-| `GET` | `/api/cms/routes` | Danh sách route |
-| `GET` | `/api/cms/routes/{id}` | Chi tiết route |
-| `POST` | `/api/cms/routes` | Tạo route |
-| `PUT` | `/api/cms/routes/{id}` | Sửa route |
-| `DELETE` | `/api/cms/routes/{id}` | Xóa route |
-| `POST` | `/api/cms/routes/{id}/pois` | Thêm POI (kèm stepOrder) |
-| `DELETE` | `/api/cms/routes/{id}/pois/{poiId}` | Xóa POI |
-| `PUT` | `/api/cms/routes/{id}/pois/{poiId}/order` | Đổi thứ tự bước |
+| `GET` | `/api/cms/tours` | Danh sách tour (thêm `?includeInactive=true` để Admin xem cả ẩn) |
+| `GET` | `/api/cms/tours/{id}` | Chi tiết tour |
+| `POST` | `/api/cms/tours` | Tạo tour mới (tự dịch 7 ngôn ngữ) |
+| `PUT` | `/api/cms/tours/{id}` | Sửa tour (regenerate localization nếu đổi tên) |
+| `DELETE` | `/api/cms/tours/{id}` | Soft-delete (isActive=false) |
+| `PATCH` | `/api/cms/tours/{id}/restore` | Khôi phục tour đã ẩn |
+| `POST` | `/api/cms/tours/{id}/pois` | Thêm POI (kèm stepOrder) |
+| `DELETE` | `/api/cms/tours/{id}/pois/{poiId}` | Xóa POI khỏi tour |
+| `PUT` | `/api/cms/tours/{id}/pois/{poiId}/order` | Đổi thứ tự bước |
 
 #### Content Pipeline
 | Method | Route | Mô tả |
@@ -399,6 +445,40 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 | ↳ `DeviceOnline / DeviceOffline` | Server→Web | Broadcast khi thiết bị kết nối/ngắt |
 | ↳ `LocationUpdated` | Server→Web | Broadcast vị trí GPS mới tới admin dashboard |
 
+#### POI Request (Owner submit — Admin review)
+| Method | Route | Mô tả |
+| :--- | :--- | :--- |
+| `GET` | `/api/cms/pois/requests/my-requests?status=` | Owner xem request của mình |
+| `GET` | `/api/cms/pois/requests/{requestId}` | Chi tiết request + proposedData JSON |
+| `POST` | `/api/cms/pois/requests` | Owner gửi request CREATE/UPDATE/DELETE |
+| `GET` | `/api/cms/pois/requests?status=PENDING` | Admin xem tất cả request |
+| `GET` | `/api/cms/pois/requests/stats` | Admin xem thống kê PENDING theo ActionType |
+| `PUT` | `/api/cms/pois/requests/{requestId}/review` | Admin phê duyệt/từ chối |
+
+#### Subscription & Pricing Plans
+| Method | Route | Mô tả |
+| :--- | :--- | :--- |
+| `GET` | `/api/cms/subscriptions/plans` | Danh sách gói (Owner: chỉ active; Admin: tất cả) |
+| `POST` | `/api/cms/subscriptions/plans` | Admin tạo gói mới |
+| `PUT` | `/api/cms/subscriptions/plans/{planId}` | Admin sửa gói |
+| `PUT` | `/api/cms/subscriptions/plans/{planId}/toggle` | Admin ẩn/hiện gói |
+| `GET` | `/api/cms/subscriptions/me` | Owner xem gói hiện tại + ngày hết hạn |
+| `POST` | `/api/cms/subscriptions/upgrade/init` | Owner khởi tạo nâng gói (VietQR/MoMo) |
+| `GET` | `/api/cms/subscriptions/owner/{accountId}` | Admin xem subscription của Owner |
+| `POST` | `/api/cms/subscriptions/owner/{accountId}/assign` | Admin gán gói thủ công (MANUAL) |
+
+#### Payment Management (Admin)
+| Method | Route | Mô tả |
+| :--- | :--- | :--- |
+| `GET` | `/api/cms/payments` | Danh sách giao dịch (filter type, status, date) |
+| `GET` | `/api/cms/payments/{transactionId}` | Chi tiết giao dịch |
+
+#### Payment Webhooks (SePay / MoMo)
+| Method | Route | Mô tả |
+| :--- | :--- | :--- |
+| `POST` | `/api/payment/sepay/webhook` | SePay callback — cập nhật PaymentTransaction |
+| `POST` | `/api/payment/momo/webhook` | MoMo callback — cập nhật PaymentTransaction |
+
 ### 📱 Mobile APIs
 
 | Method | Route | Mô tả |
@@ -408,34 +488,67 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 | `GET` | `/api/mobile/pois/nearby?lat=&lon=&radius=` | POI gần vị trí |
 | `GET` | `/api/mobile/pois/{poiId}?lang=vi` | Chi tiết POI |
 | `GET` | `/api/mobile/categories` | Danh sách danh mục |
-| `GET` | `/api/mobile/routes?lang=vi` | Danh sách route |
-| `GET` | `/api/mobile/routes/{routeId}?lang=vi` | Chi tiết route |
+| `GET` | `/api/mobile/tours?lang=vi` | Danh sách tour/route |
+| `GET` | `/api/mobile/tours/{tourId}?lang=vi` | Chi tiết tour + steps |
 | `POST` | `/api/mobile/listen-history` | Ghi lịch sử nghe |
 | `POST` | `/api/mobile/location-log` | Gửi batch GPS log |
+| `POST` | `/api/mobile/payment/init` | Du khách khởi tạo thanh toán VietQR |
+| `GET` | `/api/mobile/payment/verify/{transactionId}` | Poll trạng thái thanh toán |
+| `GET` | `/api/mobile/tours/directions?waypoints=&mode=` | Lấy đường đi (ORS OpenRouteService) |
 
 ---
 
 ## 🖥️ 8. WEB CMS — CẤU TRÚC TRANG (REACT ROUTES)
 
 > Web CMS sử dụng React Router v6 với `ProtectedRoute` kiểm tra role JWT.
+> File pages: `web/src/pages/` — **27 trang** hiện tại.
+
+**Quản lý POI & Nội dung**
 
 | Route | Trang | Quyền | Mô tả |
 | :--- | :--- | :--- | :--- |
 | `/` | `LoginPage` | Public | Đăng nhập CMS |
 | `/dashboard` | `DashboardPage` | Admin, Owner | Tổng quan thống kê (Top POI, Heatmap, Online devices) |
 | `/pois` | `POIPage` | Admin, Owner | Danh sách POI + filter/search/sort |
-| `/pois/add` | `AddPOIPage` | Owner | Form tạo POI mới |
-| `/pois/:id` | `POIDetailPage` | Admin, Owner | Chi tiết: content, gallery, pipeline |
-| `/accounts` | `AccountsPage` | Admin | CRUD tài khoản |
-| `/categories` | `CategoryPage` | Admin | CRUD danh mục |
-| `/routes` | `ToursPage` | Admin | Danh sách route |
-| `/routes/:id` | `RouteDetailPage` | Admin | Chi tiết route: quản lý steps |
+| `/pois/add` | `AddPOIPage` | Owner | Form tạo POI mới (gửi PoiRequest CREATE) |
+| `/pois/:id` | `POIDetailPage` | Admin, Owner | Chi tiết: content, gallery, pipeline trigger |
+| `/pois/:id/update` | `POIUpdateDetailPage` | Owner | Form sửa POI (gửi PoiRequest UPDATE) |
 | `/audio` | `AudioPage` | Admin, Owner | Quản lý audio files |
 | `/audio/:poiId` | `AudioContentPage` | Admin, Owner | Nội dung audio chi tiết của POI |
+
+**Duyệt POI Request (Admin Workflow)**
+
+| Route | Trang | Quyền | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `/poi-management` | `POIManagementPage` | Admin | Tổng quan 3 cột: New / Update / Delete requests |
+| `/poi-management/new` | `POINewListPage` | Admin | Danh sách request TẠO MỚI đang PENDING |
+| `/poi-management/update` | `POIUpdateListPage` | Admin | Danh sách request CẬP NHẬT đang PENDING |
+| `/poi-management/delete` | `POIDeletionListPage` | Admin | Danh sách request XÓA đang PENDING |
+
+**Quản trị & Monitoring**
+
+| Route | Trang | Quyền | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `/accounts` | `AccountsPage` | Admin | CRUD tài khoản Owner/Admin |
+| `/categories` | `CategoryPage` | Admin | CRUD danh mục POI |
+| `/tours` | `ToursPage` | Admin | Danh sách Tour/Route |
+| `/tours/create` | `CreateTourPage` | Admin | Tạo Tour mới + gán POI steps |
+| `/tours/:id` | `TourDetailPage` | Admin | Chi tiết Tour: quản lý steps và thứ tự |
 | `/analytics` | `AnalyticsPage` | Admin | Phân tích dữ liệu nâng cao |
 | `/access-codes` | `AccessCodePage` | Admin | Quản lý mã QR kích hoạt |
 | `/device-tracking` | `DeviceTrackingPage` | Admin | Real-time map vị trí thiết bị (SignalR) |
 | `/device-activity` | `DeviceActivityPage` | Admin | Timeline GPS + lịch sử nghe của thiết bị |
+| `/queue-demo` | `QueueDemoPage` | Admin | Dev tool test SignalR queue |
+
+**Subscription & Thanh Toán**
+
+| Route | Trang | Quyền | Mô tả |
+| :--- | :--- | :--- | :--- |
+| `/pricing` | `PricingPlansPage` | Owner | Xem các gói dịch vụ và so sánh |
+| `/subscriptions/checkout` | `SubscriptionCheckoutPage` | Owner | Thanh toán nâng gói (VietQR/MoMo, polling) |
+| `/subscriptions` | `AdminSubscriptionDashboard` | Admin | Quản lý subscription của tất cả Owner |
+| `/transactions` | `AdminTransactionDashboard` | Admin | Lịch sử giao dịch thanh toán |
+| `/profile` | `ProfilePage` | Admin, Owner | Xem/sửa thông tin cá nhân |
 
 ---
 
@@ -445,69 +558,10 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 
 ---
 
-### 📋 Tổng Số Chức Năng Theo Actor
-
-| Actor | Nhóm chức năng | Số UC |
-| :--- | :--- | :---: |
-| **Du Khách (Guest)** | Onboarding, Bản đồ, Tìm kiếm, Chi tiết POI, Route, Cài đặt, Nền | **13** |
-| **Chủ Quán (POI Owner)** | Xác thực, POI, Nội dung đa ngôn ngữ, Dashboard | **9** |
-| **Admin — Nội dung** | POI, Content Pipeline, Quản trị hệ thống, Phân tích | **14** |
-| **Admin — Giám sát** | Real-time, Hoạt động thiết bị, Mã QR, Giả lập | **10** |
-| **Tổng cộng** | | **46** |
-
----
-
-### 9.0. Usecase — Tổng Quan (Tất Cả Vai Trò)
-
-```mermaid
-flowchart LR
-    G["Du Khách\nGuest"]
-    O["Chủ Quán\nOwner"]
-    A["Admin"]
-
-    subgraph AG["🎧 AudioGo System"]
-        U1(["Quét QR kích hoạt"])
-        U2(["Xem bản đồ & nghe audio"])
-        U3(["Tìm kiếm POI"])
-        U4(["Xem Route"])
-        U5(["Đăng nhập CMS"])
-        U6(["Quản lý POI của mình"])
-        U7(["Upload nội dung & audio"])
-        U8(["Xem Dashboard"])
-        U9(["Quản lý toàn bộ POI"])
-        U10(["Chạy Content Pipeline"])
-        U11(["Quản lý tài khoản & danh mục"])
-        U12(["Giám sát thiết bị real-time"])
-        U13(["Quản lý mã QR"])
-        U14(["Xem Analytics"])
-    end
-
-    G --> U1
-    G --> U2
-    G --> U3
-    G --> U4
-
-    O --> U5
-    O --> U6
-    O --> U7
-    O --> U8
-
-    A --> U5
-    A --> U8
-    A --> U9
-    A --> U10
-    A --> U11
-    A --> U12
-    A --> U13
-    A --> U14
-```
-
----
 
 ### 9.1. Usecase — Du Khách (Guest / Mobile App)
 
-> **Codebase:** `mobile/AppShell.xaml` · `mobile/Views/` · `api/Controllers/Mobile/`
-> **Tổng UC: 13**
+> **Codebase:** `mobile/Views/` · `mobile/ViewModels/` · `mobile/Services/` · `api/Controllers/Mobile/`
 
 ```mermaid
 flowchart LR
@@ -516,48 +570,54 @@ flowchart LR
     subgraph MOBILE["📱 Mobile App — .NET MAUI"]
         direction TB
 
-        subgraph GRP_ONBOARD["Onboarding (WelcomePage / WelcomeQrScanPage)"]
+        subgraph GRP_ONBOARD["Onboarding"]
             UC1(["Xem màn hình chào"])
             UC2(["Quét mã QR kích hoạt"])
-            UC3(["Đồng bộ dữ liệu lần đầu"])
+            UC3(["Đồng bộ dữ liệu"])
         end
 
-        subgraph GRP_MAP["Bản đồ (MapPage)"]
+        subgraph GRP_PAYMENT["Thanh Toán"]
+            UC18(["Thanh toán online VietQR"])
+        end
+
+        subgraph GRP_MAP["Bản đồ"]
             UC4(["Xem bản đồ POI"])
-            UC5(["Tự động phát audio theo geofence"])
+            UC5(["Tự động phát audio"])
             UC6(["Điều khiển Mini-Player"])
         end
 
-        subgraph GRP_SEARCH["Khám phá (SearchPage)"]
+        subgraph GRP_SEARCH["Khám phá"]
             UC7(["Tìm kiếm POI"])
             UC8(["Lọc POI theo Category"])
         end
 
-        subgraph GRP_DETAIL["Chi tiết (PoiDetailPage)"]
+        subgraph GRP_DETAIL["Chi tiết POI"]
             UC9(["Xem thông tin POI"])
             UC10(["Xem gallery ảnh"])
             UC11(["Nghe audio theo ngôn ngữ"])
         end
 
-        subgraph GRP_TOUR["Route (RouteListPage / RouteDetailPage)"]
-            UC12(["Xem danh sách Route"])
-            UC13(["Xem lộ trình & các bước POI"])
+        subgraph GRP_TOUR["Tour"]
+            UC12(["Xem danh sách Tour"])
+            UC13(["Xem lộ trình & POI steps"])
         end
 
-        subgraph GRP_SETTINGS["Cài đặt (SettingsPage)"]
+        subgraph GRP_SETTINGS["Cài đặt"]
             UC14(["Chọn ngôn ngữ"])
             UC15(["Xóa cache offline"])
         end
 
-        subgraph GRP_BG["Nền — Background Services"]
+        subgraph GRP_BG["Nền — Background"]
             UC16(["Ghi Listen History"])
             UC17(["Gửi GPS Location Log"])
+            UC19(["Kết nối SignalR"])
         end
     end
 
     Guest --> UC1
     Guest --> UC2
     Guest --> UC3
+    Guest --> UC18
     Guest --> UC4
     Guest --> UC5
     Guest --> UC6
@@ -569,14 +629,14 @@ flowchart LR
     Guest --> UC12
     Guest --> UC13
     Guest --> UC14
+    Guest --> UC15
 ```
 
 ---
 
 ### 9.2. Usecase — Chủ Quán (POI Owner / Web CMS)
 
-> **Codebase:** `Sidebar.jsx` (role=Owner) · `POIPage.jsx` · `AudioPage.jsx` · `CmsPoiController.cs` · `CmsPoiContentController.cs`
-> **Tổng UC: 9**
+> **Codebase:** `POIPage.jsx` · `AddPOIPage.jsx` · `POIUpdateDetailPage.jsx` · `AudioPage.jsx` · `PricingPlansPage.jsx` · `SubscriptionCheckoutPage.jsx` · `CmsPoiController.cs` · `CmsSubscriptionController.cs`
 
 ```mermaid
 flowchart LR
@@ -585,26 +645,31 @@ flowchart LR
     subgraph CMS["🌐 Web CMS — Khu vực Owner"]
         direction TB
 
-        subgraph GRP_AUTH["Xác thực (LoginPage)"]
+        subgraph GRP_AUTH["Xác thực"]
             UC20(["Đăng nhập CMS"])
         end
 
-        subgraph GRP_POI["Quản lý POI (POIPage)"]
-            UC21(["Xem danh sách POI của mình"])
-            UC22(["Tạo POI mới"])
-            UC23(["Sửa thông tin POI"])
-            UC24(["Upload logo POI"])
-            UC25(["Upload ảnh gallery"])
+        subgraph GRP_POI["Yêu Cầu POI"]
+            UC21(["Xem danh sách POI"])
+            UC22(["Gửi yêu cầu TẠO POI"])
+            UC23(["Gửi yêu cầu SỬA POI"])
+            UC24(["Upload logo/gallery"])
         end
 
-        subgraph GRP_CONTENT["Nội dung đa ngôn ngữ (AudioPage)"]
+        subgraph GRP_CONTENT["Nội dung đa ngôn ngữ"]
             UC26(["Xem nội dung theo ngôn ngữ"])
             UC27(["Tạo / Sửa bản Master"])
             UC28(["Upload audio thủ công"])
         end
 
-        subgraph GRP_DASHBOARD["Dashboard (DashboardPage)"]
-            UC29(["Xem thống kê tổng quan"])
+        subgraph GRP_SUB["Gói Dịch Vụ"]
+            UC25(["Xem các gói subscription"])
+            UC29(["Thanh toán nâng gói VietQR"])
+        end
+
+        subgraph GRP_DASHBOARD["Cá nhân & Thống kê"]
+            UC30b(["Xem Dashboard"])
+            UC31b(["Xem/sửa hồ sơ"])
         end
     end
 
@@ -618,14 +683,15 @@ flowchart LR
     Owner --> UC27
     Owner --> UC28
     Owner --> UC29
+    Owner --> UC30b
+    Owner --> UC31b
 ```
 
 ---
 
 ### 9.3. Usecase — Admin (Web CMS — Quản Trị & Nội Dung)
 
-> **Codebase:** `Sidebar.jsx` (role=Admin) · `CmsPoiController.cs` · `CmsAccountController.cs` · `CmsCategoryController.cs` · `CmsRouteController.cs` · `CmsContentPipelineController.cs` · `AnalyticsController.cs`
-> **Tổng UC: 14**
+> **Codebase:** `CmsPoiController.cs` · `CmsAccountController.cs` · `CmsCategoryController.cs` · `CmsTourController.cs` · `CmsContentPipelineController.cs` · `CmsSubscriptionController.cs` · `AnalyticsController.cs`
 
 ```mermaid
 flowchart LR
@@ -634,30 +700,39 @@ flowchart LR
     subgraph CMS["🌐 Web CMS — Quản Trị & Nội Dung"]
         direction TB
 
-        subgraph GRP_POI["Quản lý POI (POIPage / AddPOIPage)"]
-            UC30(["Xem toàn bộ POI hệ thống"])
-            UC31(["Tạo / Sửa / Xóa POI"])
-            UC32(["Xét duyệt POI mới"])
-            UC33(["Xét duyệt POI xóa"])
-            UC34(["Upload logo POI"])
+        subgraph GRP_POIREQ["Duyệt Yêu Cầu POI"]
+            UC32(["Xem request PENDING"])
+            UC33(["Duyệt CREATE request"])
+            UC34(["Duyệt UPDATE request"])
+            UC35b(["Duyệt DELETE request"])
         end
 
-        subgraph GRP_CONTENT["Bản dịch & Audio (AudioPage)"]
+        subgraph GRP_POI["Quản lý POI trực tiếp"]
+            UC30(["Xem toàn bộ POI"])
+            UC31(["Tạo / Sửa / Xóa POI"])
+        end
+
+        subgraph GRP_CONTENT["Bản dịch & Audio"]
             UC35(["Tạo audio 1 POI"])
             UC36(["Tạo audio batch"])
             UC37(["Dịch + TTS toàn bộ 7 ngôn ngữ"])
-            UC38(["Xem kết quả pipeline"])
         end
 
         subgraph GRP_MGMT["Quản trị hệ thống"]
-            UC39(["CRUD tài khoản Owner"])
-            UC40(["CRUD danh mục Category"])
-            UC41(["CRUD Route & StepOrder"])
+            UC39(["CRUD tài khoản"])
+            UC40(["CRUD danh mục"])
+            UC41(["CRUD Tour & StepOrder"])
+        end
+
+        subgraph GRP_SUB["Subscription & Thanh Toán"]
+            UC44(["Quản lý subscription Owner"])
+            UC45(["Gán gói thủ công"])
+            UC46(["Xem lịch sử giao dịch"])
         end
 
         subgraph GRP_ANALYTICS["Phân tích dữ liệu"]
-            UC42(["Xem Dashboard tổng quan"])
-            UC43(["Xem Analytics chi tiết"])
+            UC42(["Xem Dashboard"])
+            UC43(["Xem Analytics"])
         end
     end
 
@@ -666,16 +741,20 @@ flowchart LR
     Admin --> UC32
     Admin --> UC33
     Admin --> UC34
+    Admin --> UC35b
     Admin --> UC35
     Admin --> UC36
     Admin --> UC37
-    Admin --> UC38
     Admin --> UC39
     Admin --> UC40
     Admin --> UC41
     Admin --> UC42
     Admin --> UC43
+    Admin --> UC44
+    Admin --> UC45
+    Admin --> UC46
 ```
+
 
 ---
 
@@ -732,109 +811,14 @@ flowchart LR
 
 ---
 
-## 🧩 10. SƠ ĐỒ LỚP (CLASS DIAGRAMS)
+## 🔄 10. SƠ ĐỒ TRÌNH TỰ (SEQUENCE DIAGRAMS)
 
-
-### 10.1. Tổng Quan — Backend Entity (Overview)
-
-> 11 Entity chính và quan hệ — tối giản, đúng với `api/Models/`.
-
-```mermaid
-classDiagram
-    direction LR
-    class Account { +AccountId +Role }
-    class Poi { +PoiId +AccountId«FK» +IsActive }
-    class PoiContent { +ContentId +PoiId«FK» +LanguageCode +IsMaster }
-    class PoiGallery { +ImageId +PoiId«FK» }
-    class Category { +CategoryId +Name }
-    class Route { +RouteId +Name }
-    class AppAccessCode { +CodeId +Code +UsedByDeviceId +ExpireAt }
-    class ListenHistory { +HistoryId +DeviceId +PoiId«FK» +ListenDuration }
-    class LocationLog { +LocationId +DeviceId +Latitude +Longitude }
-
-    Account "1" --> "0..*" Poi : owns
-    Poi "1" --> "0..*" PoiContent : has
-    Poi "1" --> "0..*" PoiGallery : has
-    Poi "0..*" <--> "0..*" Category : CategoryPoi
-    Route "0..*" <--> "0..*" Poi : RoutePoi
-    ListenHistory --> Poi
-```
-
-### 10.2. Tổng Quan — Backend Application Logic (Overview)
-
-> Gom nhóm API Controller và Services theo Domain thay vì kỹ thuật (MVC/API/Mobile), giúp dễ quản lý và mở rộng.
-
-```mermaid
-classDiagram
-    direction TB
-    
-    namespace UserManagement {
-        class AuthController { «api/auth» }
-        class AuthMobileController { «api/mobile/auth» }
-        class CmsAccountController { «api/cms/accounts 🔒» }
-        class AuthService
-        class IAccountRepository { <<interface>> }
-    }
-    
-    namespace PoiAndRouteManagement {
-        class CmsPoiController { «api/cms/pois 🔒» }
-        class PoiController { «api/mobile/poi» }
-        class CmsCategoryController { «api/cms/categories 🔒» }
-        class CmsRouteController { «api/cms/routes 🔒» }
-        class PoiRequestService
-        class IPoiRepository { <<interface>> }
-    }
-
-    namespace MediaAndContentPipeline {
-        class CmsContentPipelineController { «api/cms/pipeline 🔒» }
-        class MediaController { «api/cms/media 🔒» }
-        class ContentPipelineService
-        class IBlobStorageService { <<interface>> }
-    }
-    
-    namespace DeviceMonitoring {
-        class DeviceHub { «SignalR /hubs/device» }
-        class AnalyticsController { «api/cms/analytics 🔒» }
-        class CmsAccessCodeController { «api/cms/accesscodes 🔒» }
-        class IDevicePresenceService { <<interface>> }
-        class ILocationQueue { <<interface>> }
-    }
-    
-    class AppDbContext { «Entity Framework» }
-
-    AuthController --> AuthService
-    AuthMobileController --> AuthService
-    CmsAccountController --> IAccountRepository
-    
-    CmsPoiController --> IPoiRepository
-    PoiController --> PoiRequestService
-    PoiRequestService --> IPoiRepository
-    CmsCategoryController --> AppDbContext
-    CmsRouteController --> AppDbContext
-
-    CmsContentPipelineController --> ContentPipelineService
-    ContentPipelineService --> IBlobStorageService
-    MediaController --> IBlobStorageService
-
-    DeviceHub --> IDevicePresenceService
-    DeviceHub --> ILocationQueue
-    AnalyticsController --> AppDbContext
-    CmsAccessCodeController --> AppDbContext
-
-    IAccountRepository --> AppDbContext
-    IPoiRepository --> AppDbContext
-```
-
----
-
-## 🔄 11. SƠ ĐỒ TRÌNH TỰ (SEQUENCE DIAGRAMS)
-
-> **Mapping:** Mỗi diagram bên dưới tương ứng trực tiếp với các Use Case ở Section 9.
+> **Nguyên tắc:** 1 Use Case = 1 Sequence đơn. Flow phức tạp được tách thành các sequence con (a/b/c).
 > **Ký hiệu:** `participant` = thành phần tham gia · `->>` = gọi đồng bộ · `-->>` = phản hồi · `alt/opt/loop` = nhánh điều kiện
 
 ---
 
-### 11.1. Xem Màn Hình Chào (📱 Mobile — UC1)
+### 10.1. Xem Màn Hình Chào (📱 Mobile — UC1)
 
 ```mermaid
 sequenceDiagram
@@ -856,7 +840,7 @@ sequenceDiagram
 
 ---
 
-### 11.2. Quét QR Kích Hoạt (📱 Mobile — UC2)
+### 10.2. Quét QR Kích Hoạt (📱 Mobile — UC2)
 
 ```mermaid
 sequenceDiagram
@@ -886,7 +870,7 @@ sequenceDiagram
 
 ---
 
-### 11.3. Đồng Bộ Dữ Liệu Lần Đầu (📱 Mobile — UC3)
+### 10.3. Đồng Bộ Dữ Liệu Lần Đầu (📱 Mobile — UC3)
 
 ```mermaid
 sequenceDiagram
@@ -898,7 +882,7 @@ sequenceDiagram
 
     VM ->> SyncSvc: SyncAllAsync()
     SyncSvc ->> API: GetPoisAsync() / GetRoutesAsync() / GetCategoriesAsync()
-    API -->> SyncSvc: POIs + Routes + Categories
+    API -->> SyncSvc: POIs + Tours + Categories
     SyncSvc ->> DB: Upsert local cache
     SyncSvc -->> VM: Sync hoàn tất
     VM -->> MapPage: Navigate → MapPage
@@ -906,7 +890,7 @@ sequenceDiagram
 
 ---
 
-### 11.4. Xem Bản Đồ POI (📱 Mobile — UC4)
+### 10.4. Xem Bản Đồ POI (📱 Mobile — UC4)
 
 ```mermaid
 sequenceDiagram
@@ -924,7 +908,7 @@ sequenceDiagram
 
 ---
 
-### 11.5. Theo Dõi Vị Trí & Tự Động Phát Audio — Geofence (📱 Mobile — UC5)
+### 10.5. Theo Dõi Vị Trí & Tự Động Phát Audio — Geofence (📱 Mobile — UC5)
 
 > Bao gồm xử lý ưu tiên khi có nhiều POI trong vùng geofence và gọi hàng đợi ghi log.
 
@@ -973,7 +957,7 @@ sequenceDiagram
 
 ---
 
-### 11.6. Điều Khiển Mini-Player (📱 Mobile — UC6)
+### 10.6. Điều Khiển Mini-Player (📱 Mobile — UC6)
 
 ```mermaid
 sequenceDiagram
@@ -992,7 +976,7 @@ sequenceDiagram
 
 ---
 
-### 11.7. Tìm Kiếm POI (📱 Mobile — UC7)
+### 10.7. Tìm Kiếm POI (📱 Mobile — UC7)
 
 ```mermaid
 sequenceDiagram
@@ -1014,7 +998,7 @@ sequenceDiagram
 
 ---
 
-### 11.8. Lọc POI Theo Category (📱 Mobile — UC8)
+### 10.8. Lọc POI Theo Category (📱 Mobile — UC8)
 
 ```mermaid
 sequenceDiagram
@@ -1039,7 +1023,7 @@ sequenceDiagram
 
 ---
 
-### 11.9. Xem Thông Tin POI (📱 Mobile — UC9)
+### 10.9. Xem Thông Tin POI (📱 Mobile — UC9)
 
 ```mermaid
 sequenceDiagram
@@ -1062,7 +1046,7 @@ sequenceDiagram
 
 ---
 
-### 11.10. Xem Gallery Ảnh (📱 Mobile — UC10)
+### 10.10. Xem Gallery Ảnh (📱 Mobile — UC10)
 
 ```mermaid
 sequenceDiagram
@@ -1077,7 +1061,7 @@ sequenceDiagram
 
 ---
 
-### 11.11. Nghe Audio Theo Ngôn Ngữ (📱 Mobile — UC11)
+### 10.11. Nghe Audio Theo Ngôn Ngữ (📱 Mobile — UC11)
 
 ```mermaid
 sequenceDiagram
@@ -1101,7 +1085,164 @@ sequenceDiagram
 
 ---
 
-### 11.12. CMS — Đăng Nhập (🌐 Web CMS — UC20)
+### 10.12. Xem Danh Sách Tour (📱 Mobile — UC12)
+
+```mermaid
+sequenceDiagram
+    participant User as Người dùng
+    participant TourListPage
+    participant TourListVM as TourListViewModel
+    participant API as ApiService
+    participant Backend as TourMobileController
+
+    User ->> TourListPage: Mở trang Tour
+    TourListPage ->> TourListVM: LoadAsync()
+    TourListVM ->> API: GetToursAsync()
+    API ->> Backend: GET /api/mobile/tours
+    Backend -->> API: List~TourDto~ (name, description, stepCount)
+    API -->> TourListVM: tours[]
+    TourListVM -->> TourListPage: Render danh sách Tour
+```
+
+---
+
+### 10.13. Xem Chi Tiết Tour & Các Bước POI (📱 Mobile — UC13)
+
+```mermaid
+sequenceDiagram
+    participant User as Người dùng
+    participant TourListPage
+    participant TourDetailPage
+    participant TourDetailVM as TourDetailViewModel
+    participant API as ApiService
+    participant Backend as TourMobileController
+
+    User ->> TourListPage: Nhấn vào Tour
+    TourListPage ->> TourDetailPage: Navigate(tourId)
+    TourDetailPage ->> TourDetailVM: LoadAsync(tourId, lang)
+    TourDetailVM ->> API: GetTourDetailAsync(tourId, lang)
+    API ->> Backend: GET /api/mobile/tours/{tourId}?lang=vi
+    Backend -->> API: TourDetailDto (name, steps[]: PoiId, stepOrder, audioUrl)
+    API -->> TourDetailVM: TourDetailDto
+    TourDetailVM -->> TourDetailPage: Render lộ trình & danh sách POI theo thứ tự
+```
+
+---
+
+### 10.14. Chọn Ngôn Ngữ (📱 Mobile — UC14)
+
+```mermaid
+sequenceDiagram
+    participant User as Người dùng
+    participant SettingsPage
+    participant SettingsVM as SettingsViewModel
+    participant AppSettings as AppSettingsService
+
+    User ->> SettingsPage: Mở Settings → chọn ngôn ngữ
+    SettingsPage ->> SettingsVM: ChangeLanguage(langCode)
+    SettingsVM ->> AppSettings: SaveLanguage(langCode)
+    AppSettings -->> SettingsVM: OK
+    SettingsVM -->> SettingsPage: Reload UI theo ngôn ngữ mới
+```
+
+---
+
+### 10.15. Xóa Cache Offline (📱 Mobile — UC15)
+
+```mermaid
+sequenceDiagram
+    participant User as Người dùng
+    participant SettingsPage
+    participant SettingsVM as SettingsViewModel
+    participant SQLite as SQLiteDbContext
+
+    User ->> SettingsPage: Nhấn "Xóa cache"
+    SettingsPage ->> SettingsVM: ClearCacheCommand.Execute()
+    SettingsVM ->> SQLite: DeleteAllPoisAsync()
+    SQLite -->> SettingsVM: OK
+    SettingsVM ->> SQLite: DeleteAllContentsAsync()
+    SQLite -->> SettingsVM: OK
+    SettingsVM -->> SettingsPage: Thông báo xóa thành công
+```
+
+---
+
+### 10.18a. Thanh Toán Du Khách — Khởi Tạo (📱 Mobile — UC18)
+
+```mermaid
+sequenceDiagram
+    participant User as Du khách
+    participant PayPage as TouristPaymentPage
+    participant PayVM as TouristPaymentViewModel
+    participant API as ApiService
+    participant PayCtrl as TouristPaymentController
+
+    User ->> PayPage: Mở màn hình thanh toán
+    PayPage ->> PayVM: InitPaymentCommand.Execute()
+    PayVM ->> API: InitTouristPaymentAsync(deviceId)
+    API ->> PayCtrl: POST /api/mobile/payment/init
+    PayCtrl -->> API: 200 { transactionId, amount, vietQrUrl, bankAccount }
+    API -->> PayVM: PaymentInitDto
+    PayVM -->> PayPage: Hiển thị QR VietQR + thông tin chuyển khoản
+    PayVM ->> PayVM: StartPolling(transactionId) — mỗi 5 giây
+```
+
+---
+
+### 10.18b. Thanh Toán Du Khách — Xác Nhận & Cấp Token (📱 Mobile — UC18)
+
+```mermaid
+sequenceDiagram
+    participant PayVM as TouristPaymentViewModel
+    participant API as ApiService
+    participant PayCtrl as TouristPaymentController
+
+    loop Polling mỗi 5 giây
+        PayVM ->> API: VerifyTouristPaymentAsync(transactionId, deviceId)
+        API ->> PayCtrl: GET /api/mobile/payment/verify/{transactionId}
+
+        alt SUCCESS — SePay webhook đã xác nhận
+            PayCtrl -->> API: 200 { status: "SUCCESS", token: JWT }
+            API -->> PayVM: VerifyDto
+            PayVM ->> PayVM: Lưu JWT vào SecureStorage
+            PayVM ->> PayVM: CurrentState = Success → Navigate MainPage
+        else PENDING
+            PayCtrl -->> API: 200 { status: "PENDING" }
+            PayVM ->> PayVM: Tiếp tục poll
+        else FAILED / Timeout
+            PayVM ->> PayVM: CurrentState = Failed
+        end
+    end
+```
+
+---
+
+### 10.19. Mobile Kết Nối SignalR Real-Time (📱 Mobile — UC19)
+
+```mermaid
+sequenceDiagram
+    participant MainVM as MainViewModel
+    participant SRSvc as SignalRService
+    participant Hub as DeviceHub (Backend)
+    participant CMS as Web CMS Admin
+
+    MainVM ->> SRSvc: ConnectAsync(deviceId, JWT)
+    SRSvc ->> Hub: HubConnection.StartAsync() /hubs/device
+    Hub ->> Hub: OnConnectedAsync() → UpdatePresence(Online)
+    Hub -->> CMS: BroadcastDeviceStatus(deviceId, Online)
+
+    loop GPS location update (mỗi 30 giây)
+        SRSvc ->> Hub: InvokeAsync("SendLocationUpdate", lat, lng, deviceId)
+        Hub ->> Hub: QueueLocationAsync(log)
+        Hub -->> CMS: BroadcastLocationUpdate(deviceId, lat, lng)
+    end
+
+    Note over SRSvc,Hub: Khi app tắt → OnDisconnectedAsync() → Offline
+```
+
+---
+
+### 10.20. CMS — Đăng Nhập (🌐 Web CMS — UC20)
 
 > **UC:** UC20 Đăng nhập CMS (Owner & Admin)
 
@@ -1143,52 +1284,220 @@ sequenceDiagram
 
 ---
 
-### 11.13. CMS — Quản Lý POI (🌐 Web CMS — UC21–UC25, UC30–UC34)
+### 10.21a. CMS — Xem Danh Sách POI (🌐 Web CMS — UC21, UC30)
 
 ```mermaid
 sequenceDiagram
-    participant Admin
-    participant CMS as Web CMS (Browser)
+    participant User as Admin / Owner
+    participant CMS as Web CMS
     participant PoiCtrl as CmsPoiController
     participant DB as AppDbContext
 
-    Note over CMS,PoiCtrl: Mọi request đều gửi kèm JWT Header
+    User ->> CMS: Vào trang POI
+    CMS ->> PoiCtrl: GET /api/cms/pois [JWT]
+    PoiCtrl ->> DB: Query POIs (filter by AccountId nếu Owner)
+    DB -->> PoiCtrl: List~Poi~
+    PoiCtrl -->> CMS: 200 List~PoiDto~
+    CMS -->> User: Hiển thị bảng danh sách POI
+```
 
-    Admin ->> CMS: Xem danh sách POI
-    CMS ->> PoiCtrl: GET /api/cms/poi
-    PoiCtrl ->> DB: Query all POIs + Content
-    DB -->> PoiCtrl: List Poi
-    PoiCtrl -->> CMS: 200 List POI
-    CMS -->> Admin: Hiển thị bảng POI
+---
 
-    Admin ->> CMS: Tạo POI mới (form)
-    CMS ->> PoiCtrl: POST /api/cms/poi
+### 10.21b. CMS — Tạo POI Mới (🌐 Web CMS — UC22, UC31)
+
+```mermaid
+sequenceDiagram
+    participant User as Admin / Owner
+    participant CMS as Web CMS
+    participant PoiCtrl as CmsPoiController
+    participant DB as AppDbContext
+
+    User ->> CMS: Điền form + nhấn Tạo POI
+    CMS ->> PoiCtrl: POST /api/cms/pois [JWT]
     PoiCtrl ->> DB: Add Poi + PoiContent (master)
-    DB -->> PoiCtrl: saved
-    PoiCtrl -->> CMS: 201 Created
-    CMS -->> Admin: Thông báo tạo thành công
+    DB -->> PoiCtrl: Saved
+    PoiCtrl -->> CMS: 201 Created PoiDto
+    CMS -->> User: Thông báo tạo thành công
+```
 
-    Admin ->> CMS: Cập nhật thông tin POI
-    CMS ->> PoiCtrl: PUT /api/cms/poi/{id}
+---
+
+### 10.21c. CMS — Cập Nhật & Xóa POI (🌐 Web CMS — UC23, UC31)
+
+```mermaid
+sequenceDiagram
+    participant User as Admin / Owner
+    participant CMS as Web CMS
+    participant PoiCtrl as CmsPoiController
+    participant DB as AppDbContext
+
+    User ->> CMS: Chỉnh sửa POI → Lưu
+    CMS ->> PoiCtrl: PUT /api/cms/pois/{id} [JWT]
     PoiCtrl ->> DB: Update Poi fields
-    DB -->> PoiCtrl: saved
+    DB -->> PoiCtrl: Saved
     PoiCtrl -->> CMS: 200 OK
 
-    Admin ->> CMS: Xóa POI
-    CMS ->> PoiCtrl: DELETE /api/cms/poi/{id}
+    User ->> CMS: Xóa POI → Xác nhận
+    CMS ->> PoiCtrl: DELETE /api/cms/pois/{id} [JWT]
     PoiCtrl ->> DB: Remove Poi + related data
-    DB -->> PoiCtrl: deleted
+    DB -->> PoiCtrl: Deleted
     PoiCtrl -->> CMS: 204 No Content
 ```
 
 ---
 
-### 11.14. CMS — Content Pipeline Trigger (🌐 Web CMS — UC35, UC36, UC37, UC38)
+### 10.22a. CMS — Owner Gửi Yêu Cầu TẠO POI (🌐 Web CMS — UC22)
+
+> Luồng PoiRequest: Owner submit CREATE → PENDING → Admin duyệt sau.
+
+```mermaid
+sequenceDiagram
+    participant Owner
+    participant CMS as Web CMS (AddPOIPage)
+    participant PoiCtrl as CmsPoiController
+    participant SvcReq as IPoiRequestService
+    participant DB as AppDbContext
+
+    Owner ->> CMS: Điền form POI + nhấn Gửi Yêu Cầu
+    CMS ->> PoiCtrl: POST /api/cms/pois/requests [JWT-Owner]
+    Note over PoiCtrl: actionType=CREATE, draft=PoiDraftDto
+    PoiCtrl ->> SvcReq: SubmitPoiRequestAsync(accountId, req)
+    SvcReq ->> DB: INSERT PoiRequest { status=PENDING, proposedData=JSON }
+    DB -->> SvcReq: Saved
+    SvcReq -->> PoiCtrl: requestId
+    PoiCtrl -->> CMS: 200 { message, requestId }
+    CMS -->> Owner: "Yêu cầu đã gửi thành công — chờ Admin duyệt"
+```
+
+---
+
+### 10.33a. CMS — Admin Duyệt/Từ Chối POI Request (🌐 Web CMS — UC33/UC34/UC35b)
 
 ```mermaid
 sequenceDiagram
     participant Admin
-    participant CMS as Web CMS (Browser)
+    participant CMS as Web CMS (POIManagementPage)
+    participant PoiCtrl as CmsPoiController
+    participant SvcReq as IPoiRequestService
+    participant DB as AppDbContext
+
+    Admin ->> CMS: Mở tab New/Update/Delete requests
+    CMS ->> PoiCtrl: GET /api/cms/pois/requests?status=PENDING [JWT-Admin]
+    PoiCtrl -->> CMS: List~PoiRequestListDto~
+    CMS -->> Admin: Bảng danh sách yêu cầu
+
+    Admin ->> CMS: Chọn request → Xem chi tiết
+    CMS ->> PoiCtrl: GET /api/cms/pois/requests/{requestId}
+    PoiCtrl -->> CMS: proposedData JSON + rejectReason
+
+    alt APPROVED
+        Admin ->> CMS: Nhấn Phê duyệt
+        CMS ->> PoiCtrl: PUT /api/cms/pois/requests/{requestId}/review { status: APPROVED }
+        PoiCtrl ->> SvcReq: ReviewPoiRequestAsync(requestId, APPROVED)
+        SvcReq ->> DB: Apply proposedData → Upsert/Delete Poi
+        DB -->> SvcReq: Saved
+        SvcReq -->> PoiCtrl: { success, requestId, status }
+        PoiCtrl -->> CMS: 200 OK
+        CMS -->> Admin: "Đã phê duyệt — POI đã cập nhật live"
+    else REJECTED
+        Admin ->> CMS: Nhập lý do → Nhấn Từ chối
+        CMS ->> PoiCtrl: PUT /api/cms/pois/requests/{requestId}/review { status: REJECTED, rejectReason }
+        PoiCtrl ->> SvcReq: ReviewPoiRequestAsync(requestId, REJECTED)
+        SvcReq ->> DB: UPDATE PoiRequest status=REJECTED + rejectReason
+        DB -->> SvcReq: Saved
+        PoiCtrl -->> CMS: 200 OK
+        CMS -->> Admin: "Đã từ chối yêu cầu"
+    end
+```
+
+---
+
+### 10.25a. CMS — Owner Xem Gói Subscription (🌐 Web CMS — UC25)
+
+```mermaid
+sequenceDiagram
+    participant Owner
+    participant CMS as Web CMS (PricingPlansPage)
+    participant SubCtrl as CmsSubscriptionController
+    participant DB as AppDbContext
+
+    Owner ->> CMS: Vào trang Gói Dịch Vụ
+    CMS ->> SubCtrl: GET /api/cms/subscriptions/plans [JWT-Owner]
+    SubCtrl ->> DB: Query SubscriptionPlans WHERE isActive=true
+    DB -->> SubCtrl: List~SubscriptionPlan~
+    SubCtrl -->> CMS: 200 plans[]
+    CMS ->> SubCtrl: GET /api/cms/subscriptions/me [JWT-Owner]
+    SubCtrl -->> CMS: { currentPlan, activeSubscription, daysRemaining }
+    CMS -->> Owner: Bảng so sánh gói + gói hiện tại đang dùng
+```
+
+---
+
+### 10.29a. CMS — Owner Nâng Gói (Subscription Upgrade) (🌐 Web CMS — UC29)
+
+```mermaid
+sequenceDiagram
+    participant Owner
+    participant CMS as Web CMS (SubscriptionCheckoutPage)
+    participant SubCtrl as CmsSubscriptionController
+    participant DB as AppDbContext
+    participant Webhook as SePay/MoMo Webhook
+
+    Owner ->> CMS: Chọn gói + gateway (SEPAY/MOMO) → Xác nhận nâng cấp
+    CMS ->> SubCtrl: POST /api/cms/subscriptions/upgrade/init { planId, gateway }
+    SubCtrl ->> DB: INSERT PaymentTransaction { type=OWNER_SUBSCRIPTION, status=PENDING }
+    SubCtrl -->> CMS: 200 { transactionId, vietQrUrl, transferContent, expireInMinutes=15 }
+    CMS -->> Owner: Hiển thị QR VietQR + hướng dẫn chuyển khoản
+
+    loop Poll mỗi 5s (tối đa 15 phút)
+        CMS ->> SubCtrl: GET /api/cms/subscriptions/verify/{transactionId}
+        SubCtrl -->> CMS: { status: PENDING }
+    end
+
+    Webhook ->> SubCtrl: POST /api/payment/sepay/webhook { transactionId, amount }
+    SubCtrl ->> DB: UPDATE PaymentTransaction status=SUCCESS
+    SubCtrl ->> DB: INSERT OwnerSubscription { status=ACTIVE, endDate=+30days }
+    SubCtrl ->> DB: UPDATE Account.SubscriptionPlanId
+
+    CMS -->> Owner: "Thanh toán thành công — Gói đã được nâng cấp!"
+```
+
+---
+
+### 10.35a. CMS — Generate Audio Cho 1 POI (🌐 Web CMS — UC35)
+
+
+```mermaid
+sequenceDiagram
+    participant Admin
+    participant CMS as Web CMS
+    participant PipeCtrl as CmsContentPipelineController
+    participant Pipeline as ContentPipelineService
+    participant TTS as TtsService
+    participant Blob as BlobStorageService
+    participant DB as AppDbContext
+
+    Admin ->> CMS: Nhấn "Tạo Audio" cho POI
+    CMS ->> PipeCtrl: POST /api/cms/pipeline/generate/{poiId} [JWT]
+    PipeCtrl ->> Pipeline: GenerateAudioAsync(content)
+    Pipeline ->> TTS: SynthesizeAsync(text, lang)
+    TTS -->> Pipeline: audio MP3 stream
+    Pipeline ->> Blob: UploadAsync(stream)
+    Blob -->> Pipeline: publicUrl
+    Pipeline ->> DB: Update PoiContent.AudioUrl
+    Pipeline -->> PipeCtrl: PoiContent updated
+    PipeCtrl -->> CMS: 200 OK
+    CMS -->> Admin: Hiển thị link audio mới
+```
+
+---
+
+### 10.37a. CMS — Dịch & TTS Sang Ngôn Ngữ Mới (🌐 Web CMS — UC37)
+
+```mermaid
+sequenceDiagram
+    participant Admin
+    participant CMS as Web CMS
     participant PipeCtrl as CmsContentPipelineController
     participant Pipeline as ContentPipelineService
     participant Trans as TranslationService
@@ -1196,37 +1505,25 @@ sequenceDiagram
     participant Blob as BlobStorageService
     participant DB as AppDbContext
 
-    Admin ->> CMS: Yêu cầu tạo audio cho POI
-    CMS ->> PipeCtrl: POST /api/cms/pipeline/generate/{poiId}
-    PipeCtrl ->> Pipeline: GenerateAudioAsync(content)
-    Pipeline ->> TTS: SynthesizeAsync(text, lang)
-    TTS -->> Pipeline: audio MP3 stream
-    Pipeline ->> Blob: UploadAsync(stream)
-    Blob -->> Pipeline: publicUrl
-    Pipeline ->> DB: Update AudioUrl
-    Pipeline -->> PipeCtrl: PoiContent with AudioUrl
-    PipeCtrl -->> CMS: 200 OK
-    CMS -->> Admin: Hiển thị link audio mới
+    Admin ->> CMS: Yêu cầu dịch sang ngôn ngữ mới
+    CMS ->> PipeCtrl: POST /api/cms/pipeline/generate/{poiId} [JWT]
+    PipeCtrl ->> Pipeline: EnsureContentAsync(poi, lang)
+    Pipeline ->> DB: Tìm PoiContent(poiId, lang)
 
-    Admin ->> CMS: Yêu cầu dịch sang English
-    CMS ->> PipeCtrl: POST /api/cms/pipeline/generate/{poiId}
-    PipeCtrl ->> Pipeline: EnsureContentAsync(poi, "en")
-    Pipeline ->> DB: Kiểm tra PoiContent(poiId, "en")
-
-    alt Đã có bản dịch
-        DB -->> Pipeline: existing content
-        Pipeline -->> PipeCtrl: existing PoiContent
-    else Chưa có → Tạo mới
-        Pipeline ->> Trans: TranslateAsync(title, "vi", "en")
+    alt Chưa có bản dịch
+        Pipeline ->> Trans: TranslateAsync(title, masterLang, lang)
         Trans -->> Pipeline: translated title
-        Pipeline ->> Trans: TranslateAsync(desc, "vi", "en")
-        Trans -->> Pipeline: translated description
-        Pipeline ->> TTS: SynthesizeAsync(translated, "en")
+        Pipeline ->> Trans: TranslateAsync(desc, masterLang, lang)
+        Trans -->> Pipeline: translated desc
+        Pipeline ->> TTS: SynthesizeAsync(translatedText, lang)
         TTS -->> Pipeline: audio stream
         Pipeline ->> Blob: UploadAsync(stream)
         Blob -->> Pipeline: audioUrl
-        Pipeline ->> DB: Add new PoiContent (en)
+        Pipeline ->> DB: Add new PoiContent(poiId, lang)
         Pipeline -->> PipeCtrl: new PoiContent
+    else Đã có
+        DB -->> Pipeline: existing PoiContent
+        Pipeline -->> PipeCtrl: existing
     end
 
     PipeCtrl -->> CMS: 200 OK
@@ -1235,7 +1532,7 @@ sequenceDiagram
 
 ---
 
-### 11.15. CMS — Gallery & Media Upload (🌐 Web CMS — UC24, UC25)
+### 10.15. CMS — Gallery & Media Upload (🌐 Web CMS — UC24, UC25)
 
 ```mermaid
 sequenceDiagram
@@ -1269,7 +1566,7 @@ sequenceDiagram
 
 ---
 
-### 11.16. Xem Route (📱 Mobile)
+### 10.16. Xem  (📱 Mobile)
 
 ```mermaid
 sequenceDiagram
@@ -1302,7 +1599,7 @@ sequenceDiagram
     DetailUI -->> MobileUser: Chuyển sang MapPage với route POI
 ```
 
-### 11.17. CMS — Bulk Content Pipeline: GenerateAllLanguages (⚙️ Backend)
+### 10.17. CMS — Bulk Content Pipeline: GenerateAllLanguages (⚙️ Backend)
 
 ```mermaid
 sequenceDiagram
@@ -1372,7 +1669,7 @@ sequenceDiagram
 ```
 
 
-### 11.18. CMS — Quản Lý Tài Khoản (🌐 Web CMS)
+### 10.18. CMS — Quản Lý Tài Khoản (🌐 Web CMS)
 
 ```mermaid
 sequenceDiagram
@@ -1429,7 +1726,7 @@ sequenceDiagram
     end
 ```
 
-### 11.19. CMS — Quản Lý Danh Mục (🌐 Web CMS)
+### 10.19. CMS — Quản Lý Danh Mục (🌐 Web CMS)
 
 ```mermaid
 sequenceDiagram
@@ -1478,64 +1775,66 @@ sequenceDiagram
     CatCtrl -->> CMS: 204 No Content
 ```
 
-### 11.20. CMS — Quản Lý Route (🌐 Web CMS)
+### 10.20. CMS — Quản Lý Tour (🌐 Web CMS — UC41)
 
 ```mermaid
 sequenceDiagram
     participant Admin
-    participant CMS as Web CMS (Browser)
-    participant RouteCtrl as CmsRouteController
-    participant Repo as IRouteRepository
+    participant CMS as Web CMS (ToursPage / CreateTourPage)
+    participant TourCtrl as CmsTourController
+    participant Repo as ITourRepository
+    participant Trans as ITranslationService
     participant DB as AppDbContext
 
-    Admin ->> CMS: Xem danh sách route
-    CMS ->> RouteCtrl: GET /api/cms/routes
-    RouteCtrl ->> Repo: GetAllAsync()
-    Repo -->> RouteCtrl: List~Route~ (include RoutePois)
-    RouteCtrl -->> CMS: 200 List~TourDto~
-    CMS -->> Admin: Hiển thị danh sách route
+    Admin ->> CMS: Xem danh sách tour
+    CMS ->> TourCtrl: GET /api/cms/tours [JWT-Admin]
+    TourCtrl ->> Repo: GetAllAsync()
+    Repo -->> TourCtrl: List~Tour~ (include TourPois)
+    TourCtrl -->> CMS: 200 List~TourDto~
+    CMS -->> Admin: Hiển thị danh sách tour
 
-    Admin ->> CMS: Tạo route mới
-    CMS ->> RouteCtrl: POST /api/cms/routes { name, description }
-    RouteCtrl ->> Repo: CreateAsync(route)
+    Admin ->> CMS: Tạo tour mới (name, description, thumbnail)
+    CMS ->> TourCtrl: POST /api/cms/tours { name, description }
+    TourCtrl ->> Trans: TranslateToAllLanguagesAsync(name, "vi")
+    Trans -->> TourCtrl: nameDict (7 langs JSON)
+    TourCtrl ->> Repo: CreateAsync(tour with LocalizedName)
     Repo ->> DB: Add + SaveChanges
-    RouteCtrl -->> CMS: 201 Created TourDto
-    CMS -->> Admin: Route mới hiện trong danh sách
+    TourCtrl -->> CMS: 201 Created TourDto
+    CMS -->> Admin: Tour mới hiện trong danh sách
 
-    Admin ->> CMS: Xem chi tiết route
-    CMS ->> RouteCtrl: GET /api/cms/routes/{id}
-    RouteCtrl ->> Repo: GetByIdAsync(id)
-    Repo -->> RouteCtrl: Route (include RoutePois + Poi + Contents)
-    RouteCtrl -->> CMS: 200 TourDto (kèm danh sách POI steps)
-    CMS -->> Admin: Hiển thị chi tiết route + POI steps
-
-    Admin ->> CMS: Thêm POI vào route
-    CMS ->> RouteCtrl: POST /api/cms/routes/{id}/pois { poiId, stepOrder }
-    RouteCtrl ->> Repo: AddPoiAsync(routeId, poiId, stepOrder)
-    Repo ->> DB: Add RoutePoi + SaveChanges
-    RouteCtrl -->> CMS: 204 No Content
-    CMS -->> Admin: POI thêm vào route thành công
+    Admin ->> CMS: Thêm POI vào tour (chọn POI + stepOrder)
+    CMS ->> TourCtrl: POST /api/cms/tours/{id}/pois { poiId, stepOrder }
+    TourCtrl ->> Repo: AddPoiAsync(tourId, poiId, stepOrder)
+    Repo ->> DB: Add TourPoi + SaveChanges
+    TourCtrl -->> CMS: 204 No Content
 
     Admin ->> CMS: Đổi thứ tự bước
-    CMS ->> RouteCtrl: PUT /api/cms/routes/{id}/pois/{poiId}/order { newOrder }
-    RouteCtrl ->> Repo: ReorderPoiAsync(routeId, poiId, newOrder)
-    Repo ->> DB: Update RoutePoi.StepOrder
-    RouteCtrl -->> CMS: 204 No Content
-    CMS -->> Admin: Thứ tự đã cập nhật
+    CMS ->> TourCtrl: PUT /api/cms/tours/{id}/pois/{poiId}/order { newOrder }
+    TourCtrl ->> Repo: ReorderPoiAsync(tourId, poiId, newOrder)
+    Repo ->> DB: Update TourPoi.StepOrder
+    TourCtrl -->> CMS: 204 No Content
 
-    Admin ->> CMS: Xóa POI khỏi route
-    CMS ->> RouteCtrl: DELETE /api/cms/routes/{id}/pois/{poiId}
-    RouteCtrl ->> Repo: RemovePoiAsync(routeId, poiId)
-    Repo ->> DB: Remove RoutePoi
-    RouteCtrl -->> CMS: 204 No Content
+    Admin ->> CMS: Xóa POI khỏi tour
+    CMS ->> TourCtrl: DELETE /api/cms/tours/{id}/pois/{poiId}
+    TourCtrl ->> Repo: RemovePoiAsync(tourId, poiId)
+    Repo ->> DB: Remove TourPoi
+    TourCtrl -->> CMS: 204 No Content
 
-    Admin ->> CMS: Xóa route
-    CMS ->> RouteCtrl: DELETE /api/cms/routes/{id}
-    RouteCtrl ->> Repo: DeleteAsync(id)
-    RouteCtrl -->> CMS: 204 No Content
+    alt Soft-delete tour
+        Admin ->> CMS: Xóa tour
+        CMS ->> TourCtrl: DELETE /api/cms/tours/{id}
+        TourCtrl ->> Repo: DeleteAsync(id) — set IsActive=false
+        TourCtrl -->> CMS: 204 No Content
+    else Restore tour
+        Admin ->> CMS: Khôi phục tour đã ẩn
+        CMS ->> TourCtrl: PATCH /api/cms/tours/{id}/restore
+        TourCtrl ->> Repo: RestoreAsync(id) — set IsActive=true
+        TourCtrl -->> CMS: 204 No Content
+    end
 ```
 
-### 11.21. Real-Time Device Monitoring — SignalR (📱 Mobile ↔ 🌐 Web CMS)
+
+### 10.21. Real-Time Device Monitoring — SignalR (📱 Mobile ↔ 🌐 Web CMS)
 
 ```mermaid
 sequenceDiagram
@@ -1572,7 +1871,7 @@ sequenceDiagram
     Hub ->> Admin: DeviceOffline { deviceId, isActive=false, onlineNow }
 ```
 
-### 11.22. CMS — Quản Lý Access Code (🌐 Web CMS)
+### 10.22. CMS — Quản Lý Access Code (🌐 Web CMS)
 
 ```mermaid
 sequenceDiagram
@@ -1601,7 +1900,7 @@ sequenceDiagram
     CodeCtrl -->> CMS: 200 { message }
 ```
 
-### 11.23. CMS — Xem Timeline Hoạt Động Thiết Bị (🌐 Web CMS)
+### 10.23. CMS — Xem Timeline Hoạt Động Thiết Bị (🌐 Web CMS)
 
 ```mermaid
 sequenceDiagram
@@ -1622,11 +1921,11 @@ sequenceDiagram
 
 ---
 
-## 📋 12. SƠ ĐỒ HOẠT ĐỘNG (ACTIVITY DIAGRAMS)
+## 📋 11. SƠ ĐỒ HOẠT ĐỘNG (ACTIVITY DIAGRAMS)
 
 > **Quy ước ký hiệu:** `((●))` = Start (filled circle) · `((◉))` = End · `{ }` = Decision (diamond) · `[ ]` = Action (rectangle)
 
-### 12.1. Luồng Khởi Động App & Quyết Định Màn Hình (📱 Mobile - UC1, UC2, UC3)
+### 11.1. Luồng Khởi Động App & Quyết Định Màn Hình (📱 Mobile - UC1, UC2, UC3)
 
 ```mermaid
 flowchart TD
@@ -1660,7 +1959,7 @@ flowchart TD
     style MAIN fill:#2196F3,color:#fff
 ```
 
-### 12.2. Luồng Xử Lý Geofence — Kích Hoạt POI Tự Động (📱 Mobile - UC4, UC5, UC6)
+### 11.2. Luồng Xử Lý Geofence — Kích Hoạt POI Tự Động (📱 Mobile - UC4, UC5, UC6)
 
 ```mermaid
 flowchart TD
@@ -1706,7 +2005,7 @@ flowchart TD
     style PLAY_NEW fill:#2196F3,color:#fff
 ```
 
-### 12.3. Luồng Content Pipeline (⚙️ Backend - UC35, UC36, UC37, UC38)
+### 11.3. Luồng Content Pipeline (⚙️ Backend - UC35, UC36, UC37, UC38)
 
 ```mermaid
 flowchart TD
@@ -1739,7 +2038,7 @@ flowchart TD
     style ERROR fill:#F44336,color:#fff
 ```
 
-### 12.4. Luồng Đồng Bộ Offline-First (📱 Mobile - UC2)
+### 11.4. Luồng Đồng Bộ Offline-First (📱 Mobile - UC2)
 
 ```mermaid
 flowchart TD
@@ -1763,7 +2062,7 @@ flowchart TD
     style BG_DOWNLOAD fill:#FF9800,color:#fff
 ```
 
-### 12.5. Xác Thực QR Code (📱 Mobile - UC2)
+### 11.5. Xác Thực QR Code (📱 Mobile - UC2)
 
 ```mermaid
 flowchart TD
@@ -1805,7 +2104,7 @@ flowchart TD
     style ERR_410 fill:#F44336,color:#fff
 ```
 
-### 12.6. CMS — Quản Lý POI Activity (🌐 Web CMS - UC21-UC25)
+### 11.6. CMS — Quản Lý POI Activity (🌐 Web CMS - UC21-UC25)
 
 ```mermaid
 flowchart TD
@@ -1852,7 +2151,7 @@ flowchart TD
     style SHOW_ERR fill:#F44336,color:#fff
 ```
 
-### 12.7. CMS — Bulk Content Pipeline: GenerateAllLanguages (⚙️ Backend - UC38)
+### 11.7. CMS — Bulk Content Pipeline: GenerateAllLanguages (⚙️ Backend - UC38)
 
 ```mermaid
 flowchart TD
@@ -1903,38 +2202,41 @@ flowchart TD
     style COUNT_FAIL fill:#F44336,color:#fff
 ```
 
-### 12.8. CMS — Quản Lý Route Activity (🌐 Web CMS - UC30-UC34)
+### 11.8. CMS — Quản Lý Tour Activity (🌐 Web CMS — UC41)
 
 ```mermaid
 flowchart TD
     START((●)) --> LOGIN{Admin đã đăng nhập?}
     LOGIN -- Chưa --> AUTH[Đăng nhập CMS]
     AUTH --> LOGIN
-    LOGIN -- Rồi --> VIEW_TOURS[GET /api/cms/routes]
+    LOGIN -- Rồi --> VIEW_TOURS[GET /api/cms/tours]
 
-    VIEW_TOURS --> HAS_TOURS{Có route nào?}
-    HAS_TOURS -- Không --> CREATE_TOUR[Tạo route mới:<br/>POST /api/cms/routes]
+    VIEW_TOURS --> HAS_TOURS{Có tour nào?}
+    HAS_TOURS -- Không --> CREATE_TOUR[Tạo tour mới:<br/>POST /api/cms/tours<br/>Auto-translate 7 langs]
     CREATE_TOUR --> SELECT_TOUR
 
-    HAS_TOURS -- Có --> SELECT_TOUR[Chọn route để quản lý]
+    HAS_TOURS -- Có --> SELECT_TOUR[Chọn tour để quản lý]
     SELECT_TOUR --> ACTION{Admin chọn hành động}
 
-    ACTION -- Thêm POI --> ADD_POI[POST /routes/id/pois<br/>poiId + stepOrder]
-    ADD_POI --> REFRESH[Refresh chi tiết route]
+    ACTION -- Thêm POI --> ADD_POI[POST /tours/id/pois<br/>poiId + stepOrder]
+    ADD_POI --> REFRESH[Refresh chi tiết tour]
 
-    ACTION -- Sắp xếp thứ tự --> REORDER[PUT /routes/id/pois/poiId/order<br/>newOrder]
+    ACTION -- Sắp xếp thứ tự --> REORDER[PUT /tours/id/pois/poiId/order<br/>newOrder]
     REORDER --> REFRESH
 
-    ACTION -- Xóa POI --> REMOVE_POI[DELETE /routes/id/pois/poiId]
+    ACTION -- Xóa POI --> REMOVE_POI[DELETE /tours/id/pois/poiId]
     REMOVE_POI --> REFRESH
 
-    ACTION -- Sửa thông tin --> EDIT_TOUR[PUT /api/cms/routes/id<br/>name, description]
+    ACTION -- Sửa thông tin --> EDIT_TOUR[PUT /api/cms/tours/id<br/>name, description]
     EDIT_TOUR --> REFRESH
 
-    ACTION -- Xóa route --> CONFIRM{Xác nhận xóa?}
+    ACTION -- Xóa tour --> CONFIRM{Xác nhận xóa?}
     CONFIRM -- Không --> REFRESH
-    CONFIRM -- Có --> DELETE_TOUR[DELETE /api/cms/routes/id]
+    CONFIRM -- Có --> DELETE_TOUR[DELETE /api/cms/tours/id<br/>Soft-delete: IsActive=false]
     DELETE_TOUR --> VIEW_TOURS
+
+    ACTION -- Khôi phục tour ẩn --> RESTORE[PATCH /api/cms/tours/id/restore<br/>IsActive=true]
+    RESTORE --> REFRESH
 
     REFRESH --> ACTION
 
@@ -1947,9 +2249,11 @@ flowchart TD
     style DELETE_TOUR fill:#F44336,color:#fff
     style ADD_POI fill:#2196F3,color:#fff
     style REORDER fill:#FF9800,color:#fff
+    style RESTORE fill:#9C27B0,color:#fff
 ```
 
-### 12.9. CMS — Lựa Chọn Content Pipeline (⚙️ Backend - UC35-UC38)
+
+### 11.9. CMS — Lựa Chọn Content Pipeline (⚙️ Backend - UC35-UC38)
 
 > Admin chọn cấp độ Pipeline phù hợp dựa trên nhu cầu: Single → Batch → Bulk.
 
@@ -2006,7 +2310,7 @@ flowchart TD
     style BULK_EMPTY fill:#FF9800,color:#fff
 ```
 
-### 12.10. Luồng Real-Time Device Monitoring — SignalR (📱 Mobile + 🌐 Web CMS - UC42, UC43)
+### 11.10. Luồng Real-Time Device Monitoring — SignalR (📱 Mobile + 🌐 Web CMS - UC42, UC43)
 
 ```mermaid
 flowchart TD
@@ -2044,7 +2348,7 @@ flowchart TD
     style BROADCAST_GPS fill:#2196F3,color:#fff
 ```
 
-### 12.11. Luồng Quản Lý Access Code — Admin (🌐 Web CMS - UC39, UC40)
+### 11.11. Luồng Quản Lý Access Code — Admin (🌐 Web CMS - UC39, UC40)
 
 ```mermaid
 flowchart TD
@@ -2080,7 +2384,7 @@ flowchart TD
     style DISPLAY fill:#2196F3,color:#fff
 ```
 
-### 12.12. Luồng Tìm Kiếm & Lọc POI (📱 Mobile - UC7, UC8)
+### 11.12. Luồng Tìm Kiếm & Lọc POI (📱 Mobile - UC7, UC8)
 
 ```mermaid
 flowchart TD
@@ -2103,7 +2407,7 @@ flowchart TD
     style END_NODE fill:#000,color:#fff,stroke:#fff,stroke-width:3px
 ```
 
-### 12.13. Luồng Xem Chi Tiết POI (📱 Mobile - UC9, UC10, UC11)
+### 11.13. Luồng Xem Chi Tiết POI (📱 Mobile - UC9, UC10, UC11)
 
 ```mermaid
 flowchart TD
@@ -2131,26 +2435,26 @@ flowchart TD
     style END_NODE fill:#000,color:#fff,stroke:#fff,stroke-width:3px
 ```
 
-### 12.14. Luồng Xem và Bắt Đầu Route (📱 Mobile - UC12, UC13, UC14)
+### 11.14. Luồng Xem và Bắt Đầu Tour (📱 Mobile — UC12, UC13)
 
 ```mermaid
 flowchart TD
-    START((●)) --> LOAD_TOURS[Load danh sách Route]
-    LOAD_TOURS --> SELECT_TOUR[User chọn Route]
-    SELECT_TOUR --> LOAD_DETAIL[Load TourDetail<br/>Kèm danh sách POI steps]
-    LOAD_DETAIL --> DISPLAY[Hiển thị chi tiết Route]
-    DISPLAY --> START_TOUR{User nhấn<br/>Bắt đầu Route?}
+    START((●)) --> LOAD_TOURS["SyncService.GetToursAsync()<br/>Load danh sách Tour (offline-first)"]
+    LOAD_TOURS --> SELECT_TOUR[User chọn Tour]
+    SELECT_TOUR --> LOAD_DETAIL["SyncService.GetTourDetailAsync()<br/>Kèm danh sách POI steps"]
+    LOAD_DETAIL --> DISPLAY[Hiển thị chi tiết Tour<br/>TourDetailPage]
+    DISPLAY --> START_TOUR{User nhấn<br/>Bắt đầu Tour?}
     START_TOUR -- Không --> SELECT_TOUR
-    START_TOUR -- Có --> START_MODE[Kích hoạt chế độ Route]
-    START_MODE --> SET_ROUTE[Đặt route trên bản đồ]
-    SET_ROUTE --> NAV_MAP[Chuyển hướng sang MapPage]
+    START_TOUR -- Có --> START_MODE[Kích hoạt chế độ Tour<br/>MapViewModel.SetActiveTour]
+    START_MODE --> NAV_MAP[Chuyển hướng sang MapPage<br/>Geofence theo stepOrder]
     NAV_MAP --> END_NODE((◉))
     
     style START fill:#000,color:#fff,stroke:#000
     style END_NODE fill:#000,color:#fff,stroke:#fff,stroke-width:3px
 ```
 
-### 12.15. Luồng Quản Lý Tài Khoản và Danh Mục (🌐 Web CMS - UC15-19, UC26-29)
+
+### 11.15. Luồng Quản Lý Tài Khoản và Danh Mục (🌐 Web CMS - UC15-19, UC26-29)
 
 ```mermaid
 flowchart TD
@@ -2173,7 +2477,7 @@ flowchart TD
     style END_NODE fill:#000,color:#fff,stroke:#fff,stroke-width:3px
 ```
 
-### 12.16. Luồng Xem Timeline Hoạt Động (🌐 Web CMS - UC44)
+### 11.16. Luồng Xem Timeline Hoạt Động (🌐 Web CMS - UC44)
 
 ```mermaid
 flowchart TD
@@ -2189,9 +2493,37 @@ flowchart TD
     style END_NODE fill:#000,color:#fff,stroke:#fff,stroke-width:3px
 ```
 
+### 11.17. Luồng Thanh Toán Du Khách (📱 Mobile — UC18)
+
+```mermaid
+flowchart TD
+    START((●)) --> INIT[POST /api/mobile/payment/init]
+    INIT --> INIT_OK{Kết nối OK?}
+    INIT_OK -- Không --> ERR[Hiển thị lỗi] --> END_FAIL((◉))
+    INIT_OK -- Có --> SHOW_QR[Hiển thị QR VietQR + Thông tin CK]
+    SHOW_QR --> POLLING[Polling mỗi 5 giây]
+    POLLING --> VERIFY[VerifyTouristPayment transactionId]
+    VERIFY --> STATUS{Trạng thái?}
+    STATUS -- PENDING --> WAIT[Đợi 5s] --> POLLING
+    STATUS -- SUCCESS --> SAVE[Lưu JWT vào SecureStorage]
+    SAVE --> NAV[Vào MainPage] --> END_OK((◉))
+    STATUS -- FAILED --> FAIL[Hiển thị thất bại]
+    FAIL --> RETRY{Thử lại?}
+    RETRY -- Có --> INIT
+    RETRY -- Không --> END_FAIL
+
+    style START fill:#000,color:#fff,stroke:#000
+    style END_OK fill:#000,color:#fff,stroke:#fff,stroke-width:3px
+    style END_FAIL fill:#000,color:#fff,stroke:#fff,stroke-width:3px
+    style ERR fill:#F44336,color:#fff
+    style FAIL fill:#F44336,color:#fff
+    style SAVE fill:#4CAF50,color:#fff
+```
+
 ---
 
 ## 📂 PHỤ LỤC: CẤU TRÚC THƯ MỤC DỰ ÁN
+
 
 ```
 CSharpProject/
@@ -2202,22 +2534,27 @@ CSharpProject/
 │   │   │   ├── PoiController.cs
 │   │   │   ├── AuthMobileController.cs
 │   │   │   ├── CategoryMobileController.cs
-│   │   │   ├── RouteMobileController.cs
+│   │   │   ├── TourMobileController.cs     # Route/Tour list & detail
 │   │   │   ├── ListenHistoryController.cs
-│   │   │   └── LocationLogController.cs
-│   │   └── Cms/                  # API cho Web CMS (🔒 JWT)
-│   │       ├── CmsPoiController.cs
-│   │       ├── CmsPoiContentController.cs
-│   │       ├── CmsPoiGalleryController.cs
-│   │       ├── CmsCategoryController.cs
-│   │       ├── CmsRouteController.cs
-│   │       ├── CmsContentPipelineController.cs
-│   │       ├── CmsAccessCodeController.cs  # Quản lý QR codes
-│   │       ├── CmsLocationLogController.cs # Xem & xóa GPS logs
-│   │       ├── CmsQrController.cs
-│   │       ├── CmsTranslationController.cs
-│   │       ├── AnalyticsController.cs      # Top POI, Heatmap, DeviceActivity
-│   │       └── MediaController.cs
+│   │   │   ├── LocationLogController.cs
+│   │   │   └── TouristPaymentController.cs # VietQR payment + polling
+│   │   ├── Cms/                  # API cho Web CMS (🔒 JWT)
+│   │   │   ├── CmsPoiController.cs
+│   │   │   ├── CmsPoiContentController.cs
+│   │   │   ├── CmsPoiGalleryController.cs
+│   │   │   ├── CmsCategoryController.cs
+│   │   │   ├── CmsTourController.cs        # Route/Tour management
+│   │   │   ├── CmsContentPipelineController.cs
+│   │   │   ├── CmsAccessCodeController.cs  # Quản lý QR codes
+│   │   │   ├── CmsLocationLogController.cs # Xem & xóa GPS logs
+│   │   │   ├── CmsPaymentController.cs     # Quản lý thanh toán
+│   │   │   ├── CmsSubscriptionController.cs
+│   │   │   ├── CmsQrController.cs
+│   │   │   ├── CmsTranslationController.cs
+│   │   │   ├── AnalyticsController.cs      # Top POI, Heatmap, DeviceActivity
+│   │   │   └── MediaController.cs
+│   │   └── Payment/              # Webhook handlers
+│   │       └── SePayWebhookController.cs   # SePay payment webhook
 │   ├── Hubs/
 │   │   └── DeviceHub.cs          # SignalR: real-time device monitoring
 │   ├── Queues/
