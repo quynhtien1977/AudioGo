@@ -1,4 +1,6 @@
+using AudioGo.Services.Interfaces;
 using AudioGo.ViewModels;
+using AudioGo_Mobile.Helpers;
 using Microsoft.Maui.Controls.Maps;
 using Microsoft.Maui.Maps;
 using Shared;
@@ -9,8 +11,11 @@ public partial class MapPage : ContentPage
 {
     private readonly MapViewModel _vm;
     private readonly MainViewModel _main;
+    private readonly IDirectionsService _directions;
+    private readonly ITourSessionManager _sessionManager;
     private string? _activePinPoiId;
     private bool _isSubscribed;
+    private List<string>? _tourPoiFilter;
 
     // Expose Main for XAML bindings (MiniPlayer)
     public MainViewModel Main => _main;
@@ -18,35 +23,142 @@ public partial class MapPage : ContentPage
     // Property wrapper để map MainMap → MapControl
     private Microsoft.Maui.Controls.Maps.Map MapControl => MainMap;
 
-    public MapPage(MapViewModel vm, MainViewModel main)
+    public MapPage(MapViewModel vm, MainViewModel main, IDirectionsService directions, ITourSessionManager sessionManager)
     {
         InitializeComponent();
         _vm = vm;
         _main = main;
+        _directions = directions;
+        _sessionManager = sessionManager;
         BindingContext = vm;
         MiniPlayerGrid.BindingContext = _main;
     }
+
+    // ── Tour route state (chỉ polyline, không filter POI) ────────────────
+    private Polyline? _tourRoutePolyline;
+    private Polyline? _userToNextPoiPolyline;
 
     protected override void OnAppearing()
     {
         base.OnAppearing();
 
-        // Load pins từ danh sách POI hiện tại
+        // Luôn load TOÀN BỘ POI — không ẩn, không filter
+        // → geofence boundary KHÔNG BAO GIỜ bị thay đổi → không có bug fill đậm
         _vm.LoadPois(_main.Pois);
+
+        var filter = TourMapContext.PendingTourPoiIds;
+        if (filter != null)
+        {
+            // Từ TourDetail: vẽ route thực + zoom vào tour POIs
+            var stepOrders = TourMapContext.PendingTourStepOrders ?? new();
+            TourMapContext.Clear();
+
+            var tourPois = _main.Pois
+                .Where(p => filter.Contains(p.PoiId))
+                .OrderBy(p => stepOrders.TryGetValue(p.PoiId, out var o) ? o : 999)
+                .ToList();
+
+            // Fire-and-forget async route draw (có loading indicator bên trong)
+            _ = DrawTourRouteAsync(tourPois);
+
+            if (tourPois.Count > 0)
+                _vm.FitToPoints(tourPois.Select(p => new Location(p.Latitude, p.Longitude)));
+        }
+        else
+        {
+            // MapPage bình thường: xóa tour route nếu còn
+            RemoveTourRoute();
+        }
+
         RefreshPins();
 
-        // Subscribe to map clicks to dismiss banner
         if (!_isSubscribed)
         {
             MapControl.MapClicked += OnMapClicked;
             _main.PropertyChanged += OnMainPropertyChanged;
-            _vm.PropertyChanged += OnVmPropertyChanged;
+            _vm.PropertyChanged   += OnVmPropertyChanged;
             _isSubscribed = true;
         }
     }
 
-        // Location sẽ được cập nhật tự động qua MapViewModel (lắng nghe ILocationService)
-        // tránh gọi trực tiếp RequestInitialLocationAsync() lúc load page để không xung đột với MainViewModel.
+    /// <summary>Vẽ route Polyline thực từ Directions API, fallback straight-line khi offline.</summary>
+    private async Task DrawTourRouteAsync(List<POI> orderedPois)
+    {
+        RemoveTourRoute();
+        if (orderedPois.Count < 2) return;
+
+        // Loading: hiện text trên StatusLabel (nếu có) hoặc log
+        System.Diagnostics.Debug.WriteLine("[MapPage] Đang tính đường đi...");
+
+        var waypoints = orderedPois
+            .Select(p => (p.Latitude, p.Longitude))
+            .ToList();
+
+        // cacheKey = tourId nếu có, fallback = hash waypoints
+        var cacheKey = string.Join("|", orderedPois.Select(p => p.PoiId));
+
+        // 1. Vẽ route tổng của Tour (màu nhạt) - KHÔNG bắt đầu từ vị trí user
+        var routePoints = await _directions.GetWalkingRouteAsync(cacheKey, waypoints, prependUserLocation: false);
+
+        if (routePoints.Count > 0)
+        {
+            var line = new Polyline
+            {
+                StrokeColor = Color.FromArgb("#88D15993"), // Màu nhạt hơn (53% opacity của #D15993)
+                StrokeWidth = 4
+            };
+
+            foreach (var pt in routePoints)
+                line.Geopath.Add(pt);
+
+            _tourRoutePolyline = line;
+            MainThread.BeginInvokeOnMainThread(() => MapControl.MapElements.Add(_tourRoutePolyline));
+        }
+
+        // 2. Vẽ route đậm từ User -> Điểm tiếp theo
+        // Ưu tiên NextPoiId từ session đang chạy, nếu không có thì lấy điểm đầu tiên
+        var nextPoiId = _sessionManager.ActiveSession?.NextPoiId ?? orderedPois.First().PoiId;
+        var nextPoi = orderedPois.FirstOrDefault(p => p.PoiId == nextPoiId);
+        
+        if (nextPoi is not null)
+        {
+            // Call route API for [User, NextPoi]. prependUserLocation = true will handle user location insertion.
+            var nextPoiKey = $"user_to_{nextPoiId}";
+            var userRoutePoints = await _directions.GetWalkingRouteAsync(nextPoiKey, new List<(double Lat, double Lng)> { (nextPoi.Latitude, nextPoi.Longitude) }, prependUserLocation: true);
+            
+            if (userRoutePoints.Count > 0)
+            {
+                var userLine = new Polyline
+                {
+                    StrokeColor = Color.FromArgb("#E53935"), // Màu đỏ đậm
+                    StrokeWidth = 6
+                };
+                foreach (var pt in userRoutePoints) userLine.Geopath.Add(pt);
+                _userToNextPoiPolyline = userLine;
+                MainThread.BeginInvokeOnMainThread(() => MapControl.MapElements.Add(_userToNextPoiPolyline));
+            }
+        }
+
+        System.Diagnostics.Debug.WriteLine($"[MapPage] Route vẽ xong");
+    }
+
+    /// <summary>Xóa tour route khỏi map (giữ nguyên geofence overlays).</summary>
+    private void RemoveTourRoute()
+    {
+        if (_tourRoutePolyline is not null)
+        {
+            MapControl.MapElements.Remove(_tourRoutePolyline);
+            _tourRoutePolyline = null;
+        }
+        if (_userToNextPoiPolyline is not null)
+        {
+            MapControl.MapElements.Remove(_userToNextPoiPolyline);
+            _userToNextPoiPolyline = null;
+        }
+    }
+
+
+
 
     protected override void OnDisappearing()
     {
@@ -71,18 +183,35 @@ public partial class MapPage : ContentPage
         RefreshGeofenceOverlays();
     }
 
-    /// <summary>Xóa polygons cũ, thêm lại từ GeofencePolygons của VM.</summary>
+    /// <summary>
+    /// Differential overlay sync — chỉ add/remove phần thay đổi.
+    /// POI không đổi → object trong MapElements không bị đụng vào → không bị alpha darkening.
+    /// </summary>
     private void RefreshGeofenceOverlays()
     {
-        // Remove old geofence polygons (keep other map elements)
-        var toRemove = MapControl.MapElements
-            .OfType<Polygon>()
-            .ToList();
-        foreach (var poly in toRemove)
-            MapControl.MapElements.Remove(poly);
+        var desiredFills = _vm.GeofenceFills;
+        var desiredLines = _vm.GeofencePolylines;
 
-        foreach (var poly in _vm.GeofencePolygons)
-            MapControl.MapElements.Add(poly);
+        var desiredFillSet = desiredFills.ToHashSet();
+        var desiredLineSet = desiredLines.ToHashSet();
+
+        var currentFills = MapControl.MapElements.OfType<Polygon>().ToHashSet();
+        // Exclude tour route polylines — nó không phải geofence, quản lý riêng
+        var currentLines = MapControl.MapElements.OfType<Polyline>()
+            .Where(l => l != _tourRoutePolyline && l != _userToNextPoiPolyline)
+            .ToHashSet();
+
+        // Xóa những gì không còn cần (set difference)
+        foreach (var p in currentFills.Except(desiredFillSet))
+            MapControl.MapElements.Remove(p);
+        foreach (var s in currentLines.Except(desiredLineSet))
+            MapControl.MapElements.Remove(s);
+
+        // Add những gì mới (set difference) — fill trước để z-order đúng
+        foreach (var p in desiredFillSet.Except(currentFills))
+            MapControl.MapElements.Add(p);
+        foreach (var s in desiredLineSet.Except(currentLines))
+            MapControl.MapElements.Add(s);
     }
 
     private async void OnPinMarkerClicked(object? sender, PinClickedEventArgs e)
@@ -100,6 +229,9 @@ public partial class MapPage : ContentPage
 
         // Update VM selected POI (for distance label etc.)
         _vm.SelectedPoi = poi;
+
+        // S1-3: Highlight this POI's boundary, dim others
+        _vm.HighlightActivePoi(poiId);
 
         // Populate banner labels
         BannerTitle.Text    = poi.Title ?? string.Empty;
@@ -123,6 +255,8 @@ public partial class MapPage : ContentPage
         PoiBanner.IsVisible = false;
         _vm.SelectedPoi = null;
         _activePinPoiId = null;
+        // S1-3 + S2: reset boundary highlight when banner is dismissed
+        _vm.ClearPoiHighlight();
     }
 
     private void OnPoiBannerPlayClicked(object? sender, TappedEventArgs e)
@@ -147,6 +281,15 @@ public partial class MapPage : ContentPage
             {
                 _vm.LoadPois(_main.Pois);
                 RefreshPins();
+
+                // S2-1: Nếu POI đang được chọn đã bị ẩn/xoá → đóng banner
+                if (_activePinPoiId is not null)
+                {
+                    bool stillExists = MapControl.Pins
+                        .Any(p => p.BindingContext is string id && id == _activePinPoiId);
+                    if (!stillExists)
+                        _ = HidePoiBannerAsync();
+                }
             });
             return;
         }
@@ -176,7 +319,7 @@ public partial class MapPage : ContentPage
                     catch { /* Map chưa sẵn sàng — bỏ qua */ }
                 });
         }
-        else if (e.PropertyName == nameof(MapViewModel.GeofencePolygons))
+        else if (e.PropertyName == nameof(MapViewModel.GeofenceVersion))
         {
             MainThread.BeginInvokeOnMainThread(RefreshGeofenceOverlays);
         }

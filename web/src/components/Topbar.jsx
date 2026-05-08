@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom"
-import { Search, X } from "lucide-react"
+import { Search, X, User } from "lucide-react"
 import { useState, useEffect, useRef, useContext } from "react"
 import { getAllPOIs } from "../api/poiApi"
 import { getCategoriesApi } from "../api/categoryApi"
@@ -7,11 +7,17 @@ import { getAllToursApi } from "../api/tourApi"
 import { getUsersApi } from "../api/accountApi"
 import { audioContentApi } from "../api/audioContentApi"
 import { SearchContext } from "../context/SearchContext"
+import { useSubscription } from "../context/SubscriptionContext"
 
 export default function Topbar() {
   const navigate = useNavigate()
   const location = useLocation()
   const { updateSearch, clearSearch } = useContext(SearchContext)
+  const { currentSubscription } = useSubscription()
+  const [user, setUser] = useState(
+    JSON.parse(localStorage.getItem("user")) ||
+    JSON.parse(sessionStorage.getItem("user"))
+  )
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState([])
   const [isLoading, setIsLoading] = useState(false)
@@ -19,12 +25,19 @@ export default function Topbar() {
   const [showResults, setShowResults] = useState(false)
   const searchRef = useRef(null)
 
-  // Lấy user từ localStorage / sessionStorage
-  const user =
-    JSON.parse(localStorage.getItem("user")) ||
-    JSON.parse(sessionStorage.getItem("user"))
+  const role = user?.role
 
-  const role = user?.role 
+  // 🔄 P1-A: Lắng nghe storage event để sync tên sau khi ProfilePage cập nhật
+  useEffect(() => {
+    const syncUser = () => {
+      const updated =
+        JSON.parse(localStorage.getItem("user")) ||
+        JSON.parse(sessionStorage.getItem("user"))
+      setUser(updated)
+    }
+    window.addEventListener("storage", syncUser)
+    return () => window.removeEventListener("storage", syncUser)
+  }, [])
 
   // logout
   const handleLogout = () => {
@@ -159,7 +172,8 @@ export default function Topbar() {
         results = allData.filter(
           (acc) =>
             acc.username?.toLowerCase().includes(searchTerm) ||
-            acc.email?.toLowerCase().includes(searchTerm)
+            acc.email?.toLowerCase().includes(searchTerm) || 
+            acc.fullName?.toLowerCase().includes(searchTerm)
         )
         break
       case "audio":
@@ -291,8 +305,6 @@ export default function Topbar() {
       {/* Right */}
       <div className="flex items-center gap-4 ml-auto">
 
-        {/* ROLE SWITCH */}
-      
         {/*  Logout */}
         <button
           onClick={handleLogout}
@@ -302,10 +314,27 @@ export default function Topbar() {
         </button>
 
         {/*  User Info */}
-        <div className="text-right">
-          <p className="font-semibold">{user.username}</p>
-          <p className="text-xs text-gray-400">{user.role}</p>
-        </div>
+        {role === "Owner" ? (
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate("/profile")}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-pink-50 transition"
+            >
+              <User size={16} className="text-pink-500" />
+              <div className="text-right">
+                <p className="font-semibold text-sm">{user.fullName || user.username}</p>
+                <p className="text-xs text-teal-600">
+                  {currentSubscription?.planName || "Chưa có"}
+                </p>
+              </div>
+            </button>
+          </div>
+        ) : (
+          <div className="text-right">
+            <p className="font-semibold">{user.fullName || user.username}</p>
+            <p className="text-xs text-gray-400">{user.role}</p>
+          </div>
+        )}
 
       </div>
 

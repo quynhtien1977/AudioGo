@@ -1,4 +1,4 @@
-﻿using AudioGo.Helpers;
+using AudioGo.Helpers;
 using AudioGo.Models;
 using SQLite;
 
@@ -20,14 +20,18 @@ namespace AudioGo.Data
         private async Task DoInitAsync()
         {
             try
-        {
-            await _db.CreateTableAsync<PoiEntity>();
+            {
+                await _db.CreateTableAsync<PoiEntity>();
+                await _db.CreateTableAsync<TourEntity>();
             }
             catch (SQLiteException)
             {
                 // Schema thay đổi không tương thích — drop và tạo lại
                 await _db.DropTableAsync<PoiEntity>();
                 await _db.CreateTableAsync<PoiEntity>();
+
+                await _db.DropTableAsync<TourEntity>();
+                await _db.CreateTableAsync<TourEntity>();
             }
         }
 
@@ -62,6 +66,46 @@ namespace AudioGo.Data
         {
             await EnsureInitAsync();
             return await _db.DeleteAllAsync<PoiEntity>();
+        }
+
+        // ── Tours ──────────────────────────────────────────────────
+
+        public async Task<List<TourEntity>> GetToursAsync(string languageCode)
+        {
+            await EnsureInitAsync();
+            return await _db.Table<TourEntity>()
+                            .Where(t => t.LanguageCode == languageCode)
+                            .ToListAsync();
+        }
+
+        public async Task<List<TourEntity>> GetAllToursAsync()
+        {
+            await EnsureInitAsync();
+            return await _db.Table<TourEntity>().ToListAsync();
+        }
+
+        public async Task<TourEntity?> GetTourAsync(string tourId)
+        {
+            await EnsureInitAsync();
+            return await _db.FindAsync<TourEntity>(tourId);
+        }
+
+        public async Task SaveTourAsync(TourEntity tour)
+        {
+            await EnsureInitAsync();
+            await _db.InsertOrReplaceAsync(tour);
+        }
+
+        public async Task<int> DeleteTourAsync(string tourId)
+        {
+            await EnsureInitAsync();
+            return await _db.Table<TourEntity>().Where(t => t.TourId == tourId).DeleteAsync();
+        }
+
+        public async Task DeleteAllToursAsync()
+        {
+            await EnsureInitAsync();
+            await _db.DeleteAllAsync<TourEntity>();
         }
 
         private sealed class TableInfoRow

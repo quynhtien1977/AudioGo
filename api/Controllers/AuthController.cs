@@ -53,13 +53,13 @@ namespace Server.Controllers
         /// <summary>
         /// [DEV ONLY] Tạo hoặc reset admin account.
         /// Gọi 1 lần: POST /api/auth/setup-dev
-        /// Body: { "username": "admin", "password": "Admin@123" }
+        /// Body: { "identifier": "admin", "password": "Admin@123" }
         /// </summary>
         [HttpPost("setup-dev")]
         public async Task<IActionResult> SetupDev([FromBody] LoginRequest req)
         {
-            // Xóa account cũ nếu có
-            var existing = await _db.Accounts.FirstOrDefaultAsync(a => a.Username == req.Username);
+            // Xóa account cũ nếu có (tìm bằng username do SetupDev chỉ cần username)
+            var existing = await _db.Accounts.FirstOrDefaultAsync(a => a.Username == req.Identifier);
             if (existing is not null)
                 _db.Accounts.Remove(existing);
 
@@ -67,7 +67,7 @@ namespace Server.Controllers
             var account = new Server.Models.Account
             {
                 AccountId    = Guid.NewGuid().ToString(),
-                Username     = req.Username,
+                Username     = req.Identifier,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(req.Password),
                 Role         = "Admin",
                 CreatedAt    = DateTime.UtcNow
@@ -77,8 +77,8 @@ namespace Server.Controllers
 
             return Ok(new
             {
-                message  = $"Account '{req.Username}' đã được tạo/reset với role Admin.",
-                username = req.Username,
+                message  = $"Account '{req.Identifier}' đã được tạo/reset với role Admin.",
+                username = req.Identifier,
                 role     = "Admin"
             });
         }

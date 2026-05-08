@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Server.Data;
 using Server.Repositories.Interfaces;
 using Shared.DTOs;
+using System.Security.Claims;
 
 namespace Server.Controllers.Cms
 {
@@ -49,7 +50,32 @@ namespace Server.Controllers.Cms
         [HttpGet("top-pois")]
         public async Task<ActionResult<List<TopPoiDto>>> GetTopPois([FromQuery] int top = 10)
         {
-            var topPois = await _history.GetTopPoisAsync(top);
+            var isAdmin = User.IsInRole("Admin");
+            var accountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            List<(string PoiId, int Count)> topPois;
+            if (!isAdmin && !string.IsNullOrWhiteSpace(accountId))
+            {
+                var ownerTopPoisRaw = await (
+                    from h in _db.ListenHistories.AsNoTracking()
+                    join p in _db.Pois.AsNoTracking() on h.PoiId equals p.PoiId
+                    where p.AccountId == accountId
+                    group h by h.PoiId into g
+                    orderby g.Count() descending
+                    select new { PoiId = g.Key, Count = g.Count() }
+                )
+                .Take(top)
+                .ToListAsync();
+
+                topPois = ownerTopPoisRaw
+                    .Select(x => (x.PoiId, x.Count))
+                    .ToList();
+            }
+            else
+            {
+                var historyTopPois = await _history.GetTopPoisAsync(top);
+                topPois = historyTopPois.Select(tp => (tp.PoiId, tp.Count)).ToList();
+            }
 
             var poiIds = topPois.Select(tp => tp.PoiId).ToList();
 
@@ -104,10 +130,44 @@ namespace Server.Controllers.Cms
         public async Task<ActionResult<DashboardStatsDto>> GetListenStats(
             [FromQuery] int? days)
         {
-            var totalListens = await _history.GetTotalListensAsync();
+            var isAdmin = User.IsInRole("Admin");
+            var accountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var since = days.HasValue ? DateTime.UtcNow.Date.AddDays(-(days.Value - 1)) : (DateTime?)null;
 
-            // cho chart
-            var dailyListens = await _history.GetDailyListensAsync(days);
+            int totalListens;
+            List<DailyListenDto> dailyListens;
+
+            if (!isAdmin && !string.IsNullOrWhiteSpace(accountId))
+            {
+                var ownerBaseQuery =
+                    from h in _db.ListenHistories.AsNoTracking()
+                    join p in _db.Pois.AsNoTracking() on h.PoiId equals p.PoiId
+                    where p.AccountId == accountId
+                    select h;
+
+                totalListens = await ownerBaseQuery.CountAsync();
+
+                if (since.HasValue)
+                {
+                    ownerBaseQuery = ownerBaseQuery.Where(h => h.Timestamp >= since.Value);
+                }
+
+                dailyListens = await ownerBaseQuery
+                    .GroupBy(h => h.Timestamp.Date)
+                    .Select(g => new DailyListenDto
+                    {
+                        Date = g.Key,
+                        Count = g.Count(),
+                        TotalDuration = g.Sum(x => x.ListenDuration)
+                    })
+                    .OrderBy(x => x.Date)
+                    .ToListAsync();
+            }
+            else
+            {
+                totalListens = await _history.GetTotalListensAsync();
+                dailyListens = await _history.GetDailyListensAsync(days);
+            }
 
             return Ok(new DashboardStatsDto
             {

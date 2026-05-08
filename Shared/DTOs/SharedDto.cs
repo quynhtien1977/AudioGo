@@ -17,12 +17,12 @@ namespace Shared.DTOs
     // ── Category ────────────────────────────────────────────────────────
     public record CategoryDto(
         string CategoryId,
-        string Name,
-        int PoiCount,           // Mới thêm: Cho mobile hiển thị số lượng
-        DateTime CreatedAt,     // Cũ: CMS cần
-        DateTime UpdatedAt      // Cũ: CMS cần
+        string Name,            // LocalizedName cho mobile, Plain name cho CMS
+        int PoiCount,           // Cho mobile hiển thị số lượng
+        DateTime CreatedAt,     // CMS cần
+        DateTime UpdatedAt,     // CMS cần
+        string PlainName = ""   // ID text gốc để query API filter
     );
-
     public record CategoryCreateRequest(string Name);
 
     // ── Tour ────────────────────────────────────────────────────────────
@@ -44,7 +44,8 @@ namespace Shared.DTOs
         int PoiCount,
         string? ThumbnailUrl,
         DateTime CreatedAt,
-        IReadOnlyList<TourPoiDto> Pois
+        IReadOnlyList<TourPoiDto> Pois,
+        bool IsActive = true
     );
 
     /// <summary>Detail cho Mobile.</summary>
@@ -79,9 +80,16 @@ namespace Shared.DTOs
         List<string> Categories
     );
 
-    public record TourCreateRequest(string Name, string Description);
+    public record TourCreateRequest(string Name, string Description, string? ThumbnailUrl = null);
 
-    public record TourUpdateRequest(string? Name, string? Description);
+    public record TourUpdateRequest(string? Name, string? Description, string? ThumbnailUrl = null);
+
+    /// <summary>DTO cho Owner/Admin tự cập nhật profile của mình. Không cho phép đổi Role hoặc IsLocked.</summary>
+    public record ProfileUpdateRequest(
+        string? FullName,
+        string? Email,
+        string? PhoneNumber
+    );
 
     // ── Delta Sync ──────────────────────────────────────────────────────
     /// <summary>

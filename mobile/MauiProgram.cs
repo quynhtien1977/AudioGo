@@ -4,10 +4,12 @@ using AudioGo.Services.Interfaces;
 using AudioGo.ViewModels;
 using AudioGo_Mobile.ViewModels;
 using AudioGo_Mobile.Views;
+using AudioGo_Mobile.Config;
 using Microsoft.Extensions.Logging;
 using Plugin.Maui.Audio;
 using BarcodeScanner.Mobile;
 using CommunityToolkit.Maui;
+using System.Net;
 
 namespace AudioGo_Mobile;
 
@@ -44,21 +46,40 @@ public static class MauiProgram
         builder.Services.AddSingleton(new AppDatabase(dbPath));
 
         // ── HTTP Client ───────────────────────────────────────────
-        builder.Services.AddHttpClient<IApiService, ApiService>(client =>
-        {
-            // 10.0.2.2 = IP đặc biệt dành cho Android Emulator kết nối về localhost của PC
-            // Đổi về 192.168.x.x nếu dùng thiết bị thật trên cùng mạng WiFi
-            client.BaseAddress = new Uri(DeviceInfo.DeviceType == DeviceType.Virtual 
-                ? "http://10.0.2.2:5086/" 
-                : "http://192.168.1.12:5086/");
-            // 8s: đủ cho WiFi nội bộ, fail-fast để fallback cache kịp thời
-            client.Timeout = TimeSpan.FromSeconds(8);
-        });
+        builder.Services
+            .AddHttpClient<IApiService, ApiService>(client =>
+            {
+                // 10.0.2.2 = IP đặc biệt dành cho Android Emulator kết nối về localhost của PC
+                // Đổi về 192.168.x.x nếu dùng thiết bị thật trên cùng mạng WiFi
+                client.BaseAddress = new Uri(EndpointConfig.GetApiBaseUrl(DeviceInfo.DeviceType));
+                // Qua tunnel (ngrok) có thể handshake/chuyển tuyến chậm hơn mạng LAN.
+                client.Timeout = TimeSpan.FromSeconds(25);
+                // Ưu tiên HTTP/1.1 để giảm nguy cơ stream reset trên một số Android + tunnel.
+                client.DefaultRequestVersion = HttpVersion.Version11;
+                client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
+            })
+            .ConfigurePrimaryHttpMessageHandler(() =>
+            {
+                // Một số mạng di động/WiFi đẩy request qua proxy hệ thống làm
+                // POST body bị ngắt sớm khi đi qua tunnel.
+                return new HttpClientHandler
+                {
+                    UseProxy = false
+                };
+            });
 
         // Named client cho download files nền (audio/image) — không cần timeout ngắn
         builder.Services.AddHttpClient("downloader", client =>
         {
             client.Timeout = TimeSpan.FromSeconds(60);
+        });
+
+        // Named client cho OpenRouteService API (proxy qua backend)
+        builder.Services.AddHttpClient("directions", client =>
+        {
+            client.BaseAddress = new Uri(EndpointConfig.GetApiBaseUrl(DeviceInfo.DeviceType));
+            client.Timeout = TimeSpan.FromSeconds(12);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
         });
 
         // ── Services ──────────────────────────────────────────────
@@ -68,6 +89,8 @@ public static class MauiProgram
         builder.Services.AddSingleton<IAudioService, AudioService>();
         builder.Services.AddSingleton<ILocationService, LocationService>();
         builder.Services.AddSingleton<ISignalRService, SignalRService>();
+        builder.Services.AddSingleton<IDirectionsService, DirectionsService>(); // ORS Directions
+        builder.Services.AddSingleton<ITourSessionManager, TourSessionManager>();
 
         // ── ViewModels ────────────────────────────────────────────
         builder.Services.AddSingleton<MainViewModel>();
@@ -76,6 +99,10 @@ public static class MauiProgram
         builder.Services.AddTransient<SettingsViewModel>();
         builder.Services.AddTransient<SearchViewModel>();
         builder.Services.AddTransient<WelcomeQrScanViewModel>();
+        builder.Services.AddTransient<TouristPaymentViewModel>();  // Tourist payment flow
+        // Tour ViewModels
+        builder.Services.AddSingleton<TourListViewModel>();   // Singleton vì là tab page
+        builder.Services.AddTransient<TourDetailViewModel>();  // Transient vì dùng QueryProperty
 
         // ── Views ─────────────────────────────────────────────────
         // AppShell phải là Singleton để WelcomeQrScanViewModel có thể
@@ -88,6 +115,10 @@ public static class MauiProgram
         builder.Services.AddTransient<SearchPage>();
         builder.Services.AddTransient<WelcomePage>();
         builder.Services.AddTransient<WelcomeQrScanPage>();
+        builder.Services.AddTransient<TouristPaymentPage>();       // Tourist payment flow
+        // Tour Pages
+        builder.Services.AddSingleton<TourListPage>();    // Singleton vì là tab page
+        builder.Services.AddTransient<TourDetailPage>();   // Transient vì navigate bằng route + QueryProperty
 
 #if DEBUG
         builder.Logging.AddDebug();
