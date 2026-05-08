@@ -32,6 +32,11 @@ public static class AppStrings
             ["vi"] = "Cài đặt", ["en"] = "Settings", ["ja"] = "設定",
             ["ko"] = "설정", ["zh-Hans"] = "设置", ["fr"] = "Paramètres", ["th"] = "ตั้งค่า"
         },
+        ["tab_tours"] = new()
+        {
+            ["vi"] = "Tours", ["en"] = "Tours", ["ja"] = "ツアー",
+            ["ko"] = "투어", ["zh-Hans"] = "游览", ["fr"] = "Tours", ["th"] = "ทัวร์"
+        },
 
         // ═══════════════════════════════════════════════════════════════
         // MainPage — Hero & Header
@@ -241,6 +246,21 @@ public static class AppStrings
         {
             ["vi"] = "~{0} phút đi bộ", ["en"] = "~{0} min walk", ["ja"] = "徒歩約{0}分",
             ["ko"] = "도보 약 {0}분", ["zh-Hans"] = "步行约{0}分钟", ["fr"] = "~{0} min à pied", ["th"] = "เดินประมาณ {0} นาที"
+        },
+        ["map_route_loading"] = new()
+        {
+            ["vi"] = "Đang tính đường đi...", ["en"] = "Calculating route...", ["ja"] = "ルートを計算中...",
+            ["ko"] = "경로 계산 중...", ["zh-Hans"] = "正在计算路线...", ["fr"] = "Calcul du trajet...", ["th"] = "กำลังคำนวณเส้นทาง..."
+        },
+        ["map_route_error"] = new()
+        {
+            ["vi"] = "Không tải được đường đi", ["en"] = "Could not load route", ["ja"] = "ルートを取得できません",
+            ["ko"] = "경로를 불러올 수 없습니다", ["zh-Hans"] = "无法加载路线", ["fr"] = "Impossible de charger l'itinéraire", ["th"] = "ไม่สามารถโหลดเส้นทางได้"
+        },
+        ["map_tour_mode"] = new()
+        {
+            ["vi"] = "Chế độ Tour", ["en"] = "Tour Mode", ["ja"] = "ツアーモード",
+            ["ko"] = "투어 모드", ["zh-Hans"] = "游览模式", ["fr"] = "Mode circuit", ["th"] = "โหมดทัวร์"
         },
 
         // ═══════════════════════════════════════════════════════════════
@@ -524,6 +544,16 @@ public static class AppStrings
             ["fr"] = "Créez votre premier circuit pour explorer la rue gastronomique Vinh Khanh",
             ["th"] = "สร้างทัวร์แรกของคุณเพื่อเริ่มสำรวจถนนอาหารวิญคานห์"
         },
+        ["tour_list_empty_desc_mobile"] = new()
+        {
+            ["vi"] = "Chưa có tour nào trong khu vực. Vui lòng thử lại sau.",
+            ["en"] = "No tours available in this area. Please try again later.",
+            ["ja"] = "このエリアにはツアーがありません。後でもう一度お試しください。",
+            ["ko"] = "이 지역에는 투어가 없습니다. 나중에 다시 시도해주세요.",
+            ["zh-Hans"] = "该区域暂无游览。请稍后再试。",
+            ["fr"] = "Aucun circuit disponible dans cette zone. Veuillez réessayer plus tard.",
+            ["th"] = "ไม่มีทัวร์ในพื้นที่นี้ กรุณาลองใหม่ภายหลัง"
+        },
         ["tour_list_create_btn"] = new()
         {
             ["vi"] = "Tạo Tour Mới", ["en"] = "Create New Tour", ["ja"] = "新しいツアーを作成",
@@ -539,15 +569,30 @@ public static class AppStrings
             ["vi"] = "điểm", ["en"] = "points", ["ja"] = "ポイント",
             ["ko"] = "포인트", ["zh-Hans"] = "点数", ["fr"] = "points", ["th"] = "จุด"
         },
-        ["tour_minutes"] = new()
+        ["tour_walk"] = new()
+        {
+            ["vi"] = "di chuyển", ["en"] = "walk", ["ja"] = "徒歩",
+            ["ko"] = "도보", ["zh-Hans"] = "步行", ["fr"] = "marche", ["th"] = "เดิน"
+        },
+        ["tour_walk_min"] = new()
         {
             ["vi"] = "phút", ["en"] = "mins", ["ja"] = "分",
-            ["ko"] = "분", ["zh-Hans"] = "分钟", ["fr"] = "mins", ["th"] = "นาที"
+            ["ko"] = "분", ["zh-Hans"] = "分钟", ["fr"] = "min", ["th"] = "นาที"
         },
         ["tour_lang"] = new()
         {
             ["vi"] = "ngôn ngữ", ["en"] = "lang", ["ja"] = "言語",
             ["ko"] = "언어", ["zh-Hans"] = "语言", ["fr"] = "lang", ["th"] = "ภาษา"
+        },
+        ["tour_progress_format"] = new()
+        {
+            ["vi"] = "{0}/{1} điểm", ["en"] = "{0}/{1} spots", ["ja"] = "{0}/{1} スポット",
+            ["ko"] = "{0}/{1} 장소", ["zh-Hans"] = "{0}/{1} 地点", ["fr"] = "{0}/{1} points", ["th"] = "{0}/{1} จุด"
+        },
+        ["tour_next_walk"] = new()
+        {
+            ["vi"] = "~{0} phút đi bộ tiếp theo", ["en"] = "~{0} min walk to next", ["ja"] = "次まで徒歩約{0}分",
+            ["ko"] = "다음까지 도보 약 {0}분", ["zh-Hans"] = "下一点步行约{0}分钟", ["fr"] = "~{0} min de marche pour le suivant", ["th"] = "เดินไปจุดต่อไป {0} นาที"
         },
         ["tour_continue"] = new()
         {
@@ -631,10 +676,175 @@ public static class AppStrings
             ["vi"] = "Danh sách điểm dừng", ["en"] = "Stop List", ["ja"] = "停留所リスト",
             ["ko"] = "정류장 목록", ["zh-Hans"] = "停靠点列表", ["fr"] = "Liste des arrêts", ["th"] = "รายการจุดหยุด"
         },
+        ["tour_detail_open_map"] = new()
+        {
+            ["vi"] = "Nhấn để xem bản đồ đầy đủ", ["en"] = "Tap to view full map", ["ja"] = "タップして地図を表示",
+            ["ko"] = "탭하여 전체 지도 보기", ["zh-Hans"] = "点击查看完整地图", ["fr"] = "Appuyer pour voir la carte", ["th"] = "แตะเพื่อดูแผนที่เต็ม"
+        },
         ["tour_load_err"] = new()
         {
             ["vi"] = "Không tải được tour", ["en"] = "Failed to load tour", ["ja"] = "ツアーを読み込めませんでした",
             ["ko"] = "투어를 불러오지 못했습니다", ["zh-Hans"] = "无法加载游览", ["fr"] = "Échec du chargement du circuit", ["th"] = "ไม่สามารถโหลดทัวร์ได้"
+        },
+        ["tour_start"] = new()
+        {
+            ["vi"] = "Khám phá", ["en"] = "Start Exploring", ["ja"] = "探索を開始",
+            ["ko"] = "탐색 시작", ["zh-Hans"] = "开始探索", ["fr"] = "Commencer", ["th"] = "เริ่มสำรวจ"
+        },
+        ["tour_stop"] = new()
+        {
+            ["vi"] = "Dừng Tour", ["en"] = "Stop Tour", ["ja"] = "ツアーを停止",
+            ["ko"] = "투어 중지", ["zh-Hans"] = "停止游览", ["fr"] = "Arrêter", ["th"] = "หยุดทัวร์"
+        },
+        ["tour_reset"] = new()
+        {
+            ["vi"] = "Bắt đầu lại", ["en"] = "Restart", ["ja"] = "やり直す",
+            ["ko"] = "다시 시작", ["zh-Hans"] = "重新开始", ["fr"] = "Recommencer", ["th"] = "เริ่มใหม่"
+        },
+        ["tour_reset_confirm"] = new()
+        {
+            ["vi"] = "Bạn có chắc muốn bắt đầu lại tour này không? Tiến trình hiện tại sẽ bị xóa.",
+            ["en"] = "Are you sure you want to restart this tour? Current progress will be lost.",
+            ["ja"] = "このツアーをやり直しますか？現在の進捗は削除されます。",
+            ["ko"] = "이 투어를 다시 시작하시겠습니까? 현재 진행 상황이 삭제됩니다.",
+            ["zh-Hans"] = "您确定要重新开始此游览吗？当前进度将丢失。",
+            ["fr"] = "Voulez-vous vraiment recommencer ce circuit ? La progression actuelle sera perdue.",
+            ["th"] = "คุณแน่ใจหรือไม่ว่าต้องการเริ่มทัวร์นี้ใหม่ ความคืบหน้าปัจจุบันจะถูกลบ"
+        },
+        ["tour_completed_msg"] = new()
+        {
+            ["vi"] = "Chúc mừng! Bạn đã hoàn thành {0} điểm dừng của tour.",
+            ["en"] = "Congratulations! You have completed {0} stops of the tour.",
+            ["ja"] = "おめでとうございます！ツアーの{0}の停留所を完了しました。",
+            ["ko"] = "축하합니다! 투어의 {0}개 정류장을 모두 방문했습니다.",
+            ["zh-Hans"] = "恭喜！您已完成游览的{0}个停靠点。",
+            ["fr"] = "Félicitations ! Vous avez terminé {0} arrêts du circuit.",
+            ["th"] = "ยินดีด้วย! คุณได้ทำครบ {0} จุดหยุดของทัวร์แล้ว"
+        },
+        ["completed"] = new()
+        {
+            ["vi"] = "Hoàn thành", ["en"] = "Completed", ["ja"] = "完了",
+            ["ko"] = "완료", ["zh-Hans"] = "已完成", ["fr"] = "Terminé", ["th"] = "เสร็จสิ้น"
+        },
+        ["welcome_desc1"] = new()
+        {
+            ["vi"] = "Khám phá Khu phố Vĩnh Khánh qua giọng thuyết minh tự động.",
+            ["en"] = "Explore Vinh Khanh Street with an automated audio guide.",
+            ["ja"] = "自動音声ガイドでヴィンカイン通りを探索しましょう。",
+            ["ko"] = "자동 오디오 가이드와 함께 빈카인 거리를 탐험하세요.",
+            ["zh-Hans"] = "通过自动语音导览探索永庆街。",
+            ["fr"] = "Explorez la rue Vinh Khanh avec un guide audio automatique.",
+            ["th"] = "สำรวจถนนวิญคานห์พร้อมไกด์เสียงอัตโนมัติ"
+        },
+        ["welcome_greeting"] = new()
+        {
+            ["vi"] = "Chào mừng!", ["en"] = "Welcome!", ["ja"] = "ようこそ！",
+            ["ko"] = "환영합니다!", ["zh-Hans"] = "欢迎！", ["fr"] = "Bienvenue !", ["th"] = "ยินดีต้อนรับ!"
+        },
+        ["welcome_desc2"] = new()
+        {
+            ["vi"] = "Trải nghiệm tinh hoa ẩm thực đường phố và lịch sử Vĩnh Khánh với hướng dẫn viên ảo.",
+            ["en"] = "Experience the essence of street food and the history of Vinh Khanh with a virtual guide.",
+            ["ja"] = "バーチャルガイドと一緒に、ヴィンカインの屋台の味と歴史を体験してください。",
+            ["ko"] = "가상 가이드와 함께 빈카인의 길거리 음식의 정수와 역사를 경험해보세요.",
+            ["zh-Hans"] = "与虚拟导游一起体验永庆的街头美食精髓和历史。",
+            ["fr"] = "Découvrez l'essence de la cuisine de rue et l'histoire de Vinh Khanh avec un guide virtuel.",
+            ["th"] = "สัมผัสแก่นแท้ของอาหารริมทางและประวัติศาสตร์ของวิญคานห์พร้อมไกด์เสมือนจริง"
+        },
+        ["welcome_feat1"] = new()
+        {
+            ["vi"] = "Thuyết minh đa ngôn ngữ", ["en"] = "Multilingual Audio Guide", ["ja"] = "多言語音声ガイド",
+            ["ko"] = "다국어 오디오 가이드", ["zh-Hans"] = "多语言语音导览", ["fr"] = "Guide audio multilingue", ["th"] = "ไกด์เสียงหลายภาษา"
+        },
+        ["welcome_feat2"] = new()
+        {
+            ["vi"] = "Bản đồ tương tác", ["en"] = "Interactive Map", ["ja"] = "インタラクティブマップ",
+            ["ko"] = "대화형 지도", ["zh-Hans"] = "互动地图", ["fr"] = "Carte interactive", ["th"] = "แผนที่แบบโต้ตอบ"
+        },
+        ["welcome_feat3"] = new()
+        {
+            ["vi"] = "Tải về offline", ["en"] = "Download for Offline Use", ["ja"] = "オフライン用にダウンロード",
+            ["ko"] = "오프라인용 다운로드", ["zh-Hans"] = "下载以供离线使用", ["fr"] = "Télécharger pour une utilisation hors ligne", ["th"] = "ดาวน์โหลดสำหรับออฟไลน์"
+        },
+        ["welcome_start"] = new()
+        {
+            ["vi"] = "Bắt đầu khám phá", ["en"] = "Start Exploring", ["ja"] = "探索を開始",
+            ["ko"] = "탐색 시작", ["zh-Hans"] = "开始探索", ["fr"] = "Commencer l'exploration", ["th"] = "เริ่มสำรวจ"
+        },
+        ["welcome_loading"] = new()
+        {
+            ["vi"] = "Đang vào ứng dụng...", ["en"] = "Entering the app...", ["ja"] = "アプリを起動中...",
+            ["ko"] = "앱 시작 중...", ["zh-Hans"] = "正在进入应用...", ["fr"] = "Lancement de l'application...", ["th"] = "กำลังเข้าสู่แอป..."
+        },
+        ["qr_title"] = new()
+        {
+            ["vi"] = "Quét mã QR", ["en"] = "Scan QR Code", ["ja"] = "QRコードをスキャン",
+            ["ko"] = "QR 코드 스캔", ["zh-Hans"] = "扫描二维码", ["fr"] = "Scanner le code QR", ["th"] = "สแกนรหัส QR"
+        },
+        ["qr_subtitle"] = new()
+        {
+            ["vi"] = "Hãy quét mã QR tại điểm tham quan để bắt đầu", ["en"] = "Please scan the QR code at the attraction to start",
+            ["ja"] = "開始するにはアトラクションのQRコードをスキャンしてください",
+            ["ko"] = "시작하려면 관광지의 QR 코드를 스캔하세요",
+            ["zh-Hans"] = "请扫描景点处的二维码以开始",
+            ["fr"] = "Veuillez scanner le code QR à l'attraction pour commencer",
+            ["th"] = "กรุณาสแกนรหัส QR ที่สถานที่ท่องเที่ยวเพื่อเริ่มต้น"
+        },
+        ["qr_instruction"] = new()
+        {
+            ["vi"] = "Đưa mã QR vào khung để quét tự động", ["en"] = "Place the QR code within the frame to scan automatically",
+            ["ja"] = "自動的にスキャンするには、QRコードをフレーム内に配置してください",
+            ["ko"] = "자동으로 스캔하려면 QR 코드를 프레임 안에 맞추세요",
+            ["zh-Hans"] = "将二维码放入框内即可自动扫描",
+            ["fr"] = "Placez le code QR dans le cadre pour le scanner automatiquement",
+            ["th"] = "วางรหัส QR ไว้ในกรอบเพื่อสแกนอัตโนมัติ"
+        },
+        ["qr_processing"] = new()
+        {
+            ["vi"] = "Đang xử lý mã QR...", ["en"] = "Processing QR code...", ["ja"] = "QRコードを処理中...",
+            ["ko"] = "QR 코드 처리 중...", ["zh-Hans"] = "正在处理二维码...", ["fr"] = "Traitement du code QR...", ["th"] = "กำลังประมวลผลรหัส QR..."
+        },
+        ["qr_cam_error_title"] = new()
+        {
+            ["vi"] = "Lỗi", ["en"] = "Error", ["ja"] = "エラー",
+            ["ko"] = "오류", ["zh-Hans"] = "错误", ["fr"] = "Erreur", ["th"] = "ข้อผิดพลาด"
+        },
+        ["qr_cam_error_msg"] = new()
+        {
+            ["vi"] = "Chưa cấp quyền Camera. Không thể quét mã QR.", ["en"] = "Camera permission not granted. Cannot scan QR code.",
+            ["ja"] = "カメラの権限が付与されていません。QRコードをスキャンできません。",
+            ["ko"] = "카메라 권한이 부여되지 않았습니다. QR 코드를 스캔할 수 없습니다.",
+            ["zh-Hans"] = "未授予相机权限。无法扫描二维码。",
+            ["fr"] = "L'autorisation de l'appareil photo n'est pas accordée. Impossible de scanner le code QR.",
+            ["th"] = "ยังไม่ได้ให้สิทธิ์กล้อง ไม่สามารถสแกนรหัส QR ได้"
+        },
+        ["qr_img_support_title"] = new()
+        {
+            ["vi"] = "Thông báo", ["en"] = "Notice", ["ja"] = "通知",
+            ["ko"] = "알림", ["zh-Hans"] = "通知", ["fr"] = "Avis", ["th"] = "ประกาศ"
+        },
+        ["qr_img_support_msg"] = new()
+        {
+            ["vi"] = "Chức năng quét ảnh hiện chỉ hỗ trợ trên Android.", ["en"] = "Image scanning is currently only supported on Android.",
+            ["ja"] = "画像スキャンは現在Androidのみでサポートされています。",
+            ["ko"] = "이미지 스캔은 현재 Android에서만 지원됩니다.",
+            ["zh-Hans"] = "图像扫描目前仅支持Android。",
+            ["fr"] = "La numérisation d'images n'est actuellement prise en charge que sur Android.",
+            ["th"] = "การสแกนรูปภาพรองรับเฉพาะบน Android เท่านั้นในขณะนี้"
+        },
+        ["qr_img_invalid_msg"] = new()
+        {
+            ["vi"] = "Không tìm thấy mã QR hợp lệ trong ảnh.", ["en"] = "No valid QR code found in the image.",
+            ["ja"] = "画像内に有効なQRコードが見つかりません。",
+            ["ko"] = "이미지에서 유효한 QR 코드를 찾을 수 없습니다.",
+            ["zh-Hans"] = "在图像中未找到有效的二维码。",
+            ["fr"] = "Aucun code QR valide n'a été trouvé dans l'image.",
+            ["th"] = "ไม่พบรหัส QR ที่ถูกต้องในรูปภาพ"
+        },
+        ["cancel"] = new()
+        {
+            ["vi"] = "Hủy", ["en"] = "Cancel", ["ja"] = "キャンセル",
+            ["ko"] = "취소", ["zh-Hans"] = "取消", ["fr"] = "Annuler", ["th"] = "ยกเลิก"
         },
 
 
@@ -670,6 +880,90 @@ public static class AppStrings
         {
             ["vi"] = "Phiên bản ứng dụng", ["en"] = "App Version", ["ja"] = "アプリのバージョン",
             ["ko"] = "앱 버전", ["zh-Hans"] = "应用程序版本", ["fr"] = "Version de l'application", ["th"] = "เวอร์ชันแอป"
+        },
+
+        // ═══════════════════════════════════════════════════════════════
+        // Tourist Payment Flow
+        // ═══════════════════════════════════════════════════════════════
+        ["welcome_pay_online"] = new()
+        {
+            ["vi"] = "Thanh toán online", ["en"] = "Pay Online"
+        },
+        ["welcome_scan_qr_alt"] = new()
+        {
+            ["vi"] = "Tôi đã có mã QR", ["en"] = "I have a QR code"
+        },
+        ["pay_title"] = new()
+        {
+            ["vi"] = "Thanh toán vào app", ["en"] = "App Access Payment"
+        },
+        ["pay_subtitle"] = new()
+        {
+            ["vi"] = "Trải nghiệm 1 năm — 10.000đ", ["en"] = "1-year access — 10,000₫"
+        },
+        ["pay_phone_hint"] = new()
+        {
+            ["vi"] = "Số điện thoại của bạn", ["en"] = "Your phone number"
+        },
+        ["pay_continue"] = new()
+        {
+            ["vi"] = "Tiếp tục", ["en"] = "Continue"
+        },
+        ["pay_qr_title"] = new()
+        {
+            ["vi"] = "Quét mã hoặc chuyển khoản", ["en"] = "Scan or Bank Transfer"
+        },
+        ["pay_transfer_content_label"] = new()
+        {
+            ["vi"] = "Nội dung CK", ["en"] = "Transfer note"
+        },
+        ["pay_bank_label"] = new()
+        {
+            ["vi"] = "TP Bank", ["en"] = "TP Bank"
+        },
+        ["pay_waiting"] = new()
+        {
+            ["vi"] = "Đang chờ xác nhận...", ["en"] = "Waiting for confirmation..."
+        },
+        ["pay_waiting_seconds"] = new()
+        {
+            ["vi"] = "Đang chờ... {0}s", ["en"] = "Waiting... {0}s"
+        },
+        ["pay_check_again"] = new()
+        {
+            ["vi"] = "Kiểm tra lại", ["en"] = "Check again"
+        },
+        ["pay_cancel"] = new()
+        {
+            ["vi"] = "Hủy", ["en"] = "Cancel"
+        },
+        ["pay_copy_done"] = new()
+        {
+            ["vi"] = "Đã copy!", ["en"] = "Copied!"
+        },
+        ["pay_success_title"] = new()
+        {
+            ["vi"] = "Thanh toán thành công!", ["en"] = "Payment successful!"
+        },
+        ["pay_success_sub"] = new()
+        {
+            ["vi"] = "Chào mừng đến với AudioGo!", ["en"] = "Welcome to AudioGo!"
+        },
+        ["pay_enter_app"] = new()
+        {
+            ["vi"] = "Vào app", ["en"] = "Enter app"
+        },
+        ["pay_failed"] = new()
+        {
+            ["vi"] = "Giao dịch thất bại. Vui lòng thử lại.", ["en"] = "Transaction failed. Please try again."
+        },
+        ["pay_timeout"] = new()
+        {
+            ["vi"] = "Hết thời gian chờ. Vui lòng thử lại.", ["en"] = "Payment timed out. Please try again."
+        },
+        ["pay_retry"] = new()
+        {
+            ["vi"] = "Thử lại", ["en"] = "Retry"
         },
     };
 

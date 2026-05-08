@@ -32,6 +32,7 @@ namespace Server.Repositories
             var existing = await _db.Categories.FindAsync(category.CategoryId);
             if (existing is null) return null;
             existing.Name = category.Name;
+            existing.LocalizedName = category.LocalizedName;
             existing.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
             return existing;

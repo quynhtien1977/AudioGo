@@ -1,6 +1,7 @@
 using AudioGo_Mobile.ViewModels;
 using Microsoft.Maui.Controls;
 using BarcodeScanner.Mobile;
+using AudioGo.Helpers;
 
 namespace AudioGo_Mobile.Views;
 
@@ -33,7 +34,7 @@ public partial class WelcomeQrScanPage : ContentPage
         }
         else
         {
-            await this.DisplayAlertAsync("Lỗi", "Chưa cấp quyền Camera. Không thể quét mã QR.", "Đóng");
+            await this.DisplayAlertAsync(AppStrings.Get("qr_cam_error_title"), AppStrings.Get("qr_cam_error_msg"), AppStrings.Get("close"));
         }
     }
 
@@ -112,7 +113,7 @@ public partial class WelcomeQrScanPage : ContentPage
                 bmp.Recycle();
             }
 #else
-            await DisplayAlert("Thông báo", "Chức năng quét ảnh hiện chỉ hỗ trợ trên Android.", "OK");
+            await DisplayAlert(AppStrings.Get("qr_img_support_title"), AppStrings.Get("qr_img_support_msg"), AppStrings.Get("ok"));
 #endif
 
             _viewModel.IsLoading = false;
@@ -126,7 +127,7 @@ public partial class WelcomeQrScanPage : ContentPage
             }
             else
             {
-                await DisplayAlert("Lỗi", "Không tìm thấy mã QR hợp lệ trong ảnh.", "OK");
+                await DisplayAlert(AppStrings.Get("qr_cam_error_title"), AppStrings.Get("qr_img_invalid_msg"), AppStrings.Get("ok"));
                 _viewModel.IsDetecting = true;
                 barcodeReader.IsScanning = true;
             }
@@ -136,7 +137,7 @@ public partial class WelcomeQrScanPage : ContentPage
             _viewModel.IsLoading = false;
             _viewModel.IsDetecting = true;
             barcodeReader.IsScanning = true;
-            await DisplayAlert("Lỗi", "Đã xảy ra lỗi: " + ex.Message, "OK");
+            await DisplayAlert(AppStrings.Get("qr_cam_error_title"), AppStrings.Get("error_prefix", ex.Message), AppStrings.Get("ok"));
         }
     }
 }

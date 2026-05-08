@@ -22,8 +22,11 @@ namespace Server.Services
 
         public async Task<LoginResponse?> LoginAsync(LoginRequest req)
         {
+            // Tìm account bằng username, email hoặc số điện thoại
             var account = await _db.Accounts
-                .FirstOrDefaultAsync(a => a.Username == req.Username);
+                .FirstOrDefaultAsync(a => a.Username == req.Identifier || 
+                                          a.Email == req.Identifier || 
+                                          a.PhoneNumber == req.Identifier);
 
             if (account is null || !BCrypt.Net.BCrypt.Verify(req.Password, account.PasswordHash))
                 return null;
@@ -33,7 +36,7 @@ namespace Server.Services
                 throw new Exception("Tài khoản của bạn đã bị khóa");
             }
 
-            return new LoginResponse(GenerateToken(account), account.Role, account.AccountId,
+            return new LoginResponse(GenerateToken(account), account.Role, account.AccountId, account.FullName,
                 DateTime.UtcNow.AddMinutes(GetExpiryMinutes()));
         }
 

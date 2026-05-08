@@ -1,33 +1,33 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { loginApi } from "@/api/authApi";
 
 export default function useAuth() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const getUser = () => {
-    const user =
+  // useMemo: chỉ parse storage 1 lần khi mount, giữ reference ổn định
+  // Tránh JSON.parse() tạo object mới mỗi render → gây infinite useEffect loop
+  const user = useMemo(() => {
+    const raw =
       localStorage.getItem("user") ||
       sessionStorage.getItem("user");
+    return raw ? JSON.parse(raw) : null;
+  }, []);
 
-    return user ? JSON.parse(user) : null;
-  };
-
-  const user = getUser();
-
-  const login = async (username, password, rememberMe) => {
+  const login = async (identifier, password, rememberMe) => {
     setLoading(true);
     setError(null);
 
     try {
-      const res = await loginApi(username, password);
+      const res = await loginApi(identifier, password);
 
       if (res.isLocked === true) {
         throw "Tài khoản của bạn đã bị khóa";
       }
 
       const userData = {
-        username: username, // LẤY TỪ INPUT
+        username: identifier, // Lưu identifier (username/email/phone)
+        fullName: res.fullName,
         role: res.role,
         accountId: res.accountId,
       };

@@ -100,7 +100,7 @@ namespace Server.Controllers.Mobile
 
             // Categories từ CategoryPois navigation (include trong repository)
             var categories = p.CategoryPois
-                .Select(cp => cp.Category?.Name ?? string.Empty)
+                .Select(cp => cp.Category?.GetLocalizedName(lang) ?? string.Empty)
                 .Where(n => !string.IsNullOrEmpty(n))
                 .ToList();
 
