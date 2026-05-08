@@ -41,6 +41,14 @@ export const AdminTransactionDashboard = () => {
 
   const handleViewDetail = (tx) => setSelectedTx(tx)
 
+  /** Du khách: contactInfo. Owner (gói POI): username, fallback accountId. */
+  const getPayerDisplay = (tx) => {
+    if (tx.paymentType === 'OWNER_SUBSCRIPTION') {
+      return tx.accountUsername || tx.accountId || '-'
+    }
+    return tx.contactInfo || '-'
+  }
+
   const stats = [
     {
       label: 'Tổng giao dịch',
@@ -195,7 +203,7 @@ export const AdminTransactionDashboard = () => {
                     transactions.map((tx, idx) => (
                       <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="px-6 py-4 text-sm font-mono text-gray-600">{tx.transactionId?.substring(0, 10)}...</td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{tx.accountId || tx.contactInfo || '-'}</td>
+                        <td className="px-6 py-4 text-sm text-gray-900">{getPayerDisplay(tx)}</td>
                         <td className="px-6 py-4 text-sm text-gray-900">{tx.planId || '-'}</td>
                         <td className="px-6 py-4 text-sm font-semibold text-gray-900">
                           {new Intl.NumberFormat('vi-VN', {
@@ -284,7 +292,22 @@ export const AdminTransactionDashboard = () => {
             <div className="p-6 space-y-3 text-sm">
               <p><span className="text-gray-500">Transaction:</span> <span className="font-mono">{selectedTx.transactionId}</span></p>
               <p><span className="text-gray-500">PaymentType:</span> {selectedTx.paymentType}</p>
-              <p><span className="text-gray-500">Account:</span> {selectedTx.accountId || '-'}</p>
+              {selectedTx.paymentType === 'OWNER_SUBSCRIPTION' ? (
+                <>
+                  <p>
+                    <span className="text-gray-500">Chủ sở hữu (username):</span>{' '}
+                    <span className="font-medium text-gray-900">{selectedTx.accountUsername || selectedTx.accountId || '-'}</span>
+                  </p>
+                  {selectedTx.accountUsername && selectedTx.accountId && (
+                    <p>
+                      <span className="text-gray-500">Mã tài khoản:</span>{' '}
+                      <span className="font-mono text-xs text-gray-700">{selectedTx.accountId}</span>
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p><span className="text-gray-500">Liên hệ (du khách):</span> {selectedTx.contactInfo || '-'}</p>
+              )}
               <p><span className="text-gray-500">Plan:</span> {selectedTx.planId || '-'}</p>
               <p><span className="text-gray-500">Gateway:</span> {selectedTx.gateway || '-'}</p>
               <p><span className="text-gray-500">GatewayTransId:</span> {selectedTx.gatewayTransId || '-'}</p>

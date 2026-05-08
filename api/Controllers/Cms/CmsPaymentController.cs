@@ -47,6 +47,7 @@ namespace Server.Controllers.Cms
                     t.TransactionId,
                     t.PaymentType,
                     t.AccountId,
+                    AccountUsername = t.Account != null ? t.Account.Username : null,
                     t.ContactInfo,
                     t.PlanId,
                     t.Amount,
@@ -72,6 +73,7 @@ namespace Server.Controllers.Cms
         {
             var tx = await _db.PaymentTransactions
                 .AsNoTracking()
+                .Include(t => t.Account)
                 .Include(t => t.Plan)
                 .Include(t => t.Subscription)
                 .FirstOrDefaultAsync(t => t.TransactionId == transactionId);
@@ -83,6 +85,7 @@ namespace Server.Controllers.Cms
                 tx.TransactionId,
                 tx.PaymentType,
                 tx.AccountId,
+                AccountUsername = tx.Account?.Username,
                 tx.ContactInfo,
                 plan          = new { tx.Plan!.PlanId, tx.Plan.Name, tx.Plan.Price },
                 tx.Amount,

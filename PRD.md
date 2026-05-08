@@ -42,9 +42,9 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 
 | Vai trò (Actor) | Nền tảng | Quyền hạn (Permissions) | Xác thực |
 | :--- | :--- | :--- | :--- |
-| **Du khách (Guest)** | Mobile App | Xem bản đồ, quét QR kích hoạt, tự động nghe Audio khi đi vào hàng rào ảo, tìm kiếm/lọc POI, xem Route. | Quét mã QR → JWT `GuestApp` (7 ngày) |
+| **Du khách (Guest)** | Mobile App | Xem bản đồ, quét QR kích hoạt, tự động nghe Audio khi đi vào hàng rào ảo, tìm kiếm/lọc POI, xem Tour. | Quét mã QR → JWT `GuestApp` (7 ngày) |
 | **Chủ quán (POI Owner)** | Web CMS | Xem/Thêm/Sửa POI của mình, upload media. | JWT Bearer (`Owner`) |
-| **Admin Hệ thống** | Web CMS | Toàn quyền: CRUD POI, Account, Category, Route. Chạy Content Pipeline. Xem Dashboard Analytics. | JWT Bearer (`Admin`) |
+| **Admin Hệ thống** | Web CMS | Toàn quyền: CRUD POI, Account, Category, Tour. Chạy Content Pipeline. Xem Dashboard Analytics. | JWT Bearer (`Admin`) |
 
 ---
 
@@ -315,7 +315,7 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 | `PoiRequest` | Vùng đệm yêu cầu POI của Owner (actionType: CREATE/UPDATE/DELETE, status: PENDING/APPROVED/REJECTED, proposedData JSON) | `RequestId` |
 | `Category` | Danh mục (name) | `CategoryId` |
 | `CategoryPoi` | Bảng nối N-N Category ↔ POI | `CategoryId + PoiId` |
-| `Tour` | Route tham quan (name, localizedName JSON, localizedDescription JSON, thumbnailUrl, isActive) | `TourId` |
+| `Tour` | Tour tham quan (name, localizedName JSON, localizedDescription JSON, thumbnailUrl, isActive) | `TourId` |
 | `TourPoi` | Bảng nối Tour ↔ POI (stepOrder) | `TourId + PoiId` |
 | `ListenHistory` | Lịch sử nghe (deviceId, poiId, listenDuration, timestamp) | `HistoryId` |
 | `LocationLog` | GPS log (deviceId, lat, lon, timestamp) | `LocationId` |
@@ -438,7 +438,7 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 #### Real-Time Hub (SignalR)
 | Endpoint | Giao thức | Mô tả |
 | :--- | :--- | :--- |
-| `/hubs/device` | WebSocket (SignalR) | Hub theo dõi thiết bị real-time |
+| `/deviceHub` | WebSocket (SignalR) | Hub theo dõi thiết bị real-time |
 | ↳ `OnConnectedAsync` | Event | Mobile → đăng ký online; Admin → join group `admin_dashboard` |
 | ↳ `SendLocationUpdate(lat, lon)` | Mobile→Server | Gửi GPS real-time, lưu LocationLog qua Queue |
 | ↳ `GetActiveDevices()` | Web→Server | Snapshot danh sách thiết bị đang online |
@@ -488,12 +488,12 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 | `GET` | `/api/mobile/pois/nearby?lat=&lon=&radius=` | POI gần vị trí |
 | `GET` | `/api/mobile/pois/{poiId}?lang=vi` | Chi tiết POI |
 | `GET` | `/api/mobile/categories` | Danh sách danh mục |
-| `GET` | `/api/mobile/tours?lang=vi` | Danh sách tour/route |
+| `GET` | `/api/mobile/tours?lang=vi` | Danh sách tour |
 | `GET` | `/api/mobile/tours/{tourId}?lang=vi` | Chi tiết tour + steps |
 | `POST` | `/api/mobile/listen-history` | Ghi lịch sử nghe |
 | `POST` | `/api/mobile/location-log` | Gửi batch GPS log |
 | `POST` | `/api/mobile/payment/init` | Du khách khởi tạo thanh toán VietQR |
-| `GET` | `/api/mobile/payment/verify/{transactionId}` | Poll trạng thái thanh toán |
+| `GET` | `/api/mobile/payment/verify?transactionId=&deviceId=` | Poll trạng thái thanh toán |
 | `GET` | `/api/mobile/tours/directions?waypoints=&mode=` | Lấy đường đi (ORS OpenRouteService) |
 
 ---
@@ -531,7 +531,7 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 | :--- | :--- | :--- | :--- |
 | `/accounts` | `AccountsPage` | Admin | CRUD tài khoản Owner/Admin |
 | `/categories` | `CategoryPage` | Admin | CRUD danh mục POI |
-| `/tours` | `ToursPage` | Admin | Danh sách Tour/Route |
+| `/tours` | `ToursPage` | Admin | Danh sách Tour |
 | `/tours/create` | `CreateTourPage` | Admin | Tạo Tour mới + gán POI steps |
 | `/tours/:id` | `TourDetailPage` | Admin | Chi tiết Tour: quản lý steps và thứ tự |
 | `/analytics` | `AnalyticsPage` | Admin | Phân tích dữ liệu nâng cao |
@@ -545,7 +545,7 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 | Route | Trang | Quyền | Mô tả |
 | :--- | :--- | :--- | :--- |
 | `/pricing` | `PricingPlansPage` | Owner | Xem các gói dịch vụ và so sánh |
-| `/subscriptions/checkout` | `SubscriptionCheckoutPage` | Owner | Thanh toán nâng gói (VietQR/MoMo, polling) |
+| `/subscriptions/checkout` | `SubscriptionCheckoutPage` | Owner | Thanh toán nâng gói (VietQR/MoMo, hiển thị QR chuyển khoản) |
 | `/subscriptions` | `AdminSubscriptionDashboard` | Admin | Quản lý subscription của tất cả Owner |
 | `/transactions` | `AdminTransactionDashboard` | Admin | Lịch sử giao dịch thanh toán |
 | `/profile` | `ProfilePage` | Admin, Owner | Xem/sửa thông tin cá nhân |
@@ -558,6 +558,23 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 
 ---
 
+### 9.0. Thống Kê Chức Năng (Use Case Coverage)
+
+- Tổng use case đang mô tả: **55 chức năng**.
+- Theo actor:
+  - **Guest/Mobile:** 19 UC (`UC1..UC19`).
+  - **POI Owner/Web CMS:** 10 UC (`UC20..UC29`).
+  - **Admin CMS nghiệp vụ:** 16 UC (`UC30..UC37`, `UC39..UC46`).
+  - **Admin giám sát/thiết bị:** 10 UC (`UC50..UC59`).
+- Theo nhóm chính:
+  - **Onboarding + Access:** 3
+  - **Thanh toán:** 2
+  - **Map/Audio/Search/Detail/Tour:** 10
+  - **Settings + đồng bộ nền:** 6
+  - **Owner POI + subscription:** 10
+  - **Admin vận hành nội dung + danh mục + tài khoản + subscription:** 16
+  - **Admin monitoring + tracking + QR tools:** 10
+- Ghi chú đánh số: `UC47`, `UC48`, `UC49` hiện chưa sử dụng (reserved), tài liệu dùng numbering không liên tục để giữ tương thích lịch sử.
 
 ### 9.1. Usecase — Du Khách (Guest / Mobile App)
 
@@ -604,7 +621,7 @@ flowchart LR
 
         subgraph GRP_SETTINGS["Cài đặt"]
             UC14(["Chọn ngôn ngữ"])
-            UC15(["Xóa cache offline"])
+            UC15(["Đồng bộ dữ liệu thủ công"])
         end
 
         subgraph GRP_BG["Nền — Background"]
@@ -816,6 +833,13 @@ flowchart LR
 > **Nguyên tắc:** 1 Use Case = 1 Sequence đơn. Flow phức tạp được tách thành các sequence con (a/b/c).
 > **Ký hiệu:** `participant` = thành phần tham gia · `->>` = gọi đồng bộ · `-->>` = phản hồi · `alt/opt/loop` = nhánh điều kiện
 
+### Quy Ước BCE Cho Sequence
+
+- **Boundary (B):** `*Page`, `*View`, UI form/screen, tác nhân người dùng.
+- **Control (C):** `*ViewModel`, `*Controller`, `*Service`, lớp điều phối luồng nghiệp vụ.
+- **Entity (E):** `AppDbContext`, Repository, Model/Entity, lớp lưu trữ dữ liệu.
+- Tất cả sequence ở mục 10 giữ đúng hàm/endpoint theo codebase hiện tại; khi participant được rút gọn tên, vai trò BCE vẫn bám theo quy ước này.
+
 ---
 
 ### 10.1. Xem Màn Hình Chào (📱 Mobile — UC1)
@@ -823,18 +847,22 @@ flowchart LR
 ```mermaid
 sequenceDiagram
     participant MobileUser as Người dùng
+    participant Runtime as MAUI Runtime
+    participant App as App.xaml.cs
+    participant Shell as AppShell
     participant Welcome as WelcomePage
-    participant VM as WelcomeViewModel
     
-    MobileUser ->> Welcome: Mở App
-    Welcome ->> VM: CheckFirstLaunch()
+    MobileUser ->> Runtime: launchApp()
+    Runtime ->> App: CreateWindow()
+    App ->> App: readSessionState()
+    App ->> App: validateTokenExpiry()
     
-    alt Đã có DeviceId (đã kích hoạt trước)
-        VM -->> Welcome: Navigate → MapPage
-    else Lần đầu — chưa có DeviceId
-        VM -->> Welcome: Hiển thị màn hình chào (WelcomePage)
-        MobileUser ->> Welcome: Nhấn "Bắt đầu"
-        Welcome -->> MobileUser: Navigate → WelcomeQrScanPage (UC2)
+    alt SessionValid=true + GuestToken còn hạn
+        App -->> Shell: renderAppShell()
+    else Session chưa hợp lệ
+        App -->> Welcome: renderWelcomePage()
+        MobileUser ->> Welcome: tapStartButton()
+        Welcome -->> MobileUser: navigateToQrScanPage()
     end
 ```
 
@@ -844,27 +872,27 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant MobileUser as Người dùng
-    participant QrPage as WelcomeQrScanPage
-    participant VM as WelcomeViewModel
-    participant API as ApiService
-    participant AuthCtrl as AuthMobileController
+    participant MobileUser as Người dùng [B]
+    participant QrPage as WelcomeQrScanPage [B]
+    participant VM as WelcomeQrScanViewModel [C]
+    participant API as ApiService [C]
+    participant AuthCtrl as AuthMobileController [C]
 
-    MobileUser ->> QrPage: Camera quét mã QR
-    QrPage ->> VM: OnQrScanned(code)
-    VM ->> API: AuthenticateAsync(qrCode)
-    API ->> AuthCtrl: POST /api/mobile/auth/authenticate { code }
-    AuthCtrl ->> AuthCtrl: Validate AppAccessCode (chưa dùng, chưa hết hạn)
+    MobileUser ->> QrPage: scanQrCode()
+    QrPage ->> VM: ProcessBarcodeCommand.Execute(code)
+    VM ->> API: ScanQrAsync(code, deviceId)
+    API ->> AuthCtrl: POST /api/mobile/auth/scan-qr
+    AuthCtrl ->> AuthCtrl: validateAppAccessCode()
 
     alt Mã hợp lệ
-        AuthCtrl -->> API: 200 { deviceId, jwtToken }
-        API -->> VM: DeviceId + JWT
-        VM ->> VM: Lưu DeviceId + Token vào SecureStorage
-        VM ->> VM: Gọi Đồng bộ dữ liệu (UC3)
+        AuthCtrl -->> API: 200 OK + { message, token, expireAt }
+        API -->> VM: IsSuccess + Token
+        VM ->> VM: persistSessionAndToken()
+        VM ->> VM: switchToAppShell()
     else Mã không hợp lệ / đã dùng
-        AuthCtrl -->> API: 400 Bad Request
-        API -->> VM: Exception
-        VM -->> QrPage: Hiển thị lỗi "Mã QR không hợp lệ"
+        AuthCtrl -->> API: 403/404 + error message
+        API -->> VM: IsSuccess=false + message
+        VM -->> QrPage: showInvalidQrError()
     end
 ```
 
@@ -874,18 +902,24 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant VM as WelcomeViewModel
+    participant MainVM as MainViewModel
     participant SyncSvc as SyncService
     participant API as ApiService
     participant DB as Local SQLite
     participant MapPage
 
-    VM ->> SyncSvc: SyncAllAsync()
-    SyncSvc ->> API: GetPoisAsync() / GetRoutesAsync() / GetCategoriesAsync()
-    API -->> SyncSvc: POIs + Tours + Categories
-    SyncSvc ->> DB: Upsert local cache
-    SyncSvc -->> VM: Sync hoàn tất
-    VM -->> MapPage: Navigate → MapPage
+    MapPage ->> MainVM: InitAsync()
+    MainVM ->> SyncSvc: GetPoisAsync(lang)
+    SyncSvc ->> API: GetPoisAsync(lang)
+    API -->> SyncSvc: POIs
+    SyncSvc ->> DB: replacePoiMetadataAsync()
+
+    MainVM ->> SyncSvc: GetToursAsync(lang)
+    SyncSvc ->> API: GetToursAsync(lang)
+    API -->> SyncSvc: Tours + details
+    SyncSvc ->> DB: upsertAndCleanupToursAsync()
+
+    MainVM -->> MapPage: renderCachedDataAndRefreshAsync()
 ```
 
 ---
@@ -899,11 +933,11 @@ sequenceDiagram
     participant MapVM as MapViewModel
     participant API as ApiService
 
-    MobileUser ->> MapPage: Mở MapPage
+    MobileUser ->> MapPage: openMapPage()
     MapPage ->> MapVM: InitializeAsync()
     MapVM ->> API: GetPoisAsync(lang)
-    API -->> MapVM: List~PoiSummaryDto~
-    MapVM -->> MapPage: Render POI pins trên bản đồ
+    API -->> MapVM: returnPoiSummaryList()
+    MapVM -->> MapPage: renderPoiPins()
 ```
 
 ---
@@ -926,17 +960,17 @@ sequenceDiagram
         GeoSvc ->> GeoSvc: CheckGeofence(location, activePois)
         
         alt Thiết bị vào geofence POI mới
-            GeoSvc ->> GeoSvc: Lọc các POI thiết bị đang nằm trong vùng
+            GeoSvc ->> GeoSvc: filterEligiblePois()
             
             opt Có nhiều POI
-                GeoSvc ->> GeoSvc: Sắp xếp theo mức độ ưu tiên & khoảng cách
-                GeoSvc ->> GeoSvc: Chọn POI ưu tiên cao nhất
+                GeoSvc ->> GeoSvc: sortByPriorityThenDistance()
+                GeoSvc ->> GeoSvc: selectBestPoiByPriorityAndDistance()
             end
 
             GeoSvc ->> MapVM: OnPoiEntered(selectedPoi)
             MapVM ->> AudioSvc: PlayAsync(selectedPoi.AudioUrl, lang)
-            AudioSvc -->> MapVM: Bắt đầu phát
-            MapVM ->> MapVM: Mở Mini-Player (UC6)
+            AudioSvc -->> MapVM: startPlayback()
+            MapVM ->> MapVM: openMiniPlayer()
         end
 
         opt Thiết bị rời khỏi geofence
@@ -949,7 +983,7 @@ sequenceDiagram
         end
 
         GeoSvc ->> API: PostLocationLogAsync(batch)
-        API ->> Ctrls: POST /api/mobile/location-log
+        API ->> Ctrls: POST /api/mobile/location/batch
         Ctrls ->> Queues: QueueLocationAsync()
         Ctrls -->> API: 202 Accepted
     end
@@ -965,13 +999,13 @@ sequenceDiagram
     participant MapPage
     participant AudioSvc as AudioPlayerService
 
-    MobileUser ->> MapPage: Nhấn nút Play/Pause trên Mini-Player
-    MapPage ->> AudioSvc: TogglePlayPause()
-    AudioSvc -->> MapPage: Cập nhật trạng thái nút
+    MobileUser ->> MapPage: tapMiniPlayerToggle()
+    MapPage ->> AudioSvc: ToggleAudio()
+    AudioSvc -->> MapPage: updatePlaybackUiState()
 
-    MobileUser ->> MapPage: Kéo thanh seek
-    MapPage ->> AudioSvc: SeekTo(position)
-    AudioSvc -->> MapPage: Cập nhật vị trí âm thanh
+    MobileUser ->> MapPage: dragSeekBar()
+    MapPage ->> AudioSvc: SeekAsync(positionSeconds)
+    AudioSvc -->> MapPage: updatePlaybackProgress()
 ```
 
 ---
@@ -986,14 +1020,14 @@ sequenceDiagram
     participant API as ApiService
     participant Backend as SearchMobileController
 
-    MobileUser ->> SearchPage: Mở tab Search
-    MobileUser ->> SearchPage: Nhập từ khóa tìm kiếm
+    MobileUser ->> SearchPage: openSearchTab()
+    MobileUser ->> SearchPage: enterSearchKeyword()
     SearchPage ->> SearchVM: SearchAsync(keyword)
-    SearchVM ->> API: SearchPoisAsync(keyword, lang, null)
-    API ->> Backend: GET /api/mobile/poi/search?q=...&lang=vi
-    Backend -->> API: List~PoiSummaryDto~
-    API -->> SearchVM: Kết quả tìm kiếm
-    SearchVM -->> SearchPage: Render danh sách POI kết quả
+    SearchVM ->> API: GetPoisAsync(languageCode, query, category)
+    API ->> Backend: GET /api/mobile/pois
+    Backend -->> API: 200 OK + List<PoiSummaryDto>
+    API -->> SearchVM: returnSearchResults()
+    SearchVM -->> SearchPage: renderSearchResults()
 ```
 
 ---
@@ -1011,14 +1045,14 @@ sequenceDiagram
     SearchPage ->> SearchVM: LoadCategoriesAsync()
     SearchVM ->> API: GetCategoriesAsync()
     API ->> Backend: GET /api/mobile/categories
-    Backend -->> API: List~CategoryDto~
+    Backend -->> API: 200 OK + List<CategoryDto>
     API -->> SearchVM: Categories
-    SearchVM -->> SearchPage: Hiển thị bộ lọc Category
+    SearchVM -->> SearchPage: renderCategoryFilter()
 
-    MobileUser ->> SearchPage: Chọn bộ lọc Category
-    SearchPage ->> SearchVM: FilterByCategory(categoryId)
-    SearchVM ->> SearchVM: Filter local cache (không gọi API lại)
-    SearchVM -->> SearchPage: Render danh sách đã lọc
+    MobileUser ->> SearchPage: selectCategoryFilter()
+    SearchPage ->> SearchVM: SearchAsync(query)
+    SearchVM ->> SearchVM: filterCachedResults()
+    SearchVM -->> SearchPage: renderFilteredResults()
 ```
 
 ---
@@ -1034,14 +1068,14 @@ sequenceDiagram
     participant API as ApiService
     participant Backend as PoiMobileController
 
-    MobileUser ->> MapPage: Nhấn vào POI pin
-    MapPage ->> DetailPage: Navigate(poiId)
+    MobileUser ->> MapPage: tapPoiPin()
+    MapPage ->> DetailPage: navigateToPoiDetail()
     DetailPage ->> DetailVM: LoadAsync(poiId, lang)
     DetailVM ->> API: GetPoiDetailAsync(poiId, lang)
-    API ->> Backend: GET /api/mobile/poi/{poiId}?lang=vi
+    API ->> Backend: GET /api/mobile/pois/{poiId}
     Backend -->> API: PoiDetailDto (info, audioUrl, gallery[])
     API -->> DetailVM: PoiDetailDto
-    DetailVM -->> DetailPage: Render thông tin
+    DetailVM -->> DetailPage: renderPoiDetail()
 ```
 
 ---
@@ -1054,9 +1088,9 @@ sequenceDiagram
     participant DetailPage as PoiDetailPage
     participant GalleryPage as GalleryFullScreenPage
 
-    MobileUser ->> DetailPage: Nhấn ảnh trong gallery của POI
-    DetailPage ->> GalleryPage: Navigate(images[], selectedIndex)
-    GalleryPage -->> MobileUser: Hiển thị ảnh full-screen (vuốt trái/phải)
+    MobileUser ->> DetailPage: tapGalleryImage()
+    DetailPage ->> GalleryPage: navigateToGalleryPage()
+    GalleryPage -->> MobileUser: renderFullScreenGallery()
 ```
 
 ---
@@ -1071,16 +1105,16 @@ sequenceDiagram
     participant API as ApiService
     participant Backend as PoiMobileController
 
-    MobileUser ->> DetailPage: Nhấn nút "Nghe audio"
+    MobileUser ->> DetailPage: tapPlayAudio()
     DetailPage ->> DetailVM: PlayAudio(audioUrl, lang)
-    DetailVM -->> DetailPage: Mở Mini-Player với audio POI (Gọi UC6)
+    DetailVM -->> DetailPage: openMiniPlayerForPoi()
 
-    MobileUser ->> DetailPage: Đổi ngôn ngữ (vi/en/ja/...)
+    MobileUser ->> DetailPage: changeLanguage()
     DetailPage ->> DetailVM: ChangeLanguage(lang)
     DetailVM ->> API: GetPoiDetailAsync(poiId, newLang)
-    API ->> Backend: GET /api/mobile/poi/{poiId}?lang=en
-    Backend -->> API: PoiDetailDto (ngôn ngữ mới)
-    DetailVM -->> DetailPage: Cập nhật audio URL + nội dung
+    API ->> Backend: GET /api/mobile/pois/{poiId}
+    Backend -->> API: 200 OK + PoiDetailDto
+    DetailVM -->> DetailPage: refreshLocalizedContent()
 ```
 
 ---
@@ -1095,13 +1129,13 @@ sequenceDiagram
     participant API as ApiService
     participant Backend as TourMobileController
 
-    User ->> TourListPage: Mở trang Tour
+    User ->> TourListPage: openTourListPage()
     TourListPage ->> TourListVM: LoadAsync()
     TourListVM ->> API: GetToursAsync()
     API ->> Backend: GET /api/mobile/tours
-    Backend -->> API: List~TourDto~ (name, description, stepCount)
+    Backend -->> API: 200 OK + List<TourSummaryDto>
     API -->> TourListVM: tours[]
-    TourListVM -->> TourListPage: Render danh sách Tour
+    TourListVM -->> TourListPage: renderTourList()
 ```
 
 ---
@@ -1117,14 +1151,16 @@ sequenceDiagram
     participant API as ApiService
     participant Backend as TourMobileController
 
-    User ->> TourListPage: Nhấn vào Tour
-    TourListPage ->> TourDetailPage: Navigate(tourId)
+    User ->> TourListPage: tapTourItem()
+    TourListPage ->> TourDetailPage: navigateToTourDetail()
     TourDetailPage ->> TourDetailVM: LoadAsync(tourId, lang)
-    TourDetailVM ->> API: GetTourDetailAsync(tourId, lang)
-    API ->> Backend: GET /api/mobile/tours/{tourId}?lang=vi
-    Backend -->> API: TourDetailDto (name, steps[]: PoiId, stepOrder, audioUrl)
-    API -->> TourDetailVM: TourDetailDto
-    TourDetailVM -->> TourDetailPage: Render lộ trình & danh sách POI theo thứ tự
+    TourDetailVM ->> SyncSvc: GetTourDetailAsync(tourId, lang)
+    SyncSvc ->> API: GetTourByIdAsync(tourId, lang)
+    API ->> Backend: GET /api/mobile/tours/{tourId}
+    Backend -->> API: TourDetailDto
+    API -->> SyncSvc: TourDetailDto
+    SyncSvc -->> TourDetailVM: TourDetailDto
+    TourDetailVM -->> TourDetailPage: renderTourRouteAndStops()
 ```
 
 ---
@@ -1138,31 +1174,37 @@ sequenceDiagram
     participant SettingsVM as SettingsViewModel
     participant AppSettings as AppSettingsService
 
-    User ->> SettingsPage: Mở Settings → chọn ngôn ngữ
-    SettingsPage ->> SettingsVM: ChangeLanguage(langCode)
-    SettingsVM ->> AppSettings: SaveLanguage(langCode)
-    AppSettings -->> SettingsVM: OK
-    SettingsVM -->> SettingsPage: Reload UI theo ngôn ngữ mới
+    User ->> SettingsPage: openSettingsAndSelectLanguage()
+    SettingsPage ->> SettingsVM: ChangeLanguageAsync(langCode)
+    SettingsVM ->> AppSettings: SetAppLanguage(langCode)
+    AppSettings -->> SettingsVM: languageSaved()
+    SettingsVM -->> SettingsPage: reloadLocalizedUi()
 ```
 
 ---
 
-### 10.15. Xóa Cache Offline (📱 Mobile — UC15)
+### 10.15. Đồng Bộ Dữ Liệu Khi Đang Sử Dụng (📱 Mobile — UC15)
 
 ```mermaid
 sequenceDiagram
     participant User as Người dùng
-    participant SettingsPage
-    participant SettingsVM as SettingsViewModel
-    participant SQLite as SQLiteDbContext
+    participant MainVM as MainViewModel
+    participant SyncSvc as SyncService
+    participant API as ApiService
+    participant SQLite as Local SQLite
 
-    User ->> SettingsPage: Nhấn "Xóa cache"
-    SettingsPage ->> SettingsVM: ClearCacheCommand.Execute()
-    SettingsVM ->> SQLite: DeleteAllPoisAsync()
-    SQLite -->> SettingsVM: OK
-    SettingsVM ->> SQLite: DeleteAllContentsAsync()
-    SQLite -->> SettingsVM: OK
-    SettingsVM -->> SettingsPage: Thông báo xóa thành công
+    User ->> MainVM: continueUsingAppOnline()
+    MainVM ->> SyncSvc: ApplyDeltaAsync(lang)
+    SyncSvc ->> API: GetDeltaAsync(lastSyncAt, lang)
+    API -->> SyncSvc: deltaPayloadReceived()
+    SyncSvc ->> SQLite: upsertChangedPois()
+    SyncSvc ->> SQLite: removeStalePoisAndMedia()
+
+    MainVM ->> SyncSvc: GetToursAsync(lang)
+    SyncSvc ->> API: GetToursWithDetailsAsync()
+    API -->> SyncSvc: returnLatestTourSnapshots()
+    SyncSvc ->> SQLite: upsertToursAndCleanupStale()
+    SyncSvc -->> MainVM: pushUpdatedCacheToUi()
 ```
 
 ---
@@ -1177,14 +1219,14 @@ sequenceDiagram
     participant API as ApiService
     participant PayCtrl as TouristPaymentController
 
-    User ->> PayPage: Mở màn hình thanh toán
-    PayPage ->> PayVM: InitPaymentCommand.Execute()
+    User ->> PayPage: openPaymentPage()
+    PayPage ->> PayVM: executeInitPaymentCommand()
     PayVM ->> API: InitTouristPaymentAsync(deviceId)
     API ->> PayCtrl: POST /api/mobile/payment/init
-    PayCtrl -->> API: 200 { transactionId, amount, vietQrUrl, bankAccount }
-    API -->> PayVM: PaymentInitDto
-    PayVM -->> PayPage: Hiển thị QR VietQR + thông tin chuyển khoản
-    PayVM ->> PayVM: StartPolling(transactionId) — mỗi 5 giây
+    PayCtrl -->> API: 200 OK + PaymentInitDto
+    API -->> PayVM: mapPaymentInitDto()
+    PayVM -->> PayPage: renderPaymentQrAndBankInfo()
+    PayVM ->> PayVM: startPolling()
 ```
 
 ---
@@ -1197,20 +1239,20 @@ sequenceDiagram
     participant API as ApiService
     participant PayCtrl as TouristPaymentController
 
-    loop Polling mỗi 5 giây
+    loop pollEvery5Seconds()
         PayVM ->> API: VerifyTouristPaymentAsync(transactionId, deviceId)
-        API ->> PayCtrl: GET /api/mobile/payment/verify/{transactionId}
+        API ->> PayCtrl: GET /api/mobile/payment/verify
 
-        alt SUCCESS — SePay webhook đã xác nhận
-            PayCtrl -->> API: 200 { status: "SUCCESS", token: JWT }
-            API -->> PayVM: VerifyDto
-            PayVM ->> PayVM: Lưu JWT vào SecureStorage
-            PayVM ->> PayVM: CurrentState = Success → Navigate MainPage
-        else PENDING
-            PayCtrl -->> API: 200 { status: "PENDING" }
-            PayVM ->> PayVM: Tiếp tục poll
-        else FAILED / Timeout
-            PayVM ->> PayVM: CurrentState = Failed
+        alt onSuccess()
+            PayCtrl -->> API: 200 OK + VerifyDto(status=SUCCESS, token)
+            API -->> PayVM: mapVerifyDto()
+            PayVM ->> PayVM: saveGuestToken()
+            PayVM ->> PayVM: setSuccessStateAndNavigateMainPage()
+        else onPending()
+            PayCtrl -->> API: 200 OK + VerifyDto(status=PENDING)
+            PayVM ->> PayVM: continuePolling()
+        else onFailedOrTimeout()
+            PayVM ->> PayVM: setFailedState()
         end
     end
 ```
@@ -1226,12 +1268,12 @@ sequenceDiagram
     participant Hub as DeviceHub (Backend)
     participant CMS as Web CMS Admin
 
-    MainVM ->> SRSvc: ConnectAsync(deviceId, JWT)
-    SRSvc ->> Hub: HubConnection.StartAsync() /hubs/device
+    MainVM ->> SRSvc: StartAsync()
+    SRSvc ->> Hub: HubConnection.StartAsync()
     Hub ->> Hub: OnConnectedAsync() → UpdatePresence(Online)
     Hub -->> CMS: BroadcastDeviceStatus(deviceId, Online)
 
-    loop GPS location update (mỗi 30 giây)
+    loop sendGpsUpdateEvery30Seconds()
         SRSvc ->> Hub: InvokeAsync("SendLocationUpdate", lat, lng, deviceId)
         Hub ->> Hub: QueueLocationAsync(log)
         Hub -->> CMS: BroadcastLocationUpdate(deviceId, lat, lng)
@@ -1255,30 +1297,30 @@ sequenceDiagram
     participant AuthCtrl as AuthController (Backend)
     participant DB as AppDbContext
 
-    MobileUser ->> LoginPage: Nhập username + password → Nhấn Login
+    MobileUser ->> LoginPage: submitLoginForm()
     LoginPage ->> AuthCtx: login(username, password)
-    AuthCtx ->> API: POST /api/auth/login { username, password }
-    API ->> AuthCtrl: Login(request)
-    AuthCtrl ->> DB: Query Account WHERE Username = ?
+    AuthCtx ->> API: login(username, password)
+    API ->> AuthCtrl: POST /api/auth/login
+    AuthCtrl ->> DB: LoginAsync()
     DB -->> AuthCtrl: Account (PasswordHash, Role)
     AuthCtrl ->> AuthCtrl: BCrypt.Verify(password, hash)
 
     alt Xác thực thành công
         AuthCtrl ->> AuthCtrl: GenerateJWT(accountId, role)
-        AuthCtrl -->> API: 200 { token, role, accountId }
+        AuthCtrl -->> API: 200 OK + { token, role, accountId }
         API -->> AuthCtx: token + role
-        AuthCtx ->> AuthCtx: Lưu token vào localStorage / Cookie
-        AuthCtx -->> LoginPage: Redirect theo role
+    AuthCtx ->> AuthCtx: persistAuthToken()
+    AuthCtx -->> LoginPage: redirectByRole()
 
         alt role == "Admin"
-            LoginPage -->> MobileUser: Navigate → Dashboard (Admin)
+            LoginPage -->> MobileUser: navigateToAdminDashboard()
         else role == "Owner"
-            LoginPage -->> MobileUser: Navigate → POI List (Owner)
+            LoginPage -->> MobileUser: navigateToOwnerPoiList()
         end
     else Sai thông tin
         AuthCtrl -->> API: 401 Unauthorized
-        API -->> AuthCtx: Error
-        AuthCtx -->> LoginPage: Hiển thị lỗi "Sai tên đăng nhập hoặc mật khẩu"
+        API -->> AuthCtx: returnUnauthorizedError()
+        AuthCtx -->> LoginPage: showInvalidCredentialsError()
     end
 ```
 
@@ -1293,12 +1335,12 @@ sequenceDiagram
     participant PoiCtrl as CmsPoiController
     participant DB as AppDbContext
 
-    User ->> CMS: Vào trang POI
-    CMS ->> PoiCtrl: GET /api/cms/pois [JWT]
-    PoiCtrl ->> DB: Query POIs (filter by AccountId nếu Owner)
-    DB -->> PoiCtrl: List~Poi~
-    PoiCtrl -->> CMS: 200 List~PoiDto~
-    CMS -->> User: Hiển thị bảng danh sách POI
+    User ->> CMS: openPoiManagementPage()
+    CMS ->> PoiCtrl: GET /api/cms/pois
+    PoiCtrl ->> DB: GetAllForCmsAsync()
+    DB -->> PoiCtrl: returnPoiList()
+    PoiCtrl -->> CMS: 200 OK + List<PoiListDto>
+    CMS -->> User: renderPoiTable()
 ```
 
 ---
@@ -1312,12 +1354,12 @@ sequenceDiagram
     participant PoiCtrl as CmsPoiController
     participant DB as AppDbContext
 
-    User ->> CMS: Điền form + nhấn Tạo POI
-    CMS ->> PoiCtrl: POST /api/cms/pois [JWT]
-    PoiCtrl ->> DB: Add Poi + PoiContent (master)
-    DB -->> PoiCtrl: Saved
-    PoiCtrl -->> CMS: 201 Created PoiDto
-    CMS -->> User: Thông báo tạo thành công
+    User ->> CMS: submitCreatePoiForm()
+    CMS ->> PoiCtrl: POST /api/cms/pois
+    PoiCtrl ->> DB: CreateAsync()
+    DB -->> PoiCtrl: saveCompleted()
+    PoiCtrl -->> CMS: 201 Created + PoiDto
+    CMS -->> User: showCreateSuccessToast()
 ```
 
 ---
@@ -1331,16 +1373,16 @@ sequenceDiagram
     participant PoiCtrl as CmsPoiController
     participant DB as AppDbContext
 
-    User ->> CMS: Chỉnh sửa POI → Lưu
-    CMS ->> PoiCtrl: PUT /api/cms/pois/{id} [JWT]
-    PoiCtrl ->> DB: Update Poi fields
-    DB -->> PoiCtrl: Saved
+    User ->> CMS: submitUpdatePoiForm()
+    CMS ->> PoiCtrl: PUT /api/cms/pois/{id}
+    PoiCtrl ->> DB: UpdateAsync()
+    DB -->> PoiCtrl: saveCompleted()
     PoiCtrl -->> CMS: 200 OK
 
-    User ->> CMS: Xóa POI → Xác nhận
-    CMS ->> PoiCtrl: DELETE /api/cms/pois/{id} [JWT]
-    PoiCtrl ->> DB: Remove Poi + related data
-    DB -->> PoiCtrl: Deleted
+    User ->> CMS: confirmDeletePoi()
+    CMS ->> PoiCtrl: DELETE /api/cms/pois/{id}
+    PoiCtrl ->> DB: DeleteAsync()
+    DB -->> PoiCtrl: deleteCompleted()
     PoiCtrl -->> CMS: 204 No Content
 ```
 
@@ -1358,15 +1400,15 @@ sequenceDiagram
     participant SvcReq as IPoiRequestService
     participant DB as AppDbContext
 
-    Owner ->> CMS: Điền form POI + nhấn Gửi Yêu Cầu
-    CMS ->> PoiCtrl: POST /api/cms/pois/requests [JWT-Owner]
+    Owner ->> CMS: submitPoiRequestForm()
+    CMS ->> PoiCtrl: POST /api/cms/pois/requests
     Note over PoiCtrl: actionType=CREATE, draft=PoiDraftDto
     PoiCtrl ->> SvcReq: SubmitPoiRequestAsync(accountId, req)
-    SvcReq ->> DB: INSERT PoiRequest { status=PENDING, proposedData=JSON }
-    DB -->> SvcReq: Saved
+    SvcReq ->> DB: SubmitPoiRequestAsync()
+    DB -->> SvcReq: saveCompleted()
     SvcReq -->> PoiCtrl: requestId
-    PoiCtrl -->> CMS: 200 { message, requestId }
-    CMS -->> Owner: "Yêu cầu đã gửi thành công — chờ Admin duyệt"
+    PoiCtrl -->> CMS: 200 OK + { message, requestId }
+    CMS -->> Owner: showRequestSubmittedMessage()
 ```
 
 ---
@@ -1381,32 +1423,32 @@ sequenceDiagram
     participant SvcReq as IPoiRequestService
     participant DB as AppDbContext
 
-    Admin ->> CMS: Mở tab New/Update/Delete requests
-    CMS ->> PoiCtrl: GET /api/cms/pois/requests?status=PENDING [JWT-Admin]
-    PoiCtrl -->> CMS: List~PoiRequestListDto~
-    CMS -->> Admin: Bảng danh sách yêu cầu
+    Admin ->> CMS: openPoiRequestReviewTab()
+    CMS ->> PoiCtrl: GET /api/cms/pois/requests
+    PoiCtrl -->> CMS: 200 OK + List<PoiRequestListDto>
+    CMS -->> Admin: renderRequestTable()
 
-    Admin ->> CMS: Chọn request → Xem chi tiết
+    Admin ->> CMS: openRequestDetail()
     CMS ->> PoiCtrl: GET /api/cms/pois/requests/{requestId}
-    PoiCtrl -->> CMS: proposedData JSON + rejectReason
+    PoiCtrl -->> CMS: 200 OK + request detail
 
     alt APPROVED
-        Admin ->> CMS: Nhấn Phê duyệt
-        CMS ->> PoiCtrl: PUT /api/cms/pois/requests/{requestId}/review { status: APPROVED }
+        Admin ->> CMS: approveRequest()
+        CMS ->> PoiCtrl: PUT /api/cms/pois/requests/{requestId}/review (APPROVED)
         PoiCtrl ->> SvcReq: ReviewPoiRequestAsync(requestId, APPROVED)
-        SvcReq ->> DB: Apply proposedData → Upsert/Delete Poi
-        DB -->> SvcReq: Saved
-        SvcReq -->> PoiCtrl: { success, requestId, status }
+        SvcReq ->> DB: ReviewPoiRequestAsync()
+        DB -->> SvcReq: saveCompleted()
+        SvcReq -->> PoiCtrl: returnReviewSuccess()
         PoiCtrl -->> CMS: 200 OK
-        CMS -->> Admin: "Đã phê duyệt — POI đã cập nhật live"
+        CMS -->> Admin: showApproveSuccessMessage()
     else REJECTED
-        Admin ->> CMS: Nhập lý do → Nhấn Từ chối
-        CMS ->> PoiCtrl: PUT /api/cms/pois/requests/{requestId}/review { status: REJECTED, rejectReason }
+        Admin ->> CMS: rejectRequestWithReason()
+        CMS ->> PoiCtrl: PUT /api/cms/pois/requests/{requestId}/review (REJECTED)
         PoiCtrl ->> SvcReq: ReviewPoiRequestAsync(requestId, REJECTED)
-        SvcReq ->> DB: UPDATE PoiRequest status=REJECTED + rejectReason
-        DB -->> SvcReq: Saved
+        SvcReq ->> DB: ReviewPoiRequestAsync()
+        DB -->> SvcReq: saveCompleted()
         PoiCtrl -->> CMS: 200 OK
-        CMS -->> Admin: "Đã từ chối yêu cầu"
+        CMS -->> Admin: showRejectSuccessMessage()
     end
 ```
 
@@ -1419,16 +1461,17 @@ sequenceDiagram
     participant Owner
     participant CMS as Web CMS (PricingPlansPage)
     participant SubCtrl as CmsSubscriptionController
+    participant SePayCtrl as SePayWebhookController
     participant DB as AppDbContext
 
-    Owner ->> CMS: Vào trang Gói Dịch Vụ
-    CMS ->> SubCtrl: GET /api/cms/subscriptions/plans [JWT-Owner]
-    SubCtrl ->> DB: Query SubscriptionPlans WHERE isActive=true
-    DB -->> SubCtrl: List~SubscriptionPlan~
-    SubCtrl -->> CMS: 200 plans[]
-    CMS ->> SubCtrl: GET /api/cms/subscriptions/me [JWT-Owner]
-    SubCtrl -->> CMS: { currentPlan, activeSubscription, daysRemaining }
-    CMS -->> Owner: Bảng so sánh gói + gói hiện tại đang dùng
+    Owner ->> CMS: openPricingPlansPage()
+    CMS ->> SubCtrl: GET /api/cms/subscriptions/plans
+    SubCtrl ->> DB: GetPlans()
+    DB -->> SubCtrl: returnSubscriptionPlans()
+    SubCtrl -->> CMS: 200 OK + plans[]
+    CMS ->> SubCtrl: GET /api/cms/subscriptions/me
+    SubCtrl -->> CMS: 200 OK + { currentPlan, activeSubscription }
+    CMS -->> Owner: renderPlanComparison()
 ```
 
 ---
@@ -1443,23 +1486,21 @@ sequenceDiagram
     participant DB as AppDbContext
     participant Webhook as SePay/MoMo Webhook
 
-    Owner ->> CMS: Chọn gói + gateway (SEPAY/MOMO) → Xác nhận nâng cấp
-    CMS ->> SubCtrl: POST /api/cms/subscriptions/upgrade/init { planId, gateway }
-    SubCtrl ->> DB: INSERT PaymentTransaction { type=OWNER_SUBSCRIPTION, status=PENDING }
-    SubCtrl -->> CMS: 200 { transactionId, vietQrUrl, transferContent, expireInMinutes=15 }
-    CMS -->> Owner: Hiển thị QR VietQR + hướng dẫn chuyển khoản
+    Owner ->> CMS: submitUpgradePlanRequest()
+    CMS ->> SubCtrl: POST /api/cms/subscriptions/upgrade/init
+    SubCtrl ->> DB: InitUpgrade()
+    SubCtrl -->> CMS: 200 OK + { transactionId, vietQrUrl, transferContent }
+    CMS -->> Owner: renderUpgradePaymentQr()
 
-    loop Poll mỗi 5s (tối đa 15 phút)
-        CMS ->> SubCtrl: GET /api/cms/subscriptions/verify/{transactionId}
-        SubCtrl -->> CMS: { status: PENDING }
-    end
+    Note over CMS,SubCtrl: Hiện tại luồng Web chỉ init giao dịch và hiển thị QR/chuyển khoản.
+    Note over CMS,SubCtrl: Chưa có endpoint owner poll verify riêng trong codebase.
 
-    Webhook ->> SubCtrl: POST /api/payment/sepay/webhook { transactionId, amount }
-    SubCtrl ->> DB: UPDATE PaymentTransaction status=SUCCESS
-    SubCtrl ->> DB: INSERT OwnerSubscription { status=ACTIVE, endDate=+30days }
-    SubCtrl ->> DB: UPDATE Account.SubscriptionPlanId
+    Webhook ->> SePayCtrl: POST /api/payment/sepay/webhook
+    SePayCtrl ->> DB: HandleSePayAsync()
+    SePayCtrl ->> DB: ActivateSubscriptionAsync()
+    SePayCtrl ->> DB: ActivateSubscriptionAsync()
 
-    CMS -->> Owner: "Thanh toán thành công — Gói đã được nâng cấp!"
+    CMS -->> Owner: showUpgradeSuccessMessage()
 ```
 
 ---
@@ -1477,17 +1518,17 @@ sequenceDiagram
     participant Blob as BlobStorageService
     participant DB as AppDbContext
 
-    Admin ->> CMS: Nhấn "Tạo Audio" cho POI
-    CMS ->> PipeCtrl: POST /api/cms/pipeline/generate/{poiId} [JWT]
+    Admin ->> CMS: triggerGenerateAudio()
+    CMS ->> PipeCtrl: POST /api/cms/pipeline/generate/{poiId}
     PipeCtrl ->> Pipeline: GenerateAudioAsync(content)
     Pipeline ->> TTS: SynthesizeAsync(text, lang)
-    TTS -->> Pipeline: audio MP3 stream
+    TTS -->> Pipeline: returnAudioStream()
     Pipeline ->> Blob: UploadAsync(stream)
-    Blob -->> Pipeline: publicUrl
-    Pipeline ->> DB: Update PoiContent.AudioUrl
-    Pipeline -->> PipeCtrl: PoiContent updated
+    Blob -->> Pipeline: returnPublicUrl()
+    Pipeline ->> DB: GenerateAudioAsync()
+    Pipeline -->> PipeCtrl: returnUpdatedPoiContent()
     PipeCtrl -->> CMS: 200 OK
-    CMS -->> Admin: Hiển thị link audio mới
+    CMS -->> Admin: renderGeneratedAudioLink()
 ```
 
 ---
@@ -1505,29 +1546,29 @@ sequenceDiagram
     participant Blob as BlobStorageService
     participant DB as AppDbContext
 
-    Admin ->> CMS: Yêu cầu dịch sang ngôn ngữ mới
-    CMS ->> PipeCtrl: POST /api/cms/pipeline/generate/{poiId} [JWT]
+    Admin ->> CMS: triggerGenerateTranslation()
+    CMS ->> PipeCtrl: POST /api/cms/pipeline/generate/{poiId}
     PipeCtrl ->> Pipeline: EnsureContentAsync(poi, lang)
-    Pipeline ->> DB: Tìm PoiContent(poiId, lang)
+    Pipeline ->> DB: EnsureContentAsync()
 
     alt Chưa có bản dịch
         Pipeline ->> Trans: TranslateAsync(title, masterLang, lang)
-        Trans -->> Pipeline: translated title
+        Trans -->> Pipeline: returnTranslatedTitle()
         Pipeline ->> Trans: TranslateAsync(desc, masterLang, lang)
-        Trans -->> Pipeline: translated desc
+        Trans -->> Pipeline: returnTranslatedDescription()
         Pipeline ->> TTS: SynthesizeAsync(translatedText, lang)
-        TTS -->> Pipeline: audio stream
+        TTS -->> Pipeline: returnAudioStream()
         Pipeline ->> Blob: UploadAsync(stream)
-        Blob -->> Pipeline: audioUrl
-        Pipeline ->> DB: Add new PoiContent(poiId, lang)
-        Pipeline -->> PipeCtrl: new PoiContent
+        Blob -->> Pipeline: returnAudioUrl()
+        Pipeline ->> DB: EnsureContentAsync()
+        Pipeline -->> PipeCtrl: returnNewPoiContent()
     else Đã có
-        DB -->> Pipeline: existing PoiContent
-        Pipeline -->> PipeCtrl: existing
+        DB -->> Pipeline: returnExistingPoiContent()
+        Pipeline -->> PipeCtrl: returnExistingContent()
     end
 
     PipeCtrl -->> CMS: 200 OK
-    CMS -->> Admin: Hiển thị nội dung đã dịch
+    CMS -->> Admin: renderTranslatedContent()
 ```
 
 ---
@@ -1543,60 +1584,60 @@ sequenceDiagram
     participant Blob as BlobStorageService
     participant DB as AppDbContext
 
-    Admin ->> CMS: Upload ảnh vào gallery POI
+    Admin ->> CMS: uploadPoiGalleryImage()
     CMS ->> GalleryCtrl: POST /api/cms/poi-gallery/{poiId}
     GalleryCtrl ->> Blob: UploadAsync("images", path, file)
     Blob -->> GalleryCtrl: imageUrl
-    GalleryCtrl ->> DB: Add PoiGallery(poiId, imageUrl)
-    GalleryCtrl -->> CMS: 201 { imageId, imageUrl }
-    CMS -->> Admin: Hiển thị ảnh mới trong gallery
+    GalleryCtrl ->> DB: CreateAsync()
+    GalleryCtrl -->> CMS: 201 Created + { imageId, imageUrl }
+    CMS -->> Admin: renderUpdatedGallery()
 
-    Admin ->> CMS: Xóa ảnh khỏi gallery
+    Admin ->> CMS: deletePoiGalleryImage()
     CMS ->> GalleryCtrl: DELETE /api/cms/poi-gallery/{imageId}
     GalleryCtrl ->> Blob: DeleteAsync(imageUrl)
-    GalleryCtrl ->> DB: Remove PoiGallery
+    GalleryCtrl ->> DB: DeleteAsync()
     GalleryCtrl -->> CMS: 204 No Content
 
     Admin ->> CMS: Upload media chung (logo, thumbnail)
     CMS ->> MediaCtrl: POST /api/cms/media
     MediaCtrl ->> Blob: UploadAsync("media", path, file)
     Blob -->> MediaCtrl: fileUrl
-    MediaCtrl -->> CMS: 200 { url }
+    MediaCtrl -->> CMS: 200 OK + { url }
 ```
 
 ---
 
-### 10.16. Xem  (📱 Mobile)
+### 10.16. Xem map dẫn đường tour (📱 Mobile)
 
 ```mermaid
 sequenceDiagram
     participant MobileUser as Người dùng
-    participant ListUI as RouteListPage
-    participant ListVM as RouteListViewModel
-    participant DetailUI as RouteDetailPage
-    participant DetailVM as RouteDetailViewModel
+    participant ListUI as TourListPage
+    participant ListVM as TourListViewModel
+    participant DetailUI as TourDetailPage
+    participant DetailVM as TourDetailViewModel
     participant API as ApiService
-    participant Backend as RouteMobileController
+    participant Backend as TourMobileController
 
-    MobileUser ->> ListUI: Mở tab Routes
-    ListUI ->> ListVM: LoadRoutesAsync()
-    ListVM ->> API: GetRoutesAsync(lang)
-    API ->> Backend: GET /api/mobile/route?lang=vi
-    Backend -->> API: List<RouteSummaryDto>
-    API -->> ListVM: List<RouteSummaryDto>
-    ListVM -->> ListUI: Hiển thị danh sách route
+    MobileUser ->> ListUI: openToursTab()
+    ListUI ->> ListVM: LoadAsync()
+    ListVM ->> API: GetToursAsync(lang)
+    API ->> Backend: GET /api/mobile/tours
+    Backend -->> API: List<TourSummaryDto>
+    API -->> ListVM: List<TourSummaryDto>
+    ListVM -->> ListUI: renderTourList()
 
-    MobileUser ->> ListUI: Chọn một route
-    ListUI ->> DetailUI: Navigate(routeId)
-    DetailUI ->> DetailVM: LoadRouteDetailAsync(routeId)
-    DetailVM ->> API: GetRouteByIdAsync(routeId, lang)
-    API ->> Backend: GET /api/mobile/route/{routeId}?lang=vi
-    Backend -->> API: RouteDetailDto (with Steps)
-    API -->> DetailVM: RouteDetailDto
-    DetailVM -->> DetailUI: Hiển thị chi tiết route + danh sách POI steps
+    MobileUser ->> ListUI: selectTourItem()
+    ListUI ->> DetailUI: Navigate(tourId)
+    DetailUI ->> DetailVM: LoadAsync(tourId, lang)
+    DetailVM ->> API: GetTourByIdAsync(tourId, lang)
+    API ->> Backend: GET /api/mobile/tours/{tourId}
+    Backend -->> API: TourDetailDto (with Steps)
+    API -->> DetailVM: TourDetailDto
+    DetailVM -->> DetailUI: renderTourDetailAndStops()
 
-    MobileUser ->> DetailUI: Nhấn "Bắt đầu Route"
-    DetailUI -->> MobileUser: Chuyển sang MapPage với route POI
+    MobileUser ->> DetailUI: tapStartTourButton()
+    DetailUI -->> MobileUser: navigateToMapWithTourStops()
 ```
 
 ### 10.17. CMS — Bulk Content Pipeline: GenerateAllLanguages (⚙️ Backend)
@@ -1612,15 +1653,15 @@ sequenceDiagram
     participant TTS as TtsService
     participant Blob as BlobStorageService
 
-    Admin ->> CMS: Nhấn "Generate All Languages"
+    Admin ->> CMS: triggerGenerateAllLanguages()
     CMS ->> PipeCtrl: POST /api/cms/pipeline/generate-all-languages
     activate PipeCtrl
 
-    PipeCtrl ->> DB: Query Active POIs (Include Contents)
+    PipeCtrl ->> DB: GenerateAllLanguages()
     DB -->> PipeCtrl: List<Poi> (IsActive == true)
 
     alt Không có Active POI
-        PipeCtrl -->> CMS: 200 { message: "Không có active POI" }
+        PipeCtrl -->> CMS: 200 OK + { message: "Không có active POI" }
     else Có Active POIs
         Note over PipeCtrl: targetLangs = [vi, en, ja, ko, zh-Hans, fr, th]
 
@@ -1629,12 +1670,12 @@ sequenceDiagram
                 PipeCtrl ->> Pipeline: EnsureContentAsync(poi, lang)
                 activate Pipeline
 
-                Pipeline ->> DB: Tìm PoiContent(poiId, lang)
+                Pipeline ->> DB: EnsureContentAsync()
 
                 alt Đã có content cho lang này
                     DB -->> Pipeline: existing PoiContent
                 else Chưa có → Tạo mới
-                    Pipeline ->> DB: Lấy Master content (IsMaster=true)
+                    Pipeline ->> DB: EnsureContentAsync()
                     Pipeline ->> Trans: TranslateAsync(title, masterLang, lang)
                     Trans -->> Pipeline: translated title
                     Pipeline ->> Trans: TranslateAsync(desc, masterLang, lang)
@@ -1643,7 +1684,7 @@ sequenceDiagram
                     TTS -->> Pipeline: audio MP3 stream
                     Pipeline ->> Blob: UploadAsync("audio", path, stream)
                     Blob -->> Pipeline: audioUrl
-                    Pipeline ->> DB: Add new PoiContent + SaveChanges
+                    Pipeline ->> DB: EnsureContentAsync()
                 end
 
                 Pipeline -->> PipeCtrl: PoiContent
@@ -1655,17 +1696,17 @@ sequenceDiagram
                     TTS -->> Pipeline: audio stream
                     Pipeline ->> Blob: UploadAsync(stream)
                     Blob -->> Pipeline: audioUrl
-                    Pipeline ->> DB: Update AudioUrl
+                    Pipeline ->> DB: GenerateAudioAsync()
                     Pipeline -->> PipeCtrl: updated PoiContent
                 end
             end
         end
 
-        PipeCtrl -->> CMS: 200 { totalPois, successCount, failCount, results }
+        PipeCtrl -->> CMS: 200 OK + { totalPois, successCount, failCount, results }
     end
 
     deactivate PipeCtrl
-    CMS -->> Admin: Hiển thị kết quả pipeline
+    CMS -->> Admin: renderPipelineResult()
 ```
 
 
@@ -1679,44 +1720,44 @@ sequenceDiagram
     participant Repo as IAccountRepository
     participant DB as AppDbContext
 
-    Admin ->> CMS: Xem danh sách tài khoản
+    Admin ->> CMS: openAccountManagementPage()
     CMS ->> AccCtrl: GET /api/cms/accounts
     AccCtrl ->> Repo: GetAllAsync()
-    Repo ->> DB: Query Account table
-    DB -->> Repo: List~Account~
-    Repo -->> AccCtrl: List~Account~
-    AccCtrl -->> CMS: 200 List~AccountDto~
-    CMS -->> Admin: Hiển thị bảng tài khoản
+    Repo ->> DB: GetAllAsync()
+    DB -->> Repo: returnAccountList()
+    Repo -->> AccCtrl: returnAccountList()
+    AccCtrl -->> CMS: 200 OK + List<AccountDto>
+    CMS -->> Admin: renderAccountTable()
 
-    Admin ->> CMS: Tạo tài khoản mới (form)
+    Admin ->> CMS: submitCreateAccountForm()
     CMS ->> AccCtrl: POST /api/cms/accounts
     AccCtrl ->> Repo: ExistsByUsernameAsync(username)
 
     alt Username đã tồn tại
         Repo -->> AccCtrl: true
         AccCtrl -->> CMS: 400 "Username already exists"
-        CMS -->> Admin: Hiển thị lỗi trùng username
+        CMS -->> Admin: showDuplicateUsernameError()
     else Username hợp lệ
         AccCtrl ->> AccCtrl: BCrypt.HashPassword(password)
         AccCtrl ->> Repo: CreateAsync(account)
-        Repo ->> DB: Add + SaveChanges
+        Repo ->> DB: CreateAsync()
         Repo -->> AccCtrl: Account
-        AccCtrl -->> CMS: 201 Created AccountDto
-        CMS -->> Admin: Thông báo tạo thành công
+        AccCtrl -->> CMS: 201 Created + AccountDto
+        CMS -->> Admin: showAccountCreateSuccess()
     end
 
-    Admin ->> CMS: Cập nhật tài khoản (sửa role, khóa, ...)
+    Admin ->> CMS: submitUpdateAccountForm()
     CMS ->> AccCtrl: PUT /api/cms/accounts/{id}
     AccCtrl ->> Repo: GetByIdAsync(id)
     alt Không tìm thấy
         AccCtrl -->> CMS: 404 Not Found
     else Tìm thấy
-        AccCtrl ->> AccCtrl: Cập nhật fields (role, isLocked, ...)
+        AccCtrl ->> AccCtrl: applyAccountFieldUpdates()
         AccCtrl ->> Repo: UpdateAsync(existing)
-        AccCtrl -->> CMS: 200 Updated AccountDto
+        AccCtrl -->> CMS: 200 OK + UpdatedAccountDto
     end
 
-    Admin ->> CMS: Xóa tài khoản
+    Admin ->> CMS: deleteAccount()
     CMS ->> AccCtrl: DELETE /api/cms/accounts/{id}
     AccCtrl ->> Repo: DeleteAsync(id)
     alt Thành công
@@ -1736,40 +1777,40 @@ sequenceDiagram
     participant Repo as ICategoryRepository
     participant DB as AppDbContext
 
-    Admin ->> CMS: Xem danh sách danh mục
+    Admin ->> CMS: openCategoryManagementPage()
     CMS ->> CatCtrl: GET /api/cms/categories
     CatCtrl ->> Repo: GetAllAsync()
-    Repo -->> CatCtrl: List~Category~ (include CategoryPois)
-    CatCtrl -->> CMS: 200 List~CategoryDto~ (kèm PoiCount)
-    CMS -->> Admin: Hiển thị bảng danh mục
+    Repo -->> CatCtrl: returnCategoryList()
+    CatCtrl -->> CMS: 200 OK + List<CategoryDto>
+    CMS -->> Admin: renderCategoryTable()
 
-    Admin ->> CMS: Tạo danh mục mới
-    CMS ->> CatCtrl: POST /api/cms/categories { name }
+    Admin ->> CMS: submitCreateCategory()
+    CMS ->> CatCtrl: POST /api/cms/categories
     CatCtrl ->> Repo: CreateAsync(category)
-    Repo ->> DB: Add + SaveChanges
-    CatCtrl -->> CMS: 201 Created CategoryDto
-    CMS -->> Admin: Danh mục mới hiện trong bảng
+    Repo ->> DB: CreateAsync()
+    CatCtrl -->> CMS: 201 Created + CategoryDto
+    CMS -->> Admin: renderCreatedCategory()
 
-    Admin ->> CMS: Sửa tên danh mục
+    Admin ->> CMS: submitRenameCategory()
     CMS ->> CatCtrl: PUT /api/cms/categories/{id}
     CatCtrl ->> Repo: GetByIdAsync(id)
     CatCtrl ->> Repo: UpdateAsync(existing)
-    CatCtrl -->> CMS: 200 Updated CategoryDto
+    CatCtrl -->> CMS: 200 OK + UpdatedCategoryDto
 
-    Admin ->> CMS: Gán POI vào danh mục
-    CMS ->> CatCtrl: POST /api/cms/categories/{id}/pois { poiId }
+    Admin ->> CMS: assignPoiToCategory()
+    CMS ->> CatCtrl: POST /api/cms/categories/{id}/pois
     CatCtrl ->> Repo: AddPoiAsync(catId, poiId)
-    Repo ->> DB: Add CategoryPoi + SaveChanges
+    Repo ->> DB: AddPoiAsync()
     CatCtrl -->> CMS: 204 No Content
-    CMS -->> Admin: POI đã được gán
+    CMS -->> Admin: showPoiAssignedSuccess()
 
-    Admin ->> CMS: Bỏ POI khỏi danh mục
+    Admin ->> CMS: removePoiFromCategory()
     CMS ->> CatCtrl: DELETE /api/cms/categories/{id}/pois/{poiId}
     CatCtrl ->> Repo: RemovePoiAsync(catId, poiId)
-    Repo ->> DB: Remove CategoryPoi
+    Repo ->> DB: RemovePoiAsync()
     CatCtrl -->> CMS: 204 No Content
 
-    Admin ->> CMS: Xóa danh mục
+    Admin ->> CMS: deleteCategory()
     CMS ->> CatCtrl: DELETE /api/cms/categories/{id}
     CatCtrl ->> Repo: DeleteAsync(id)
     CatCtrl -->> CMS: 204 No Content
@@ -1786,47 +1827,47 @@ sequenceDiagram
     participant Trans as ITranslationService
     participant DB as AppDbContext
 
-    Admin ->> CMS: Xem danh sách tour
-    CMS ->> TourCtrl: GET /api/cms/tours [JWT-Admin]
+    Admin ->> CMS: openTourManagementPage()
+    CMS ->> TourCtrl: GET /api/cms/tours
     TourCtrl ->> Repo: GetAllAsync()
-    Repo -->> TourCtrl: List~Tour~ (include TourPois)
-    TourCtrl -->> CMS: 200 List~TourDto~
-    CMS -->> Admin: Hiển thị danh sách tour
+    Repo -->> TourCtrl: returnTourList()
+    TourCtrl -->> CMS: 200 OK + List<TourDto>
+    CMS -->> Admin: renderTourTable()
 
-    Admin ->> CMS: Tạo tour mới (name, description, thumbnail)
-    CMS ->> TourCtrl: POST /api/cms/tours { name, description }
+    Admin ->> CMS: submitCreateTourForm()
+    CMS ->> TourCtrl: POST /api/cms/tours
     TourCtrl ->> Trans: TranslateToAllLanguagesAsync(name, "vi")
     Trans -->> TourCtrl: nameDict (7 langs JSON)
     TourCtrl ->> Repo: CreateAsync(tour with LocalizedName)
-    Repo ->> DB: Add + SaveChanges
-    TourCtrl -->> CMS: 201 Created TourDto
-    CMS -->> Admin: Tour mới hiện trong danh sách
+    Repo ->> DB: CreateAsync()
+    TourCtrl -->> CMS: 201 Created + TourDto
+    CMS -->> Admin: renderCreatedTour()
 
-    Admin ->> CMS: Thêm POI vào tour (chọn POI + stepOrder)
-    CMS ->> TourCtrl: POST /api/cms/tours/{id}/pois { poiId, stepOrder }
+    Admin ->> CMS: addPoiToTour()
+    CMS ->> TourCtrl: POST /api/cms/tours/{id}/pois
     TourCtrl ->> Repo: AddPoiAsync(tourId, poiId, stepOrder)
-    Repo ->> DB: Add TourPoi + SaveChanges
+    Repo ->> DB: AddPoiAsync()
     TourCtrl -->> CMS: 204 No Content
 
-    Admin ->> CMS: Đổi thứ tự bước
-    CMS ->> TourCtrl: PUT /api/cms/tours/{id}/pois/{poiId}/order { newOrder }
+    Admin ->> CMS: reorderTourStep()
+    CMS ->> TourCtrl: PUT /api/cms/tours/{id}/pois/{poiId}/order
     TourCtrl ->> Repo: ReorderPoiAsync(tourId, poiId, newOrder)
-    Repo ->> DB: Update TourPoi.StepOrder
+    Repo ->> DB: ReorderPoiAsync()
     TourCtrl -->> CMS: 204 No Content
 
-    Admin ->> CMS: Xóa POI khỏi tour
+    Admin ->> CMS: removePoiFromTour()
     CMS ->> TourCtrl: DELETE /api/cms/tours/{id}/pois/{poiId}
     TourCtrl ->> Repo: RemovePoiAsync(tourId, poiId)
-    Repo ->> DB: Remove TourPoi
+    Repo ->> DB: RemovePoiAsync()
     TourCtrl -->> CMS: 204 No Content
 
     alt Soft-delete tour
-        Admin ->> CMS: Xóa tour
+        Admin ->> CMS: softDeleteTour()
         CMS ->> TourCtrl: DELETE /api/cms/tours/{id}
         TourCtrl ->> Repo: DeleteAsync(id) — set IsActive=false
         TourCtrl -->> CMS: 204 No Content
     else Restore tour
-        Admin ->> CMS: Khôi phục tour đã ẩn
+        Admin ->> CMS: restoreTour()
         CMS ->> TourCtrl: PATCH /api/cms/tours/{id}/restore
         TourCtrl ->> Repo: RestoreAsync(id) — set IsActive=true
         TourCtrl -->> CMS: 204 No Content
@@ -1848,7 +1889,7 @@ sequenceDiagram
     Note over Mobile,Hub: Mobile kết nối với JWT GuestApp
     Mobile ->> Hub: Connect (JWT GuestApp)
     Hub ->> Presence: MarkOnline(connectionId, deviceId)
-    Hub ->> Admin: DeviceOnline { deviceId, onlineNow }
+    Hub ->> Admin: broadcastDeviceOnline()
 
     Note over Admin,Hub: Admin kết nối với JWT Admin
     Admin ->> Hub: Connect (JWT Admin)
@@ -1857,18 +1898,18 @@ sequenceDiagram
 
     Admin ->> Hub: GetActiveDevices()
     Hub ->> Presence: GetOnlineDeviceIds()
-    Hub -->> Admin: { onlineNow, deviceIds, snapshotAt }
+    Hub -->> Admin: returnActiveDeviceSnapshot()
 
     loop Định kỳ GPS polling
         Mobile ->> Hub: SendLocationUpdate(lat, lon)
         Hub ->> Queue: QueueLocationAsync(LocationLog)
-        Queue ->> DB: Batch insert LocationLog
-        Hub ->> Admin: LocationUpdated { deviceId, lat, lon, timestamp }
+        Queue ->> DB: QueueLocationAsync()
+        Hub ->> Admin: broadcastLocationUpdated()
     end
 
     Mobile ->> Hub: Disconnect
     Hub ->> Presence: MarkOffline(connectionId) → deviceId
-    Hub ->> Admin: DeviceOffline { deviceId, isActive=false, onlineNow }
+    Hub ->> Admin: broadcastDeviceOffline()
 ```
 
 ### 10.22. CMS — Quản Lý Access Code (🌐 Web CMS)
@@ -1880,24 +1921,24 @@ sequenceDiagram
     participant CodeCtrl as CmsAccessCodeController
     participant DB as AppDbContext
 
-    Admin ->> CMS: Xem danh sách mã QR
-    CMS ->> CodeCtrl: GET /api/cms/accesscodes?page=1
-    CodeCtrl ->> DB: Query AppAccessCodes (ORDER BY CreatedAt DESC)
+    Admin ->> CMS: openAccessCodePage()
+    CMS ->> CodeCtrl: GET /api/cms/accesscodes
+    CodeCtrl ->> DB: GetAccessCodes()
     DB -->> CodeCtrl: List<AppAccessCode> + pagination
-    CodeCtrl -->> CMS: 200 { data, pagination }
-    CMS -->> Admin: Hiển thị bảng mã QR (trạng thái từng mã)
+    CodeCtrl -->> CMS: 200 OK + { data, pagination }
+    CMS -->> Admin: renderAccessCodeTable()
 
-    Admin ->> CMS: Tạo batch 10 mã QR mới
-    CMS ->> CodeCtrl: POST /api/cms/accesscodes { count: 10 }
-    CodeCtrl ->> CodeCtrl: GenerateRandomCode() × 10
-    CodeCtrl ->> DB: AddRange(newCodes) + SaveChanges
-    CodeCtrl -->> CMS: 200 { message, codes[] }
-    CMS -->> Admin: Hiển thị danh sách mã mới
+    Admin ->> CMS: submitCreateAccessCodeBatch()
+    CMS ->> CodeCtrl: POST /api/cms/accesscodes
+    CodeCtrl ->> CodeCtrl: generateRandomCodeBatch()
+    CodeCtrl ->> DB: CreateCodes()
+    CodeCtrl -->> CMS: 200 OK + { message, codes[] }
+    CMS -->> Admin: renderNewAccessCodes()
 
-    Admin ->> CMS: Xóa mã QR
+    Admin ->> CMS: deleteAccessCode()
     CMS ->> CodeCtrl: DELETE /api/cms/accesscodes/{id}
-    CodeCtrl ->> DB: Remove + SaveChanges
-    CodeCtrl -->> CMS: 200 { message }
+    CodeCtrl ->> DB: DeleteCode()
+    CodeCtrl -->> CMS: 200 OK + { message }
 ```
 
 ### 10.23. CMS — Xem Timeline Hoạt Động Thiết Bị (🌐 Web CMS)
@@ -1909,14 +1950,14 @@ sequenceDiagram
     participant AnalCtrl as AnalyticsController
     participant DB as AppDbContext
 
-    Admin ->> CMS: Nhập deviceId + chọn khoảng ngày
-    CMS ->> AnalCtrl: GET /api/cms/analytics/device-activity?deviceId=X&days=7
-    AnalCtrl ->> DB: Query ListenHistory WHERE DeviceId = X AND Timestamp > (now - 7d)
-    AnalCtrl ->> DB: Query LocationLog WHERE DeviceId = X AND Timestamp > (now - 7d)
+    Admin ->> CMS: submitDeviceActivityFilter()
+    CMS ->> AnalCtrl: GET /api/cms/analytics/device-activity
+    AnalCtrl ->> DB: GetDeviceActivity()
+    AnalCtrl ->> DB: GetDeviceActivity()
     DB -->> AnalCtrl: ListenHistory[] + LocationLog[]
     AnalCtrl ->> AnalCtrl: Merge & sort by Timestamp → timeline[]
-    AnalCtrl -->> CMS: 200 { deviceId, totalListens, firstSeen, lastSeen, timeline[] }
-    CMS -->> Admin: Hiển thị bản đồ lộ trình GPS + timeline sự kiện
+    AnalCtrl -->> CMS: 200 OK + DeviceActivityDto
+    CMS -->> Admin: renderDeviceActivityTimeline()
 ```
 
 ---
@@ -2534,7 +2575,7 @@ CSharpProject/
 │   │   │   ├── PoiController.cs
 │   │   │   ├── AuthMobileController.cs
 │   │   │   ├── CategoryMobileController.cs
-│   │   │   ├── TourMobileController.cs     # Route/Tour list & detail
+│   │   │   ├── TourMobileController.cs     # Tour list & detail
 │   │   │   ├── ListenHistoryController.cs
 │   │   │   ├── LocationLogController.cs
 │   │   │   └── TouristPaymentController.cs # VietQR payment + polling
@@ -2543,7 +2584,7 @@ CSharpProject/
 │   │   │   ├── CmsPoiContentController.cs
 │   │   │   ├── CmsPoiGalleryController.cs
 │   │   │   ├── CmsCategoryController.cs
-│   │   │   ├── CmsTourController.cs        # Route/Tour management
+│   │   │   ├── CmsTourController.cs        # Tour management
 │   │   │   ├── CmsContentPipelineController.cs
 │   │   │   ├── CmsAccessCodeController.cs  # Quản lý QR codes
 │   │   │   ├── CmsLocationLogController.cs # Xem & xóa GPS logs
@@ -2597,7 +2638,7 @@ CSharpProject/
 │   │   │   ├── AccountsPage.jsx
 │   │   │   ├── CategoryPage.jsx
 │   │   │   ├── ToursPage.jsx
-│   │   │   ├── RouteDetailPage.jsx
+│   │   │   ├── TourDetailPage.jsx
 │   │   │   ├── AudioPage.jsx
 │   │   │   ├── AudioContentPage.jsx
 │   │   │   ├── AnalyticsPage.jsx
