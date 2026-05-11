@@ -106,6 +106,7 @@ builder.Services.AddHttpContextAccessor();
 // ── Subscription & Payment ────────────────────────────────────────────
 builder.Services.AddScoped<SubscriptionService>();
 builder.Services.AddScoped<PaymentWebhookService>();
+builder.Services.AddHostedService<PaymentCleanupService>(); // Tự động expire PENDING tx sau 30 phút
 
 
 // ── Controllers & OpenAPI ─────────────────────────────────────────────

@@ -186,10 +186,10 @@ export function SubscriptionProvider({ children }) {
     }
   };
 
-  const upgradeSubscription = async (newPlanId) => {
+  const upgradeSubscription = async (newPlanId, gateway = "SEPAY") => {
     try {
       setLoading(true);
-      const result = await subscriptionApi.initUpgradeSubscriptionApi(newPlanId, "SEPAY");
+      const result = await subscriptionApi.initUpgradeSubscriptionApi(newPlanId, gateway);
       return result;
     } catch (err) {
       console.error("Error upgrading subscription:", err);
@@ -200,6 +200,9 @@ export function SubscriptionProvider({ children }) {
     }
   };
 
+  // Alias: dùng để refresh sau khi thanh toán thành công
+  const refreshSubscription = fetchMySubscription;
+
   const value = {
     plans,
     currentSubscription,
@@ -207,6 +210,7 @@ export function SubscriptionProvider({ children }) {
     error,
     fetchPlans,
     fetchMySubscription,
+    refreshSubscription,
     createSubscription,
     upgradeSubscription,
   };

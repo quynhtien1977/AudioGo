@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Server.Data;
 using Server.Models;
 using Server.Services;
+using System.Diagnostics;
 using System.Security.Claims;
 
 namespace Server.Controllers.Cms
@@ -12,6 +13,11 @@ namespace Server.Controllers.Cms
     /// Quản lý gói đăng ký Owner:
     ///   - Admin: xem danh sách plans, xem/gán subscription cho Owner
     ///   - Owner: xem gói hiện tại của mình, khởi tạo giao dịch nâng cấp
+    ///
+    /// Luồng nâng gói:
+    ///   1. POST /api/cms/subscriptions/upgrade/init   → PENDING tx + VietQR URL
+    ///   2. [SePay webhook]                            → tx SUCCESS + subscription activated
+    ///   3. GET  /api/cms/subscriptions/upgrade/verify → Web UI poll mỗi 5s → khi SUCCESS refresh sidebar
     /// </summary>
     [ApiController]
     [Route("api/cms/subscriptions")]
@@ -21,16 +27,19 @@ namespace Server.Controllers.Cms
         private readonly AppDbContext _db;
         private readonly SubscriptionService _subscription;
         private readonly IConfiguration _config;
+        private readonly ILogger<CmsSubscriptionController> _logger;
 
         public CmsSubscriptionController(
             AppDbContext db,
             SubscriptionService subscription,
-            IConfiguration config
+            IConfiguration config,
+            ILogger<CmsSubscriptionController> logger
         )
         {
             _db = db;
             _subscription = subscription;
             _config = config;
+            _logger = logger;
         }
 
         private string CurrentUserId() =>
@@ -351,14 +360,32 @@ namespace Server.Controllers.Cms
                 );
             }
 
-            if (
-                req.Gateway != "SEPAY" &&
-                req.Gateway != "MOMO"
-            )
+            // MoMo chưa được implement — chỉ dùng SePay
+            if (req.Gateway != "SEPAY")
             {
                 return BadRequest(
-                    "Gateway phải là 'SEPAY' hoặc 'MOMO'."
+                    "Hiện tại chỉ hỗ trợ gateway 'SEPAY'."
                 );
+            }
+
+            // Idempotency: Tái sử dụng PENDING tx trong 15 phút để tránh rác DB
+            var sw = Stopwatch.StartNew();
+            var existingTx = await _db.PaymentTransactions
+                .Where(t => t.AccountId == accountId
+                         && t.PlanId == req.PlanId
+                         && t.Status == "PENDING"
+                         && t.PaymentType == "OWNER_SUBSCRIPTION"
+                         && t.CreatedAt >= DateTime.UtcNow.AddMinutes(-15))
+                .OrderByDescending(t => t.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            if (existingTx != null)
+            {
+                sw.Stop();
+                _logger.LogInformation(
+                    "Owner upgrade init reused pending tx. Account={AccountId} Tx={TxId} Plan={PlanId} ElapsedMs={ElapsedMs}",
+                    accountId, existingTx.TransactionId, req.PlanId, sw.ElapsedMilliseconds);
+                return Ok(BuildOwnerInitResponse(existingTx, plan));
             }
 
             var txId = GenerateTransactionId();
@@ -367,23 +394,6 @@ namespace Server.Controllers.Cms
             var chargeAmount = useTestAmount
                 ? (testAmountVnd > 0 ? testAmountVnd : 2000)
                 : plan.Price;
-            var bankAccount =
-                FirstNonEmpty(
-                    _config["SubscriptionPayment:BankAccountNo"],
-                    _config["TouristAccess:BankAccountNo"],
-                    "24200502218"
-                );
-            var bankName =
-                FirstNonEmpty(
-                    _config["SubscriptionPayment:BankName"],
-                    "TP Bank"
-                );
-            var transferContent = $"Nang goi AudioGo {txId}";
-            var encodedContent = Uri.EscapeDataString(transferContent);
-            var vietQrUrl = $"https://img.vietqr.io/image/TPB-{bankAccount}-compact2.png" +
-                            $"?amount={chargeAmount:F0}" +
-                            $"&addInfo={encodedContent}" +
-                            $"&accountName=AUDIOGO";
 
             var tx = new PaymentTransaction
             {
@@ -399,22 +409,94 @@ namespace Server.Controllers.Cms
             };
 
             _db.PaymentTransactions.Add(tx);
-
             await _db.SaveChangesAsync();
+            sw.Stop();
+
+            _logger.LogInformation(
+                "Owner upgrade init created new tx. Account={AccountId} Tx={TxId} Plan={PlanId} Amount={Amount} ElapsedMs={ElapsedMs}",
+                accountId, txId, req.PlanId, chargeAmount, sw.ElapsedMilliseconds);
+
+            return Ok(BuildOwnerInitResponse(tx, plan));
+        }
+
+        // ══════════════════════════════════════════════════════════════════
+        //  VERIFY TRẠNG THÁI THANH TOÁN (Owner poll sau khi hiển thị QR)
+        // ══════════════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// GET /api/cms/subscriptions/upgrade/verify?transactionId=AG-...
+        /// Owner poll mỗi 5s để biết SePay đã xác nhận chưa.
+        /// Trả về status: PENDING | SUCCESS | FAILED | EXPIRED
+        /// Khi SUCCESS: trả thêm planName, endDate, daysRemaining.
+        /// </summary>
+        [HttpGet("upgrade/verify")]
+        [Authorize(Roles = "Owner")]
+        public async Task<IActionResult> VerifyUpgrade([FromQuery] string transactionId)
+        {
+            if (string.IsNullOrWhiteSpace(transactionId))
+                return BadRequest("transactionId là bắt buộc.");
+
+            var accountId = CurrentUserId();
+
+            var tx = await _db.PaymentTransactions
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.TransactionId == transactionId
+                                       && t.PaymentType   == "OWNER_SUBSCRIPTION"
+                                       && t.AccountId     == accountId);
+
+            if (tx == null)
+                return NotFound("Không tìm thấy giao dịch.");
+
+            // Fallback: nếu giao dịch đang PENDING, kiểm tra account này
+            // có subscription SUCCESS nào trong 30 phút qua không
+            // (trường hợp web reload tạo tx mới nhưng payment đã về tx cũ)
+            if (tx.Status == "PENDING")
+            {
+                var recentSuccess = await _db.PaymentTransactions
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.AccountId     == accountId
+                                           && t.PaymentType   == "OWNER_SUBSCRIPTION"
+                                           && t.Status        == "SUCCESS"
+                                           && t.CompletedAt   >= DateTime.UtcNow.AddMinutes(-30));
+                if (recentSuccess != null)
+                    tx = recentSuccess;
+            }
+
+            if (tx.Status != "SUCCESS")
+            {
+                return Ok(new
+                {
+                    status  = tx.Status,
+                    message = tx.Status switch
+                    {
+                        "PENDING"  => "Đang chờ xác nhận thanh toán...",
+                        "FAILED"   => "Giao dịch thất bại. Vui lòng thử lại.",
+                        "EXPIRED"  => "Giao dịch đã hết hạn. Vui lòng tạo QR mới.",
+                        _          => $"Trạng thái: {tx.Status}"
+                    }
+                });
+            }
+
+            // SUCCESS — lấy thông tin subscription đã activate
+            var sub = await _db.OwnerSubscriptions
+                .Include(s => s.Plan)
+                .Where(s => s.AccountId == accountId && s.Status == "ACTIVE")
+                .OrderByDescending(s => s.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            _logger.LogInformation(
+                "Owner upgrade verified SUCCESS. Account={AccountId} Tx={TxId}",
+                accountId, tx.TransactionId);
 
             return Ok(new
             {
-                transactionId = txId,
-                amount = chargeAmount,
-                originalPlanAmount = plan.Price,
-                isTestAmount = useTestAmount,
-                planName = plan.Name,
-                gateway = req.Gateway,
-                bankAccount,
-                bankName,
-                transferContent,
-                vietQrUrl,
-                expireInMinutes = 15
+                status       = "SUCCESS",
+                message      = "Thanh toán thành công! Gói đã được kích hoạt.",
+                planName     = sub?.Plan?.Name ?? tx.PlanId,
+                endDate      = sub?.EndDate,
+                daysRemaining = sub == null
+                    ? (int?)null
+                    : (int)(sub.EndDate - DateTime.UtcNow).TotalDays
             });
         }
 
@@ -520,17 +602,41 @@ namespace Server.Controllers.Cms
             });
         }
 
+        private object BuildOwnerInitResponse(PaymentTransaction tx, SubscriptionPlan plan)
+        {
+            var useTestAmount   = _config.GetValue<bool>("SubscriptionPayment:UseTestAmount");
+            var bankAccount     = FirstNonEmpty(
+                _config["SubscriptionPayment:BankAccountNo"],
+                _config["TouristAccess:BankAccountNo"],
+                "24200502218");
+            var bankName        = FirstNonEmpty(_config["SubscriptionPayment:BankName"], "TP Bank");
+            var transferContent = $"Nang goi AudioGo {tx.TransactionId}";
+            var encodedContent  = Uri.EscapeDataString(transferContent);
+            var vietQrUrl       = $"https://img.vietqr.io/image/TPB-{bankAccount}-compact2.png"
+                                + $"?amount={tx.Amount:F0}"
+                                + $"&addInfo={encodedContent}"
+                                + $"&accountName=AUDIOGO";
+
+            return new
+            {
+                transactionId      = tx.TransactionId,
+                amount             = tx.Amount,
+                originalPlanAmount = plan.Price,
+                isTestAmount       = useTestAmount,
+                planName           = plan.Name,
+                gateway            = tx.Gateway,
+                bankAccount,
+                bankName,
+                transferContent,
+                vietQrUrl,
+                expireInMinutes    = 15
+            };
+        }
+
         private static string GenerateTransactionId()
         {
-            var timestamp =
-                DateTime.UtcNow
-                    .ToString("yyyyMMddHHmmss");
-
-            var random =
-                Guid.NewGuid()
-                    .ToString("N")[..6]
-                    .ToUpper();
-
+            var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+            var random    = Guid.NewGuid().ToString("N")[..6].ToUpper();
             return $"AG-{timestamp}-{random}";
         }
 
@@ -539,11 +645,8 @@ namespace Server.Controllers.Cms
             foreach (var value in values)
             {
                 if (!string.IsNullOrWhiteSpace(value))
-                {
                     return value.Trim();
-                }
             }
-
             return string.Empty;
         }
     }
