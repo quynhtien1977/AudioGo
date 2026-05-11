@@ -6,18 +6,17 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useSubscription } from "@/context/SubscriptionContext";
-import api from "@/api/axios";
+import api from "@/api/apiClient";
 
 // Thời gian poll mỗi lần (ms)
-const POLL_INTERVAL_MS  = 5_000;
-// Tổng thời gian timeout polling (ms) — 10 phút
-const POLL_TIMEOUT_MS   = 10 * 60 * 1_000;
-// Đếm ngược hiển thị (giây)
-const QR_EXPIRE_SECS    = 15 * 60;
+const POLL_INTERVAL_MS = 5_000;
+// Đếm ngược + tổng timeout đồng nhất: 10 phút
+const QR_EXPIRE_SECS   = 10 * 60;  // 600 giây
 
+// apiClient baseURL đã có /api — đường dẫn bắt đầu từ /cms/...
 async function verifyUpgrade(transactionId) {
   const res = await api.get(
-    `/api/cms/subscriptions/upgrade/verify?transactionId=${encodeURIComponent(transactionId)}`
+    `/cms/subscriptions/upgrade/verify?transactionId=${encodeURIComponent(transactionId)}`
   );
   return res.data;
 }
@@ -40,18 +39,15 @@ export default function SubscriptionCheckoutPage() {
   // Countdown QR expire (detik)
   const [countdown, setCountdown]         = useState(QR_EXPIRE_SECS);
 
-  const pollIntervalRef  = useRef(null);
-  const pollTimeoutRef   = useRef(null);
-  const countdownRef     = useRef(null);
+  const pollIntervalRef = useRef(null);
+  const countdownRef    = useRef(null);
 
   // ── Cleanup timers ──────────────────────────────────────────────────────────
   const clearAllTimers = useCallback(() => {
-    if (pollIntervalRef.current)  clearInterval(pollIntervalRef.current);
-    if (pollTimeoutRef.current)   clearTimeout(pollTimeoutRef.current);
-    if (countdownRef.current)     clearInterval(countdownRef.current);
-    pollIntervalRef.current  = null;
-    pollTimeoutRef.current   = null;
-    countdownRef.current     = null;
+    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    if (countdownRef.current)    clearInterval(countdownRef.current);
+    pollIntervalRef.current = null;
+    countdownRef.current    = null;
   }, []);
 
   useEffect(() => {
@@ -66,11 +62,25 @@ export default function SubscriptionCheckoutPage() {
     setPaymentStatus("pending");
     setCountdown(QR_EXPIRE_SECS);
 
-    // Countdown QR timer (đếm ngược mỗi giây)
+    // Countdown timer — khi về 0 tự trigger expired (không cần pollTimeoutRef riêng)
     countdownRef.current = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(countdownRef.current);
+          countdownRef.current = null;
+          // Trigger expired qua functional update để tránh stale closure
+          setPaymentStatus((cur) => {
+            if (cur === "pending") {
+              // Dừng poll interval
+              if (pollIntervalRef.current) {
+                clearInterval(pollIntervalRef.current);
+                pollIntervalRef.current = null;
+              }
+              toast.error("QR đã hết hạn. Vui lòng tạo mã mới.");
+              return "expired";
+            }
+            return cur;
+          });
           return 0;
         }
         return prev - 1;
@@ -85,7 +95,6 @@ export default function SubscriptionCheckoutPage() {
           clearAllTimers();
           setPaymentStatus("success");
           setVerifyResult(res);
-          // Refresh sidebar subscription badge
           if (refreshSubscription) await refreshSubscription();
           toast.success("🎉 Thanh toán thành công! Gói đã được kích hoạt.");
         } else if (res.status === "FAILED") {
@@ -98,18 +107,9 @@ export default function SubscriptionCheckoutPage() {
           toast.error("QR đã hết hạn. Vui lòng tạo mã mới.");
         }
       } catch {
-        // Bỏ qua lỗi mạng tạm thời, tiếp tục poll
+        // Bỏ qua lỗi mạng tạm thời — poll vẫn tiếp tục
       }
     }, POLL_INTERVAL_MS);
-
-    // Timeout tổng 10 phút
-    pollTimeoutRef.current = setTimeout(() => {
-      if (pollIntervalRef.current) {
-        clearAllTimers();
-        setPaymentStatus("expired");
-        toast.error("Đã hết thời gian chờ. Vui lòng tạo QR mới.");
-      }
-    }, POLL_TIMEOUT_MS);
   }, [clearAllTimers, refreshSubscription]);
 
   // ── Xử lý confirm thanh toán ────────────────────────────────────────────────
