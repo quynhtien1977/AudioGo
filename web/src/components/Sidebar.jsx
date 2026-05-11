@@ -15,6 +15,7 @@ import {
   CreditCard,
   DollarSign,
   Sparkles,
+  Zap,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useState } from "react";
@@ -91,6 +92,10 @@ export default function Sidebar() {
 
             <MenuItem to="/queue-demo" icon={<Rocket size={18} />}>
               Giả lập thiết bị
+            </MenuItem>
+
+            <MenuItem to="/geofence-simulator" icon={<Zap size={18} />}>
+              Giả lập tranh chấp
             </MenuItem>
 
           </>

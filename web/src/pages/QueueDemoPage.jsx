@@ -94,10 +94,10 @@ const QueueDemoPage = () => {
       <div style={{ textAlign: "center" }}>
         <h1 style={{ fontSize: "2.5rem", fontWeight: "800", color: "#1f2937", margin: "0 0 1rem 0", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.75rem" }}>
           <Rocket className="text-pink-500" size={36} /> 
-          Stress Test: Message Queue
+          Giả lập ghi log vị trí
         </h1>
         <p style={{ color: "#6b7280", fontSize: "1.1rem" }}>
-          Giả lập lưu lượng truy cập lớn cùng lúc để kiểm tra thời gian phản hồi API và khả năng chịu tải của Queue.
+          Giả lập lưu lượng thiết bị gửi log vị trí cùng lúc để kiểm tra khả năng chịu tải của hệ thống.
         </p>
       </div>
 
