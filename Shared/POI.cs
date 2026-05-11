@@ -26,6 +26,14 @@ namespace Shared
         /// <summary>Đường dẫn file audio đã tải về máy. Chỉ tồn tại trên SQLite device, không từ server.</summary>
         public string? LocalAudioPath { get; set; }
 
+        /// <summary>
+        /// TRUE nếu file audio đã được tải về máy và sẵn sàng phát offline.
+        /// Dùng cho Tier 2 sorting trong GeofenceService:
+        ///   Priority đồng hạng → ưu tiên POI đã có audio local (UX tốt hơn, phát ngay không chờ network).
+        /// </summary>
+        public bool HasLocalAudio => !string.IsNullOrWhiteSpace(LocalAudioPath);
+
+
         // ── Relations ──────────────────────────────────────────────
         /// <summary>Danh sách tên category (ví dụ: ["Ẩm thực", "Hải sản"]).</summary>
         public List<string> Categories { get; set; } = [];
