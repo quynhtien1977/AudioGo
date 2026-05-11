@@ -46,6 +46,18 @@ const normalizeCurrentSubscription = (data) => {
     const currentPlan = normalizePlan(data.currentPlan);
     const activeSubscription = data.activeSubscription || null;
 
+    // Extract planName with multiple fallbacks
+    const planName = 
+      currentPlan?.name ||
+      currentPlan?.Name ||
+      data.planName ||
+      data.name ||
+      data.Name ||
+      data.subscriptionPlanName ||
+      data.planTitle ||
+      null;
+
+
     return {
       ...data,
       currentPlan,
@@ -53,7 +65,7 @@ const normalizeCurrentSubscription = (data) => {
       subscriptionPlanId: currentPlan?.id || null,
       planId: currentPlan?.id || null,
       PlanId: currentPlan?.id || null,
-      planName: currentPlan?.name || null,
+      planName,
       pricePerMonth: currentPlan?.pricePerMonth || 0,
       maxPoiCount: currentPlan?.maxPoiCount ?? null,
       priorityLevel: currentPlan?.priorityLevel ?? null,
@@ -72,7 +84,7 @@ const normalizeCurrentSubscription = (data) => {
     ...data,
     subscriptionPlanId:
       data.subscriptionPlanId || data.planId || data.PlanId || data.currentPlan?.id || null,
-    planName: data.planName || data.name || data.Name || null,
+    planName: data.planName || data.name || data.Name || data.subscriptionPlanName || data.planTitle || null,
   };
 };
 
