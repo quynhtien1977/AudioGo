@@ -924,12 +924,11 @@ sequenceDiagram
     participant MobileUser as Người dùng
     participant MapPage
     participant MapVM as MapViewModel
-    participant API as ApiService
+    participant MainVM as MainViewModel
 
     MobileUser ->> MapPage: openMapPage()
-    MapPage ->> MapVM: InitializeAsync()
-    MapVM ->> API: GetPoisAsync(lang)
-    API -->> MapVM: returnPoiSummaryList()
+    MapPage ->> MapVM: LoadPois(MainVM.Pois)
+    MapVM ->> MapVM: RefilterPins()
     MapVM -->> MapPage: renderPoiPins()
 ```
 
@@ -1013,21 +1012,37 @@ sequenceDiagram
 
 ### 10.7. Tìm Kiếm POI (📱 Mobile — UC7)
 
+
+
 ```mermaid
 sequenceDiagram
     participant MobileUser as Người dùng
     participant SearchPage
     participant SearchVM as SearchViewModel
     participant API as ApiService
-    participant Backend as SearchMobileController
+    participant SyncSvc as SyncService
+    participant PoiCtrl as PoiController (api/mobile/pois)
 
     MobileUser ->> SearchPage: openSearchTab()
     MobileUser ->> SearchPage: enterSearchKeyword()
     SearchPage ->> SearchVM: SearchAsync(keyword)
-    SearchVM ->> API: GetPoisAsync(languageCode, query, category)
-    API ->> Backend: GET /api/mobile/pois
-    Backend -->> API: 200 OK + List<PoiSummaryDto>
-    API -->> SearchVM: returnSearchResults()
+
+    alt HasInternet
+        SearchVM ->> API: GetPoisAsync(lang, query, category)
+        API ->> PoiCtrl: GET /api/mobile/pois
+        PoiCtrl -->> API: 200 OK + List<POI>
+        API -->> SearchVM: pois[]
+        SearchVM ->> SyncSvc: GetToursAsync(lang)
+        Note over SearchVM: Lọc tour theo keyword trên client
+        SyncSvc -->> SearchVM: tours[]
+    else NoInternet
+        SearchVM ->> SearchVM: OfflineSearchAsync(query)
+        SearchVM ->> SyncSvc: GetPoisAsync(lang)
+        SyncSvc -->> SearchVM: poisFromSqlite[]
+        SearchVM ->> SyncSvc: GetToursAsync(lang)
+        SyncSvc -->> SearchVM: toursFromSqlite[]
+    end
+
     SearchVM -->> SearchPage: renderSearchResults()
 ```
 
@@ -1035,30 +1050,39 @@ sequenceDiagram
 
 ### 10.8. Lọc POI Theo Category (📱 Mobile — UC8)
 
+
+
 ```mermaid
 sequenceDiagram
     participant MobileUser as Người dùng
     participant SearchPage
     participant SearchVM as SearchViewModel
+    participant SyncSvc as SyncService
     participant API as ApiService
-    participant Backend as SearchMobileController
+    participant CatCtrl as CategoryMobileController
 
     SearchPage ->> SearchVM: LoadCategoriesAsync()
-    SearchVM ->> API: GetCategoriesAsync()
-    API ->> Backend: GET /api/mobile/categories
-    Backend -->> API: 200 OK + List<CategoryDto>
-    API -->> SearchVM: Categories
+    SearchVM ->> SyncSvc: GetCategoriesAsync(lang)
+    alt SyncSvc uses HTTP
+        SyncSvc ->> API: GetCategoriesAsync(lang)
+        API ->> CatCtrl: GET /api/mobile/categories
+        CatCtrl -->> API: 200 OK + List<CategoryDto>
+        API -->> SyncSvc: categories[]
+    end
+    SyncSvc -->> SearchVM: categories[]
     SearchVM -->> SearchPage: renderCategoryFilter()
 
     MobileUser ->> SearchPage: selectCategoryFilter()
-    SearchPage ->> SearchVM: SearchAsync(query)
-    SearchVM ->> SearchVM: filterCachedResults()
-    SearchVM -->> SearchPage: renderFilteredResults()
+    SearchPage ->> SearchVM: set ActiveCategory (chip)
+    SearchVM ->> SearchVM: SearchAsync(Query)
+    SearchVM -->> SearchPage: renderSearchResults()
 ```
 
 ---
 
 ### 10.9. Xem Thông Tin POI (📱 Mobile — UC9)
+
+> **Khớp code:** `PoiDetailViewModel.LoadAsync` đọc **`AppDatabase.GetPoiAsync(poiId)`** (SQLite). API `GET /api/mobile/pois/{id}` tồn tại trên server nhưng **không** được ViewModel này gọi khi mở chi tiết.
 
 ```mermaid
 sequenceDiagram
@@ -1066,16 +1090,13 @@ sequenceDiagram
     participant MapPage
     participant DetailPage as PoiDetailPage
     participant DetailVM as PoiDetailViewModel
-    participant API as ApiService
-    participant Backend as PoiMobileController
+    participant DB as AppDatabase (SQLite)
 
     MobileUser ->> MapPage: tapPoiPin()
     MapPage ->> DetailPage: navigateToPoiDetail()
-    DetailPage ->> DetailVM: LoadAsync(poiId, lang)
-    DetailVM ->> API: GetPoiDetailAsync(poiId, lang)
-    API ->> Backend: GET /api/mobile/pois/{poiId}
-    Backend -->> API: PoiDetailDto (info, audioUrl, gallery[])
-    API -->> DetailVM: PoiDetailDto
+    DetailPage ->> DetailVM: LoadAsync(poiId)
+    DetailVM ->> DB: GetPoiAsync(poiId)
+    DB -->> DetailVM: PoiEntity
     DetailVM -->> DetailPage: renderPoiDetail()
 ```
 
@@ -1098,44 +1119,65 @@ sequenceDiagram
 
 ### 10.11. Nghe Audio Theo Ngôn Ngữ (📱 Mobile — UC11)
 
+
+
 ```mermaid
 sequenceDiagram
     participant MobileUser as Người dùng
     participant DetailPage as PoiDetailPage
     participant DetailVM as PoiDetailViewModel
-    participant API as ApiService
-    participant Backend as PoiMobileController
+    participant DB as AppDatabase (SQLite)
+    participant MainVM as MainViewModel
 
-    MobileUser ->> DetailPage: tapPlayAudio()
-    DetailPage ->> DetailVM: PlayAudio(audioUrl, lang)
-    DetailVM -->> DetailPage: openMiniPlayerForPoi()
-
-    MobileUser ->> DetailPage: changeLanguage()
-    DetailPage ->> DetailVM: ChangeLanguage(lang)
-    DetailVM ->> API: GetPoiDetailAsync(poiId, newLang)
-    API ->> Backend: GET /api/mobile/pois/{poiId}
-    Backend -->> API: 200 OK + PoiDetailDto
-    DetailVM -->> DetailPage: refreshLocalizedContent()
+    MobileUser ->> DetailPage: tapPlayPause()
+    DetailPage ->> DetailVM: TogglePlayPauseAsync()
+    DetailVM ->> DB: GetPoiAsync(poiId)
+    DB -->> DetailVM: PoiEntity (optional refresh LocalAudioPath)
+    DetailVM ->> MainVM: TriggerAudioAsync(poi)
+    MainVM -->> DetailPage: miniPlayer + playback UI
 ```
 
 ---
 
 ### 10.12. Xem Danh Sách Tour (📱 Mobile — UC12)
 
+
+
 ```mermaid
 sequenceDiagram
     participant User as Người dùng
     participant TourListPage
     participant TourListVM as TourListViewModel
+    participant SyncSvc as SyncService
+    participant SQLite as AppDatabase
     participant API as ApiService
-    participant Backend as TourMobileController
+    participant TourCtrl as TourMobileController
 
     User ->> TourListPage: openTourListPage()
-    TourListPage ->> TourListVM: LoadAsync()
-    TourListVM ->> API: GetToursAsync()
-    API ->> Backend: GET /api/mobile/tours
-    Backend -->> API: 200 OK + List<TourSummaryDto>
-    API -->> TourListVM: tours[]
+    TourListPage ->> TourListVM: LoadToursAsync()
+    TourListVM ->> SyncSvc: GetToursAsync(lang)
+    SyncSvc ->> SQLite: GetToursAsync(lang)
+    SQLite -->> SyncSvc: TourEntity[]
+
+    alt cachedCount > 0 and HasInternet
+        Note over SyncSvc: Task.Run RefreshToursFromServerAsync (background)
+        SyncSvc ->> API: GetToursAsync(lang)
+        API ->> TourCtrl: GET /api/mobile/tours
+        TourCtrl -->> API: 200 OK + summaries
+        loop each tour for detail upsert
+            SyncSvc ->> API: GetTourByIdAsync(tourId, lang)
+            API ->> TourCtrl: GET /api/mobile/tours/{tourId}
+            TourCtrl -->> API: TourDetailDto
+        end
+        SyncSvc ->> SQLite: SaveTourAsync(entity)
+    else cachedCount == 0 and HasInternet
+        SyncSvc ->> API: GetToursAsync(lang)
+        API ->> TourCtrl: GET /api/mobile/tours
+        TourCtrl -->> API: 200 OK + summaries
+        Note over SyncSvc: RefreshToursFromServerAsync fills SQLite
+    end
+
+    SyncSvc -->> TourListVM: List<TourSummaryDto>
     TourListVM -->> TourListPage: renderTourList()
 ```
 
@@ -1143,24 +1185,38 @@ sequenceDiagram
 
 ### 10.13. Xem Chi Tiết Tour & Các Bước POI (📱 Mobile — UC13)
 
+
+
 ```mermaid
 sequenceDiagram
     participant User as Người dùng
     participant TourListPage
     participant TourDetailPage
     participant TourDetailVM as TourDetailViewModel
+    participant SyncSvc as SyncService
+    participant SQLite as AppDatabase
     participant API as ApiService
-    participant Backend as TourMobileController
+    participant TourCtrl as TourMobileController
 
     User ->> TourListPage: tapTourItem()
     TourListPage ->> TourDetailPage: navigateToTourDetail()
-    TourDetailPage ->> TourDetailVM: LoadAsync(tourId, lang)
+    TourDetailPage ->> TourDetailVM: LoadAsync(tourId)
     TourDetailVM ->> SyncSvc: GetTourDetailAsync(tourId, lang)
-    SyncSvc ->> API: GetTourByIdAsync(tourId, lang)
-    API ->> Backend: GET /api/mobile/tours/{tourId}
-    Backend -->> API: TourDetailDto
-    API -->> SyncSvc: TourDetailDto
-    SyncSvc -->> TourDetailVM: TourDetailDto
+
+    alt SQLite hit same language
+        SyncSvc ->> SQLite: GetTourAsync(tourId)
+        SyncSvc ->> SQLite: GetAllPoisAsync()
+        SyncSvc -->> TourDetailVM: TourDetailDto (built locally)
+    else No sqlite hit and HasInternet
+        SyncSvc ->> API: GetTourByIdAsync(tourId, lang)
+        API ->> TourCtrl: GET /api/mobile/tours/{tourId}
+        TourCtrl -->> API: 200 OK + TourDetailDto
+        API -->> SyncSvc: TourDetailDto
+        SyncSvc -->> TourDetailVM: TourDetailDto
+    else Offline or error
+        SyncSvc -->> TourDetailVM: null
+    end
+
     TourDetailVM -->> TourDetailPage: renderTourRouteAndStops()
 ```
 
@@ -1168,17 +1224,25 @@ sequenceDiagram
 
 ### 10.14. Chọn Ngôn Ngữ (📱 Mobile — UC14)
 
+
+
 ```mermaid
 sequenceDiagram
     participant User as Người dùng
     participant SettingsPage
     participant SettingsVM as SettingsViewModel
-    participant AppSettings as AppSettingsService
+    participant MainVM as MainViewModel
+    participant SyncSvc as SyncService
+    participant API as ApiService
 
-    User ->> SettingsPage: openSettingsAndSelectLanguage()
+    User ->> SettingsPage: selectLanguage()
     SettingsPage ->> SettingsVM: ChangeLanguageAsync(langCode)
-    SettingsVM ->> AppSettings: SetAppLanguage(langCode)
-    AppSettings -->> SettingsVM: languageSaved()
+    SettingsVM ->> MainVM: ChangeLanguageAsync(langCode)
+    MainVM ->> SyncSvc: SwitchLanguageAsync(langCode)
+    SyncSvc ->> API: GetPoisAsync(langCode)
+    API -->> SyncSvc: List<POI>
+    SyncSvc ->> SyncSvc: ReplaceMetadataAsync(serverPois)
+    MainVM ->> MainVM: AppSettings.SetAppLanguage(langCode)
     SettingsVM -->> SettingsPage: reloadLocalizedUi()
 ```
 
@@ -1186,26 +1250,31 @@ sequenceDiagram
 
 ### 10.15. Đồng Bộ Dữ Liệu Khi Đang Sử Dụng (📱 Mobile — UC15)
 
+
+
 ```mermaid
 sequenceDiagram
-    participant User as Người dùng
     participant MainVM as MainViewModel
     participant SyncSvc as SyncService
     participant API as ApiService
-    participant SQLite as Local SQLite
+    participant SQLite as AppDatabase (SQLite)
+    participant PoiCtrl as PoiController (api/mobile/pois)
 
-    User ->> MainVM: continueUsingAppOnline()
-    MainVM ->> SyncSvc: ApplyDeltaAsync(lang)
-    SyncSvc ->> API: GetDeltaAsync(lastSyncAt, lang)
-    API -->> SyncSvc: deltaPayloadReceived()
-    SyncSvc ->> SQLite: upsertChangedPois()
-    SyncSvc ->> SQLite: removeStalePoisAndMedia()
-
-    MainVM ->> SyncSvc: GetToursAsync(lang)
-    SyncSvc ->> API: GetToursWithDetailsAsync()
-    API -->> SyncSvc: returnLatestTourSnapshots()
-    SyncSvc ->> SQLite: upsertToursAndCleanupStale()
-    SyncSvc -->> MainVM: pushUpdatedCacheToUi()
+    loop DeltaPollLoopAsync (~1 min, có mạng)
+        MainVM ->> SyncSvc: ApplyDeltaAsync(lang)
+        SyncSvc ->> API: GetDeltaAsync(lastSyncAt, lang)
+        API ->> PoiCtrl: GET /api/mobile/pois/delta
+        PoiCtrl -->> API: 200 OK + PoiDeltaDto
+        API -->> SyncSvc: PoiDeltaDto
+        opt delta có Updated / DeletedIds
+            SyncSvc ->> SQLite: SavePoiAsync(entity)
+            SyncSvc ->> SQLite: DeletePoiAsync(stale)
+        end
+        SyncSvc -->> MainVM: List<POI> hoặc null
+        opt updated != null
+            MainVM ->> MainVM: Pois = updated + NotifyPoisUpdated()
+        end
+    end
 ```
 
 ---
@@ -1624,6 +1693,8 @@ sequenceDiagram
 
 ### 10.16. Xem map dẫn đường tour (📱 Mobile)
 
+
+
 ```mermaid
 sequenceDiagram
     participant MobileUser as Người dùng
@@ -1631,24 +1702,19 @@ sequenceDiagram
     participant ListVM as TourListViewModel
     participant DetailUI as TourDetailPage
     participant DetailVM as TourDetailViewModel
-    participant API as ApiService
-    participant Backend as TourMobileController
+    participant SyncSvc as SyncService
 
     MobileUser ->> ListUI: openToursTab()
-    ListUI ->> ListVM: LoadAsync()
-    ListVM ->> API: GetToursAsync(lang)
-    API ->> Backend: GET /api/mobile/tours
-    Backend -->> API: List<TourSummaryDto>
-    API -->> ListVM: List<TourSummaryDto>
+    ListUI ->> ListVM: LoadToursAsync()
+    ListVM ->> SyncSvc: GetToursAsync(lang)
+    SyncSvc -->> ListVM: List<TourSummaryDto>
     ListVM -->> ListUI: renderTourList()
 
     MobileUser ->> ListUI: selectTourItem()
     ListUI ->> DetailUI: Navigate(tourId)
-    DetailUI ->> DetailVM: LoadAsync(tourId, lang)
-    DetailVM ->> API: GetTourByIdAsync(tourId, lang)
-    API ->> Backend: GET /api/mobile/tours/{tourId}
-    Backend -->> API: TourDetailDto (with Steps)
-    API -->> DetailVM: TourDetailDto
+    DetailUI ->> DetailVM: LoadAsync(tourId)
+    DetailVM ->> SyncSvc: GetTourDetailAsync(tourId, lang)
+    SyncSvc -->> DetailVM: TourDetailDto
     DetailVM -->> DetailUI: renderTourDetailAndStops()
 
     MobileUser ->> DetailUI: tapStartTourButton()
@@ -2665,15 +2731,18 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    START((●)) --> LOAD_CAT[Load Categories<br/>từ API / Local Cache]
+    START((●)) --> LOAD_CAT[LoadCategoriesAsync<br/>SyncService.GetCategoriesAsync]
     LOAD_CAT --> VIEW_SEARCH[Hiển thị SearchPage]
     VIEW_SEARCH --> ACTION{User thao tác}
     
-    ACTION -- Nhập từ khóa --> API_SEARCH[Gọi API SearchPoisAsync]
+    ACTION -- Nhập từ khóa --> NET{HasInternet?}
+    NET -- Có --> API_SEARCH[GetPoisAsync HTTP + GetToursAsync cache/lọc client]
+    NET -- Không --> OFF_SEARCH[OfflineSearchAsync<br/>GetPoisAsync + GetToursAsync từ SQLite]
     API_SEARCH --> DISPLAY[Hiển thị danh sách kết quả]
+    OFF_SEARCH --> DISPLAY
     
-    ACTION -- Chọn Category --> FILTER_LOCAL[Filter dữ liệu local<br/>hoặc gọi API nếu cần]
-    FILTER_LOCAL --> DISPLAY
+    ACTION -- Chọn Category --> SEARCH_AGAIN[ActiveCategory setter<br/>gọi SearchAsync Query hiện tại]
+    SEARCH_AGAIN --> NET
     
     DISPLAY --> CLICK_POI{User chọn POI?}
     CLICK_POI -- Không --> ACTION
@@ -2688,7 +2757,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    START((●)) --> LOAD[Load POI Detail<br/>GetPoiDetailAsync]
+    START((●)) --> LOAD[Load POI Detail<br/>AppDatabase.GetPoiAsync SQLite]
     LOAD --> DISPLAY[Hiển thị thông tin POI<br/>Text, Ảnh thumbnail]
     DISPLAY --> ACTION{User thao tác}
     
@@ -2703,7 +2772,7 @@ flowchart TD
     PLAY_MEDIA --> OPEN_PLAYER
     OPEN_PLAYER --> ACTION
     
-    ACTION -- Đổi ngôn ngữ --> CHANGE_LANG[Gọi API GetPoiDetailAsync<br/>với ngôn ngữ mới]
+    ACTION -- Đổi ngôn ngữ app --> CHANGE_LANG[UC14 MainViewModel.ChangeLanguageAsync<br/>SyncService.SwitchLanguageAsync]
     CHANGE_LANG --> LOAD
     
     ACTION -- Đóng --> END_NODE((◉))
