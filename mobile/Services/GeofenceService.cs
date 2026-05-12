@@ -69,16 +69,21 @@ namespace AudioGo.Services
                 if (eligiblePois.Count > 1)
                 {
                     // Xác định tier nào đã phân giải conflict
-                    var decisionTier = "Tier3_Distance";
-                    var topPriority  = sorted[0].Poi.Priority;
-                    var allSamePriority = sorted.All(x => x.Poi.Priority == topPriority);
-                    if (!allSamePriority)
+                    // So sánh WINNER vs RUNNER-UP (sorted[1]) — không dùng allSamePriority
+                    // vì nếu có POI thứ 3 priority thấp hơn, allSamePriority sẽ false
+                    // dù winner và runner-up cùng priority → báo sai Tier1.
+                    string decisionTier;
+                    if (sorted[0].Poi.Priority != sorted[1].Poi.Priority)
                     {
                         decisionTier = "Tier1_Priority";
                     }
                     else if (sorted[0].Poi.HasLocalAudio != sorted[1].Poi.HasLocalAudio)
                     {
                         decisionTier = "Tier2_HasLocalAudio";
+                    }
+                    else
+                    {
+                        decisionTier = "Tier3_Distance";
                     }
 
                     System.Diagnostics.Debug.WriteLine(

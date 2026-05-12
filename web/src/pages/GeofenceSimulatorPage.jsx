@@ -5,6 +5,8 @@ import "leaflet/dist/leaflet.css";
 import { Play, Trash2, Copy, Zap, Trophy, ArrowLeft, RefreshCw, Loader2, Smartphone } from "lucide-react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import apiClient from "../api/apiClient";
+
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -19,7 +21,7 @@ const mkIcon = c => new L.Icon({
 });
 const ICONS = { gold: mkIcon("gold"), green: mkIcon("green"), red: mkIcon("red"), blue: mkIcon("blue"), violet: mkIcon("violet") };
 const DEV_COLORS = ["gold","blue","violet","green","red"];
-const POI_NAMES = ["Alpha","Beta","Gamma","Delta","Epsilon","Zeta","Eta"];
+const POI_NAMES = ["A","B","C","D","E","F","G"];
 const DEFAULT = { lat: 10.7769, lon: 106.7009 };
 
 const SCENARIOS = [
@@ -71,20 +73,15 @@ function generatePois(devices, poiCount, scenario) {
         ctrDist = 90;
     }
 
-    const radius = Math.max(200, ctrDist + maxDev + 60);
+    const radius = Math.round(Math.max(200, ctrDist + maxDev + 60));  // int for C# deserialization
     const dLat = (ctrDist/111320)*Math.cos(angle);
     const dLon = (ctrDist/(111320*Math.cos(cLat*Math.PI/180)))*Math.sin(angle);
     return { id:`fp-${i}`, name:`POI ${POI_NAMES[i]??i+1}`, lat:cLat+dLat, lon:cLon+dLon, radius, priority, hasLocalAudio };
   });
 }
 
-function resolveConflict(device, pois){
-  const cands = pois.map(p=>({...p,dist:Math.round(haversineM(device.lat,device.lon,p.lat,p.lon))}))
-    .filter(p=>p.dist<=p.radius)
-    .sort((a,b)=>b.priority-a.priority||(b.hasLocalAudio?1:0)-(a.hasLocalAudio?1:0)||a.dist-b.dist)
-    .map((p,i)=>({...p,rank:i+1}));
-  return { winner:cands[0]??null, candidates:cands };
-}
+// resolveConflict đã được chuyển sang backend C# — frontend chỉ sinh data test
+
 
 function MapClicker({cb}){ useMapEvents({click:e=>cb(e.latlng.lat,e.latlng.lng)}); return null; }
 function ts(){ return new Date().toLocaleTimeString("vi-VN",{hour12:false}); }
@@ -132,42 +129,60 @@ export default function GeofenceSimulatorPage(){
     const sc = SCENARIOS.find(s=>s.id===scenario);
     addLog("header",`══ SIMULATE | ${devCount} thiết bị | Kịch bản: ${sc.label} ══`);
     addLog("info", sc.desc);
+    addLog("info","⚡ Gọi backend C# — chạy logic thực tế, không phải JS copy");
 
     const poiCount = devCount + 2;
-    addLog("step",`⚙ Sinh ${poiCount} POI bao quanh vùng giao...`);
+    addLog("step",`⚙ Sinh ${poiCount} fake POI bao quanh centroid...`);
     const pois = generatePois(devices, poiCount, scenario);
     setFakePois(pois);
-    await new Promise(r=>setTimeout(r,250));
+    await new Promise(r=>setTimeout(r,200));
     pois.forEach(p=> addLog("trace",`  📍 ${p.name}: P=${p.priority} R=${p.radius}m audio=${p.hasLocalAudio?"✓":"✗"}`));
 
+    // Gửi từng device lên backend C# với toàn bộ fake POI
     const allRes=[];
     for(let i=0;i<devices.length;i++){
       const d=devices[i];
       addLog("header",`── Device ${i+1} (${d.lat.toFixed(4)},${d.lon.toFixed(4)}) ──`);
-      const {winner,candidates}=resolveConflict(d,pois);
-      if(!candidates.length){ addLog("warn","  ⚠ Không có POI trong vùng phủ."); allRes.push({deviceIdx:i,winner:null,candidates:[]}); continue; }
-      addLog("step",`Bước 1: ${candidates.length} POI trong vùng phủ`);
-      candidates.forEach(c=> addLog("trace",`  #${c.rank} ${c.name} dist=${c.dist}m P=${c.priority} audio=${c.hasLocalAudio?"✓":"✗"}`));
-      addLog("step","Bước 2: Sắp xếp 3-tier (Priority → HasAudio → Distance)");
+      addLog("step","→ POST /cms/debug/geofence-simulate (C# backend)");
+      try {
+        const { data } = await apiClient.post("/cms/debug/geofence-simulate", {
+          latitude:   d.lat,
+          longitude:  d.lon,
+          customPois: pois.map(p => ({
+            poiId:            p.id,
+            name:             p.name,
+            latitude:         p.lat,
+            longitude:        p.lon,
+            activationRadius: Math.round(p.radius),   // must be int
+            priority:         Math.round(p.priority), // must be int
+            hasLocalAudio:    Boolean(p.hasLocalAudio),
+          }))
+        });
 
-      // So sánh winner vs runner-up để xác định tier thực sự quyết định
-      const second = candidates[1];
-      let decTier;
-      if (!second) {
-        decTier = "Duy nhất trong vùng (không tranh chấp)";
-      } else if (winner.priority !== second.priority) {
-        decTier = `Tier 1 — Priority (${winner.priority} > ${second.priority})`;
-      } else if (winner.hasLocalAudio !== second.hasLocalAudio) {
-        decTier = `Tier 2 — HasLocalAudio (winner có audio, runner-up không)`;
-      } else {
-        decTier = `Tier 3 — Khoảng cách (${winner.dist}m < ${second.dist}m)`;
+        // Log từng dòng trace của C# backend
+        (data.sortingTrace || []).forEach(line => {
+          const type = line.includes("WINNER") ? "winner"
+                     : line.includes("LOSER")  ? "loser"
+                     : line.includes("Bước")   ? "step"
+                     : line.includes("⚡") || line.includes("🗄") ? "info"
+                     : "trace";
+          addLog(type, line);
+        });
+
+        const candidates = (data.candidatePois || []).map(c => ({
+          id: c.poiId, name: c.name, priority: c.priority,
+          dist: c.distanceMeters, hasLocalAudio: c.hasLocalAudio,
+          rank: c.rank, inCooldown: c.inCooldown,
+        }));
+        const winner = data.winner ? candidates.find(c=>c.id===data.winner.poiId) ?? null : null;
+        allRes.push({ deviceIdx:i, winner, candidates, decisionTier: data.winner?.decisionTier });
+
+      } catch(err) {
+        const msg = err.response?.data?.message || err.message;
+        addLog("warn",`  ⚠ Lỗi backend: ${msg}`);
+        allRes.push({ deviceIdx:i, winner:null, candidates:[] });
       }
-      addLog("winner",`🏆 WINNER: ${winner.name} [P=${winner.priority} dist=${winner.dist}m audio=${winner.hasLocalAudio?"✓":"✗"}]`);
-      addLog("trace",`  Quyết định bởi: ${decTier}`);
-      if (second) addLog("trace",`  Runner-up: ${second.name} [P=${second.priority} dist=${second.dist}m audio=${second.hasLocalAudio?"✓":"✗"}]`);
-      candidates.filter(c=>c.id!==winner.id).forEach(c=> addLog("loser",`  ✗ ${c.name} thua — rank #${c.rank}`));
-      allRes.push({deviceIdx:i,winner,candidates});
-      await new Promise(r=>setTimeout(r,150));
+      await new Promise(r=>setTimeout(r,120));
     }
     setResults(allRes);
     addLog("header",`══ KẾT THÚC — ${allRes.filter(r=>r.winner).length}/${devCount} có winner ══`);
@@ -190,7 +205,7 @@ export default function GeofenceSimulatorPage(){
           </button>
           <div className="w-px h-5 bg-gray-200"/>
           <Zap size={17} className="text-pink-500"/>
-          <span className="font-bold text-gray-900">Geofence Conflict Simulator</span>
+          <span className="font-bold text-gray-900">Giả lập tranh chấp</span>
           <span className="text-xs bg-pink-50 text-pink-600 border border-pink-200 px-2 py-0.5 rounded-full">Admin Debug</span>
         </div>
         <div className="flex gap-2">
