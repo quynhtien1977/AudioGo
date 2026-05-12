@@ -283,6 +283,9 @@ namespace Server.Services
 
                             if (request.ActionType == "CREATE")
                             {
+                                // ── Enforce Priority = AutoPriority theo subscription plan của Owner ──
+                                // Không tin Priority từ draft (FE có thể gửi bất kỳ giá trị nào).
+                                var ownerPlan = await _subscription.GetCurrentPlanAsync(request.AccountId);
                                 var poi = new Poi
                                 {
                                     PoiId = targetPoiId,
@@ -290,7 +293,7 @@ namespace Server.Services
                                     Latitude = draft.Latitude,
                                     Longitude = draft.Longitude,
                                     ActivationRadius = draft.ActivationRadius,
-                                    Priority = draft.Priority,
+                                    Priority = ownerPlan.AutoPriority,  // Luôn dùng AutoPriority, bỏ qua draft.Priority
                                     LogoUrl = draft.LogoUrl,
                                     IsActive = true,
                                     CreatedAt = DateTime.UtcNow,
@@ -329,10 +332,13 @@ namespace Server.Services
                                 var poi = await _db.Pois.FindAsync(request.PoiId);
                                 if (poi != null)
                                 {
+                                    // ── Enforce Priority tối đa = AutoPriority gói hiện tại ──
+                                    var updateOwnerPlan = await _subscription.GetCurrentPlanAsync(request.AccountId);
                                     poi.Latitude = draft.Latitude;
                                     poi.Longitude = draft.Longitude;
                                     poi.ActivationRadius = draft.ActivationRadius;
-                                    poi.Priority = draft.Priority;
+                                    // Cap Priority: không cho phép nâng cao hơn gói hiện tại
+                                    poi.Priority = Math.Min(draft.Priority, updateOwnerPlan.AutoPriority);
                                     if (!string.IsNullOrEmpty(draft.LogoUrl)) poi.LogoUrl = draft.LogoUrl;
                                     poi.UpdatedAt = DateTime.UtcNow;
 
