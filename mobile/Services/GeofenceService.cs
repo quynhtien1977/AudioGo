@@ -48,38 +48,66 @@ namespace AudioGo.Services
 
             if (eligiblePois.Any())
             {
-                // TODO (Optimization Note - PriorityQueue vs LINQ Sorting): 
-                // Hiện tại đang dùng LINQ OrderBy(Priority).ThenBy(Distance) vì số lượng điểm POI "giao nhau" (K) 
-                // mà user đồng thời giẫm lên thường rất nhỏ (K <= 5). Chi phí sắp xếp O(K log K) cực kỳ nhanh.
-                // Nếu sau này hệ thống mở rộng và user có thể đứng lọt thỏm giữa hàng ngàn vùng POI đan xen,
-                // hãy cân nhắc chuyển sang sử dụng cấu trúc PriorityQueue để tối ưu thuật toán lấy điểm duy nhất.
-                /* * LÝ DO KHÔNG SỬ DỤNG PriorityQueue CHO LOGIC GEOFENCE NÀY:
-                * Mặc dù PriorityQueue (từ .NET 6) là cấu trúc tối ưu nhất về lý thuyết (O(log N)) để lấy phần tử tốt nhất, 
-                * giải pháp dùng LINQ được ưu tiên vì các lý do thực tiễn sau:
-                *
-                * 1. Kích thước tập dữ liệu quá nhỏ (Micro-optimization overkill):
-                * - Ứng dụng duyệt qua N điểm POI để tính khoảng cách (O(N)).
-                * - Số lượng điểm (K) user thực sự đè lên cùng lúc cực kỳ nhỏ (thường chỉ 1 đến 5 điểm).
-                * - Sắp xếp K phần tử bằng LINQ (.OrderBy().ThenBy()) mất O(K log K), chỉ tốn vài nano giây.
-                * - Việc này không có khác biệt tốc độ so với PriorityQueue, thậm chí nhanh hơn vì không 
-                * tốn chi phí cấp phát bộ nhớ (Allocation tree) cho cấu trúc Queue.
-                *
-                * 2. Khó khăn khi so sánh nhiều điều kiện (Multi-level sorting):
-                * - Yêu cầu có 2 tầng ưu tiên: Level 1 (Priority to hơn) -> Level 2 (Distance gần tâm hơn).
-                * - PriorityQueue<TElement, TPriority> chỉ nhận 1 biến TPriority. Để xử lý 2 điều kiện 
-                * cùng lúc cần phải khai báo thêm class IComparer ngoài luồng cực kỳ cồng kềnh.
-                * - Cú pháp OrderBy(Priority).ThenBy(Distance) của List tự mô tả tốt, dễ đọc và dễ maintain hơn.
-                */
-                var bestPoiMatch = eligiblePois
-                    .OrderByDescending(x => x.Poi.Priority)
-                    .ThenBy(x => x.Distance)
-                    .First();
+                // ── 3-Tier POI Conflict Resolution ───────────────────────────────
+                // Tier 1 : Priority          (subscription plan) — số cao hơn thắng
+                // Tier 2 : HasLocalAudio     (preload offline)   — đã tải audio local thắng
+                // Tier 3 : Distance          (gần tâm hơn)       — khoảng cách nhỏ hơn thắng
+                //
+                // Lý do giữ LINQ thay vì PriorityQueue:
+                //   K (số POI eligible đồng thời) thường ≤ 5 → O(K log K) ≈ hằng số.
+                //   Multi-level sort với LINQ tự mô tả, dễ đọc, không cần IComparer riêng.
+                var sorted = eligiblePois
+                    .OrderByDescending(x => x.Poi.Priority)         // Tier 1
+                    .ThenByDescending(x => x.Poi.HasLocalAudio)     // Tier 2
+                    .ThenBy(x => x.Distance)                        // Tier 3
+                    .ToList();
 
-                var bestPoi = bestPoiMatch.Poi;
+                var bestPoiMatch = sorted[0];
+                var bestPoi      = bestPoiMatch.Poi;
+
+                // ── Structured conflict log (chỉ ghi khi có từ 2 ứng viên trở lên) ──
+                if (eligiblePois.Count > 1)
+                {
+                    // Xác định tier nào đã phân giải conflict
+                    // So sánh WINNER vs RUNNER-UP (sorted[1]) — không dùng allSamePriority
+                    // vì nếu có POI thứ 3 priority thấp hơn, allSamePriority sẽ false
+                    // dù winner và runner-up cùng priority → báo sai Tier1.
+                    string decisionTier;
+                    if (sorted[0].Poi.Priority != sorted[1].Poi.Priority)
+                    {
+                        decisionTier = "Tier1_Priority";
+                    }
+                    else if (sorted[0].Poi.HasLocalAudio != sorted[1].Poi.HasLocalAudio)
+                    {
+                        decisionTier = "Tier2_HasLocalAudio";
+                    }
+                    else
+                    {
+                        decisionTier = "Tier3_Distance";
+                    }
+
+                    System.Diagnostics.Debug.WriteLine(
+                        $"[Geofence|Conflict] 🏆 WINNER: {bestPoi.Title} " +
+                        $"(P={bestPoi.Priority}, D={bestPoiMatch.Distance:F1}m, " +
+                        $"Audio={bestPoi.HasLocalAudio}, DecisionTier={decisionTier})");
+
+                    for (int i = 1; i < sorted.Count; i++)
+                    {
+                        var loser = sorted[i];
+                        System.Diagnostics.Debug.WriteLine(
+                            $"[Geofence|Conflict] ❌ LOSER #{i}: {loser.Poi.Title} " +
+                            $"(P={loser.Poi.Priority}, D={loser.Distance:F1}m, Audio={loser.Poi.HasLocalAudio})");
+                    }
+
+                    System.Diagnostics.Debug.WriteLine(
+                        $"[Geofence|Conflict] ⬆️ Resolved by {decisionTier} | " +
+                        $"Candidates: [{string.Join(", ", sorted.Select(x => $"{x.Poi.Title}(P={x.Poi.Priority},A={x.Poi.HasLocalAudio},D={x.Distance:F0}m)"))}]");
+                }
 
                 _lastTriggered[bestPoi.PoiId] = DateTime.UtcNow;
                 PoiTriggered?.Invoke(this, bestPoi);
             }
+
         }
     }
 }

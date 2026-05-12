@@ -30,6 +30,7 @@ import AnalyticsPage from "@/pages/AnalyticsPage";
 import SubscriptionCheckoutPage from "@/pages/SubscriptionCheckoutPage";
 import AdminSubscriptionDashboard from "@/pages/AdminSubscriptionDashboard";
 import AdminTransactionDashboard from "@/pages/AdminTransactionDashboard";
+import GeofenceSimulatorPage from "@/pages/GeofenceSimulatorPage";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 
@@ -360,6 +361,16 @@ export default function App() {
               <MainLayout>
                 <AdminTransactionDashboard />
               </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* GEOFENCE SIMULATOR — Admin only, fullscreen (no MainLayout) */}
+        <Route
+          path="/geofence-simulator"
+          element={
+            <ProtectedRoute roles={["Admin"]}>
+              <GeofenceSimulatorPage />
             </ProtectedRoute>
           }
         />

@@ -9,8 +9,8 @@ const QueueDemoPage = () => {
   const [errorMsg, setErrorMsg] = useState('')
 
   const handleSimulate = async () => {
-    if (numDevices <= 0 || numDevices > 10000) {
-      alert("Vui lòng chọn số lượng thiết bị từ 1 đến 10000.")
+    if (numDevices <= 0 || numDevices > 100000) {
+      alert("Vui lòng chọn số lượng thiết bị từ 1 đến 100000.")
       return
     }
 
@@ -20,63 +20,65 @@ const QueueDemoPage = () => {
     setErrorMsg('')
 
     const API_URL = 'http://localhost:5086/api/mobile/location-log'
-    const requestPromises = []
-    
+    const CONCURRENCY = 50  // Số request chạy song song cùng lúc — tránh TCP saturation
+    const results = []
     const startTimeTotal = Date.now()
 
-    for (let i = 0; i < numDevices; i++) {
+    // Chia thành các "slot" chạy song song tối đa CONCURRENCY tại 1 thời điểm
+    // Thay vì fire tất cả 10000 cùng lúc (browser chỉ xử lý 6 TCP connection/host)
+    const sendOne = async (i) => {
       const payload = {
-          deviceId: `fake-device-${i}`,
-          points: [
-              {
-                  latitude: 10.7769 + (Math.random() * 0.01),
-                  longitude: 106.7009 + (Math.random() * 0.01),
-                  timestamp: new Date().toISOString()
-              }
-          ]
+        deviceId: `fake-device-${i}`,
+        points: [{
+          latitude:  10.7769 + (Math.random() * 0.01),
+          longitude: 106.7009 + (Math.random() * 0.01),
+          timestamp: new Date().toISOString()
+        }]
       }
-      
       const reqStart = Date.now()
-      const p = fetch(API_URL, {
-          method: 'POST',
+      try {
+        const res = await fetch(API_URL, {
+          method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-      }).then(res => {
-          const duration = Date.now() - reqStart
-          return { id: payload.deviceId, status: res.status, duration, success: res.ok }
-      }).catch(err => {
-          const duration = Date.now() - reqStart
-          return { id: payload.deviceId, status: 'Error', duration, success: false }
-      })
-      
-      requestPromises.push(p)
+          body:    JSON.stringify(payload)
+        })
+        return { id: payload.deviceId, status: res.status, duration: Date.now() - reqStart, success: res.ok }
+      } catch (err) {
+        return { id: payload.deviceId, status: 'Error', duration: Date.now() - reqStart, success: false }
+      }
     }
 
+    // Pool pattern: giữ đúng CONCURRENCY worker chạy liên tục cho đến hết N request
+    const queue = Array.from({ length: numDevices }, (_, i) => i)
+    const workers = Array.from({ length: CONCURRENCY }, async () => {
+      while (queue.length > 0) {
+        const i = queue.shift()
+        if (i === undefined) break
+        const result = await sendOne(i)
+        results.push(result)
+      }
+    })
+
     try {
-      const results = await Promise.all(requestPromises)
+      await Promise.all(workers)
       const durationTotal = Date.now() - startTimeTotal
-      
-      let successCount = 0
-      let failCount = 0
-      let maxTime = 0
-      let minTime = Number.MAX_VALUE
-      
+
+      let successCount = 0, failCount = 0, maxTime = 0, minTime = Number.MAX_VALUE
       results.forEach(r => {
-        if (r.success) successCount++
-        else failCount++
+        if (r.success) successCount++; else failCount++
         if (r.duration > maxTime) maxTime = r.duration
         if (r.duration < minTime) minTime = r.duration
       })
-      
+
       if (results.length === 0) minTime = 0
 
       setLogs(results)
       setMetrics({
-        total: numDevices,
-        success: successCount,
-        failed: failCount,
+        total:         numDevices,
+        success:       successCount,
+        failed:        failCount,
         totalDuration: durationTotal,
-        avgTime: (durationTotal / numDevices).toFixed(2),
+        avgTime:       (durationTotal / numDevices).toFixed(2),
         maxTime,
         minTime
       })
@@ -94,10 +96,10 @@ const QueueDemoPage = () => {
       <div style={{ textAlign: "center" }}>
         <h1 style={{ fontSize: "2.5rem", fontWeight: "800", color: "#1f2937", margin: "0 0 1rem 0", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.75rem" }}>
           <Rocket className="text-pink-500" size={36} /> 
-          Stress Test: Message Queue
+          Giả lập ghi log vị trí
         </h1>
         <p style={{ color: "#6b7280", fontSize: "1.1rem" }}>
-          Giả lập lưu lượng truy cập lớn cùng lúc để kiểm tra thời gian phản hồi API và khả năng chịu tải của Queue.
+          Giả lập lưu lượng thiết bị gửi log vị trí cùng lúc để kiểm tra khả năng chịu tải của hệ thống.
         </p>
       </div>
 
@@ -115,7 +117,7 @@ const QueueDemoPage = () => {
                 value={numDevices}
                 onChange={(e) => setNumDevices(parseInt(e.target.value) || 0)}
                 min="1"
-                max="10000"
+                max="100000"
                 style={{ flex: 1, padding: "0.75rem 1rem", fontSize: "1rem", borderRadius: "0.5rem", border: "1px solid #d1d5db", outline: "none" }}
               />
               <button 

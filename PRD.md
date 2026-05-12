@@ -2,7 +2,7 @@
 
 > **Hệ Thống Thuyết Minh Du Lịch Đa Ngôn Ngữ**  
 > *Dự án kỹ thuật số hóa Phố Ẩm Thực Vĩnh Khánh, Quận 4, TP.HCM*  
-> *Cập nhật: 08/05/2026*
+> *Cập nhật: 12/05/2026*
 
 ---
 
@@ -34,7 +34,7 @@
 | **Mobile App** | .NET MAUI (Android) | ✅ Hoàn thiện |
 | **Web CMS** | React 19, Vite 6, TailwindCSS | ✅ Hoàn thiện |
 
-Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật duy nhất" (Single Source of Truth)** chuẩn hóa mọi yêu cầu nghiệp vụ (Business Requirements), yêu cầu chức năng (Functional Requirements), API routes, sơ đồ UML, và tiêu chí nghiệm thu (Acceptance Criteria).
+Mục tiêu tài liệu này (PRD) là đóng vai trò chuẩn hóa mọi yêu cầu nghiệp vụ (Business Requirements), yêu cầu chức năng (Functional Requirements), API routes, sơ đồ UML, và tiêu chí nghiệm thu (Acceptance Criteria).
 
 ---
 
@@ -165,8 +165,11 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
   - Owner gửi `POST /api/cms/pois/requests` với `{ actionType: CREATE|UPDATE|DELETE, draft: PoiDraftDto }`.
   - Request lưu vào bảng `PoiRequest` với `Status = PENDING`, không thay đổi dữ liệu `Poi` live ngay.
   - Owner xem trạng thái tại `GET /api/cms/pois/requests/my-requests`.
+  - **Priority tự động gán theo gói:** Khi Admin duyệt `CREATE`, `Poi.Priority` được set = `SubscriptionPlan.AutoPriority` của Owner — **bất kể giá trị draft gửi lên**. Với `UPDATE`, Priority bị cap tối đa = `AutoPriority` gói hiện tại (không thể tự nâng).
+  - Owner không được tự chỉ định Priority vượt mức gói đang dùng.
 - **AC:**
   - [x] Tạo request → PENDING. Admin duyệt → APPROVED → dữ liệu live cập nhật. Admin từ chối → REJECTED + rejectReason.
+  - [x] POI mới tạo luôn có Priority = AutoPriority của gói Owner, không phụ thuộc FE.
 
 **US 2.6 — Nâng Gói Subscription**
 > *Là POI Owner, tôi muốn nâng gói dịch vụ để có thêm POI và tính năng.*
@@ -256,6 +259,20 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
   - [x] Admin assign gói thủ công → subscription ACTIVE ngay, transaction ghi MANUAL.
   - [x] Dashboard lịch sử giao dịch hiển thị đúng status (PENDING/SUCCESS/FAILED).
 
+**US 3.8 — Geofence Conflict Simulator (Debug Tool)**
+> *Là Admin, tôi muốn giả lập cơ chế tranh chấp Geofence để kiểm chứng logic 3-Tier trước khi demo hoặc debug.*
+- **FR:**
+  - `POST /api/cms/debug/geofence-simulate` — nhận tọa độ thiết bị + danh sách POI tùy chỉnh (`CustomPois[]`).
+  - Khi `CustomPois` được gửi lên: dùng POI fake (không query DB, không persist). Khi không có: dùng POI active từ DB.
+  - Trả về: `Winner` (PoiId, Name, DecisionTier, Reason) + `CandidatePois[]` (rank, distance, tier scores) + `SortingTrace[]` (log từng bước giải quyết conflict).
+  - `DecisionTier` có 4 giá trị: `Trivial_OnlyOne`, `Tier1_Priority`, `Tier2_HasLocalAudio`, `Tier3_Distance`.
+  - Logic sort 3-Tier hoàn toàn giống `GeofenceService.cs` trên Mobile (parity đảm bảo).
+- **AC:**
+  - [x] Simulator chứng minh đúng 3-Tier: Priority → HasLocalAudio → Distance.
+  - [x] Log hiển thị rõ tier nào quyết định, ai thắng, ai thua và lý do.
+  - [x] Chạy không ảnh hưởng dữ liệu production (read-only hoặc in-memory).
+  - [x] Chỉ Admin mới truy cập được (`[Authorize(Roles = "Admin")]`).
+
 ---
 
 ## ⚙️ 4. YÊU CẦU PHI CHỨC NĂNG (NON-FUNCTIONAL REQUIREMENTS)
@@ -279,6 +296,7 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 | :--- | :--- | :--- |
 | **Backend API** | ASP.NET Core 10 (C#), EF Core 9 | Controllers: `api/cms/*` (🔒 JWT) + `api/mobile/*` |
 | **Database** | SQL Server | 15 bảng (+ Payment, Subscription, PoiRequest) |
+| **Message Broker** | RabbitMQ | LocationLog queue (high-throughput, chạy qua Docker) |
 | **Cloud – Audio** | Azure Text-To-Speech | Sinh MP3 từ text theo ngôn ngữ |
 | **Cloud – Dịch** | Azure AI Translator | Dịch từ Master sang 6 ngôn ngữ |
 | **Cloud – Lưu trữ** | Azure Blob Storage | `audiogo-audio`, `audiogo-images` |
@@ -319,9 +337,20 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 | `TourPoi` | Bảng nối Tour ↔ POI (stepOrder) | `TourId + PoiId` |
 | `ListenHistory` | Lịch sử nghe (deviceId, poiId, listenDuration, timestamp) | `HistoryId` |
 | `LocationLog` | GPS log (deviceId, lat, lon, timestamp) | `LocationId` |
-| `SubscriptionPlan` | Gói đăng ký cho Owner (planId: basic/professional/enterprise, price, durationDay, maxPoiCount, autoPriority, features JSON) | `PlanId` |
+| `SubscriptionPlan` | Gói đăng ký cho Owner (planId: basic/plus/professional/enterprise, price, durationDay, maxPoiCount, autoPriority, features JSON) | `PlanId` |
 | `OwnerSubscription` | Gói đang kích hoạt của Owner (accountId FK, planId FK, status: ACTIVE/EXPIRED/CANCELLED, startDate, endDate) | `SubscriptionId` |
 | `PaymentTransaction` | Lịch sử giao dịch thanh toán (paymentType: TOURIST_ACCESS/OWNER_SUBSCRIPTION, gateway: SEPAY/MOMO/MANUAL, status: PENDING/SUCCESS/FAILED/REFUNDED, amount, transactionId: AG-{ts}-{rand6}) | `TransactionId` |
+
+**Chi tiết gói SubscriptionPlan:**
+
+| PlanId | Tên | Giá (VNĐ) | Số POI tối đa | AutoPriority | Thời hạn |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `basic` | Cơ bản | 199.000 | 1 | 1 (Thấp) | 30 ngày |
+| `plus` | Nâng cao | 249.000 | 3 | 2 | 30 ngày |
+| `professional` | Chuyên nghiệp | 499.000 | 5 | 3 | 30 ngày |
+| `enterprise` | Doanh nghiệp | 999.000 | 10 | 4 (Cao) | 30 ngày |
+
+> **Quy tắc Priority:** `AutoPriority` quyết định `Poi.Priority` khi POI được duyệt tạo mới. Khi subscription EXPIRED → tất cả POI của Owner bị hạ về `Priority = 1`.
 
 ---
 
@@ -466,6 +495,12 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 | `POST` | `/api/cms/subscriptions/upgrade/init` | Owner khởi tạo nâng gói (VietQR/MoMo) |
 | `GET` | `/api/cms/subscriptions/owner/{accountId}` | Admin xem subscription của Owner |
 | `POST` | `/api/cms/subscriptions/owner/{accountId}/assign` | Admin gán gói thủ công (MANUAL) |
+| `GET` | `/api/cms/subscriptions/upgrade/verify?transactionId=` | Owner poll kết quả thanh toán |
+
+#### Debug & Simulator Tools (Admin Only)
+| Method | Route | Mô tả |
+| :--- | :--- | :--- |
+| `POST` | `/api/cms/debug/geofence-simulate` | Giả lập tranh chấp Geofence — 3-Tier conflict resolution với CustomPois hoặc DB |
 
 #### Payment Management (Admin)
 | Method | Route | Mô tả |
@@ -554,31 +589,8 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 
 ## 📊 9. SƠ ĐỒ USECASE (USE CASE DIAGRAMS)
 
-> **Nguồn:** Dựa hoàn toàn vào codebase — `mobile/AppShell.xaml`, `mobile/Views/`, `web/src/components/Sidebar.jsx`, `web/src/pages/`, `api/Controllers/`
-
----
-
-### 9.0. Thống Kê Chức Năng (Use Case Coverage)
-
-- Tổng use case đang mô tả: **55 chức năng**.
-- Theo actor:
-  - **Guest/Mobile:** 19 UC (`UC1..UC19`).
-  - **POI Owner/Web CMS:** 10 UC (`UC20..UC29`).
-  - **Admin CMS nghiệp vụ:** 16 UC (`UC30..UC37`, `UC39..UC46`).
-  - **Admin giám sát/thiết bị:** 10 UC (`UC50..UC59`).
-- Theo nhóm chính:
-  - **Onboarding + Access:** 3
-  - **Thanh toán:** 2
-  - **Map/Audio/Search/Detail/Tour:** 10
-  - **Settings + đồng bộ nền:** 6
-  - **Owner POI + subscription:** 10
-  - **Admin vận hành nội dung + danh mục + tài khoản + subscription:** 16
-  - **Admin monitoring + tracking + QR tools:** 10
-- Ghi chú đánh số: `UC47`, `UC48`, `UC49` hiện chưa sử dụng (reserved), tài liệu dùng numbering không liên tục để giữ tương thích lịch sử.
-
 ### 9.1. Usecase — Du Khách (Guest / Mobile App)
 
-> **Codebase:** `mobile/Views/` · `mobile/ViewModels/` · `mobile/Services/` · `api/Controllers/Mobile/`
 
 ```mermaid
 flowchart LR
@@ -588,7 +600,6 @@ flowchart LR
         direction TB
 
         subgraph GRP_ONBOARD["Onboarding"]
-            UC1(["Xem màn hình chào"])
             UC2(["Quét mã QR kích hoạt"])
             UC3(["Đồng bộ dữ liệu"])
         end
@@ -621,17 +632,18 @@ flowchart LR
 
         subgraph GRP_SETTINGS["Cài đặt"]
             UC14(["Chọn ngôn ngữ"])
-            UC15(["Đồng bộ dữ liệu thủ công"])
+            UC15(["Đồng bộ dữ liệu "])
         end
 
         subgraph GRP_BG["Nền — Background"]
             UC16(["Ghi Listen History"])
+            UC16n(["(qua in-memory Channel, batch 20)"])
             UC17(["Gửi GPS Location Log"])
+            UC17n(["(qua RabbitMQ, batch 1000)"])
             UC19(["Kết nối SignalR"])
         end
     end
 
-    Guest --> UC1
     Guest --> UC2
     Guest --> UC3
     Guest --> UC18
@@ -653,7 +665,6 @@ flowchart LR
 
 ### 9.2. Usecase — Chủ Quán (POI Owner / Web CMS)
 
-> **Codebase:** `POIPage.jsx` · `AddPOIPage.jsx` · `POIUpdateDetailPage.jsx` · `AudioPage.jsx` · `PricingPlansPage.jsx` · `SubscriptionCheckoutPage.jsx` · `CmsPoiController.cs` · `CmsSubscriptionController.cs`
 
 ```mermaid
 flowchart LR
@@ -675,13 +686,13 @@ flowchart LR
 
         subgraph GRP_CONTENT["Nội dung đa ngôn ngữ"]
             UC26(["Xem nội dung theo ngôn ngữ"])
-            UC27(["Tạo / Sửa bản Master"])
             UC28(["Upload audio thủ công"])
         end
 
         subgraph GRP_SUB["Gói Dịch Vụ"]
             UC25(["Xem các gói subscription"])
             UC29(["Thanh toán nâng gói VietQR"])
+            UC29b(["Poll xác nhận kết quả thanh toán"])
         end
 
         subgraph GRP_DASHBOARD["Cá nhân & Thống kê"]
@@ -697,9 +708,9 @@ flowchart LR
     Owner --> UC24
     Owner --> UC25
     Owner --> UC26
-    Owner --> UC27
     Owner --> UC28
     Owner --> UC29
+    Owner --> UC29b
     Owner --> UC30b
     Owner --> UC31b
 ```
@@ -708,7 +719,6 @@ flowchart LR
 
 ### 9.3. Usecase — Admin (Web CMS — Quản Trị & Nội Dung)
 
-> **Codebase:** `CmsPoiController.cs` · `CmsAccountController.cs` · `CmsCategoryController.cs` · `CmsTourController.cs` · `CmsContentPipelineController.cs` · `CmsSubscriptionController.cs` · `AnalyticsController.cs`
 
 ```mermaid
 flowchart LR
@@ -725,14 +735,12 @@ flowchart LR
         end
 
         subgraph GRP_POI["Quản lý POI trực tiếp"]
-            UC30(["Xem toàn bộ POI"])
-            UC31(["Tạo / Sửa / Xóa POI"])
+            UC30(["Xem POI"])
+            UC31(["Ẩn hiện POI"])
         end
 
         subgraph GRP_CONTENT["Bản dịch & Audio"]
-            UC35(["Tạo audio 1 POI"])
-            UC36(["Tạo audio batch"])
-            UC37(["Dịch + TTS toàn bộ 7 ngôn ngữ"])
+            UC37(["Dịch + TTS toàn bộ 7 ngôn ngữ tự động"])
         end
 
         subgraph GRP_MGMT["Quản trị hệ thống"]
@@ -749,7 +757,7 @@ flowchart LR
 
         subgraph GRP_ANALYTICS["Phân tích dữ liệu"]
             UC42(["Xem Dashboard"])
-            UC43(["Xem Analytics"])
+            UC43(["Xem Analytics Phân tích"])
         end
     end
 
@@ -759,8 +767,6 @@ flowchart LR
     Admin --> UC33
     Admin --> UC34
     Admin --> UC35b
-    Admin --> UC35
-    Admin --> UC36
     Admin --> UC37
     Admin --> UC39
     Admin --> UC40
@@ -777,8 +783,7 @@ flowchart LR
 
 ### 9.4. Usecase — Admin (Web CMS — Giám Sát Thiết Bị & Mã QR)
 
-> **Codebase:** `DeviceTrackingPage.jsx` · `DeviceActivityPage.jsx` · `AccessCodePage.jsx` · `QueueDemoPage.jsx` · `DeviceHub.cs` · `CmsAccessCodeController.cs` · `CmsLocationLogController.cs`
-> **Tổng UC: 10**
+
 
 ```mermaid
 flowchart LR
@@ -788,26 +793,26 @@ flowchart LR
     subgraph CMS["🌐 Web CMS — Giám Sát & Truy Cập"]
         direction TB
 
-        subgraph GRP_TRACK["Giám sát Real-time (DeviceTrackingPage / DeviceHub SignalR)"]
+        subgraph GRP_TRACK["Giám sát Real-time "]
             UC50(["Xem bản đồ vị trí thiết bị"])
             UC51(["Nhận cảnh báo Online / Offline"])
             UC52(["Xem danh sách thiết bị kết nối"])
         end
 
-        subgraph GRP_ACTIVITY["Hoạt động thiết bị (DeviceActivityPage)"]
+        subgraph GRP_ACTIVITY["Hoạt động thiết bị "]
             UC53(["Xem timeline hoạt động"])
             UC54(["Xem lộ trình GPS & lịch sử nghe"])
-            UC55(["Xóa GPS Location Logs"])
         end
 
-        subgraph GRP_QR["Quản lý mã QR (AccessCodePage)"]
+        subgraph GRP_QR["Quản lý mã QR "]
             UC56(["Xem danh sách mã QR"])
             UC57(["Tạo batch mã QR 1–100"])
             UC58(["Xóa mã QR"])
         end
 
-        subgraph GRP_DEMO["Giả lập (QueueDemoPage)"]
+        subgraph GRP_DEMO["Giả lập & Debug"]
             UC59(["Giả lập thiết bị gửi GPS"])
+            UC60(["Giả lập tranh chấp"])
         end
     end
 
@@ -816,11 +821,11 @@ flowchart LR
     Admin --> UC52
     Admin --> UC53
     Admin --> UC54
-    Admin --> UC55
     Admin --> UC56
     Admin --> UC57
     Admin --> UC58
     Admin --> UC59
+    Admin --> UC60
 
     MobileApp --> UC50
     MobileApp --> UC51
@@ -829,18 +834,6 @@ flowchart LR
 ---
 
 ## 🔄 10. SƠ ĐỒ TRÌNH TỰ (SEQUENCE DIAGRAMS)
-
-> **Nguyên tắc:** 1 Use Case = 1 Sequence đơn. Flow phức tạp được tách thành các sequence con (a/b/c).
-> **Ký hiệu:** `participant` = thành phần tham gia · `->>` = gọi đồng bộ · `-->>` = phản hồi · `alt/opt/loop` = nhánh điều kiện
-
-### Quy Ước BCE Cho Sequence
-
-- **Boundary (B):** `*Page`, `*View`, UI form/screen, tác nhân người dùng.
-- **Control (C):** `*ViewModel`, `*Controller`, `*Service`, lớp điều phối luồng nghiệp vụ.
-- **Entity (E):** `AppDbContext`, Repository, Model/Entity, lớp lưu trữ dữ liệu.
-- Tất cả sequence ở mục 10 giữ đúng hàm/endpoint theo codebase hiện tại; khi participant được rút gọn tên, vai trò BCE vẫn bám theo quy ước này.
-
----
 
 ### 10.1. Xem Màn Hình Chào (📱 Mobile — UC1)
 
@@ -872,11 +865,11 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant MobileUser as Người dùng [B]
-    participant QrPage as WelcomeQrScanPage [B]
-    participant VM as WelcomeQrScanViewModel [C]
-    participant API as ApiService [C]
-    participant AuthCtrl as AuthMobileController [C]
+    participant MobileUser as Người dùng
+    participant QrPage as WelcomeQrScanPage
+    participant VM as WelcomeQrScanViewModel
+    participant API as ApiService
+    participant AuthCtrl as AuthMobileController
 
     MobileUser ->> QrPage: scanQrCode()
     QrPage ->> VM: ProcessBarcodeCommand.Execute(code)
@@ -903,23 +896,23 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant MainVM as MainViewModel
-    participant SyncSvc as SyncService
+    participant SyncService
     participant API as ApiService
     participant DB as Local SQLite
-    participant MapPage
+    
 
-    MapPage ->> MainVM: InitAsync()
-    MainVM ->> SyncSvc: GetPoisAsync(lang)
-    SyncSvc ->> API: GetPoisAsync(lang)
-    API -->> SyncSvc: POIs
-    SyncSvc ->> DB: replacePoiMetadataAsync()
+    
+    MainVM ->> SyncService: GetPoisAsync(lang)
+    SyncService ->> API: GetPoisAsync(lang)
+    API -->> SyncService: POIs
+    SyncService ->> DB: replacePoiMetadataAsync()
 
-    MainVM ->> SyncSvc: GetToursAsync(lang)
-    SyncSvc ->> API: GetToursAsync(lang)
-    API -->> SyncSvc: Tours + details
-    SyncSvc ->> DB: upsertAndCleanupToursAsync()
+    MainVM ->> SyncService: GetToursAsync(lang)
+    SyncService ->> API: GetToursAsync(lang)
+    API -->> SyncService: Tours + details
+    SyncService ->> DB: upsertAndCleanupToursAsync()
 
-    MainVM -->> MapPage: renderCachedDataAndRefreshAsync()
+    
 ```
 
 ---
@@ -944,7 +937,7 @@ sequenceDiagram
 
 ### 10.5. Theo Dõi Vị Trí & Tự Động Phát Audio — Geofence (📱 Mobile — UC5)
 
-> Bao gồm xử lý ưu tiên khi có nhiều POI trong vùng geofence và gọi hàng đợi ghi log.
+> Bao gồm xử lý ưu tiên 3-Tier khi có nhiều POI trong vùng geofence và gọi hàng đợi ghi log.
 
 ```mermaid
 sequenceDiagram
@@ -952,8 +945,10 @@ sequenceDiagram
     participant MapVM as MapViewModel
     participant AudioSvc as AudioPlayerService
     participant API as ApiService
-    participant Ctrls as MobileControllers
-    participant Queues as BackgroundQueues
+    participant ListenCtrl as ListenHistoryController
+    participant LocCtrl as LocationLogController
+    participant ListenQ as IListenHistoryQueue
+    participant LocQ as ILocationQueue (RabbitMQ)
 
     loop Định kỳ (GPS polling - Background)
         GeoSvc ->> GeoSvc: GetCurrentLocation()
@@ -962,9 +957,13 @@ sequenceDiagram
         alt Thiết bị vào geofence POI mới
             GeoSvc ->> GeoSvc: filterEligiblePois()
             
-            opt Có nhiều POI
-                GeoSvc ->> GeoSvc: sortByPriorityThenDistance()
-                GeoSvc ->> GeoSvc: selectBestPoiByPriorityAndDistance()
+            opt Có nhiều POI chồng geofence
+                Note over GeoSvc: Tier 1: sort by Priority ASC (số nhỏ = cao)
+                GeoSvc ->> GeoSvc: groupByLowestPriority()
+                Note over GeoSvc: Tier 2: tie-break bằng HasLocalAudio
+                GeoSvc ->> GeoSvc: preferPoiWithLocalAudio()
+                Note over GeoSvc: Tier 3: tie-break cuối cùng bằng Distance
+                GeoSvc ->> GeoSvc: selectNearestPoi()
             end
 
             GeoSvc ->> MapVM: OnPoiEntered(selectedPoi)
@@ -977,15 +976,17 @@ sequenceDiagram
             GeoSvc ->> MapVM: OnPoiExited(poi)
             MapVM ->> AudioSvc: StopAsync()
             MapVM ->> API: PostListenHistoryAsync(poiId, duration)
-            API ->> Ctrls: POST /api/mobile/listen-history
-            Ctrls ->> Queues: QueueListenHistoryAsync()
-            Ctrls -->> API: 202 Accepted
+            API ->> ListenCtrl: POST /api/mobile/listen-history
+            ListenCtrl ->> ListenQ: QueueListenHistoryAsync()
+            Note over ListenQ: in-memory Channel<T>, batch ≤20, flush 5s
+            ListenCtrl -->> API: 202 Accepted
         end
 
-        GeoSvc ->> API: PostLocationLogAsync(batch)
-        API ->> Ctrls: POST /api/mobile/location/batch
-        Ctrls ->> Queues: QueueLocationAsync()
-        Ctrls -->> API: 202 Accepted
+        GeoSvc ->> API: PostLocationLogAsync(locationLog)
+        API ->> LocCtrl: POST /api/mobile/location-log
+        LocCtrl ->> LocQ: QueueLocationAsync()
+        Note over LocQ: RabbitMQ broker, batch ≤1000, flush 5s
+        LocCtrl -->> API: 202 Accepted
     end
 ```
 
@@ -1261,26 +1262,14 @@ sequenceDiagram
 
 ### 10.19. Mobile Kết Nối SignalR Real-Time (📱 Mobile — UC19)
 
-```mermaid
-sequenceDiagram
-    participant MainVM as MainViewModel
-    participant SRSvc as SignalRService
-    participant Hub as DeviceHub (Backend)
-    participant CMS as Web CMS Admin
+> 📌 **Xem diagram đầy đủ tại [Sequence 10.21](#1021-real-time-device-monitoring--signalr--mobile--web-cms)** — bao gồm cả góc nhìn Mobile, Admin, Hub, Queue và DB.  
+> Sequence này được merge vào 10.21 để tránh trùng lặp.
 
-    MainVM ->> SRSvc: StartAsync()
-    SRSvc ->> Hub: HubConnection.StartAsync()
-    Hub ->> Hub: OnConnectedAsync() → UpdatePresence(Online)
-    Hub -->> CMS: BroadcastDeviceStatus(deviceId, Online)
-
-    loop sendGpsUpdateEvery30Seconds()
-        SRSvc ->> Hub: InvokeAsync("SendLocationUpdate", lat, lng, deviceId)
-        Hub ->> Hub: QueueLocationAsync(log)
-        Hub -->> CMS: BroadcastLocationUpdate(deviceId, lat, lng)
-    end
-
-    Note over SRSvc,Hub: Khi app tắt → OnDisconnectedAsync() → Offline
-```
+**Tóm tắt luồng Mobile:**
+1. `MainViewModel` → `SignalRService.StartAsync()` → Kết nối `DeviceHub` với JWT GuestApp
+2. `OnConnectedAsync()` → `DevicePresenceService.MarkOnline(connectionId, deviceId)` → Broadcast `deviceOnline` đến Admin CMS
+3. Loop GPS: `InvokeAsync("SendLocationUpdate", lat, lng)` → `QueueLocationAsync()` → RabbitMQ
+4. `OnDisconnectedAsync()` → `MarkOffline()` → Broadcast `deviceOffline`
 
 ---
 
@@ -1297,7 +1286,7 @@ sequenceDiagram
     participant AuthCtrl as AuthController (Backend)
     participant DB as AppDbContext
 
-    MobileUser ->> LoginPage: submitLoginForm()
+    AdminUser ->> LoginPage: submitLoginForm()
     LoginPage ->> AuthCtx: login(username, password)
     AuthCtx ->> API: login(username, password)
     API ->> AuthCtrl: POST /api/auth/login
@@ -1309,13 +1298,13 @@ sequenceDiagram
         AuthCtrl ->> AuthCtrl: GenerateJWT(accountId, role)
         AuthCtrl -->> API: 200 OK + { token, role, accountId }
         API -->> AuthCtx: token + role
-    AuthCtx ->> AuthCtx: persistAuthToken()
-    AuthCtx -->> LoginPage: redirectByRole()
+        AuthCtx ->> AuthCtx: persistAuthToken()
+        AuthCtx -->> LoginPage: redirectByRole()
 
         alt role == "Admin"
-            LoginPage -->> MobileUser: navigateToAdminDashboard()
+            LoginPage -->> AdminUser: navigateToAdminDashboard()
         else role == "Owner"
-            LoginPage -->> MobileUser: navigateToOwnerPoiList()
+            LoginPage -->> AdminUser: navigateToOwnerPoiList()
         end
     else Sai thông tin
         AuthCtrl -->> API: 401 Unauthorized
@@ -1345,45 +1334,64 @@ sequenceDiagram
 
 ---
 
-### 10.21b. CMS — Tạo POI Mới (🌐 Web CMS — UC22, UC31)
+### 10.21b. CMS — Admin Tạo POI Trực Tiếp (🌐 Web CMS — UC31)
+
+> ⚠️ **Admin only.** Endpoint này tạo POI trực tiếp vào DB (không qua PoiRequest workflow). Owner phải dùng `POST /api/cms/pois/requests` (UC22 → 10.22a).
 
 ```mermaid
 sequenceDiagram
-    participant User as Admin / Owner
-    participant CMS as Web CMS
+    participant Admin
+    participant CMS as Web CMS (POIPage)
     participant PoiCtrl as CmsPoiController
     participant DB as AppDbContext
 
-    User ->> CMS: submitCreatePoiForm()
+    Admin ->> CMS: submitCreatePoiForm()
     CMS ->> PoiCtrl: POST /api/cms/pois
-    PoiCtrl ->> DB: CreateAsync()
-    DB -->> PoiCtrl: saveCompleted()
-    PoiCtrl -->> CMS: 201 Created + PoiDto
-    CMS -->> User: showCreateSuccessToast()
+    Note over PoiCtrl: [Authorize] — Admin & Owner JWT accepted,
+    Note over PoiCtrl: nhưng thực tế chỉ Admin dùng luồng này
+    PoiCtrl ->> PoiCtrl: map PoiCreateRequest → Poi entity
+    PoiCtrl ->> DB: CreateAsync(poi)
+    DB -->> PoiCtrl: Poi (with PoiId)
+    PoiCtrl -->> CMS: 201 Created + Poi
+    CMS -->> Admin: showCreateSuccessToast()
 ```
 
 ---
 
-### 10.21c. CMS — Cập Nhật & Xóa POI (🌐 Web CMS — UC23, UC31)
+### 10.21c. CMS — Admin Cập Nhật & Xóa POI (🌐 Web CMS — UC31)
+
+> ⚠️ **Admin only.** `PUT` cập nhật trực tiếp — dùng để ẩn/hiện (`isActive`) hoặc chỉnh tọa độ/priority. Owner phải gửi `PoiRequest UPDATE` (UC23 → 10.22b). `DELETE` là **hard delete** (không phải soft-delete).
 
 ```mermaid
 sequenceDiagram
-    participant User as Admin / Owner
-    participant CMS as Web CMS
+    participant Admin
+    participant CMS as Web CMS (POIDetailPage)
     participant PoiCtrl as CmsPoiController
     participant DB as AppDbContext
 
-    User ->> CMS: submitUpdatePoiForm()
+    Note over Admin,CMS: Cập nhật POI (partial update — chỉ field có giá trị mới)
+    Admin ->> CMS: submitUpdatePoiForm()
     CMS ->> PoiCtrl: PUT /api/cms/pois/{id}
-    PoiCtrl ->> DB: UpdateAsync()
-    DB -->> PoiCtrl: saveCompleted()
-    PoiCtrl -->> CMS: 200 OK
+    PoiCtrl ->> DB: GetByIdForCmsAsync(id)
+    DB -->> PoiCtrl: existing Poi (kể cả inactive)
+    PoiCtrl ->> PoiCtrl: apply changed fields only
+    Note over PoiCtrl: lat/lon/radius/priority/logoUrl/isActive
+    PoiCtrl ->> DB: UpdateAsync(existing)
+    DB -->> PoiCtrl: updated Poi
+    PoiCtrl -->> CMS: 200 OK + updated Poi
+    CMS -->> Admin: renderUpdatedPoi()
 
-    User ->> CMS: confirmDeletePoi()
+    Note over Admin,CMS: Xóa POI (hard delete)
+    Admin ->> CMS: confirmDeletePoi()
     CMS ->> PoiCtrl: DELETE /api/cms/pois/{id}
-    PoiCtrl ->> DB: DeleteAsync()
-    DB -->> PoiCtrl: deleteCompleted()
-    PoiCtrl -->> CMS: 204 No Content
+    PoiCtrl ->> DB: DeleteAsync(id)
+    alt Tìm thấy & xóa được
+        DB -->> PoiCtrl: true
+        PoiCtrl -->> CMS: 204 No Content
+    else Không tìm thấy
+        DB -->> PoiCtrl: false
+        PoiCtrl -->> CMS: 404 Not Found
+    end
 ```
 
 ---
@@ -1413,7 +1421,7 @@ sequenceDiagram
 
 ---
 
-### 10.33a. CMS — Admin Duyệt/Từ Chối POI Request (🌐 Web CMS — UC33/UC34/UC35b)
+### 10.22b. CMS — Admin Duyệt/Từ Chối POI Request (🌐 Web CMS — UC33/UC34/UC35b)
 
 ```mermaid
 sequenceDiagram
@@ -1454,7 +1462,7 @@ sequenceDiagram
 
 ---
 
-### 10.25a. CMS — Owner Xem Gói Subscription (🌐 Web CMS — UC25)
+### 10.24a. CMS — Owner Xem Gói Subscription (🌐 Web CMS — UC25)
 
 ```mermaid
 sequenceDiagram
@@ -1476,7 +1484,7 @@ sequenceDiagram
 
 ---
 
-### 10.29a. CMS — Owner Nâng Gói (Subscription Upgrade) (🌐 Web CMS — UC29)
+### 10.24b. CMS — Owner Nâng Gói (Subscription Upgrade) (🌐 Web CMS — UC29)
 
 ```mermaid
 sequenceDiagram
@@ -1485,6 +1493,7 @@ sequenceDiagram
     participant SubCtrl as CmsSubscriptionController
     participant DB as AppDbContext
     participant Webhook as SePay/MoMo Webhook
+    participant SePayCtrl as SePayWebhookController
 
     Owner ->> CMS: submitUpgradePlanRequest()
     CMS ->> SubCtrl: POST /api/cms/subscriptions/upgrade/init
@@ -1492,20 +1501,26 @@ sequenceDiagram
     SubCtrl -->> CMS: 200 OK + { transactionId, vietQrUrl, transferContent }
     CMS -->> Owner: renderUpgradePaymentQr()
 
-    Note over CMS,SubCtrl: Hiện tại luồng Web chỉ init giao dịch và hiển thị QR/chuyển khoản.
-    Note over CMS,SubCtrl: Chưa có endpoint owner poll verify riêng trong codebase.
+    loop Owner poll verify (mỗi 5 giây)
+        CMS ->> SubCtrl: GET /api/cms/subscriptions/upgrade/verify?transactionId=...
+        alt Thanh toán hoàn tất (Webhook đã xử lý)
+            SubCtrl -->> CMS: 200 OK + { status=SUCCESS }
+            CMS -->> Owner: showUpgradeSuccessMessage()
+        else Đang chờ
+            SubCtrl -->> CMS: 200 OK + { status=PENDING }
+            CMS ->> CMS: continuePolling()
+        end
+    end
 
+    Note over Webhook,SePayCtrl: Song song — Webhook tự động kích hoạt khi nhận thanh toán
     Webhook ->> SePayCtrl: POST /api/payment/sepay/webhook
     SePayCtrl ->> DB: HandleSePayAsync()
     SePayCtrl ->> DB: ActivateSubscriptionAsync()
-    SePayCtrl ->> DB: ActivateSubscriptionAsync()
-
-    CMS -->> Owner: showUpgradeSuccessMessage()
 ```
 
 ---
 
-### 10.35a. CMS — Generate Audio Cho 1 POI (🌐 Web CMS — UC35)
+### 10.25a. CMS — Generate Audio Cho 1 POI (🌐 Web CMS — UC35)
 
 
 ```mermaid
@@ -1533,7 +1548,7 @@ sequenceDiagram
 
 ---
 
-### 10.37a. CMS — Dịch & TTS Sang Ngôn Ngữ Mới (🌐 Web CMS — UC37)
+### 10.25b. CMS — Dịch & TTS Sang Ngôn Ngữ Mới (🌐 Web CMS — UC37)
 
 ```mermaid
 sequenceDiagram
@@ -1573,7 +1588,7 @@ sequenceDiagram
 
 ---
 
-### 10.15. CMS — Gallery & Media Upload (🌐 Web CMS — UC24, UC25)
+### 10.26a. CMS — Gallery & Media Upload (🌐 Web CMS — UC24)
 
 ```mermaid
 sequenceDiagram
@@ -1958,6 +1973,227 @@ sequenceDiagram
     AnalCtrl ->> AnalCtrl: Merge & sort by Timestamp → timeline[]
     AnalCtrl -->> CMS: 200 OK + DeviceActivityDto
     CMS -->> Admin: renderDeviceActivityTimeline()
+```
+
+---
+
+### 10.24. CMS — Gán Gói Subscription Thủ Công (🌐 Web CMS — UC45)
+
+
+```mermaid
+sequenceDiagram
+    participant Admin
+    participant SubPage as SubscriptionPage (B)
+    participant API as CmsSubscriptionController (C)
+    participant SubSvc as SubscriptionService (C)
+    participant DB as AppDbContext (E)
+
+    Admin ->> SubPage: Chọn Owner + chọn Plan mới
+    SubPage ->> API: PUT /api/cms/subscriptions/{accountId}/plan\n{ planId }
+    API ->> SubSvc: AssignPlanAsync(accountId, planId)
+    SubSvc ->> DB: Query Account + SubscriptionPlan
+    DB -->> SubSvc: account, plan
+    SubSvc ->> SubSvc: Tính expiry = UtcNow + plan.DurationDays
+    SubSvc ->> DB: UPDATE AccountSubscription\nPlanId, ExpiryDate, AutoPriority
+    SubSvc ->> DB: UPDATE các POI của Owner\nPriority = plan.AutoPriority (nếu vượt cap)
+    DB -->> SubSvc: saved
+    SubSvc -->> API: OK
+    API -->> SubPage: 200 { message: "Đã gán gói" }
+    SubPage -->> Admin: Toast "Gán gói thành công"
+```
+
+---
+
+### 10.25. CMS — Xem Lịch Sử Giao Dịch (🌐 Web CMS — UC46)
+
+> **Codebase:** `CmsPaymentController.cs` → `GET /api/cms/payments` · `GET /api/cms/payments/{id}` · `AppDbContext.PaymentTransactions`
+
+```mermaid
+sequenceDiagram
+    participant Admin
+    participant TxPage as TransactionPage (B)
+    participant API as CmsPaymentController (C)
+    participant DB as AppDbContext (E)
+
+    Admin ->> TxPage: Mở trang Giao dịch (filter: status, date, owner)
+    TxPage ->> API: GET /api/cms/payments?status=&from=&to=&page=
+    API ->> DB: SELECT PaymentTransactions JOIN Account\nWHERE filters ORDER BY CreatedAt DESC
+    DB -->> API: List<PaymentTransaction>
+    API -->> TxPage: 200 { data: [...], total, page }
+    TxPage -->> Admin: Render bảng giao dịch
+
+    opt Xem chi tiết
+        Admin ->> TxPage: Click vào 1 giao dịch
+        TxPage ->> API: GET /api/cms/payments/{id}
+        API ->> DB: SELECT PaymentTransaction + Account + Plan
+        DB -->> API: detail
+        API -->> TxPage: 200 detail
+        TxPage -->> Admin: Hiển thị modal chi tiết
+    end
+
+    note over API,DB: PaymentCleanupService tự động PENDING→EXPIRED\nsau 30 phút (BackgroundService mỗi 30 phút)
+```
+
+---
+
+### 10.26. CMS — Giả Lập Geofence Conflict (🌐 Web CMS — UC60)
+
+> **Codebase:** `GeofenceSimulatorController.cs` → `POST /api/cms/debug/geofence-simulate` · `GeofenceSimulatorPage.jsx`
+
+```mermaid
+sequenceDiagram
+    participant Admin
+    participant SimPage as GeofenceSimulatorPage (B)
+    participant API as GeofenceSimulatorController (C)
+    participant Svc as GeofenceSimulatorController logic (C)
+
+    Admin ->> SimPage: Cấu hình kịch bản\n(số POI, lat/lng, rank, hasLocalAudio)
+    SimPage ->> API: POST /api/cms/debug/geofence-simulate\n{ deviceLat, deviceLng, pois[] }
+    API ->> Svc: SimulateConflict(request)
+    
+    loop Với mỗi POI trong bán kính
+        Svc ->> Svc: Tính khoảng cách Haversine
+        Svc ->> Svc: Kiểm tra trong geofence radius?
+    end
+
+    Svc ->> Svc: Sort theo Priority ASC
+    
+    alt Nhiều POI cùng Priority cao nhất
+        Svc ->> Svc: Lọc nhóm Priority thấp nhất
+        
+        alt Có POI có HasLocalAudio = true
+            Svc ->> Svc: Winner = POI có LocalAudio\n(tie-break: khoảng cách gần nhất)
+        else Tất cả cùng HasLocalAudio
+            Svc ->> Svc: Winner = POI gần nhất
+        end
+    else POI đơn độc ở Priority cao nhất
+        Svc ->> Svc: Winner = POI đó
+    end
+
+    Svc -->> API: { winner, allPois, decisionLog[] }
+    API -->> SimPage: 200 { result }
+    SimPage -->> Admin: Render map + winner highlight\n+ bảng decision log từng bước
+```
+
+---
+
+### 10.27. CMS — Giả Lập GPS Queue (🌐 Web CMS — UC59)
+
+> **Codebase:** `QueueDemoPage.jsx` · `LocationLogController.cs` → `POST /api/mobile/location-log`
+
+```mermaid
+sequenceDiagram
+    participant Admin
+    participant Demo as QueueDemoPage (B)
+    participant API as LocationLogController (C)
+    participant Queue as ILocationQueue (C)
+    participant Worker as LocationQueueHostedService (C)
+    participant DB as AppDbContext (E)
+
+    Admin ->> Demo: Nhập Device ID + số lần gửi + interval
+    
+    loop N lần (configurable)
+        Demo ->> API: POST /api/mobile/location-log\n{ deviceId, lat, lng, timestamp }
+        API ->> Queue: QueueLocationAsync(locationLog)
+        Queue -->> API: queued
+        API -->> Demo: 200 OK (nhanh, không block)
+    end
+
+    note over Worker: Worker drain queue: batch ≤1000 items hoặc timeout 5 giây
+    Worker ->> Queue: ReadAsync() batch
+    Worker ->> DB: INSERT INTO LocationLogs (bulk)
+    DB -->> Worker: saved
+
+    Demo -->> Admin: Hiển thị throughput stats\n(sent / queued / flushed)
+```
+
+---
+
+### 10.28. ListenHistory Queue — Luồng Ghi Lịch Sử Nghe (⚙️ Backend)
+
+> **Codebase:** `ListenHistoryQueue.cs` (in-memory `Channel<T>`, capacity 2000) + `ListenHistoryHostedService.cs` (batch ≤20, timeout 5s)
+
+```mermaid
+sequenceDiagram
+    participant Mobile as 📱 Mobile App
+    participant ListenCtrl as ListenHistoryController
+    participant ListenQ as IListenHistoryQueue
+    participant Channel as Channel<ListenHistory> (in-memory)
+    participant Worker as ListenHistoryHostedService
+    participant DB as AppDbContext
+
+    Note over Mobile,ListenCtrl: Khi du khách rời geofence POI
+    Mobile ->> ListenCtrl: POST /api/mobile/listen-history\n{ deviceId, poiId, duration }
+    ListenCtrl ->> ListenQ: QueueListenHistoryAsync(listenHistory)
+    ListenQ ->> Channel: TryWrite(item)
+    Note over Channel: Bounded capacity 2000\nnon-blocking write
+    Channel -->> ListenQ: written
+    ListenCtrl -->> Mobile: 202 Accepted (không block)
+
+    Note over Worker: Chạy liên tục trong background (IHostedService)
+    loop Background drain loop
+        Worker ->> Channel: ReadAsync() — blocking wait
+        Channel -->> Worker: item (khi có)
+        Worker ->> Worker: Tích lũy batch items
+        
+        alt Đủ 20 items HOẶC timeout 5 giây
+            Worker ->> DB: CreateBatchAsync(batch)
+            DB -->> Worker: saved
+            Worker ->> Worker: Reset batch
+        end
+    end
+```
+
+---
+
+### 10.29. RabbitMQ Location Queue — Kiến Trúc 4 Tầng (⚙️ Backend)
+
+> **Codebase:** `RabbitMQLocationQueue.cs` + `LocationQueueHostedService.cs`  
+> Dùng RabbitMQ thay vì in-memory Channel vì LocationLog có throughput cao hơn nhiều (realtime GPS mọi thiết bị).
+
+```mermaid
+sequenceDiagram
+    participant API as HTTP Thread\n(LocationLogController)
+    participant WriteBuf as _writeBuffer\n(Channel<LocationLog>)
+    participant PubLoop as PublishLoopAsync\n(1 background thread)
+    participant RMQ as RabbitMQ Broker\n(Docker)
+    participant Consumer as EventingBasicConsumer\n(callback thread)
+    participant Semaphore as _readReady\n(SemaphoreSlim)
+    participant Worker as LocationQueueHostedService\n(IHostedService)
+    participant DB as AppDbContext
+
+    Note over API,WriteBuf: Tầng 1 — HTTP thread KHÔNG block
+    API ->> WriteBuf: TryWrite(locationLog)
+    Note over WriteBuf: Capacity 50,000\nNon-blocking
+    WriteBuf -->> API: written
+    API -->> API: 202 Accepted (return ngay)
+
+    Note over PubLoop,RMQ: Tầng 2 — Publisher Loop (1 thread duy nhất → thread-safe)
+    loop PublishLoopAsync
+        PubLoop ->> WriteBuf: ReadAsync() — blocking wait
+        WriteBuf -->> PubLoop: locationLog
+        PubLoop ->> RMQ: BasicPublish(body)\nwith prefetchCount=200
+        RMQ -->> PubLoop: ack
+    end
+
+    Note over RMQ,Semaphore: Tầng 3 — Consumer Callback (khi RabbitMQ deliver message)
+    RMQ ->> Consumer: Received(message)
+    Consumer ->> Consumer: Deserialize → enqueue _localBuffer
+    Consumer ->> Semaphore: Release(1)
+
+    Note over Worker,DB: Tầng 4 — Worker drain vào DB
+    loop LocationQueueHostedService
+        Worker ->> Semaphore: WaitAsync() — blocking
+        Semaphore -->> Worker: signaled
+        Worker ->> Consumer: Dequeue từ _localBuffer
+        Worker ->> Worker: Tích lũy batch
+
+        alt batch ≥1000 HOẶC timeout 5 giây
+            Worker ->> DB: BulkInsertAsync(batch)
+            DB -->> Worker: saved
+            Worker ->> Worker: Reset batch
+        end
+    end
 ```
 
 ---
@@ -2563,7 +2799,111 @@ flowchart TD
 
 ---
 
-## 📂 PHỤ LỤC: CẤU TRÚC THƯ MỤC DỰ ÁN
+
+
+### 11.18. Luồng Gán Gói Thủ Công — Admin (🌐 Web CMS — UC45)
+
+```mermaid
+flowchart TD
+    START((●)) --> SELECT_OWNER[Admin chọn Owner Account]
+    SELECT_OWNER --> SELECT_PLAN[Chọn gói mới từ danh sách]
+    SELECT_PLAN --> CONFIRM{Xác nhận?}
+    CONFIRM -- Không --> END_CANCEL((◉))
+    CONFIRM -- Có --> CALL_API[PUT /api/cms/subscriptions/accountId/plan]
+    CALL_API --> CHECK_PLAN{Plan tồn tại?}
+    CHECK_PLAN -- Không --> ERR[Lỗi 404] --> END_ERR((◉))
+    CHECK_PLAN -- Có --> ASSIGN[Gán plan mới\nCập nhật expiry]
+    ASSIGN --> CAP_POI[Cập nhật Priority các POI\nnếu vượt AutoPriority cap mới]
+    CAP_POI --> NOTIFY[Toast thành công]
+    NOTIFY --> END_OK((◉))
+
+    style START fill:#000,color:#fff,stroke:#000
+    style END_OK fill:#000,color:#fff,stroke:#fff,stroke-width:3px
+    style END_CANCEL fill:#000,color:#fff,stroke:#fff,stroke-width:3px
+    style END_ERR fill:#000,color:#fff,stroke:#fff,stroke-width:3px
+    style ERR fill:#F44336,color:#fff
+    style ASSIGN fill:#4CAF50,color:#fff
+```
+
+---
+
+### 11.19. Luồng Xem & Lọc Giao Dịch — Admin (🌐 Web CMS — UC46)
+
+```mermaid
+flowchart TD
+    START((●)) --> OPEN[Mở trang Giao dịch]
+    OPEN --> LOAD[GET /api/cms/payments?page=1]
+    LOAD --> RENDER[Render bảng: status, amount, owner, date]
+    RENDER --> FILTER{Admin lọc?}
+    FILTER -- Status / Date / Owner --> RELOAD[GET với query params mới]
+    RELOAD --> RENDER
+    FILTER -- Không --> DETAIL{Xem chi tiết?}
+    DETAIL -- Có --> MODAL[GET /api/cms/payments/id]
+    MODAL --> SHOW_DETAIL[Hiển thị modal chi tiết]
+    SHOW_DETAIL --> DETAIL
+    DETAIL -- Không --> END_NODE((◉))
+
+    style START fill:#000,color:#fff,stroke:#000
+    style END_NODE fill:#000,color:#fff,stroke:#fff,stroke-width:3px
+```
+
+---
+
+### 11.20. Luồng Giả Lập Geofence Conflict — Admin (🌐 Web CMS — UC60)
+
+```mermaid
+flowchart TD
+    START((●)) --> CONFIG[Admin cấu hình kịch bản\nDevice vị trí + số POI + rank + audio flag]
+    CONFIG --> GEN[Sinh POI ngẫu nhiên bao quanh device\nTrong geofence radius]
+    GEN --> SUBMIT[POST /api/cms/debug/geofence-simulate]
+    SUBMIT --> CALC_DIST[Backend tính khoảng cách Haversine\ncho từng POI]
+    CALC_DIST --> IN_FENCE{Trong bán kính?}
+    IN_FENCE -- Không --> EXCLUDE[Bỏ POI khỏi candidates]
+    IN_FENCE -- Có --> ADD[Thêm vào candidates]
+    ADD --> SORT[Sort theo Priority ASC]
+    SORT --> GROUP{Nhiều POI cùng Priority min?}
+    GROUP -- Không --> WIN_SOLO[Winner = POI Priority cao nhất]
+    GROUP -- Có --> AUDIO{Có POI với LocalAudio?}
+    AUDIO -- Có --> WIN_AUDIO[Winner = POI LocalAudio\ngần nhất nếu tie]
+    AUDIO -- Không --> WIN_DIST[Winner = POI gần nhất]
+    WIN_SOLO --> RESULT[Trả về winner + decisionLog]
+    WIN_AUDIO --> RESULT
+    WIN_DIST --> RESULT
+    RESULT --> DISPLAY[Render map highlight winner\nBảng log quyết định từng bước]
+    DISPLAY --> END_NODE((◉))
+
+    style START fill:#000,color:#fff,stroke:#000
+    style END_NODE fill:#000,color:#fff,stroke:#fff,stroke-width:3px
+    style WIN_AUDIO fill:#4CAF50,color:#fff
+    style WIN_SOLO fill:#2196F3,color:#fff
+    style WIN_DIST fill:#FF9800,color:#fff
+```
+
+---
+
+### 11.21. Luồng Giả Lập GPS Queue — Admin (🌐 Web CMS — UC59)
+
+```mermaid
+flowchart TD
+    START((●)) --> INPUT[Admin nhập Device ID\nSố lần gửi + Interval ms]
+    INPUT --> LOOP_START[Bắt đầu vòng lặp]
+    LOOP_START --> SEND[POST /api/mobile/location-log]
+    SEND --> QUEUE[LocationLog → ILocationQueue\nChannel hoặc RabbitMQ]
+    QUEUE --> DONE_SEND{Còn lần gửi?}
+    DONE_SEND -- Có --> WAIT[Delay interval] --> LOOP_START
+    DONE_SEND -- Không --> STATS[Hiển thị: tổng gửi / thành công / thất bại]
+    STATS --> WORKER[Worker flush mỗi 3s / 50 items\nBulk INSERT vào DB]
+    WORKER --> END_NODE((◉))
+
+    style START fill:#000,color:#fff,stroke:#000
+    style END_NODE fill:#000,color:#fff,stroke:#fff,stroke-width:3px
+    style QUEUE fill:#9C27B0,color:#fff
+    style WORKER fill:#607D8B,color:#fff
+```
+
+---
+
+
 
 
 ```
@@ -2599,10 +2939,15 @@ CSharpProject/
 │   ├── Hubs/
 │   │   └── DeviceHub.cs          # SignalR: real-time device monitoring
 │   ├── Queues/
-│   │   └── ILocationQueue.cs     # Background queue cho LocationLog
+│   │   ├── LocationQueue.cs          # In-process Channel<T> implementation
+│   │   ├── RabbitMQLocationQueue.cs  # RabbitMQ implementation (bật qua config)
+│   │   ├── LocationQueueHostedService.cs
+│   │   ├── ListenHistoryQueue.cs
+│   │   └── ContentPipelineQueue.cs
 │   ├── Models/                   # EF Core Entities (11 models)
 │   ├── Services/                 # Business Logic
 │   │   ├── Interfaces/
+│   │   ├── PaymentCleanupService.cs  # Background: PENDING → EXPIRED sau 30 phút
 │   │   ├── ContentPipelineService.cs
 │   │   ├── DevicePresenceService.cs  # In-memory device presence (Singleton)
 │   │   ├── PoiRequestService.cs      # Mobile POI query logic
