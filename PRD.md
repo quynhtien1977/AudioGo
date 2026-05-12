@@ -588,9 +588,6 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 
 ## 📊 9. SƠ ĐỒ USECASE (USE CASE DIAGRAMS)
 
-> **Nguồn:** Dựa hoàn toàn vào codebase — `mobile/AppShell.xaml`, `mobile/Views/`, `web/src/components/Sidebar.jsx`, `web/src/pages/`, `api/Controllers/`
-
----
 
 ### 9.0. Thống Kê Chức Năng (Use Case Coverage)
 
@@ -612,7 +609,6 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 
 ### 9.1. Usecase — Du Khách (Guest / Mobile App)
 
-> **Codebase:** `mobile/Views/` · `mobile/ViewModels/` · `mobile/Services/` · `api/Controllers/Mobile/`
 
 ```mermaid
 flowchart LR
@@ -622,7 +618,6 @@ flowchart LR
         direction TB
 
         subgraph GRP_ONBOARD["Onboarding"]
-            UC1(["Xem màn hình chào"])
             UC2(["Quét mã QR kích hoạt"])
             UC3(["Đồng bộ dữ liệu"])
         end
@@ -655,7 +650,7 @@ flowchart LR
 
         subgraph GRP_SETTINGS["Cài đặt"]
             UC14(["Chọn ngôn ngữ"])
-            UC15(["Đồng bộ dữ liệu thủ công"])
+            UC15(["Đồng bộ dữ liệu "])
         end
 
         subgraph GRP_BG["Nền — Background"]
@@ -665,7 +660,6 @@ flowchart LR
         end
     end
 
-    Guest --> UC1
     Guest --> UC2
     Guest --> UC3
     Guest --> UC18
@@ -687,7 +681,6 @@ flowchart LR
 
 ### 9.2. Usecase — Chủ Quán (POI Owner / Web CMS)
 
-> **Codebase:** `POIPage.jsx` · `AddPOIPage.jsx` · `POIUpdateDetailPage.jsx` · `AudioPage.jsx` · `PricingPlansPage.jsx` · `SubscriptionCheckoutPage.jsx` · `CmsPoiController.cs` · `CmsSubscriptionController.cs`
 
 ```mermaid
 flowchart LR
@@ -709,7 +702,6 @@ flowchart LR
 
         subgraph GRP_CONTENT["Nội dung đa ngôn ngữ"]
             UC26(["Xem nội dung theo ngôn ngữ"])
-            UC27(["Tạo / Sửa bản Master"])
             UC28(["Upload audio thủ công"])
         end
 
@@ -731,7 +723,6 @@ flowchart LR
     Owner --> UC24
     Owner --> UC25
     Owner --> UC26
-    Owner --> UC27
     Owner --> UC28
     Owner --> UC29
     Owner --> UC30b
@@ -742,7 +733,6 @@ flowchart LR
 
 ### 9.3. Usecase — Admin (Web CMS — Quản Trị & Nội Dung)
 
-> **Codebase:** `CmsPoiController.cs` · `CmsAccountController.cs` · `CmsCategoryController.cs` · `CmsTourController.cs` · `CmsContentPipelineController.cs` · `CmsSubscriptionController.cs` · `AnalyticsController.cs`
 
 ```mermaid
 flowchart LR
@@ -759,14 +749,12 @@ flowchart LR
         end
 
         subgraph GRP_POI["Quản lý POI trực tiếp"]
-            UC30(["Xem toàn bộ POI"])
-            UC31(["Tạo / Sửa / Xóa POI"])
+            UC30(["Xem POI"])
+            UC31(["Ẩn hiện POI"])
         end
 
         subgraph GRP_CONTENT["Bản dịch & Audio"]
-            UC35(["Tạo audio 1 POI"])
-            UC36(["Tạo audio batch"])
-            UC37(["Dịch + TTS toàn bộ 7 ngôn ngữ"])
+            UC37(["Dịch + TTS toàn bộ 7 ngôn ngữ tự động"])
         end
 
         subgraph GRP_MGMT["Quản trị hệ thống"]
@@ -783,7 +771,7 @@ flowchart LR
 
         subgraph GRP_ANALYTICS["Phân tích dữ liệu"]
             UC42(["Xem Dashboard"])
-            UC43(["Xem Analytics"])
+            UC43(["Xem Analytics Phân tích"])
         end
     end
 
@@ -793,8 +781,6 @@ flowchart LR
     Admin --> UC33
     Admin --> UC34
     Admin --> UC35b
-    Admin --> UC35
-    Admin --> UC36
     Admin --> UC37
     Admin --> UC39
     Admin --> UC40
@@ -811,8 +797,7 @@ flowchart LR
 
 ### 9.4. Usecase — Admin (Web CMS — Giám Sát Thiết Bị & Mã QR)
 
-> **Codebase:** `DeviceTrackingPage.jsx` · `DeviceActivityPage.jsx` · `AccessCodePage.jsx` · `QueueDemoPage.jsx` · `DeviceHub.cs` · `CmsAccessCodeController.cs` · `CmsLocationLogController.cs`
-> **Tổng UC: 10**
+
 
 ```mermaid
 flowchart LR
@@ -822,26 +807,26 @@ flowchart LR
     subgraph CMS["🌐 Web CMS — Giám Sát & Truy Cập"]
         direction TB
 
-        subgraph GRP_TRACK["Giám sát Real-time (DeviceTrackingPage / DeviceHub SignalR)"]
+        subgraph GRP_TRACK["Giám sát Real-time "]
             UC50(["Xem bản đồ vị trí thiết bị"])
             UC51(["Nhận cảnh báo Online / Offline"])
             UC52(["Xem danh sách thiết bị kết nối"])
         end
 
-        subgraph GRP_ACTIVITY["Hoạt động thiết bị (DeviceActivityPage)"]
+        subgraph GRP_ACTIVITY["Hoạt động thiết bị "]
             UC53(["Xem timeline hoạt động"])
             UC54(["Xem lộ trình GPS & lịch sử nghe"])
-            UC55(["Xóa GPS Location Logs"])
         end
 
-        subgraph GRP_QR["Quản lý mã QR (AccessCodePage)"]
+        subgraph GRP_QR["Quản lý mã QR "]
             UC56(["Xem danh sách mã QR"])
             UC57(["Tạo batch mã QR 1–100"])
             UC58(["Xóa mã QR"])
         end
 
-        subgraph GRP_DEMO["Giả lập (QueueDemoPage)"]
+        subgraph GRP_DEMO["Giả lập & Debug"]
             UC59(["Giả lập thiết bị gửi GPS"])
+            UC60(["Giả lập tranh chấp"])
         end
     end
 
@@ -850,11 +835,11 @@ flowchart LR
     Admin --> UC52
     Admin --> UC53
     Admin --> UC54
-    Admin --> UC55
     Admin --> UC56
     Admin --> UC57
     Admin --> UC58
     Admin --> UC59
+    Admin --> UC60
 
     MobileApp --> UC50
     MobileApp --> UC51
@@ -864,17 +849,7 @@ flowchart LR
 
 ## 🔄 10. SƠ ĐỒ TRÌNH TỰ (SEQUENCE DIAGRAMS)
 
-> **Nguyên tắc:** 1 Use Case = 1 Sequence đơn. Flow phức tạp được tách thành các sequence con (a/b/c).
-> **Ký hiệu:** `participant` = thành phần tham gia · `->>` = gọi đồng bộ · `-->>` = phản hồi · `alt/opt/loop` = nhánh điều kiện
-
 ### Quy Ước BCE Cho Sequence
-
-- **Boundary (B):** `*Page`, `*View`, UI form/screen, tác nhân người dùng.
-- **Control (C):** `*ViewModel`, `*Controller`, `*Service`, lớp điều phối luồng nghiệp vụ.
-- **Entity (E):** `AppDbContext`, Repository, Model/Entity, lớp lưu trữ dữ liệu.
-- Tất cả sequence ở mục 10 giữ đúng hàm/endpoint theo codebase hiện tại; khi participant được rút gọn tên, vai trò BCE vẫn bám theo quy ước này.
-
----
 
 ### 10.1. Xem Màn Hình Chào (📱 Mobile — UC1)
 
@@ -1996,6 +1971,138 @@ sequenceDiagram
 
 ---
 
+### 10.24. CMS — Gán Gói Subscription Thủ Công (🌐 Web CMS — UC45)
+
+
+```mermaid
+sequenceDiagram
+    participant Admin
+    participant SubPage as SubscriptionPage (B)
+    participant API as CmsSubscriptionController (C)
+    participant SubSvc as SubscriptionService (C)
+    participant DB as AppDbContext (E)
+
+    Admin ->> SubPage: Chọn Owner + chọn Plan mới
+    SubPage ->> API: PUT /api/cms/subscriptions/{accountId}/plan\n{ planId }
+    API ->> SubSvc: AssignPlanAsync(accountId, planId)
+    SubSvc ->> DB: Query Account + SubscriptionPlan
+    DB -->> SubSvc: account, plan
+    SubSvc ->> SubSvc: Tính expiry = UtcNow + plan.DurationDays
+    SubSvc ->> DB: UPDATE AccountSubscription\nPlanId, ExpiryDate, AutoPriority
+    SubSvc ->> DB: UPDATE các POI của Owner\nPriority = plan.AutoPriority (nếu vượt cap)
+    DB -->> SubSvc: saved
+    SubSvc -->> API: OK
+    API -->> SubPage: 200 { message: "Đã gán gói" }
+    SubPage -->> Admin: Toast "Gán gói thành công"
+```
+
+---
+
+### 10.25. CMS — Xem Lịch Sử Giao Dịch (🌐 Web CMS — UC46)
+
+> **Codebase:** `CmsPaymentController.cs` → `GET /api/cms/payments` · `GET /api/cms/payments/{id}` · `AppDbContext.PaymentTransactions`
+
+```mermaid
+sequenceDiagram
+    participant Admin
+    participant TxPage as TransactionPage (B)
+    participant API as CmsPaymentController (C)
+    participant DB as AppDbContext (E)
+
+    Admin ->> TxPage: Mở trang Giao dịch (filter: status, date, owner)
+    TxPage ->> API: GET /api/cms/payments?status=&from=&to=&page=
+    API ->> DB: SELECT PaymentTransactions JOIN Account\nWHERE filters ORDER BY CreatedAt DESC
+    DB -->> API: List<PaymentTransaction>
+    API -->> TxPage: 200 { data: [...], total, page }
+    TxPage -->> Admin: Render bảng giao dịch
+
+    opt Xem chi tiết
+        Admin ->> TxPage: Click vào 1 giao dịch
+        TxPage ->> API: GET /api/cms/payments/{id}
+        API ->> DB: SELECT PaymentTransaction + Account + Plan
+        DB -->> API: detail
+        API -->> TxPage: 200 detail
+        TxPage -->> Admin: Hiển thị modal chi tiết
+    end
+
+    note over API,DB: PaymentCleanupService tự động PENDING→EXPIRED\nsau 30 phút (BackgroundService mỗi 30 phút)
+```
+
+---
+
+### 10.26. CMS — Giả Lập Geofence Conflict (🌐 Web CMS — UC60)
+
+> **Codebase:** `GeofenceSimulatorController.cs` → `POST /api/cms/debug/geofence-simulate` · `GeofenceSimulatorPage.jsx`
+
+```mermaid
+sequenceDiagram
+    participant Admin
+    participant SimPage as GeofenceSimulatorPage (B)
+    participant API as GeofenceSimulatorController (C)
+    participant Svc as GeofenceSimulatorController logic (C)
+
+    Admin ->> SimPage: Cấu hình kịch bản\n(số POI, lat/lng, rank, hasLocalAudio)
+    SimPage ->> API: POST /api/cms/debug/geofence-simulate\n{ deviceLat, deviceLng, pois[] }
+    API ->> Svc: SimulateConflict(request)
+    
+    loop Với mỗi POI trong bán kính
+        Svc ->> Svc: Tính khoảng cách Haversine
+        Svc ->> Svc: Kiểm tra trong geofence radius?
+    end
+
+    Svc ->> Svc: Sort theo Priority ASC
+    
+    alt Nhiều POI cùng Priority cao nhất
+        Svc ->> Svc: Lọc nhóm Priority thấp nhất
+        
+        alt Có POI có HasLocalAudio = true
+            Svc ->> Svc: Winner = POI có LocalAudio\n(tie-break: khoảng cách gần nhất)
+        else Tất cả cùng HasLocalAudio
+            Svc ->> Svc: Winner = POI gần nhất
+        end
+    else POI đơn độc ở Priority cao nhất
+        Svc ->> Svc: Winner = POI đó
+    end
+
+    Svc -->> API: { winner, allPois, decisionLog[] }
+    API -->> SimPage: 200 { result }
+    SimPage -->> Admin: Render map + winner highlight\n+ bảng decision log từng bước
+```
+
+---
+
+### 10.27. CMS — Giả Lập GPS Queue (🌐 Web CMS — UC59)
+
+> **Codebase:** `QueueDemoPage.jsx` · `LocationLogController.cs` → `POST /api/mobile/location-log`
+
+```mermaid
+sequenceDiagram
+    participant Admin
+    participant Demo as QueueDemoPage (B)
+    participant API as LocationLogController (C)
+    participant Queue as ILocationQueue (C)
+    participant Worker as LocationQueueHostedService (C)
+    participant DB as AppDbContext (E)
+
+    Admin ->> Demo: Nhập Device ID + số lần gửi + interval
+    
+    loop N lần (configurable)
+        Demo ->> API: POST /api/mobile/location-log\n{ deviceId, lat, lng, timestamp }
+        API ->> Queue: QueueLocationAsync(locationLog)
+        Queue -->> API: queued
+        API -->> Demo: 200 OK (nhanh, không block)
+    end
+
+    note over Worker: Worker drain queue mỗi 3 giây hoặc khi đủ 50 items
+    Worker ->> Queue: ReadAsync() batch
+    Worker ->> DB: INSERT INTO LocationLogs (bulk)
+    DB -->> Worker: saved
+
+    Demo -->> Admin: Hiển thị throughput stats\n(sent / queued / flushed)
+```
+
+---
+
 ## 📋 11. SƠ ĐỒ HOẠT ĐỘNG (ACTIVITY DIAGRAMS)
 
 > **Quy ước ký hiệu:** `((●))` = Start (filled circle) · `((◉))` = End · `{ }` = Decision (diamond) · `[ ]` = Action (rectangle)
@@ -2597,7 +2704,111 @@ flowchart TD
 
 ---
 
-## 📂 PHỤ LỤC: CẤU TRÚC THƯ MỤC DỰ ÁN
+
+
+### 11.18. Luồng Gán Gói Thủ Công — Admin (🌐 Web CMS — UC45)
+
+```mermaid
+flowchart TD
+    START((●)) --> SELECT_OWNER[Admin chọn Owner Account]
+    SELECT_OWNER --> SELECT_PLAN[Chọn gói mới từ danh sách]
+    SELECT_PLAN --> CONFIRM{Xác nhận?}
+    CONFIRM -- Không --> END_CANCEL((◉))
+    CONFIRM -- Có --> CALL_API[PUT /api/cms/subscriptions/accountId/plan]
+    CALL_API --> CHECK_PLAN{Plan tồn tại?}
+    CHECK_PLAN -- Không --> ERR[Lỗi 404] --> END_ERR((◉))
+    CHECK_PLAN -- Có --> ASSIGN[Gán plan mới\nCập nhật expiry]
+    ASSIGN --> CAP_POI[Cập nhật Priority các POI\nnếu vượt AutoPriority cap mới]
+    CAP_POI --> NOTIFY[Toast thành công]
+    NOTIFY --> END_OK((◉))
+
+    style START fill:#000,color:#fff,stroke:#000
+    style END_OK fill:#000,color:#fff,stroke:#fff,stroke-width:3px
+    style END_CANCEL fill:#000,color:#fff,stroke:#fff,stroke-width:3px
+    style END_ERR fill:#000,color:#fff,stroke:#fff,stroke-width:3px
+    style ERR fill:#F44336,color:#fff
+    style ASSIGN fill:#4CAF50,color:#fff
+```
+
+---
+
+### 11.19. Luồng Xem & Lọc Giao Dịch — Admin (🌐 Web CMS — UC46)
+
+```mermaid
+flowchart TD
+    START((●)) --> OPEN[Mở trang Giao dịch]
+    OPEN --> LOAD[GET /api/cms/payments?page=1]
+    LOAD --> RENDER[Render bảng: status, amount, owner, date]
+    RENDER --> FILTER{Admin lọc?}
+    FILTER -- Status / Date / Owner --> RELOAD[GET với query params mới]
+    RELOAD --> RENDER
+    FILTER -- Không --> DETAIL{Xem chi tiết?}
+    DETAIL -- Có --> MODAL[GET /api/cms/payments/id]
+    MODAL --> SHOW_DETAIL[Hiển thị modal chi tiết]
+    SHOW_DETAIL --> DETAIL
+    DETAIL -- Không --> END_NODE((◉))
+
+    style START fill:#000,color:#fff,stroke:#000
+    style END_NODE fill:#000,color:#fff,stroke:#fff,stroke-width:3px
+```
+
+---
+
+### 11.20. Luồng Giả Lập Geofence Conflict — Admin (🌐 Web CMS — UC60)
+
+```mermaid
+flowchart TD
+    START((●)) --> CONFIG[Admin cấu hình kịch bản\nDevice vị trí + số POI + rank + audio flag]
+    CONFIG --> GEN[Sinh POI ngẫu nhiên bao quanh device\nTrong geofence radius]
+    GEN --> SUBMIT[POST /api/cms/debug/geofence-simulate]
+    SUBMIT --> CALC_DIST[Backend tính khoảng cách Haversine\ncho từng POI]
+    CALC_DIST --> IN_FENCE{Trong bán kính?}
+    IN_FENCE -- Không --> EXCLUDE[Bỏ POI khỏi candidates]
+    IN_FENCE -- Có --> ADD[Thêm vào candidates]
+    ADD --> SORT[Sort theo Priority ASC]
+    SORT --> GROUP{Nhiều POI cùng Priority min?}
+    GROUP -- Không --> WIN_SOLO[Winner = POI Priority cao nhất]
+    GROUP -- Có --> AUDIO{Có POI với LocalAudio?}
+    AUDIO -- Có --> WIN_AUDIO[Winner = POI LocalAudio\ngần nhất nếu tie]
+    AUDIO -- Không --> WIN_DIST[Winner = POI gần nhất]
+    WIN_SOLO --> RESULT[Trả về winner + decisionLog]
+    WIN_AUDIO --> RESULT
+    WIN_DIST --> RESULT
+    RESULT --> DISPLAY[Render map highlight winner\nBảng log quyết định từng bước]
+    DISPLAY --> END_NODE((◉))
+
+    style START fill:#000,color:#fff,stroke:#000
+    style END_NODE fill:#000,color:#fff,stroke:#fff,stroke-width:3px
+    style WIN_AUDIO fill:#4CAF50,color:#fff
+    style WIN_SOLO fill:#2196F3,color:#fff
+    style WIN_DIST fill:#FF9800,color:#fff
+```
+
+---
+
+### 11.21. Luồng Giả Lập GPS Queue — Admin (🌐 Web CMS — UC59)
+
+```mermaid
+flowchart TD
+    START((●)) --> INPUT[Admin nhập Device ID\nSố lần gửi + Interval ms]
+    INPUT --> LOOP_START[Bắt đầu vòng lặp]
+    LOOP_START --> SEND[POST /api/mobile/location-log]
+    SEND --> QUEUE[LocationLog → ILocationQueue\nChannel hoặc RabbitMQ]
+    QUEUE --> DONE_SEND{Còn lần gửi?}
+    DONE_SEND -- Có --> WAIT[Delay interval] --> LOOP_START
+    DONE_SEND -- Không --> STATS[Hiển thị: tổng gửi / thành công / thất bại]
+    STATS --> WORKER[Worker flush mỗi 3s / 50 items\nBulk INSERT vào DB]
+    WORKER --> END_NODE((◉))
+
+    style START fill:#000,color:#fff,stroke:#000
+    style END_NODE fill:#000,color:#fff,stroke:#fff,stroke-width:3px
+    style QUEUE fill:#9C27B0,color:#fff
+    style WORKER fill:#607D8B,color:#fff
+```
+
+---
+
+
 
 
 ```
@@ -2633,10 +2844,15 @@ CSharpProject/
 │   ├── Hubs/
 │   │   └── DeviceHub.cs          # SignalR: real-time device monitoring
 │   ├── Queues/
-│   │   └── ILocationQueue.cs     # Background queue cho LocationLog
+│   │   ├── LocationQueue.cs          # In-process Channel<T> implementation
+│   │   ├── RabbitMQLocationQueue.cs  # RabbitMQ implementation (bật qua config)
+│   │   ├── LocationQueueHostedService.cs
+│   │   ├── ListenHistoryQueue.cs
+│   │   └── ContentPipelineQueue.cs
 │   ├── Models/                   # EF Core Entities (11 models)
 │   ├── Services/                 # Business Logic
 │   │   ├── Interfaces/
+│   │   ├── PaymentCleanupService.cs  # Background: PENDING → EXPIRED sau 30 phút
 │   │   ├── ContentPipelineService.cs
 │   │   ├── DevicePresenceService.cs  # In-memory device presence (Singleton)
 │   │   ├── PoiRequestService.cs      # Mobile POI query logic

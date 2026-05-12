@@ -1,0 +1,20 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: audiogo-rabbitmq
+    ports:
+      - "5672:5672"    # AMQP port — .NET kết nối vào đây
+      - "15672:15672"  # Management UI — http://localhost:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  rabbitmq_data:

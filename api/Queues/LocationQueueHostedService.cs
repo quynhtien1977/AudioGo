@@ -32,13 +32,13 @@ namespace Server.Queues
                     var location = await _queue.ReadAsync(stoppingToken);
                     batch.Add(location);
 
-                    // Đọc thêm item cho đến khi đủ batch size (50) hoặc timeout (3s)
+                    // Đọc thêm item cho đến khi đủ batch size (1000) hoặc timeout (5s)
                     using var cts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
-                    cts.CancelAfter(TimeSpan.FromSeconds(3));
+                    cts.CancelAfter(TimeSpan.FromSeconds(5));
 
                     try
                     {
-                        while (batch.Count < 50 && !cts.Token.IsCancellationRequested)
+                        while (batch.Count < 1000 && !cts.Token.IsCancellationRequested)
                         {
                             var nextLocation = await _queue.ReadAsync(cts.Token);
                             batch.Add(nextLocation);
