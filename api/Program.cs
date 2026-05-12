@@ -86,7 +86,11 @@ builder.Services.AddScoped<ILocationLogRepository, LocationLogRepository>();
 builder.Services.AddScoped<AuthService>();
 
 // ── Background Queues ────────────────────────────────────────────────
-builder.Services.AddSingleton<ILocationQueue, LocationQueue>();
+// Location log queue: RabbitMQ external broker (docker-compose up -d)
+// Cấu hình: appsettings.json -> "RabbitMQ": { "Host", "Port", "User", "Password" }
+builder.Services.AddSingleton<ILocationQueue, RabbitMQLocationQueue>();
+builder.Services.AddSingleton<IDisposable>(sp =>
+    (IDisposable)sp.GetRequiredService<ILocationQueue>()); // Đảm bảo Dispose được gọi khi shutdown
 builder.Services.AddHostedService<LocationQueueHostedService>();
 
 builder.Services.AddSingleton<IListenHistoryQueue, ListenHistoryQueue>();
