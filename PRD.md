@@ -2,7 +2,7 @@
 
 > **Hệ Thống Thuyết Minh Du Lịch Đa Ngôn Ngữ**  
 > *Dự án kỹ thuật số hóa Phố Ẩm Thực Vĩnh Khánh, Quận 4, TP.HCM*  
-> *Cập nhật: 08/05/2026*
+> *Cập nhật: 12/05/2026*
 
 ---
 
@@ -165,8 +165,11 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
   - Owner gửi `POST /api/cms/pois/requests` với `{ actionType: CREATE|UPDATE|DELETE, draft: PoiDraftDto }`.
   - Request lưu vào bảng `PoiRequest` với `Status = PENDING`, không thay đổi dữ liệu `Poi` live ngay.
   - Owner xem trạng thái tại `GET /api/cms/pois/requests/my-requests`.
+  - **Priority tự động gán theo gói:** Khi Admin duyệt `CREATE`, `Poi.Priority` được set = `SubscriptionPlan.AutoPriority` của Owner — **bất kể giá trị draft gửi lên**. Với `UPDATE`, Priority bị cap tối đa = `AutoPriority` gói hiện tại (không thể tự nâng).
+  - Owner không được tự chỉ định Priority vượt mức gói đang dùng.
 - **AC:**
   - [x] Tạo request → PENDING. Admin duyệt → APPROVED → dữ liệu live cập nhật. Admin từ chối → REJECTED + rejectReason.
+  - [x] POI mới tạo luôn có Priority = AutoPriority của gói Owner, không phụ thuộc FE.
 
 **US 2.6 — Nâng Gói Subscription**
 > *Là POI Owner, tôi muốn nâng gói dịch vụ để có thêm POI và tính năng.*
@@ -256,6 +259,20 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
   - [x] Admin assign gói thủ công → subscription ACTIVE ngay, transaction ghi MANUAL.
   - [x] Dashboard lịch sử giao dịch hiển thị đúng status (PENDING/SUCCESS/FAILED).
 
+**US 3.8 — Geofence Conflict Simulator (Debug Tool)**
+> *Là Admin, tôi muốn giả lập cơ chế tranh chấp Geofence để kiểm chứng logic 3-Tier trước khi demo hoặc debug.*
+- **FR:**
+  - `POST /api/cms/debug/geofence-simulate` — nhận tọa độ thiết bị + danh sách POI tùy chỉnh (`CustomPois[]`).
+  - Khi `CustomPois` được gửi lên: dùng POI fake (không query DB, không persist). Khi không có: dùng POI active từ DB.
+  - Trả về: `Winner` (PoiId, Name, DecisionTier, Reason) + `CandidatePois[]` (rank, distance, tier scores) + `SortingTrace[]` (log từng bước giải quyết conflict).
+  - `DecisionTier` có 4 giá trị: `Trivial_OnlyOne`, `Tier1_Priority`, `Tier2_HasLocalAudio`, `Tier3_Distance`.
+  - Logic sort 3-Tier hoàn toàn giống `GeofenceService.cs` trên Mobile (parity đảm bảo).
+- **AC:**
+  - [x] Simulator chứng minh đúng 3-Tier: Priority → HasLocalAudio → Distance.
+  - [x] Log hiển thị rõ tier nào quyết định, ai thắng, ai thua và lý do.
+  - [x] Chạy không ảnh hưởng dữ liệu production (read-only hoặc in-memory).
+  - [x] Chỉ Admin mới truy cập được (`[Authorize(Roles = "Admin")]`).
+
 ---
 
 ## ⚙️ 4. YÊU CẦU PHI CHỨC NĂNG (NON-FUNCTIONAL REQUIREMENTS)
@@ -319,9 +336,20 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 | `TourPoi` | Bảng nối Tour ↔ POI (stepOrder) | `TourId + PoiId` |
 | `ListenHistory` | Lịch sử nghe (deviceId, poiId, listenDuration, timestamp) | `HistoryId` |
 | `LocationLog` | GPS log (deviceId, lat, lon, timestamp) | `LocationId` |
-| `SubscriptionPlan` | Gói đăng ký cho Owner (planId: basic/professional/enterprise, price, durationDay, maxPoiCount, autoPriority, features JSON) | `PlanId` |
+| `SubscriptionPlan` | Gói đăng ký cho Owner (planId: basic/plus/professional/enterprise, price, durationDay, maxPoiCount, autoPriority, features JSON) | `PlanId` |
 | `OwnerSubscription` | Gói đang kích hoạt của Owner (accountId FK, planId FK, status: ACTIVE/EXPIRED/CANCELLED, startDate, endDate) | `SubscriptionId` |
 | `PaymentTransaction` | Lịch sử giao dịch thanh toán (paymentType: TOURIST_ACCESS/OWNER_SUBSCRIPTION, gateway: SEPAY/MOMO/MANUAL, status: PENDING/SUCCESS/FAILED/REFUNDED, amount, transactionId: AG-{ts}-{rand6}) | `TransactionId` |
+
+**Chi tiết gói SubscriptionPlan:**
+
+| PlanId | Tên | Giá (VNĐ) | Số POI tối đa | AutoPriority | Thời hạn |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `basic` | Cơ bản | 199.000 | 1 | 1 (Thấp) | 30 ngày |
+| `plus` | Nâng cao | 249.000 | 3 | 2 | 30 ngày |
+| `professional` | Chuyên nghiệp | 499.000 | 5 | 3 | 30 ngày |
+| `enterprise` | Doanh nghiệp | 999.000 | Không giới hạn (-1) | 4 (Cao) | 30 ngày |
+
+> **Quy tắc Priority:** `AutoPriority` quyết định `Poi.Priority` khi POI được duyệt tạo mới. Khi subscription EXPIRED → tất cả POI của Owner bị hạ về `Priority = 1`.
 
 ---
 
@@ -466,6 +494,12 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò **"nguồn sự thật du
 | `POST` | `/api/cms/subscriptions/upgrade/init` | Owner khởi tạo nâng gói (VietQR/MoMo) |
 | `GET` | `/api/cms/subscriptions/owner/{accountId}` | Admin xem subscription của Owner |
 | `POST` | `/api/cms/subscriptions/owner/{accountId}/assign` | Admin gán gói thủ công (MANUAL) |
+| `GET` | `/api/cms/subscriptions/upgrade/verify?transactionId=` | Owner poll kết quả thanh toán |
+
+#### Debug & Simulator Tools (Admin Only)
+| Method | Route | Mô tả |
+| :--- | :--- | :--- |
+| `POST` | `/api/cms/debug/geofence-simulate` | Giả lập tranh chấp Geofence — 3-Tier conflict resolution với CustomPois hoặc DB |
 
 #### Payment Management (Admin)
 | Method | Route | Mô tả |
