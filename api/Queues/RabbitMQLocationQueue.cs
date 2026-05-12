@@ -61,14 +61,23 @@ namespace Server.Queues
 
             var factory = new ConnectionFactory
             {
-                HostName = config["RabbitMQ:Host"]     ?? "localhost",
-                Port     = int.Parse(config["RabbitMQ:Port"] ?? "5672"),
-                UserName = config["RabbitMQ:User"]     ?? "guest",
-                Password = config["RabbitMQ:Password"] ?? "guest",
                 AutomaticRecoveryEnabled = true,
                 NetworkRecoveryInterval  = TimeSpan.FromSeconds(5),
                 RequestedHeartbeat       = TimeSpan.FromSeconds(30)
             };
+
+            var rmqUrl = config["RabbitMQ:Url"];
+            if (!string.IsNullOrWhiteSpace(rmqUrl))
+            {
+                factory.Uri = new Uri(rmqUrl);
+            }
+            else
+            {
+                factory.HostName = config["RabbitMQ:Host"]     ?? "localhost";
+                factory.Port     = int.Parse(config["RabbitMQ:Port"] ?? "5672");
+                factory.UserName = config["RabbitMQ:User"]     ?? "guest";
+                factory.Password = config["RabbitMQ:Password"] ?? "guest";
+            }
 
             _connection = factory.CreateConnection("audiogo-location-queue");
 
