@@ -936,57 +936,43 @@ sequenceDiagram
 
 ### 10.5. Theo Dõi Vị Trí & Tự Động Phát Audio — Geofence (📱 Mobile — UC5)
 
-> Bao gồm xử lý ưu tiên 3-Tier khi có nhiều POI trong vùng geofence và gọi hàng đợi ghi log.
 
 ```mermaid
 sequenceDiagram
+    participant LocSvc as LocationService
+    participant MainVM as MainViewModel
     participant GeoSvc as GeofenceService
-    participant MapVM as MapViewModel
-    participant AudioSvc as AudioPlayerService
+    participant AudioSvc as AudioService
     participant API as ApiService
     participant ListenCtrl as ListenHistoryController
-    participant LocCtrl as LocationLogController
     participant ListenQ as IListenHistoryQueue
-    participant LocQ as ILocationQueue (RabbitMQ)
+    participant SigR as SignalRService
+    participant Hub as DeviceHub
+    participant LocQ as ILocationQueue
 
-    loop Định kỳ (GPS polling - Background)
-        GeoSvc ->> GeoSvc: GetCurrentLocation()
-        GeoSvc ->> GeoSvc: CheckGeofence(location, activePois)
-        
-        alt Thiết bị vào geofence POI mới
-            GeoSvc ->> GeoSvc: filterEligiblePois()
-            
-            opt Có nhiều POI chồng geofence
-                Note over GeoSvc: Tier 1: sort by Priority ASC (số nhỏ = cao)
-                GeoSvc ->> GeoSvc: groupByLowestPriority()
-                Note over GeoSvc: Tier 2: tie-break bằng HasLocalAudio
-                GeoSvc ->> GeoSvc: preferPoiWithLocalAudio()
-                Note over GeoSvc: Tier 3: tie-break cuối cùng bằng Distance
-                GeoSvc ->> GeoSvc: selectNearestPoi()
-            end
-
-            GeoSvc ->> MapVM: OnPoiEntered(selectedPoi)
-            MapVM ->> AudioSvc: PlayAsync(selectedPoi.AudioUrl, lang)
-            AudioSvc -->> MapVM: startPlayback()
-            MapVM ->> MapVM: openMiniPlayer()
+    loop GPS polling (foreground)
+        LocSvc ->> MainVM: LocationUpdated(Lat, Lon)
+        MainVM ->> GeoSvc: OnLocationUpdated(lat, lon)
+        Note over GeoSvc: eligiblePois trong ActivationRadius + cooldown 5 phút
+        opt Có ≥1 POI eligible
+            Note over GeoSvc: OrderByDescending(Priority), ThenByDescending(HasLocalAudio), ThenBy(Distance) → winner
+            GeoSvc ->> MainVM: PoiTriggered(poi)
+            MainVM ->> MainVM: OnPoiTriggered(sender, poi)
+            MainVM ->> MainVM: TriggerAudioAsync(poi)
+            MainVM ->> AudioSvc: PlayPoiAudioAsync(localAudioPath, audioUrl, description, languageCode)
         end
-
-        opt Thiết bị rời khỏi geofence
-            GeoSvc ->> MapVM: OnPoiExited(poi)
-            MapVM ->> AudioSvc: StopAsync()
-            MapVM ->> API: PostListenHistoryAsync(poiId, duration)
-            API ->> ListenCtrl: POST /api/mobile/listen-history
-            ListenCtrl ->> ListenQ: QueueListenHistoryAsync()
-            Note over ListenQ: in-memory Channel<T>, batch ≤20, flush 5s
-            ListenCtrl -->> API: 202 Accepted
-        end
-
-        GeoSvc ->> API: PostLocationLogAsync(locationLog)
-        API ->> LocCtrl: POST /api/mobile/location-log
-        LocCtrl ->> LocQ: QueueLocationAsync()
-        Note over LocQ: RabbitMQ broker, batch ≤1000, flush 5s
-        LocCtrl -->> API: 202 Accepted
+        MainVM ->> SigR: SendLocationAsync(lat, lon)
+        SigR ->> Hub: InvokeAsync("SendLocationUpdate", lat, lon)
+        Hub ->> LocQ: QueueLocationAsync(LocationLog)
     end
+
+    Note over MainVM,ListenQ: Listen history sau khi nghe xong (không phải khi rời geofence)
+    MainVM ->> MainVM: PlaybackStateChanged(PlaybackEnded)
+    MainVM ->> MainVM: PostListenHistoryFireAndForgetAsync(poiId, durationSec)
+    MainVM ->> API: PostListenHistoryAsync(poiId, deviceId, durationSeconds)
+    API ->> ListenCtrl: POST /api/mobile/listen-history
+    ListenCtrl ->> ListenQ: QueueListenHistoryAsync(ListenHistory)
+    ListenCtrl -->> API: 202 Accepted
 ```
 
 ---
