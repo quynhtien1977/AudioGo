@@ -1079,7 +1079,6 @@ sequenceDiagram
 
 ### 10.9. Xem Thông Tin POI (📱 Mobile — UC9)
 
-> **Khớp code:** `PoiDetailViewModel.LoadAsync` đọc **`AppDatabase.GetPoiAsync(poiId)`** (SQLite). API `GET /api/mobile/pois/{id}` tồn tại trên server nhưng **không** được ViewModel này gọi khi mở chi tiết.
 
 ```mermaid
 sequenceDiagram
@@ -1328,8 +1327,6 @@ sequenceDiagram
 
 ### 10.19. Mobile Kết Nối SignalR Real-Time (📱 Mobile — UC19)
 
-> 📌 **Xem diagram đầy đủ tại [Sequence 10.21](#1021-real-time-device-monitoring--signalr--mobile--web-cms)** — bao gồm cả góc nhìn Mobile, Admin, Hub, Queue và DB.  
-> Sequence này được merge vào 10.21 để tránh trùng lặp.
 
 **Tóm tắt luồng Mobile:**
 1. `MainViewModel` → `SignalRService.StartAsync()` → Kết nối `DeviceHub` với JWT GuestApp
@@ -1341,7 +1338,7 @@ sequenceDiagram
 
 ### 10.20. CMS — Đăng Nhập (🌐 Web CMS — UC20)
 
-> **UC:** UC20 Đăng nhập CMS (Owner & Admin)
+
 
 ```mermaid
 sequenceDiagram
@@ -1399,33 +1396,12 @@ sequenceDiagram
 
 ---
 
-### 10.21b. CMS — Admin Tạo POI Trực Tiếp (🌐 Web CMS — UC31)
 
-> ⚠️ **Admin only.** Endpoint này tạo POI trực tiếp vào DB (không qua PoiRequest workflow). Owner phải dùng `POST /api/cms/pois/requests` (UC22 → 10.22a).
-
-```mermaid
-sequenceDiagram
-    participant Admin
-    participant CMS as Web CMS (POIPage)
-    participant PoiCtrl as CmsPoiController
-    participant DB as AppDbContext
-
-    Admin ->> CMS: submitCreatePoiForm()
-    CMS ->> PoiCtrl: POST /api/cms/pois
-    Note over PoiCtrl: [Authorize] — Admin & Owner JWT accepted,
-    Note over PoiCtrl: nhưng thực tế chỉ Admin dùng luồng này
-    PoiCtrl ->> PoiCtrl: map PoiCreateRequest → Poi entity
-    PoiCtrl ->> DB: CreateAsync(poi)
-    DB -->> PoiCtrl: Poi (with PoiId)
-    PoiCtrl -->> CMS: 201 Created + Poi
-    CMS -->> Admin: showCreateSuccessToast()
-```
 
 ---
 
 ### 10.21c. CMS — Admin Cập Nhật & Xóa POI (🌐 Web CMS — UC31)
 
-> ⚠️ **Admin only.** `PUT` cập nhật trực tiếp — dùng để ẩn/hiện (`isActive`) hoặc chỉnh tọa độ/priority. Owner phải gửi `PoiRequest UPDATE` (UC23 → 10.22b). `DELETE` là **hard delete** (không phải soft-delete).
 
 ```mermaid
 sequenceDiagram
@@ -1463,7 +1439,6 @@ sequenceDiagram
 
 ### 10.22a. CMS — Owner Gửi Yêu Cầu TẠO POI (🌐 Web CMS — UC22)
 
-> Luồng PoiRequest: Owner submit CREATE → PENDING → Admin duyệt sau.
 
 ```mermaid
 sequenceDiagram
@@ -1585,33 +1560,6 @@ sequenceDiagram
 
 ---
 
-### 10.25a. CMS — Generate Audio Cho 1 POI (🌐 Web CMS — UC35)
-
-
-```mermaid
-sequenceDiagram
-    participant Admin
-    participant CMS as Web CMS
-    participant PipeCtrl as CmsContentPipelineController
-    participant Pipeline as ContentPipelineService
-    participant TTS as TtsService
-    participant Blob as BlobStorageService
-    participant DB as AppDbContext
-
-    Admin ->> CMS: triggerGenerateAudio()
-    CMS ->> PipeCtrl: POST /api/cms/pipeline/generate/{poiId}
-    PipeCtrl ->> Pipeline: GenerateAudioAsync(content)
-    Pipeline ->> TTS: SynthesizeAsync(text, lang)
-    TTS -->> Pipeline: returnAudioStream()
-    Pipeline ->> Blob: UploadAsync(stream)
-    Blob -->> Pipeline: returnPublicUrl()
-    Pipeline ->> DB: GenerateAudioAsync()
-    Pipeline -->> PipeCtrl: returnUpdatedPoiContent()
-    PipeCtrl -->> CMS: 200 OK
-    CMS -->> Admin: renderGeneratedAudioLink()
-```
-
----
 
 ### 10.25b. CMS — Dịch & TTS Sang Ngôn Ngữ Mới (🌐 Web CMS — UC37)
 
@@ -2100,7 +2048,6 @@ sequenceDiagram
 
 ### 10.26. CMS — Giả Lập Geofence Conflict (🌐 Web CMS — UC60)
 
-> **Codebase:** `GeofenceSimulatorController.cs` → `POST /api/cms/debug/geofence-simulate` · `GeofenceSimulatorPage.jsx`
 
 ```mermaid
 sequenceDiagram
@@ -2131,7 +2078,7 @@ sequenceDiagram
 
 ### 10.27. CMS — Giả Lập GPS Queue (🌐 Web CMS — UC59)
 
-> **Codebase:** `QueueDemoPage.jsx` · `LocationLogController.cs` → `POST /api/mobile/location-log`
+
 
 ```mermaid
 sequenceDiagram
