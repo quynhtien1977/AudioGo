@@ -868,20 +868,25 @@ sequenceDiagram
     participant MobileUser as Người dùng
     participant QrPage as WelcomeQrScanPage
     participant VM as WelcomeQrScanViewModel
+    participant App as App.xaml.cs
     participant API as ApiService
     participant AuthCtrl as AuthMobileController
+    participant DB as AppDbContext
 
     MobileUser ->> QrPage: scanQrCode()
     QrPage ->> VM: ProcessBarcodeCommand.Execute(code)
     VM ->> API: ScanQrAsync(code, deviceId)
     API ->> AuthCtrl: POST /api/mobile/auth/scan-qr
-    AuthCtrl ->> AuthCtrl: validateAppAccessCode()
+    AuthCtrl ->> DB: FirstOrDefaultAsync(AppAccessCodes by Code)
+    AuthCtrl ->> DB: SaveChangesAsync() (khi mã mới)
+    AuthCtrl ->> AuthCtrl: GenerateGuestToken(deviceId, expireAt)
 
     alt Mã hợp lệ
         AuthCtrl -->> API: 200 OK + { message, token, expireAt }
         API -->> VM: IsSuccess + Token
-        VM ->> VM: persistSessionAndToken()
-        VM ->> VM: switchToAppShell()
+        VM ->> VM: SecureStorage.SetAsync("GuestToken", token)
+        VM ->> App: MarkSessionValid()
+        VM ->> VM: Application.MainPage = GetRequiredService(AppShell)
     else Mã không hợp lệ / đã dùng
         AuthCtrl -->> API: 403/404 + error message
         API -->> VM: IsSuccess=false + message
@@ -896,23 +901,19 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant MainVM as MainViewModel
-    participant SyncService
-    participant API as ApiService
-    participant DB as Local SQLite
-    
+    participant SyncSvc as SyncService
+    participant GeoSvc as GeofenceService
+    participant LocSvc as LocationService
+    participant SigR as SignalRService
 
-    
-    MainVM ->> SyncService: GetPoisAsync(lang)
-    SyncService ->> API: GetPoisAsync(lang)
-    API -->> SyncService: POIs
-    SyncService ->> DB: replacePoiMetadataAsync()
-
-    MainVM ->> SyncService: GetToursAsync(lang)
-    SyncService ->> API: GetToursAsync(lang)
-    API -->> SyncService: Tours + details
-    SyncService ->> DB: upsertAndCleanupToursAsync()
-
-    
+    MainVM ->> MainVM: InitAsync()
+    MainVM ->> SyncSvc: GetPoisAsync(CurrentLanguage)
+    Note over SyncSvc: Offline-first: SQLite trước; có mạng có thể refresh nền (RefreshFromServerAsync / ReplaceMetadataAsync → SavePoiAsync, DeletePoiAsync)
+    MainVM ->> GeoSvc: StartMonitoringAsync(Pois)
+    MainVM ->> LocSvc: StartAsync()
+    MainVM ->> SigR: StartAsync()
+    MainVM ->> MainVM: StartDeltaPolling()
+    Note over MainVM: GetToursAsync chỉ khi user mở Tour / Search — không gọi trong InitAsync
 ```
 
 ---
@@ -979,19 +980,29 @@ sequenceDiagram
 
 ### 10.6. Điều Khiển Mini-Player (📱 Mobile — UC6)
 
+
 ```mermaid
 sequenceDiagram
     participant MobileUser as Người dùng
     participant MapPage
-    participant AudioSvc as AudioPlayerService
+    participant MainVM as MainViewModel
+    participant AudioSvc as AudioService
+    participant DetailPage as PoiDetailPage
+    participant DetailVM as PoiDetailViewModel
 
-    MobileUser ->> MapPage: tapMiniPlayerToggle()
-    MapPage ->> AudioSvc: ToggleAudio()
-    AudioSvc -->> MapPage: updatePlaybackUiState()
+    MobileUser ->> MapPage: tapMiniPlay (mini bar)
+    MapPage ->> MainVM: ToggleAudio()
+    alt audio đang phát
+        MainVM ->> AudioSvc: PauseAsync()
+    else đang pause cùng POI
+        MainVM ->> AudioSvc: ResumeAsync()
+    else stopped / POI khác
+        MainVM ->> MainVM: TriggerAudioAsync(ActivePoi)
+    end
 
-    MobileUser ->> MapPage: dragSeekBar()
-    MapPage ->> AudioSvc: SeekAsync(positionSeconds)
-    AudioSvc -->> MapPage: updatePlaybackProgress()
+    MobileUser ->> DetailPage: dragSeekBar completed
+    DetailPage ->> DetailVM: SeekToAsync(normalizedPosition)
+    DetailVM ->> AudioSvc: SeekAsync(targetSeconds)
 ```
 
 ---
@@ -1339,18 +1350,17 @@ sequenceDiagram
     participant AuthCtx as AuthContext (React)
     participant API as axiosInstance
     participant AuthCtrl as AuthController (Backend)
-    participant DB as AppDbContext
+    participant AuthSvc as AuthService
 
     AdminUser ->> LoginPage: submitLoginForm()
     LoginPage ->> AuthCtx: login(username, password)
     AuthCtx ->> API: login(username, password)
     API ->> AuthCtrl: POST /api/auth/login
-    AuthCtrl ->> DB: LoginAsync()
-    DB -->> AuthCtrl: Account (PasswordHash, Role)
-    AuthCtrl ->> AuthCtrl: BCrypt.Verify(password, hash)
+    AuthCtrl ->> AuthSvc: LoginAsync(LoginRequest)
+    AuthSvc -->> AuthCtrl: LoginResponse hoặc null
 
     alt Xác thực thành công
-        AuthCtrl ->> AuthCtrl: GenerateJWT(accountId, role)
+        Note over AuthSvc: BCrypt + JWT nằm trong AuthService / luồng login hiện tại
         AuthCtrl -->> API: 200 OK + { token, role, accountId }
         API -->> AuthCtx: token + role
         AuthCtx ->> AuthCtx: persistAuthToken()
@@ -1724,8 +1734,8 @@ sequenceDiagram
     CMS ->> PipeCtrl: POST /api/cms/pipeline/generate-all-languages
     activate PipeCtrl
 
-    PipeCtrl ->> DB: GenerateAllLanguages()
-    DB -->> PipeCtrl: List<Poi> (IsActive == true)
+    PipeCtrl ->> DB: Pois.Include(Contents).Where(IsActive).ToListAsync()
+    DB -->> PipeCtrl: List<Poi>
 
     alt Không có Active POI
         PipeCtrl -->> CMS: 200 OK + { message: "Không có active POI" }
@@ -1970,7 +1980,7 @@ sequenceDiagram
     loop Định kỳ GPS polling
         Mobile ->> Hub: SendLocationUpdate(lat, lon)
         Hub ->> Queue: QueueLocationAsync(LocationLog)
-        Queue ->> DB: QueueLocationAsync()
+        Note over Queue: RabbitMQ; consumer hosted service ghi DB — không gọi trực tiếp từ Hub
         Hub ->> Admin: broadcastLocationUpdated()
     end
 
@@ -2036,21 +2046,20 @@ sequenceDiagram
 sequenceDiagram
     participant Admin
     participant SubPage as SubscriptionPage (B)
-    participant API as CmsSubscriptionController (C)
-    participant SubSvc as SubscriptionService (C)
-    participant DB as AppDbContext (E)
+    participant SubCtrl as CmsSubscriptionController
+    participant SubSvc as SubscriptionService
+    participant DB as AppDbContext
 
     Admin ->> SubPage: Chọn Owner + chọn Plan mới
-    SubPage ->> API: PUT /api/cms/subscriptions/{accountId}/plan\n{ planId }
-    API ->> SubSvc: AssignPlanAsync(accountId, planId)
-    SubSvc ->> DB: Query Account + SubscriptionPlan
-    DB -->> SubSvc: account, plan
-    SubSvc ->> SubSvc: Tính expiry = UtcNow + plan.DurationDays
-    SubSvc ->> DB: UPDATE AccountSubscription\nPlanId, ExpiryDate, AutoPriority
-    SubSvc ->> DB: UPDATE các POI của Owner\nPriority = plan.AutoPriority (nếu vượt cap)
-    DB -->> SubSvc: saved
-    SubSvc -->> API: OK
-    API -->> SubPage: 200 { message: "Đã gán gói" }
+    SubPage ->> SubCtrl: POST /api/cms/subscriptions/owner/{accountId}/assign\n{ planId, gateway }
+    SubCtrl ->> DB: Accounts.FindAsync(accountId)
+    SubCtrl ->> DB: SubscriptionPlans.FindAsync(planId)
+    SubCtrl ->> DB: PaymentTransactions.Add(tx) + SaveChangesAsync()
+    SubCtrl ->> SubSvc: ActivateSubscriptionAsync(accountId, planId, transactionId)
+    Note over SubSvc,DB: Hủy ACTIVE cũ (CANCELLED); tạo OwnerSubscription mới; cập nhật Account.SubscriptionPlanId; SaveChangesAsync; nếu downgrade gói → DowngradePoiPriorityAsync (cập nhật Priority POI)
+    SubSvc -->> SubCtrl: OwnerSubscription
+    SubCtrl ->> DB: SaveChangesAsync() (gắn SubscriptionId vào tx)
+    SubCtrl -->> SubPage: 200 OK + { message, subscriptionId, transactionId, endDate }
     SubPage -->> Admin: Toast "Gán gói thành công"
 ```
 
@@ -2058,32 +2067,33 @@ sequenceDiagram
 
 ### 10.25. CMS — Xem Lịch Sử Giao Dịch (🌐 Web CMS — UC46)
 
-> **Codebase:** `CmsPaymentController.cs` → `GET /api/cms/payments` · `GET /api/cms/payments/{id}` · `AppDbContext.PaymentTransactions`
+
 
 ```mermaid
 sequenceDiagram
     participant Admin
     participant TxPage as TransactionPage (B)
-    participant API as CmsPaymentController (C)
-    participant DB as AppDbContext (E)
+    participant PayCtrl as CmsPaymentController
+    participant DB as AppDbContext
 
-    Admin ->> TxPage: Mở trang Giao dịch (filter: status, date, owner)
-    TxPage ->> API: GET /api/cms/payments?status=&from=&to=&page=
-    API ->> DB: SELECT PaymentTransactions JOIN Account\nWHERE filters ORDER BY CreatedAt DESC
-    DB -->> API: List<PaymentTransaction>
-    API -->> TxPage: 200 { data: [...], total, page }
+    Admin ->> TxPage: Mở trang Giao dịch (filter: paymentType, status, gateway, accountId, page)
+    TxPage ->> PayCtrl: GET /api/cms/payments?paymentType=&status=&gateway=&accountId=&page=&pageSize=
+    PayCtrl ->> DB: CountAsync() on filtered PaymentTransactions query
+    PayCtrl ->> DB: ToListAsync() after OrderByDescending(CreatedAt), Skip, Take, Select projection
+    DB -->> PayCtrl: total + rows
+    PayCtrl -->> TxPage: 200 { data, pagination }
     TxPage -->> Admin: Render bảng giao dịch
 
     opt Xem chi tiết
         Admin ->> TxPage: Click vào 1 giao dịch
-        TxPage ->> API: GET /api/cms/payments/{id}
-        API ->> DB: SELECT PaymentTransaction + Account + Plan
-        DB -->> API: detail
-        API -->> TxPage: 200 detail
+        TxPage ->> PayCtrl: GET /api/cms/payments/{transactionId}
+        PayCtrl ->> DB: FirstOrDefaultAsync(PaymentTransactions by id, Include Account, Plan, Subscription)
+        DB -->> PayCtrl: PaymentTransaction + navigations
+        PayCtrl -->> TxPage: 200 detail DTO
         TxPage -->> Admin: Hiển thị modal chi tiết
     end
 
-    note over API,DB: PaymentCleanupService tự động PENDING→EXPIRED\nsau 30 phút (BackgroundService mỗi 30 phút)
+    note over PayCtrl,DB: PaymentCleanupService (HostedService) đánh dấu PENDING quá hạn → EXPIRED\ntheo cấu hình PaymentCleanup (mặc định ~30 phút)
 ```
 
 ---
@@ -2097,34 +2107,24 @@ sequenceDiagram
     participant Admin
     participant SimPage as GeofenceSimulatorPage (B)
     participant API as GeofenceSimulatorController (C)
-    participant Svc as GeofenceSimulatorController logic (C)
+    participant DB as AppDbContext
 
-    Admin ->> SimPage: Cấu hình kịch bản\n(số POI, lat/lng, rank, hasLocalAudio)
-    SimPage ->> API: POST /api/cms/debug/geofence-simulate\n{ deviceLat, deviceLng, pois[] }
-    API ->> Svc: SimulateConflict(request)
-    
-    loop Với mỗi POI trong bán kính
-        Svc ->> Svc: Tính khoảng cách Haversine
-        Svc ->> Svc: Kiểm tra trong geofence radius?
+    Admin ->> SimPage: Cấu hình kịch bản\n(lat/lng, customPois hoặc DB)
+    SimPage ->> API: POST /api/cms/debug/geofence-simulate
+    alt CustomPois (simulator mode)
+        Note over API: Dùng body CustomPois — không query DB
+    else DB mode
+        API ->> DB: Pois.Where(IsActive).Include(Contents).ToListAsync()
+        DB -->> API: active POIs
     end
 
-    Svc ->> Svc: Sort theo Priority ASC
-    
-    alt Nhiều POI cùng Priority cao nhất
-        Svc ->> Svc: Lọc nhóm Priority thấp nhất
-        
-        alt Có POI có HasLocalAudio = true
-            Svc ->> Svc: Winner = POI có LocalAudio\n(tie-break: khoảng cách gần nhất)
-        else Tất cả cùng HasLocalAudio
-            Svc ->> Svc: Winner = POI gần nhất
-        end
-    else POI đơn độc ở Priority cao nhất
-        Svc ->> Svc: Winner = POI đó
-    end
+    API ->> API: Haversine filter trong ActivationRadius
+    API ->> API: Lọc cooldown (theo CooldownOverrides)
+    Note over API: Bước sort giống GeofenceService mobile: OrderByDescending(Priority), ThenByDescending(HasLocalAudio), ThenBy(Distance)
+    API ->> API: Xác định decisionTier (Tier1_Priority / Tier2_HasLocalAudio / Tier3_Distance / Trivial_OnlyOne)
 
-    Svc -->> API: { winner, allPois, decisionLog[] }
-    API -->> SimPage: 200 { result }
-    SimPage -->> Admin: Render map + winner highlight\n+ bảng decision log từng bước
+    API -->> SimPage: 200 SimulateResponse (winner, candidates, sortingTrace)
+    SimPage -->> Admin: Render map + winner + trace
 ```
 
 ---
@@ -2140,21 +2140,21 @@ sequenceDiagram
     participant API as LocationLogController (C)
     participant Queue as ILocationQueue (C)
     participant Worker as LocationQueueHostedService (C)
-    participant DB as AppDbContext (E)
+    participant Repo as ILocationLogRepository
 
     Admin ->> Demo: Nhập Device ID + số lần gửi + interval
     
     loop N lần (configurable)
-        Demo ->> API: POST /api/mobile/location-log\n{ deviceId, lat, lng, timestamp }
+        Demo ->> API: POST /api/mobile/location-log\n{ deviceId, points: [{ latitude, longitude, timestamp }] }
         API ->> Queue: QueueLocationAsync(locationLog)
         Queue -->> API: queued
-        API -->> Demo: 200 OK (nhanh, không block)
+        API -->> Demo: 202 Accepted (không block)
     end
 
     note over Worker: Worker drain queue: batch ≤1000 items hoặc timeout 5 giây
-    Worker ->> Queue: ReadAsync() batch
-    Worker ->> DB: INSERT INTO LocationLogs (bulk)
-    DB -->> Worker: saved
+    Worker ->> Queue: ReadAsync() (tích lũy batch)
+    Worker ->> Repo: CreateBatchAsync(batch)
+    Repo -->> Worker: completed
 
     Demo -->> Admin: Hiển thị throughput stats\n(sent / queued / flushed)
 ```
@@ -2163,88 +2163,57 @@ sequenceDiagram
 
 ### 10.28. ListenHistory Queue — Luồng Ghi Lịch Sử Nghe (⚙️ Backend)
 
-> **Codebase:** `ListenHistoryQueue.cs` (in-memory `Channel<T>`, capacity 2000) + `ListenHistoryHostedService.cs` (batch ≤20, timeout 5s)
+
 
 ```mermaid
 sequenceDiagram
-    participant Mobile as 📱 Mobile App
+    participant Mobile as Mobile (ApiService)
     participant ListenCtrl as ListenHistoryController
     participant ListenQ as IListenHistoryQueue
-    participant Channel as Channel<ListenHistory> (in-memory)
     participant Worker as ListenHistoryHostedService
-    participant DB as AppDbContext
+    participant Repo as IListenHistoryRepository
 
-    Note over Mobile,ListenCtrl: Khi du khách rời geofence POI
-    Mobile ->> ListenCtrl: POST /api/mobile/listen-history\n{ deviceId, poiId, duration }
-    ListenCtrl ->> ListenQ: QueueListenHistoryAsync(listenHistory)
-    ListenQ ->> Channel: TryWrite(item)
-    Note over Channel: Bounded capacity 2000\nnon-blocking write
-    Channel -->> ListenQ: written
-    ListenCtrl -->> Mobile: 202 Accepted (không block)
+    Note over Mobile,ListenCtrl: PostListenHistoryAsync sau khi phát audio kết thúc (PlaybackEnded)
+    Mobile ->> ListenCtrl: POST /api/mobile/listen-history\n{ deviceId, poiId, listenDuration }
+    ListenCtrl ->> ListenQ: QueueListenHistoryAsync(entry)
+    ListenCtrl -->> Mobile: 202 Accepted
 
-    Note over Worker: Chạy liên tục trong background (IHostedService)
-    loop Background drain loop
-        Worker ->> Channel: ReadAsync() — blocking wait
-        Channel -->> Worker: item (khi có)
-        Worker ->> Worker: Tích lũy batch items
-        
-        alt Đủ 20 items HOẶC timeout 5 giây
-            Worker ->> DB: CreateBatchAsync(batch)
-            DB -->> Worker: saved
-            Worker ->> Worker: Reset batch
-        end
+    loop ListenHistoryHostedService (batch ≤20, timeout 5s)
+        Worker ->> ListenQ: ReadAsync()
+        ListenQ -->> Worker: ListenHistory item(s)
+        Worker ->> Repo: CreateBatchAsync(batch)
+        Repo -->> Worker: completed
+        Worker ->> Worker: batch.Clear()
     end
 ```
 
 ---
 
-### 10.29. RabbitMQ Location Queue — Kiến Trúc 4 Tầng (⚙️ Backend)
+### 10.29. RabbitMQ Location Queue — Tương tác tóm tắt (⚙️ Backend)
 
-> **Codebase:** `RabbitMQLocationQueue.cs` + `LocationQueueHostedService.cs`  
-> Dùng RabbitMQ thay vì in-memory Channel vì LocationLog có throughput cao hơn nhiều (realtime GPS mọi thiết bị).
 
 ```mermaid
 sequenceDiagram
-    participant API as HTTP Thread\n(LocationLogController)
-    participant WriteBuf as _writeBuffer\n(Channel<LocationLog>)
-    participant PubLoop as PublishLoopAsync\n(1 background thread)
-    participant RMQ as RabbitMQ Broker\n(Docker)
-    participant Consumer as EventingBasicConsumer\n(callback thread)
-    participant Semaphore as _readReady\n(SemaphoreSlim)
-    participant Worker as LocationQueueHostedService\n(IHostedService)
-    participant DB as AppDbContext
+    participant API as LocationLogController
+    participant LocQ as RabbitMQLocationQueue\n(ILocationQueue)
+    participant RMQ as RabbitMQ Broker
+    participant Worker as LocationQueueHostedService
+    participant Repo as ILocationLogRepository
 
-    Note over API,WriteBuf: Tầng 1 — HTTP thread KHÔNG block
-    API ->> WriteBuf: TryWrite(locationLog)
-    Note over WriteBuf: Capacity 50,000\nNon-blocking
-    WriteBuf -->> API: written
-    API -->> API: 202 Accepted (return ngay)
+    API ->> LocQ: QueueLocationAsync(locationLog)
+    LocQ -->> API: Đã enqueue (HTTP trả 202 Accepted)
 
-    Note over PubLoop,RMQ: Tầng 2 — Publisher Loop (1 thread duy nhất → thread-safe)
-    loop PublishLoopAsync
-        PubLoop ->> WriteBuf: ReadAsync() — blocking wait
-        WriteBuf -->> PubLoop: locationLog
-        PubLoop ->> RMQ: BasicPublish(body)\nwith prefetchCount=200
-        RMQ -->> PubLoop: ack
-    end
+    Note over LocQ,RMQ: Publish (RabbitMQ.Client) → queue `location_logs`
+    LocQ ->> RMQ: Message (GPS log)
 
-    Note over RMQ,Semaphore: Tầng 3 — Consumer Callback (khi RabbitMQ deliver message)
-    RMQ ->> Consumer: Received(message)
-    Consumer ->> Consumer: Deserialize → enqueue _localBuffer
-    Consumer ->> Semaphore: Release(1)
+    Note over RMQ,LocQ: Consumer (thư viện) nhận từ broker → LocQ phục vụ ReadAsync
+    RMQ -->> LocQ: Delivered messages
 
-    Note over Worker,DB: Tầng 4 — Worker drain vào DB
-    loop LocationQueueHostedService
-        Worker ->> Semaphore: WaitAsync() — blocking
-        Semaphore -->> Worker: signaled
-        Worker ->> Consumer: Dequeue từ _localBuffer
-        Worker ->> Worker: Tích lũy batch
-
-        alt batch ≥1000 HOẶC timeout 5 giây
-            Worker ->> DB: BulkInsertAsync(batch)
-            DB -->> Worker: saved
-            Worker ->> Worker: Reset batch
-        end
+    loop Batch ≤1000 hoặc timeout 5s
+        Worker ->> LocQ: ReadAsync()
+        LocQ -->> Worker: LocationLog
+        Worker ->> Repo: CreateBatchAsync(batch)
+        Repo -->> Worker: completed
     end
 ```
 
@@ -2915,12 +2884,12 @@ flowchart TD
     CALC_DIST --> IN_FENCE{Trong bán kính?}
     IN_FENCE -- Không --> EXCLUDE[Bỏ POI khỏi candidates]
     IN_FENCE -- Có --> ADD[Thêm vào candidates]
-    ADD --> SORT[Sort theo Priority ASC]
-    SORT --> GROUP{Nhiều POI cùng Priority min?}
-    GROUP -- Không --> WIN_SOLO[Winner = POI Priority cao nhất]
-    GROUP -- Có --> AUDIO{Có POI với LocalAudio?}
-    AUDIO -- Có --> WIN_AUDIO[Winner = POI LocalAudio\ngần nhất nếu tie]
-    AUDIO -- Không --> WIN_DIST[Winner = POI gần nhất]
+    ADD --> SORT[Sort Tier1 Priority DESC\nTier2 HasLocalAudio DESC\nTier3 Distance ASC]
+    SORT --> GROUP{Nhiều POI cùng Priority cao nhất?}
+    GROUP -- Không --> WIN_SOLO[Winner = POI duy nhất / không tranh chấp]
+    GROUP -- Có --> AUDIO{Cùng Priority — khác HasLocalAudio?}
+    AUDIO -- Có --> WIN_AUDIO[Winner = POI có HasLocalAudio\n(nếu vẫn hòa → gần hơn)]
+    AUDIO -- Không --> WIN_DIST[Winner = POI gần nhất (Tier3 Distance)]
     WIN_SOLO --> RESULT[Trả về winner + decisionLog]
     WIN_AUDIO --> RESULT
     WIN_DIST --> RESULT
@@ -2947,7 +2916,7 @@ flowchart TD
     QUEUE --> DONE_SEND{Còn lần gửi?}
     DONE_SEND -- Có --> WAIT[Delay interval] --> LOOP_START
     DONE_SEND -- Không --> STATS[Hiển thị: tổng gửi / thành công / thất bại]
-    STATS --> WORKER[Worker flush mỗi 3s / 50 items\nBulk INSERT vào DB]
+    STATS --> WORKER[LocationQueueHostedService:\nbatch ≤1000 hoặc timeout 5s →\nILocationLogRepository.CreateBatchAsync]
     WORKER --> END_NODE((◉))
 
     style START fill:#000,color:#fff,stroke:#000
