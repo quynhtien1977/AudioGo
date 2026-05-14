@@ -7,5 +7,6 @@ namespace Server.Repositories.Interfaces
         Task CreateBatchAsync(IEnumerable<LocationLog> logs);
         Task<List<LocationLog>> GetByDeviceAsync(string deviceId, int limit = 200);
         Task<List<(double Lat, double Lon, int Count)>> GetHeatmapAsync();
+        Task<List<(double Lat, double Lon, int Count)>> GetHeatmapByTimeAsync(string? date, int? hour);
     }
 }

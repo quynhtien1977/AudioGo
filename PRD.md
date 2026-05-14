@@ -1092,36 +1092,33 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant AdminUser as Owner / Admin
+    participant User as "Owner / Admin"
     participant LoginPage
-    participant AuthCtx as AuthContext (React)
-    participant API as axiosInstance
-    participant AuthCtrl as AuthController (Backend)
+    participant AuthCtx as "AuthContext (React)"
+    participant AuthCtrl as "AuthController (Backend)"
     participant AuthSvc as AuthService
 
-    AdminUser ->> LoginPage: submitLoginForm()
+    User ->> LoginPage: submitLoginForm()
     LoginPage ->> AuthCtx: login(username, password)
-    AuthCtx ->> API: login(username, password)
-    API ->> AuthCtrl: POST /api/auth/login
+    AuthCtx ->> AuthCtrl: POST /api/auth/login
     AuthCtrl ->> AuthSvc: LoginAsync(LoginRequest)
     AuthSvc -->> AuthCtrl: LoginResponse hoặc null
 
-    alt Xác thực thành công
+    alt [Xác thực thành công]
         Note over AuthSvc: BCrypt + JWT nằm trong AuthService / luồng login hiện tại
-        AuthCtrl -->> API: 200 OK + { token, role, accountId }
-        API -->> AuthCtx: token + role
+        AuthCtrl -->> AuthCtx: 200 OK + { token, role, accountId }
         AuthCtx ->> AuthCtx: persistAuthToken()
         AuthCtx -->> LoginPage: redirectByRole()
 
-        alt role == "Admin"
-            LoginPage -->> AdminUser: navigateToAdminDashboard()
-        else role == "Owner"
-            LoginPage -->> AdminUser: navigateToOwnerPoiList()
+        alt [role == "Admin"]
+            LoginPage -->> User: navigateToAdminDashboard()
+        else [role == "Owner"]
+            LoginPage -->> User: navigateToOwnerPoiList()
         end
-    else Sai thông tin
-        AuthCtrl -->> API: 401 Unauthorized
-        API -->> AuthCtx: returnUnauthorizedError()
-        AuthCtx -->> LoginPage: showInvalidCredentialsError()
+    else [Sai thông tin]
+        AuthCtrl -->> AuthCtx: 401 Unauthorized
+        AuthCtx -->> LoginPage: returnUnauthorizedError()
+        LoginPage -->> User: showInvalidCredentialsError()
     end
 ```
 
@@ -1132,11 +1129,11 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant User as Admin / Owner
-    participant CMS as Web CMS
+    participant CMS as Web CMS (POIPage)
     participant PoiCtrl as CmsPoiController
     participant DB as AppDbContext
 
-    User ->> CMS: openPoiManagementPage()
+    User ->> CMS: openPoiPage()
     CMS ->> PoiCtrl: GET /api/cms/pois
     PoiCtrl ->> DB: GetAllForCmsAsync()
     DB -->> PoiCtrl: returnPoiList()
@@ -1268,15 +1265,24 @@ sequenceDiagram
     participant Owner
     participant CMS as Web CMS (PricingPlansPage)
     participant SubCtrl as CmsSubscriptionController
-    participant SePayCtrl as SePayWebhookController
+    participant SubSvc as SubscriptionService
     participant DB as AppDbContext
 
     Owner ->> CMS: openPricingPlansPage()
     CMS ->> SubCtrl: GET /api/cms/subscriptions/plans
     SubCtrl ->> DB: GetPlans()
-    DB -->> SubCtrl: returnSubscriptionPlans()
+    DB -->> SubCtrl: List<SubscriptionPlan>
     SubCtrl -->> CMS: 200 OK + plans[]
+    
     CMS ->> SubCtrl: GET /api/cms/subscriptions/me
+    SubCtrl ->> SubSvc: GetActiveSubscriptionAsync(accountId)
+    SubSvc ->> DB: GetActiveSubscriptionAsync(accountId)
+    DB -->> SubSvc: OwnerSubscription (or null)
+    SubSvc -->> SubCtrl: OwnerSubscription
+    SubCtrl ->> SubSvc: GetCurrentPlanAsync(accountId)
+    SubSvc ->> DB: Accounts.Include().FirstOrDefaultAsync()
+    DB -->> SubSvc: SubscriptionPlan (or fallback basic)
+    SubSvc -->> SubCtrl: SubscriptionPlan
     SubCtrl -->> CMS: 200 OK + { currentPlan, activeSubscription }
     CMS -->> Owner: renderPlanComparison()
 ```
@@ -1365,31 +1371,41 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant Admin
-    participant CMS as Web CMS (Browser)
-    participant GalleryCtrl as CmsPoiGalleryController
+    participant CMS as Web CMS (POIDetailPage)
     participant MediaCtrl as MediaController
+    participant GalleryCtrl as CmsPoiGalleryController
     participant Blob as BlobStorageService
     participant DB as AppDbContext
 
-    Admin ->> CMS: uploadPoiGalleryImage()
-    CMS ->> GalleryCtrl: POST /api/cms/poi-gallery/{poiId}
-    GalleryCtrl ->> Blob: UploadAsync("images", path, file)
-    Blob -->> GalleryCtrl: imageUrl
-    GalleryCtrl ->> DB: CreateAsync()
-    GalleryCtrl -->> CMS: 201 Created + { imageId, imageUrl }
+    Admin ->> CMS: selectGalleryImage()
+    CMS ->> MediaCtrl: POST /api/cms/upload/image (file + folder="pois")
+    MediaCtrl ->> Blob: UploadAsync("images", path, file)
+    Blob -->> MediaCtrl: fileUrl
+    MediaCtrl -->> CMS: 200 OK + { url, fileName, size }
+
+    Admin ->> CMS: confirmGalleryImage()
+    CMS ->> GalleryCtrl: POST /api/cms/pois/{poiId}/gallery
+    Note over CMS,GalleryCtrl: { imageUrl: url, sortOrder: index }
+    GalleryCtrl ->> DB: Create(poiId, req)
+    DB -->> GalleryCtrl: saveCompleted()
+    GalleryCtrl -->> CMS: 201 Created + { imageId, imageUrl, sortOrder }
     CMS -->> Admin: renderUpdatedGallery()
 
     Admin ->> CMS: deletePoiGalleryImage()
-    CMS ->> GalleryCtrl: DELETE /api/cms/poi-gallery/{imageId}
-    GalleryCtrl ->> Blob: DeleteAsync(imageUrl)
-    GalleryCtrl ->> DB: DeleteAsync()
+    CMS ->> GalleryCtrl: DELETE /api/cms/pois/{poiId}/gallery/{imageId}
+    GalleryCtrl ->> DB: FirstOrDefaultAsync(imageId && poiId)
+    DB -->> GalleryCtrl: PoiGallery
+    GalleryCtrl ->> DB: Remove(image)
+    DB -->> GalleryCtrl: saveCompleted()
     GalleryCtrl -->> CMS: 204 No Content
+    CMS -->> Admin: renderGalleryUpdated()
 
-    Admin ->> CMS: Upload media chung (logo, thumbnail)
-    CMS ->> MediaCtrl: POST /api/cms/media
-    MediaCtrl ->> Blob: UploadAsync("media", path, file)
+    Admin ->> CMS: uploadMediaFile(logo/thumbnail)
+    CMS ->> MediaCtrl: POST /api/cms/upload/image (file + folder="media")
+    MediaCtrl ->> Blob: UploadAsync("images", path, file)
     Blob -->> MediaCtrl: fileUrl
     MediaCtrl -->> CMS: 200 OK + { url }
+    CMS -->> Admin: renderMediaUrl()
 ```
 
 ---
@@ -1499,12 +1515,12 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant Admin
-    participant CMS as Web CMS (Browser)
+    participant CMS as Web CMS (AccountPage)
     participant AccCtrl as CmsAccountController
     participant Repo as IAccountRepository
     participant DB as AppDbContext
 
-    Admin ->> CMS: openAccountManagementPage()
+    Admin ->> CMS: openAccountPage()
     CMS ->> AccCtrl: GET /api/cms/accounts
     AccCtrl ->> Repo: GetAllAsync()
     Repo ->> DB: GetAllAsync()
@@ -1536,14 +1552,13 @@ sequenceDiagram
     alt Không tìm thấy
         AccCtrl -->> CMS: 404 Not Found
     else Tìm thấy
-        AccCtrl ->> AccCtrl: applyAccountFieldUpdates()
         AccCtrl ->> Repo: UpdateAsync(existing)
         AccCtrl -->> CMS: 200 OK + UpdatedAccountDto
     end
 
     Admin ->> CMS: deleteAccount()
     CMS ->> AccCtrl: DELETE /api/cms/accounts/{id}
-    AccCtrl ->> Repo: DeleteAsync(id)
+    AccCtrl ->> Repo: DeleteAsync(id) - set isLocked = true
     alt Thành công
         AccCtrl -->> CMS: 204 No Content
     else Không tìm thấy
@@ -1556,12 +1571,12 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant Admin
-    participant CMS as Web CMS (Browser)
+    participant CMS as Web CMS (CategoryPage)
     participant CatCtrl as CmsCategoryController
     participant Repo as ICategoryRepository
     participant DB as AppDbContext
 
-    Admin ->> CMS: openCategoryManagementPage()
+    Admin ->> CMS: openCategoryPage()
     CMS ->> CatCtrl: GET /api/cms/categories
     CatCtrl ->> Repo: GetAllAsync()
     Repo -->> CatCtrl: returnCategoryList()
@@ -1611,7 +1626,7 @@ sequenceDiagram
     participant Trans as ITranslationService
     participant DB as AppDbContext
 
-    Admin ->> CMS: openTourManagementPage()
+    Admin ->> CMS: openTourPage()
     CMS ->> TourCtrl: GET /api/cms/tours
     TourCtrl ->> Repo: GetAllAsync()
     Repo -->> TourCtrl: returnTourList()
@@ -1700,7 +1715,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant Admin
-    participant CMS as Web CMS (Browser)
+    participant CMS as Web CMS (AccessCodePage)
     participant CodeCtrl as CmsAccessCodeController
     participant DB as AppDbContext
 
@@ -1713,7 +1728,7 @@ sequenceDiagram
 
     Admin ->> CMS: submitCreateAccessCodeBatch()
     CMS ->> CodeCtrl: POST /api/cms/accesscodes
-    CodeCtrl ->> CodeCtrl: generateRandomCodeBatch()
+    CodeCtrl ->> CodeCtrl: GenerateRandomCode()
     CodeCtrl ->> DB: CreateCodes()
     CodeCtrl -->> CMS: 200 OK + { message, codes[] }
     CMS -->> Admin: renderNewAccessCodes()

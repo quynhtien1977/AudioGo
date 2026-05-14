@@ -61,6 +61,32 @@ export const getHeatmap = async () => {
 }
 
 /**
+ * 🔥 Heatmap theo thời gian (ngày + giờ)
+ */
+export const getHeatmapByTime = async (date = null, hour = null) => {
+  try {
+    let url = `/heatmap-by-time`
+    const params = []
+    
+    if (date) params.push(`date=${encodeURIComponent(date)}`)
+    if (hour !== null && hour >= 0 && hour < 24) params.push(`hour=${hour}`)
+    
+    if (params.length > 0) {
+      url += `?${params.join('&')}`
+    }
+    
+    console.log(`📡 Calling heatmap-by-time API:`, url)
+    const res = await analyticsClient.get(url)
+    console.log(`📦 Heatmap response status:`, res.status, `Data count:`, res.data?.length || 0)
+    return res.data
+  } catch (error) {
+    console.error("❌ Error fetching heatmap by time:", error.response?.status, error.message)
+    console.error("Response data:", error.response?.data)
+    return []
+  }
+}
+
+/**
  * 🔥 Listen stats
  */
 export const getListenStats = async (days = null) => {

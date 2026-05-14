@@ -125,6 +125,18 @@ namespace Server.Controllers.Cms
             return Ok(points.Select(p => new HeatmapPointDto(p.Lat, p.Lon, p.Count)));
         }
 
+        /// <summary>Heatmap theo thời gian cụ thể (ngày + giờ).</summary>
+        /// <param name="date">Ngày (format: yyyy-MM-dd) - optional</param>
+        /// <param name="hour">Giờ (0-23) - optional</param>
+        [HttpGet("heatmap-by-time")]
+        public async Task<ActionResult<List<HeatmapPointDto>>> GetHeatmapByTime(
+            [FromQuery] string? date,
+            [FromQuery] int? hour)
+        {
+            var points = await _location.GetHeatmapByTimeAsync(date, hour);
+            return Ok(points.Select(p => new HeatmapPointDto(p.Lat, p.Lon, p.Count)));
+        }
+
         /// <summary>Thống kê tổng lượt nghe + biểu đồ theo ngày</summary>
         [HttpGet("listen-stats")]
         public async Task<ActionResult<DashboardStatsDto>> GetListenStats(
