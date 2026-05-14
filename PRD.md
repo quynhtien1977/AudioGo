@@ -1146,43 +1146,52 @@ sequenceDiagram
 
 ---
 
-
-
----
-
-### 10.21c. CMS — Admin Cập Nhật & Xóa POI (🌐 Web CMS — UC31)
-
+### 10.21c. CMS — Owner Gửi Yêu Cầu Cập Nhật POI (🌐 Web CMS — UC23, UC31)
 
 ```mermaid
 sequenceDiagram
-    participant Admin
+    participant Owner
     participant CMS as Web CMS (POIDetailPage)
     participant PoiCtrl as CmsPoiController
+    participant SvcReq as IPoiRequestService
     participant DB as AppDbContext
 
-    Note over Admin,CMS: Cập nhật POI (partial update — chỉ field có giá trị mới)
-    Admin ->> CMS: submitUpdatePoiForm()
-    CMS ->> PoiCtrl: PUT /api/cms/pois/{id}
-    PoiCtrl ->> DB: GetByIdForCmsAsync(id)
-    DB -->> PoiCtrl: existing Poi (kể cả inactive)
-    PoiCtrl ->> PoiCtrl: apply changed fields only
-    Note over PoiCtrl: lat/lon/radius/priority/logoUrl/isActive
-    PoiCtrl ->> DB: UpdateAsync(existing)
-    DB -->> PoiCtrl: updated Poi
-    PoiCtrl -->> CMS: 200 OK + updated Poi
-    CMS -->> Admin: renderUpdatedPoi()
+    Owner ->> CMS: submitUpdatePoiForm()
+    CMS ->> PoiCtrl: POST /api/cms/pois/requests
+    Note over PoiCtrl: actionType=UPDATE, draft=UpdatedPoiDraftDto
+    PoiCtrl ->> SvcReq: SubmitPoiRequestAsync(accountId, req)
+    SvcReq ->> DB: SubmitPoiRequestAsync(accountId, req)
+    DB -->> SvcReq: saveCompleted()
+    SvcReq -->> PoiCtrl: requestId
+    PoiCtrl -->> CMS: 201 Created + { message, requestId }
+    CMS -->> Owner: showUpdateRequestSubmittedMessage()
+```
 
-    Note over Admin,CMS: Xóa POI (hard delete)
-    Admin ->> CMS: confirmDeletePoi()
-    CMS ->> PoiCtrl: DELETE /api/cms/pois/{id}
-    PoiCtrl ->> DB: DeleteAsync(id)
-    alt Tìm thấy & xóa được
-        DB -->> PoiCtrl: true
-        PoiCtrl -->> CMS: 204 No Content
-    else Không tìm thấy
-        DB -->> PoiCtrl: false
-        PoiCtrl -->> CMS: 404 Not Found
-    end
+---
+
+### 10.21c. CMS — Owner Gửi Yêu Cầu Xóa POI (🌐 Web CMS — UC23, UC31)
+
+```mermaid
+sequenceDiagram
+    participant Owner
+    participant CMS as Web CMS (POIPage)
+    participant PoiCtrl as CmsPoiController
+    participant SvcReq as IPoiRequestService
+    participant DB as AppDbContext
+
+    Owner ->> CMS: selectPoiAndClickDelete()
+    CMS -->> Owner: showDeleteConfirmationDialog()
+    Owner ->> CMS: confirmDeleteRequest()
+    
+    CMS ->> PoiCtrl: POST /api/cms/pois/requests
+    Note over PoiCtrl: actionType=DELETE, draft=null
+    PoiCtrl ->> SvcReq: SubmitPoiRequestAsync(accountId, req)
+    SvcReq ->> DB: SubmitPoiRequestAsync(accountId, req)
+    DB -->> SvcReq: saveCompleted(accountId, req)
+    
+    SvcReq -->> PoiCtrl: requestId
+    PoiCtrl -->> CMS: 201 Created + { message, requestId }
+    CMS -->> Owner: showDeleteRequestSubmittedMessage()
 ```
 
 ---
