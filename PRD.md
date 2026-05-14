@@ -309,7 +309,7 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò chuẩn hóa mọi yêu c
 
 ### 5.3. Sơ Đồ Cơ Sở Dữ Liệu (Schema & ERD)
 
-![Sơ Đồ Schema](./public/img/Schema.jpg)
+![Sơ Đồ Schema](./public/img/Schema.png)
 
 ![Sơ Đồ ERD](./public/img/ERD.png)
 
@@ -591,247 +591,17 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò chuẩn hóa mọi yêu c
 
 ### 9.1. Usecase — Du Khách (Guest / Mobile App)
 
-
-```mermaid
-flowchart LR
-    Guest["Du Khách\n(Guest)"]
-
-    subgraph MOBILE["📱 Mobile App — .NET MAUI"]
-        direction TB
-
-        subgraph GRP_ONBOARD["Onboarding"]
-            UC2(["Quét mã QR kích hoạt"])
-            UC3(["Đồng bộ dữ liệu"])
-        end
-
-        subgraph GRP_PAYMENT["Thanh Toán"]
-            UC18(["Thanh toán online VietQR"])
-        end
-
-        subgraph GRP_MAP["Bản đồ"]
-            UC4(["Xem bản đồ POI"])
-            UC5(["Tự động phát audio"])
-            UC6(["Điều khiển Mini-Player"])
-        end
-
-        subgraph GRP_SEARCH["Khám phá"]
-            UC7(["Tìm kiếm POI"])
-            UC8(["Lọc POI theo Category"])
-        end
-
-        subgraph GRP_DETAIL["Chi tiết POI"]
-            UC9(["Xem thông tin POI"])
-            UC10(["Xem gallery ảnh"])
-            UC11(["Nghe audio theo ngôn ngữ"])
-        end
-
-        subgraph GRP_TOUR["Tour"]
-            UC12(["Xem danh sách Tour"])
-            UC13(["Xem lộ trình & POI steps"])
-        end
-
-        subgraph GRP_SETTINGS["Cài đặt"]
-            UC14(["Chọn ngôn ngữ"])
-            UC15(["Đồng bộ dữ liệu "])
-        end
-
-        subgraph GRP_BG["Nền — Background"]
-            UC16(["Ghi Listen History"])
-            UC16n(["(qua in-memory Channel, batch 20)"])
-            UC17(["Gửi GPS Location Log"])
-            UC17n(["(qua RabbitMQ, batch 1000)"])
-            UC19(["Kết nối SignalR"])
-        end
-    end
-
-    Guest --> UC2
-    Guest --> UC3
-    Guest --> UC18
-    Guest --> UC4
-    Guest --> UC5
-    Guest --> UC6
-    Guest --> UC7
-    Guest --> UC8
-    Guest --> UC9
-    Guest --> UC10
-    Guest --> UC11
-    Guest --> UC12
-    Guest --> UC13
-    Guest --> UC14
-    Guest --> UC15
-```
-
----
+![Usecase Du Khách](./public/img/usecase_guest.drawio.png)
 
 ### 9.2. Usecase — Chủ Quán (POI Owner / Web CMS)
 
 
-```mermaid
-flowchart LR
-    Owner["Chủ Quán\n(POI Owner)"]
-
-    subgraph CMS["🌐 Web CMS — Khu vực Owner"]
-        direction TB
-
-        subgraph GRP_AUTH["Xác thực"]
-            UC20(["Đăng nhập CMS"])
-        end
-
-        subgraph GRP_POI["Yêu Cầu POI"]
-            UC21(["Xem danh sách POI"])
-            UC22(["Gửi yêu cầu TẠO POI"])
-            UC23(["Gửi yêu cầu SỬA POI"])
-            UC24(["Upload logo/gallery"])
-        end
-
-        subgraph GRP_CONTENT["Nội dung đa ngôn ngữ"]
-            UC26(["Xem nội dung theo ngôn ngữ"])
-            UC28(["Upload audio thủ công"])
-        end
-
-        subgraph GRP_SUB["Gói Dịch Vụ"]
-            UC25(["Xem các gói subscription"])
-            UC29(["Thanh toán nâng gói VietQR"])
-            UC29b(["Poll xác nhận kết quả thanh toán"])
-        end
-
-        subgraph GRP_DASHBOARD["Cá nhân & Thống kê"]
-            UC30b(["Xem Dashboard"])
-            UC31b(["Xem/sửa hồ sơ"])
-        end
-    end
-
-    Owner --> UC20
-    Owner --> UC21
-    Owner --> UC22
-    Owner --> UC23
-    Owner --> UC24
-    Owner --> UC25
-    Owner --> UC26
-    Owner --> UC28
-    Owner --> UC29
-    Owner --> UC29b
-    Owner --> UC30b
-    Owner --> UC31b
-```
-
----
-
-### 9.3. Usecase — Admin (Web CMS — Quản Trị & Nội Dung)
+![Usecase Chủ Quán](./public/img/usecase_poi_owner.drawio.png)
 
 
-```mermaid
-flowchart LR
-    Admin["Admin"]
+### 9.3. Usecase — Admin 
 
-    subgraph CMS["🌐 Web CMS — Quản Trị & Nội Dung"]
-        direction TB
-
-        subgraph GRP_POIREQ["Duyệt Yêu Cầu POI"]
-            UC32(["Xem request PENDING"])
-            UC33(["Duyệt CREATE request"])
-            UC34(["Duyệt UPDATE request"])
-            UC35b(["Duyệt DELETE request"])
-        end
-
-        subgraph GRP_POI["Quản lý POI trực tiếp"]
-            UC30(["Xem POI"])
-            UC31(["Ẩn hiện POI"])
-        end
-
-        subgraph GRP_CONTENT["Bản dịch & Audio"]
-            UC37(["Dịch + TTS toàn bộ 7 ngôn ngữ tự động"])
-        end
-
-        subgraph GRP_MGMT["Quản trị hệ thống"]
-            UC39(["CRUD tài khoản"])
-            UC40(["CRUD danh mục"])
-            UC41(["CRUD Tour & StepOrder"])
-        end
-
-        subgraph GRP_SUB["Subscription & Thanh Toán"]
-            UC44(["Quản lý subscription Owner"])
-            UC45(["Gán gói thủ công"])
-            UC46(["Xem lịch sử giao dịch"])
-        end
-
-        subgraph GRP_ANALYTICS["Phân tích dữ liệu"]
-            UC42(["Xem Dashboard"])
-            UC43(["Xem Analytics Phân tích"])
-        end
-    end
-
-    Admin --> UC30
-    Admin --> UC31
-    Admin --> UC32
-    Admin --> UC33
-    Admin --> UC34
-    Admin --> UC35b
-    Admin --> UC37
-    Admin --> UC39
-    Admin --> UC40
-    Admin --> UC41
-    Admin --> UC42
-    Admin --> UC43
-    Admin --> UC44
-    Admin --> UC45
-    Admin --> UC46
-```
-
-
----
-
-### 9.4. Usecase — Admin (Web CMS — Giám Sát Thiết Bị & Mã QR)
-
-
-
-```mermaid
-flowchart LR
-    Admin["Admin"]
-    MobileApp["Mobile App\n(system)"]
-
-    subgraph CMS["🌐 Web CMS — Giám Sát & Truy Cập"]
-        direction TB
-
-        subgraph GRP_TRACK["Giám sát Real-time "]
-            UC50(["Xem bản đồ vị trí thiết bị"])
-            UC51(["Nhận cảnh báo Online / Offline"])
-            UC52(["Xem danh sách thiết bị kết nối"])
-        end
-
-        subgraph GRP_ACTIVITY["Hoạt động thiết bị "]
-            UC53(["Xem timeline hoạt động"])
-            UC54(["Xem lộ trình GPS & lịch sử nghe"])
-        end
-
-        subgraph GRP_QR["Quản lý mã QR "]
-            UC56(["Xem danh sách mã QR"])
-            UC57(["Tạo batch mã QR 1–100"])
-            UC58(["Xóa mã QR"])
-        end
-
-        subgraph GRP_DEMO["Giả lập & Debug"]
-            UC59(["Giả lập thiết bị gửi GPS"])
-            UC60(["Giả lập tranh chấp"])
-        end
-    end
-
-    Admin --> UC50
-    Admin --> UC51
-    Admin --> UC52
-    Admin --> UC53
-    Admin --> UC54
-    Admin --> UC56
-    Admin --> UC57
-    Admin --> UC58
-    Admin --> UC59
-    Admin --> UC60
-
-    MobileApp --> UC50
-    MobileApp --> UC51
-```
-
----
+![Usecase Admin](./public/img/usecase_admin.drawio.png)
 
 ## 🔄 10. SƠ ĐỒ TRÌNH TỰ (SEQUENCE DIAGRAMS)
 
@@ -908,7 +678,6 @@ sequenceDiagram
 
     MainVM ->> MainVM: InitAsync()
     MainVM ->> SyncSvc: GetPoisAsync(CurrentLanguage)
-    Note over SyncSvc: Offline-first: SQLite trước; có mạng có thể refresh nền (RefreshFromServerAsync / ReplaceMetadataAsync → SavePoiAsync, DeletePoiAsync)
     MainVM ->> GeoSvc: StartMonitoringAsync(Pois)
     MainVM ->> LocSvc: StartAsync()
     MainVM ->> SigR: StartAsync()
@@ -925,7 +694,7 @@ sequenceDiagram
     participant MobileUser as Người dùng
     participant MapPage
     participant MapVM as MapViewModel
-    participant MainVM as MainViewModel
+    
 
     MobileUser ->> MapPage: openMapPage()
     MapPage ->> MapVM: LoadPois(MainVM.Pois)
@@ -944,9 +713,6 @@ sequenceDiagram
     participant MainVM as MainViewModel
     participant GeoSvc as GeofenceService
     participant AudioSvc as AudioService
-    participant API as ApiService
-    participant ListenCtrl as ListenHistoryController
-    participant ListenQ as IListenHistoryQueue
     participant SigR as SignalRService
     participant Hub as DeviceHub
     participant LocQ as ILocationQueue
@@ -967,13 +733,8 @@ sequenceDiagram
         Hub ->> LocQ: QueueLocationAsync(LocationLog)
     end
 
-    Note over MainVM,ListenQ: Listen history sau khi nghe xong (không phải khi rời geofence)
     MainVM ->> MainVM: PlaybackStateChanged(PlaybackEnded)
     MainVM ->> MainVM: PostListenHistoryFireAndForgetAsync(poiId, durationSec)
-    MainVM ->> API: PostListenHistoryAsync(poiId, deviceId, durationSeconds)
-    API ->> ListenCtrl: POST /api/mobile/listen-history
-    ListenCtrl ->> ListenQ: QueueListenHistoryAsync(ListenHistory)
-    ListenCtrl -->> API: 202 Accepted
 ```
 
 ---
@@ -1323,18 +1084,7 @@ sequenceDiagram
     end
 ```
 
----
 
-### 10.19. Mobile Kết Nối SignalR Real-Time (📱 Mobile — UC19)
-
-
-**Tóm tắt luồng Mobile:**
-1. `MainViewModel` → `SignalRService.StartAsync()` → Kết nối `DeviceHub` với JWT GuestApp
-2. `OnConnectedAsync()` → `DevicePresenceService.MarkOnline(connectionId, deviceId)` → Broadcast `deviceOnline` đến Admin CMS
-3. Loop GPS: `InvokeAsync("SendLocationUpdate", lat, lng)` → `QueueLocationAsync()` → RabbitMQ
-4. `OnDisconnectedAsync()` → `MarkOffline()` → Broadcast `deviceOffline`
-
----
 
 ### 10.20. CMS — Đăng Nhập (🌐 Web CMS — UC20)
 
@@ -1928,7 +1678,6 @@ sequenceDiagram
     loop Định kỳ GPS polling
         Mobile ->> Hub: SendLocationUpdate(lat, lon)
         Hub ->> Queue: QueueLocationAsync(LocationLog)
-        Note over Queue: RabbitMQ; consumer hosted service ghi DB — không gọi trực tiếp từ Hub
         Hub ->> Admin: broadcastLocationUpdated()
     end
 
@@ -2004,7 +1753,6 @@ sequenceDiagram
     SubCtrl ->> DB: SubscriptionPlans.FindAsync(planId)
     SubCtrl ->> DB: PaymentTransactions.Add(tx) + SaveChangesAsync()
     SubCtrl ->> SubSvc: ActivateSubscriptionAsync(accountId, planId, transactionId)
-    Note over SubSvc,DB: Hủy ACTIVE cũ (CANCELLED); tạo OwnerSubscription mới; cập nhật Account.SubscriptionPlanId; SaveChangesAsync; nếu downgrade gói → DowngradePoiPriorityAsync (cập nhật Priority POI)
     SubSvc -->> SubCtrl: OwnerSubscription
     SubCtrl ->> DB: SaveChangesAsync() (gắn SubscriptionId vào tx)
     SubCtrl -->> SubPage: 200 OK + { message, subscriptionId, transactionId, endDate }
