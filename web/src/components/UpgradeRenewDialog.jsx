@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { AlertCircle, CheckCircle, X } from 'lucide-react'
-import { format } from 'date-fns'
-import { vi } from 'date-fns/locale'
+import { formatDateVN } from '@/utils/formatDate'
 
 /**
  * UpgradeRenewDialog - Modal for upgrading or renewing subscription
@@ -87,7 +86,7 @@ export const UpgradeRenewDialog = ({
                   </p>
                   <p className="text-sm text-gray-600 mt-1">
                     {currentPlan?.name || 'Gói tiêu chuẩn'} 
-                    {!isExpired && ` - Hết hạn: ${format(new Date(subscription.expirationDate), 'dd/MM/yyyy', { locale: vi })}`}
+                    {!isExpired && ` - Hết hạn: ${formatDateVN(subscription.expirationDate, false)}`}
                   </p>
                 </div>
               </div>

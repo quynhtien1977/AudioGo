@@ -45,23 +45,33 @@ namespace Server.Repositories
         {
             var query = _db.LocationLogs.AsNoTracking();
 
-            // Lọc theo ngày (so sánh Year/Month/Day để tránh timezone issue)
-            if (!string.IsNullOrEmpty(date) && DateTime.TryParse(date, out var parsedDate))
-            {
-                var targetYear = parsedDate.Year;
-                var targetMonth = parsedDate.Month;
-                var targetDay = parsedDate.Day;
-                
-                query = query.Where(l => 
-                    l.Timestamp.Year == targetYear && 
-                    l.Timestamp.Month == targetMonth && 
-                    l.Timestamp.Day == targetDay);
-            }
+            DateTime parsedDate = default;
+            bool hasDate = !string.IsNullOrEmpty(date) && DateTime.TryParse(date, out parsedDate);
+            bool hasHour = hour.HasValue && hour.Value >= 0 && hour.Value < 24;
 
-            // Lọc theo giờ
-            if (hour.HasValue && hour.Value >= 0 && hour.Value < 24)
+            if (hasDate && hasHour)
             {
-                query = query.Where(l => l.Timestamp.Hour == hour.Value);
+                // Tối ưu SARGable query khi có cả ngày và giờ
+                // Giờ Việt Nam (UTC+7), dịch về UTC để so sánh chuẩn với db
+                var vnStartTime = new DateTime(parsedDate.Year, parsedDate.Month, parsedDate.Day, hour.Value, 0, 0, DateTimeKind.Unspecified);
+                var utcStartTime = vnStartTime.AddHours(-7);
+                var utcEndTime = utcStartTime.AddHours(1);
+
+                query = query.Where(l => l.Timestamp >= utcStartTime && l.Timestamp < utcEndTime);
+            }
+            else if (hasDate)
+            {
+                // Chỉ có ngày (lấy trọn 1 ngày theo giờ VN)
+                var vnStartTime = new DateTime(parsedDate.Year, parsedDate.Month, parsedDate.Day, 0, 0, 0, DateTimeKind.Unspecified);
+                var utcStartTime = vnStartTime.AddHours(-7);
+                var utcEndTime = utcStartTime.AddDays(1);
+
+                query = query.Where(l => l.Timestamp >= utcStartTime && l.Timestamp < utcEndTime);
+            }
+            else if (hasHour)
+            {
+                // Chỉ có giờ nhưng lấy mọi ngày, dùng AddHours để dịch Timestamp DB sang giờ VN
+                query = query.Where(l => l.Timestamp.AddHours(7).Hour == hour.Value);
             }
 
             return await query

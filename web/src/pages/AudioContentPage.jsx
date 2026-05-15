@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from "react";
 import { Headphones, Play, Pause, RefreshCw, Search, ChevronDown, ChevronUp, Languages, ChevronLeft, ChevronRight } from "lucide-react";
-import { format } from "date-fns";
+import { formatDateVN } from "@/utils/formatDate";
 import { audioContentApi } from "../api/audioContentApi";
 import { SearchContext } from "@/context/SearchContext";
 
@@ -196,7 +196,7 @@ export default function AudioContentPage() {
 
                                         {/* CREATED AT */}
                                         <div className="text-center text-xs text-gray-500 font-normal">
-                                            {c.createdAt ? format(new Date(c.createdAt), "dd/MM/yyyy") : "-"}
+                                            {c.createdAt ? formatDateVN(c.createdAt, false) : "-"}
                                         </div>
 
                                         {/* ACTION (EXPAND) */}
@@ -230,7 +230,7 @@ export default function AudioContentPage() {
                                                                 {t.languageCode}
                                                             </span>
                                                             <span className="text-xs text-gray-400 mt-1">
-                                                                {t.createdAt ? format(new Date(t.createdAt), "dd/MM/yyyy") : "-"}
+                                                                {t.createdAt ? formatDateVN(t.createdAt, false) : "-"}
                                                             </span>
                                                         </div>
 

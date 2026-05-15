@@ -26,12 +26,11 @@ L.Marker.prototype.options.icon = DefaultIcon;
 
 const DAYS_OPTIONS = [1, 3, 7, 14, 30]
 
+import { formatDateVN } from '../utils/formatDate'
+
 const formatTime = (ts) => {
   if (!ts) return '—'
-  return new Date(ts).toLocaleString('vi-VN', {
-    hour: '2-digit', minute: '2-digit', second: '2-digit',
-    day: '2-digit', month: '2-digit', year: 'numeric'
-  })
+  return formatDateVN(ts, true)
 }
 
 const formatDuration = (sec) => {

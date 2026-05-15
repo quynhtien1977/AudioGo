@@ -1,5 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+import { parseUTC, formatDateVN, getRelativeTime } from "../utils/formatDate";
+
 export default function DeviceTrackingTable({
   data = [],
   isLoading = false,
@@ -9,43 +11,6 @@ export default function DeviceTrackingTable({
   totalItems = 0,
 }) {
   const totalPages = Math.ceil(totalItems / pageSize);
-
-  // ✅ Parse UTC timestamp đúng cách
-  // DB lưu DateTime.UtcNow dạng "2026-04-23T08:00:00" (không có Z)
-  // → browser sẽ hiểu là local time nếu không có Z → lệch múi giờ
-  // → thêm Z để force parse as UTC
-  const parseUTC = (timestamp) => {
-    if (!timestamp) return new Date(0)
-    const s = String(timestamp)
-    // Nếu chưa có Z hoặc +offset thì thêm Z
-    return new Date(s.endsWith("Z") || s.includes("+") ? s : s + "Z")
-  }
-
-  // ✅ FORMAT DATE
-  const formatTimestamp = (timestamp) => {
-    const date = parseUTC(timestamp)
-    return date.toLocaleString("vi-VN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    })
-  }
-
-  // ✅ RELATIVE TIME (so sánh UTC với UTC)
-  const getRelativeTime = (timestamp) => {
-    const now = new Date()
-    const date = parseUTC(timestamp)
-    const diffMs = now - date
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMs / 3600000)
-    const diffDays = Math.floor(diffMs / 86400000)
-
-    if (diffMins < 1) return "vừa xong"
-    if (diffMins < 60) return `${diffMins} phút trước`
-    if (diffHours < 24) return `${diffHours} giờ trước`
-    if (diffDays < 7) return `${diffDays} ngày trước`
-    return formatTimestamp(timestamp)
-  }
 
   // ✅ ONLINE = hoạt động trong 5 phút gần nhất (UTC-aware)
   const isOnline = (timestamp) => {

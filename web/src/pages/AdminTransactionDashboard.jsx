@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { DollarSign, CheckCircle, AlertCircle, RotateCw } from 'lucide-react'
 import * as subscriptionApi from '../api/subscriptionApi'
-import { format } from 'date-fns'
-import { vi } from 'date-fns/locale'
+import { formatDateVN } from '../utils/formatDate'
 import toast from 'react-hot-toast'
 
 /**
@@ -214,7 +213,7 @@ export const AdminTransactionDashboard = () => {
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600">
                           {tx.createdAt
-                            ? format(new Date(tx.createdAt), 'dd/MM/yyyy HH:mm', { locale: vi })
+                            ? formatDateVN(tx.createdAt, true)
                             : '-'}
                         </td>
                         <td className="px-6 py-4">

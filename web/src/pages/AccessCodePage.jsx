@@ -12,7 +12,7 @@ import {
     ChevronLeft,
     ChevronRight
 } from "lucide-react";
-import { format } from "date-fns";
+import { formatDateVN } from "@/utils/formatDate";
 import { accessCodeApi } from "../api/accessCodeApi";
 import ConfirmModal from "@/components/ConfirmModal";
 
@@ -253,17 +253,17 @@ export default function AccessCodePage() {
 
                                         {/* CREATED AT */}
                                         <div className="text-center text-sm text-gray-500">
-                                            {c.createdAt ? format(new Date(c.createdAt), "dd/MM/yyyy") : "-"}
+                                            {c.createdAt ? formatDateVN(c.createdAt, false) : "-"}
                                         </div>
 
                                         {/* ACTIVATED AT */}
                                         <div className="text-center text-sm text-gray-500">
-                                            {c.activatedAt ? format(new Date(c.activatedAt), "dd/MM/yyyy") : "-"}
+                                            {c.activatedAt ? formatDateVN(c.activatedAt, false) : "-"}
                                         </div>
 
                                         {/* EXPIRE AT */}
                                         <div className="text-center text-sm text-gray-500">
-                                            {c.expireAt ? format(new Date(c.expireAt), "dd/MM/yyyy") : "-"}
+                                            {c.expireAt ? formatDateVN(c.expireAt, false) : "-"}
                                         </div>
 
                                         {/* ACTION */}

@@ -1,5 +1,4 @@
-import { format } from 'date-fns'
-import { vi } from 'date-fns/locale'
+import { formatDateVN } from '@/utils/formatDate'
 
 /**
  * SubscriptionBadge - Displays current subscription status
@@ -37,7 +36,7 @@ export const SubscriptionBadge = ({ subscription, className = '' }) => {
       <div className="text-xs mt-1">
         {subscription.status === 'CANCELLED' 
           ? 'Đã hủy' 
-          : `${getStatusText()} • Hết hạn: ${format(new Date(subscription.expirationDate), 'dd/MM/yyyy', { locale: vi })}`
+          : `${getStatusText()} • Hết hạn: ${formatDateVN(subscription.expirationDate, false)}`
         }
       </div>
     </div>
