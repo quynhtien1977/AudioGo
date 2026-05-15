@@ -4,8 +4,8 @@ import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
 import 'leaflet.heat'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { Map as MapIcon, BarChart3, TrendingUp, Headphones } from 'lucide-react'
-import { getHeatmap, getListenStats } from '@/api/analyticsApi'
+import { Map as MapIcon, BarChart3, TrendingUp, Headphones, Clock, Calendar } from 'lucide-react'
+import { getHeatmap, getListenStats, getHeatmapByTime } from '@/api/analyticsApi'
 import { getAllPOIs } from '@/api/poiApi'
 
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -61,9 +61,16 @@ function HeatmapLayer({ points }) {
 
 export default function AnalyticsPage() {
   const [heatmapData, setHeatmapData] = useState([])
+  const [heatmapByTimeData, setHeatmapByTimeData] = useState([])
   const [statsData, setStatsData] = useState(null)
   const [poisData, setPoisData] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadingByTime, setLoadingByTime] = useState(false)
+  
+  // State cho Heatmap theo thời gian
+  const [viewMode, setViewMode] = useState('overview') // 'overview' hoặc 'by-time'
+  const [selectedDate, setSelectedDate] = useState('2026-05-02') // ✅ Default là ngày có data
+  const [selectedHour, setSelectedHour] = useState(null) // null = tất cả giờ, 0-23 = giờ cụ thể
 
   useEffect(() => {
     const loadData = async () => {
@@ -85,6 +92,28 @@ export default function AnalyticsPage() {
     
     loadData()
   }, [])
+
+  // Load heatmap theo thời gian khi có thay đổi
+  useEffect(() => {
+    if (viewMode === 'by-time') {
+      loadHeatmapByTime()
+    }
+  }, [selectedDate, selectedHour, viewMode])
+
+  const loadHeatmapByTime = async () => {
+    try {
+      setLoadingByTime(true)
+      console.log(`🔥 Loading heatmap for date: ${selectedDate}, hour: ${selectedHour}`)
+      const data = await getHeatmapByTime(selectedDate, selectedHour)
+      console.log(`✅ Heatmap data received:`, data)
+      setHeatmapByTimeData(data || [])
+    } catch (error) {
+      console.error("Lỗi tải heatmap theo thời gian", error)
+      setHeatmapByTimeData([])
+    } finally {
+      setLoadingByTime(false)
+    }
+  }
 
   // Chuẩn bị data cho biểu đồ cột
   const chartData = statsData?.dailyListens?.map(d => ({
@@ -174,13 +203,103 @@ export default function AnalyticsPage() {
 
       {/* HEATMAP SECTION */}
       <div style={{ backgroundColor: 'white', borderRadius: '1rem', border: '1px solid #e5e7eb', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-        <div style={{ padding: '1.5rem', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#4b5563', fontWeight: '600' }}>
-            <MapIcon size={20} className="text-red-500" /> Bản Đồ Nhiệt Mật Độ Di Chuyển (Heatmap)
+        <div style={{ padding: '1.5rem', borderBottom: '1px solid #e5e7eb' }}>
+          {/* Tiêu đề + Thông tin */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#4b5563', fontWeight: '600' }}>
+              <MapIcon size={20} className="text-red-500" /> Bản Đồ Nhiệt Mật Độ Di Chuyển (Heatmap)
+            </div>
+            <div style={{ fontSize: '0.85rem', color: '#6b7280', backgroundColor: '#f3f4f6', padding: '0.25rem 0.75rem', borderRadius: '1rem' }}>
+              {viewMode === 'overview' ? heatmapData.length : heatmapByTimeData.length} điểm tọa độ
+            </div>
           </div>
-          <div style={{ fontSize: '0.85rem', color: '#6b7280', backgroundColor: '#f3f4f6', padding: '0.25rem 0.75rem', borderRadius: '1rem' }}>
-            {heatmapData.length} điểm tọa độ
+
+          {/* Tab chọn view mode */}
+          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '1rem' }}>
+            <button
+              onClick={() => setViewMode('overview')}
+              style={{
+                padding: '0.75rem 1.5rem',
+                borderRadius: '0.5rem',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: '500',
+                fontSize: '0.95rem',
+                transition: 'all 0.2s',
+                backgroundColor: viewMode === 'overview' ? '#f472b6' : '#f3f4f6',
+                color: viewMode === 'overview' ? 'white' : '#6b7280',
+              }}
+            >
+              📊 Tổng Quan
+            </button>
+            <button
+              onClick={() => setViewMode('by-time')}
+              style={{
+                padding: '0.75rem 1.5rem',
+                borderRadius: '0.5rem',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: '500',
+                fontSize: '0.95rem',
+                transition: 'all 0.2s',
+                backgroundColor: viewMode === 'by-time' ? '#f472b6' : '#f3f4f6',
+                color: viewMode === 'by-time' ? 'white' : '#6b7280',
+              }}
+            >
+              ⏰ Theo Thời Gian
+            </button>
           </div>
+
+          {/* Controls cho chế độ theo thời gian */}
+          {viewMode === 'by-time' && (
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', backgroundColor: '#f9fafb', padding: '1rem', borderRadius: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Calendar size={18} style={{ color: '#6b7280' }} />
+                <label style={{ fontSize: '0.9rem', fontWeight: '500', color: '#374151' }}>Ngày:</label>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  style={{
+                    padding: '0.5rem 0.75rem',
+                    borderRadius: '0.375rem',
+                    border: '1px solid #d1d5db',
+                    fontSize: '0.9rem',
+                  }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Clock size={18} style={{ color: '#6b7280' }} />
+                <label style={{ fontSize: '0.9rem', fontWeight: '500', color: '#374151' }}>Giờ:</label>
+                <select
+                  value={selectedHour === null ? '' : selectedHour}
+                  onChange={(e) => setSelectedHour(e.target.value === '' ? null : parseInt(e.target.value))}
+                  style={{
+                    padding: '0.5rem 0.75rem',
+                    borderRadius: '0.375rem',
+                    border: '1px solid #d1d5db',
+                    fontSize: '0.9rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <option value="">Tất cả giờ</option>
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i} value={i}>
+                      {i.toString().padStart(2, '0')}:00 - {(i + 1).toString().padStart(2, '0')}:00
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ fontSize: '0.85rem', color: '#6b7280', marginLeft: 'auto' }}>
+                {selectedHour !== null 
+                  ? `${new Date(selectedDate).toLocaleDateString('vi-VN')} • Giờ ${selectedHour.toString().padStart(2, '0')}:00` 
+                  : `${new Date(selectedDate).toLocaleDateString('vi-VN')} • Toàn bộ ngày`
+                }
+              </div>
+            </div>
+          )}
         </div>
         
         <div style={{ height: '600px', width: '100%', position: 'relative', zIndex: 0 }}>
@@ -196,8 +315,11 @@ export default function AnalyticsPage() {
               url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
             />
             
-            {/* Heatmap Layer */}
-            {heatmapData.length > 0 && <HeatmapLayer points={heatmapData} />}
+            {/* Heatmap Layer - Overview */}
+            {viewMode === 'overview' && heatmapData.length > 0 && <HeatmapLayer points={heatmapData} />}
+            
+            {/* Heatmap Layer - By Time */}
+            {viewMode === 'by-time' && heatmapByTimeData.length > 0 && <HeatmapLayer points={heatmapByTimeData} />}
 
             {/* POI Markers */}
             {poisData.map(poi => (
@@ -214,6 +336,42 @@ export default function AnalyticsPage() {
               </Marker>
             ))}
           </MapContainer>
+
+          {/* Loading Overlay - By Time */}
+          {viewMode === 'by-time' && loadingByTime && (
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+              borderRadius: '0.5rem'
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ 
+                  width: '40px', 
+                  height: '40px', 
+                  border: '4px solid #f3f4f6', 
+                  borderTop: '4px solid #f472b6',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite',
+                  margin: '0 auto 1rem'
+                }} />
+                <p style={{ color: '#6b7280', fontSize: '0.95rem' }}>Đang tải dữ liệu...</p>
+              </div>
+            </div>
+          )}
+
+          <style>{`
+            @keyframes spin {
+              to { transform: rotate(360deg); }
+            }
+          `}</style>
         </div>
       </div>
 
