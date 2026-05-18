@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:maps="clr-namespace:Microsoft.Maui.Controls.Maps;assembly=Microsoft.Maui.Controls.Maps"
@@ -54,6 +54,76 @@
                         </Grid>
                     </Border>
 
+
+                    <!-- ── Khám phá theo chủ đề (Categories) ── -->
+                    <VerticalStackLayout Spacing="12" IsVisible="{Binding HasCategories}">
+                        <Label Text="{Binding CategoriesTitle}" Style="{StaticResource SectionTitle}"/>
+                        <CollectionView ItemsSource="{Binding Categories}"
+                                        ItemsLayout="HorizontalList"
+                                        HorizontalScrollBarVisibility="Never"
+                                        SelectionMode="None">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border StrokeShape="RoundRectangle 20"
+                                            Stroke="{StaticResource Primary}"
+                                            StrokeThickness="1"
+                                            BackgroundColor="{StaticResource Surface}"
+                                            Padding="16,8"
+                                            Margin="0,0,12,0">
+                                        <Label Text="{Binding Name}" 
+                                               TextColor="{StaticResource Primary}"
+                                               FontAttributes="Bold"
+                                               VerticalOptions="Center"/>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+
+                    <!-- ── Địa điểm nổi bật (Top POIs) ── -->
+                    <VerticalStackLayout Spacing="12" IsVisible="{Binding HasTopPois}">
+                        <Label Text="{Binding TopPoisTitle}" Style="{StaticResource SectionTitle}"/>
+                        <CollectionView ItemsSource="{Binding TopPois}"
+                                        ItemsLayout="HorizontalList"
+                                        HorizontalScrollBarVisibility="Never"
+                                        SelectionMode="None">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource CardBorder}" 
+                                            WidthRequest="220" 
+                                            HeightRequest="160"
+                                            Margin="0,0,16,10" 
+                                            Padding="0">
+                                        <Grid RowDefinitions="*,Auto">
+                                            <!-- POI Image with emoji fallback -->
+                                            <Grid Grid.Row="0">
+                                                <Border BackgroundColor="{StaticResource PrimaryLight}" StrokeThickness="0">
+                                                    <Label Text="&#xe0c8;" FontFamily="MaterialIcons" FontSize="40" TextColor="{StaticResource Primary}"
+                                                           HorizontalOptions="Center" VerticalOptions="Center"/>
+                                                </Border>
+                                                <Image Source="{Binding LogoUrl}" Aspect="AspectFill"/>
+                                            </Grid>
+                                            
+                                            <!-- Info overlay/bottom part -->
+                                            <Grid Grid.Row="1" BackgroundColor="{StaticResource Surface}" Padding="12">
+                                                <VerticalStackLayout Spacing="2">
+                                                    <Label Text="{Binding Title}" Style="{StaticResource SectionTitle}" FontSize="14" LineBreakMode="TailTruncation"/>
+                                                    <HorizontalStackLayout Spacing="4">
+                                                        <Label Text="&#xe838;" FontFamily="MaterialIcons" TextColor="{StaticResource Primary}" FontSize="12" VerticalOptions="Center"/>
+                                                        <Label Text="{Binding Priority}" Style="{StaticResource CaptionLabel}" VerticalOptions="Center"/>
+                                                    </HorizontalStackLayout>
+                                                </VerticalStackLayout>
+                                            </Grid>
+                                        </Grid>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding BindingContext.OpenPoiDetailCommand, Source={x:Reference ThisPage}}"
+                                                                  CommandParameter="{Binding .}"/>
+                                        </Border.GestureRecognizers>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
 
                     <!-- ── Điểm nổi bật gần bạn ── -->
                     <VerticalStackLayout Spacing="12">

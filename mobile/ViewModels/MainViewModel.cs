@@ -3,6 +3,7 @@ using AudioGo.Services;
 using AudioGo.Services.Interfaces;
 using AudioGo.ViewModels;
 using Shared;
+using Shared.DTOs;
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 
@@ -38,7 +39,21 @@ namespace AudioGo.ViewModels
             {
                 SetProperty(ref _pois, value);
                 UpdateNearbyPois();
+                UpdateTopPois();
             }
+        }
+
+        private void UpdateTopPois()
+        {
+            var top = _pois
+                .OrderByDescending(p => p.Priority)
+                .Take(5)
+                .ToList();
+
+            _topPois.Clear();
+            foreach (var p in top) _topPois.Add(p);
+
+            OnPropertyChanged(nameof(HasTopPois));
         }
 
         private void UpdateNearbyPois()
@@ -81,6 +96,9 @@ namespace AudioGo.ViewModels
         public string NearbyEmptyDesc => AppStrings.Get("nearby_empty_desc");
         public string MiniPlayerNowPlaying => AppStrings.Get("mini_playing");
         
+        public string TopPoisTitle => AppStrings.Get("top_pois_title");
+        public string CategoriesTitle => AppStrings.Get("categories_title");
+
         // Map Page Labels
         public string MapTitle => AppStrings.Get("map_title");
         public string MapListenLabel => AppStrings.Get("map_listen");
@@ -90,8 +108,16 @@ namespace AudioGo.ViewModels
         private ObservableCollection<POI> _nearbyPois = new();
         public ObservableCollection<POI> NearbyPois => _nearbyPois;
 
+        private ObservableCollection<POI> _topPois = new();
+        public ObservableCollection<POI> TopPois => _topPois;
+
+        private ObservableCollection<CategoryDto> _categories = new();
+        public ObservableCollection<CategoryDto> Categories => _categories;
+
         public bool HasNearbyPois => _nearbyPois.Count > 0;
         public bool NearbyEmpty   => _nearbyPois.Count == 0;
+        public bool HasTopPois    => _topPois.Count > 0;
+        public bool HasCategories => _categories.Count > 0;
         public bool HasActivePoi  => _activePoi is not null;
         public bool IsAudioPaused => !_audio.IsPlaying;
     /// <summary>Icon Material cho mini-player: pause khi đang phát, play khi dừng/paused.</summary>
@@ -183,12 +209,13 @@ namespace AudioGo.ViewModels
         }
 
         public async Task InitAsync()
-            {
-                IsLoading = true;
-                StatusMessage = AppStrings.Get("status_loading");
+        {
+            IsLoading = true;
+            StatusMessage = AppStrings.Get("status_loading");
             try
             {
                 Pois = await _sync.GetPoisAsync(CurrentLanguage);
+                await LoadCategoriesAsync();
                 await _geofence.StartMonitoringAsync(Pois);
                 await _location.StartAsync();
 
@@ -215,6 +242,21 @@ namespace AudioGo.ViewModels
             StartDeltaPolling();
         }
 
+        private async Task LoadCategoriesAsync()
+        {
+            try
+            {
+                var cats = await _sync.GetCategoriesAsync(CurrentLanguage);
+                _categories.Clear();
+                foreach (var c in cats) _categories.Add(c);
+                OnPropertyChanged(nameof(HasCategories));
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[MainViewModel] LoadCategories error: {ex.Message}");
+            }
+        }
+
                 public async Task ChangeLanguageAsync(string languageCode)
         {
             var normalized = LanguageHelper.NormalizeToSupported(languageCode);
@@ -233,6 +275,7 @@ namespace AudioGo.ViewModels
                 AppSettings.SetAppLanguage(normalized);
 
                 Pois = newPois;
+                await LoadCategoriesAsync();
                 await _geofence.StartMonitoringAsync(Pois);
                 StatusMessage = AppStrings.Get("status_tracking", Pois.Count.ToString());
                 _sync.NotifyLanguageChanged(normalized);
@@ -254,6 +297,7 @@ namespace AudioGo.ViewModels
             {
                 await _audio.StopAsync();
                 Pois = await _sync.GetPoisAsync(CurrentLanguage);
+                await LoadCategoriesAsync();
                 await _geofence.StartMonitoringAsync(Pois);
                 StatusMessage = AppStrings.Get("status_tracking", Pois.Count.ToString());
             }
@@ -288,6 +332,8 @@ namespace AudioGo.ViewModels
             OnPropertyChanged(nameof(NearbyViewAll));
             OnPropertyChanged(nameof(NearbyEmptyTitle));
             OnPropertyChanged(nameof(NearbyEmptyDesc));
+            OnPropertyChanged(nameof(TopPoisTitle));
+            OnPropertyChanged(nameof(CategoriesTitle));
             OnPropertyChanged(nameof(MiniPlayerNowPlaying));
             OnPropertyChanged(nameof(DownloadPolicyLabel));
             OnPropertyChanged(nameof(MapTitle));
