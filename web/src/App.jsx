@@ -24,13 +24,13 @@ import CreateTourPage from "@/pages/CreateTourPage";
 import ProfilePage from "@/pages/ProfilePage";
 import DeviceTrackingPage from "@/pages/DeviceTrackingPage";
 import AccessCodePage from "@/pages/AccessCodePage";
-import QueueDemoPage from "@/pages/QueueDemoPage";
+
 import DeviceActivityPage from "@/pages/DeviceActivityPage";
 import AnalyticsPage from "@/pages/AnalyticsPage";
 import SubscriptionCheckoutPage from "@/pages/SubscriptionCheckoutPage";
 import AdminSubscriptionDashboard from "@/pages/AdminSubscriptionDashboard";
 import AdminTransactionDashboard from "@/pages/AdminTransactionDashboard";
-import GeofenceSimulatorPage from "@/pages/GeofenceSimulatorPage";
+
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 
@@ -292,16 +292,7 @@ export default function App() {
           }
         />
 
-        <Route
-          path="/queue-demo"
-          element={
-            <ProtectedRoute roles={["Admin"]}>
-              <MainLayout>
-                <QueueDemoPage />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
+
 
         <Route
           path="/device-activity"
@@ -365,15 +356,7 @@ export default function App() {
           }
         />
 
-        {/* GEOFENCE SIMULATOR — Admin only, fullscreen (no MainLayout) */}
-        <Route
-          path="/geofence-simulator"
-          element={
-            <ProtectedRoute roles={["Admin"]}>
-              <GeofenceSimulatorPage />
-            </ProtectedRoute>
-          }
-        />
+
 
         {/* fallback */}
         <Route path="*" element={<Navigate to="/" />} />

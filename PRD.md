@@ -259,20 +259,6 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò chuẩn hóa mọi yêu c
   - [x] Admin assign gói thủ công → subscription ACTIVE ngay, transaction ghi MANUAL.
   - [x] Dashboard lịch sử giao dịch hiển thị đúng status (PENDING/SUCCESS/FAILED).
 
-**US 3.8 — Geofence Conflict Simulator (Debug Tool)**
-> *Là Admin, tôi muốn giả lập cơ chế tranh chấp Geofence để kiểm chứng logic 3-Tier trước khi demo hoặc debug.*
-- **FR:**
-  - `POST /api/cms/debug/geofence-simulate` — nhận tọa độ thiết bị + danh sách POI tùy chỉnh (`CustomPois[]`).
-  - Khi `CustomPois` được gửi lên: dùng POI fake (không query DB, không persist). Khi không có: dùng POI active từ DB.
-  - Trả về: `Winner` (PoiId, Name, DecisionTier, Reason) + `CandidatePois[]` (rank, distance, tier scores) + `SortingTrace[]` (log từng bước giải quyết conflict).
-  - `DecisionTier` có 4 giá trị: `Trivial_OnlyOne`, `Tier1_Priority`, `Tier2_HasLocalAudio`, `Tier3_Distance`.
-  - Logic sort 3-Tier hoàn toàn giống `GeofenceService.cs` trên Mobile (parity đảm bảo).
-- **AC:**
-  - [x] Simulator chứng minh đúng 3-Tier: Priority → HasLocalAudio → Distance.
-  - [x] Log hiển thị rõ tier nào quyết định, ai thắng, ai thua và lý do.
-  - [x] Chạy không ảnh hưởng dữ liệu production (read-only hoặc in-memory).
-  - [x] Chỉ Admin mới truy cập được (`[Authorize(Roles = "Admin")]`).
-
 ---
 
 ## ⚙️ 4. YÊU CẦU PHI CHỨC NĂNG (NON-FUNCTIONAL REQUIREMENTS)
@@ -497,11 +483,6 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò chuẩn hóa mọi yêu c
 | `POST` | `/api/cms/subscriptions/owner/{accountId}/assign` | Admin gán gói thủ công (MANUAL) |
 | `GET` | `/api/cms/subscriptions/upgrade/verify?transactionId=` | Owner poll kết quả thanh toán |
 
-#### Debug & Simulator Tools (Admin Only)
-| Method | Route | Mô tả |
-| :--- | :--- | :--- |
-| `POST` | `/api/cms/debug/geofence-simulate` | Giả lập tranh chấp Geofence — 3-Tier conflict resolution với CustomPois hoặc DB |
-
 #### Payment Management (Admin)
 | Method | Route | Mô tả |
 | :--- | :--- | :--- |
@@ -563,7 +544,7 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò chuẩn hóa mọi yêu c
 **Quản trị & Monitoring**
 
 | Route | Trang | Quyền | Mô tả |
-| :--- | :--- | :--- | :--- |
+| :--- | :--- | :--- |
 | `/accounts` | `AccountsPage` | Admin | CRUD tài khoản Owner/Admin |
 | `/categories` | `CategoryPage` | Admin | CRUD danh mục POI |
 | `/tours` | `ToursPage` | Admin | Danh sách Tour |
@@ -573,12 +554,11 @@ Mục tiêu tài liệu này (PRD) là đóng vai trò chuẩn hóa mọi yêu c
 | `/access-codes` | `AccessCodePage` | Admin | Quản lý mã QR kích hoạt |
 | `/device-tracking` | `DeviceTrackingPage` | Admin | Real-time map vị trí thiết bị (SignalR) |
 | `/device-activity` | `DeviceActivityPage` | Admin | Timeline GPS + lịch sử nghe của thiết bị |
-| `/queue-demo` | `QueueDemoPage` | Admin | Dev tool test SignalR queue |
 
 **Subscription & Thanh Toán**
 
 | Route | Trang | Quyền | Mô tả |
-| :--- | :--- | :--- | :--- |
+| :--- | :--- | :--- |
 | `/pricing` | `PricingPlansPage` | Owner | Xem các gói dịch vụ và so sánh |
 | `/subscriptions/checkout` | `SubscriptionCheckoutPage` | Owner | Thanh toán nâng gói (VietQR/MoMo, hiển thị QR chuyển khoản) |
 | `/subscriptions` | `AdminSubscriptionDashboard` | Admin | Quản lý subscription của tất cả Owner |
@@ -770,8 +750,6 @@ sequenceDiagram
 
 ### 10.7. Tìm Kiếm POI (📱 Mobile — UC7)
 
-
-
 ```mermaid
 sequenceDiagram
     participant MobileUser as Người dùng
@@ -779,7 +757,7 @@ sequenceDiagram
     participant SearchVM as SearchViewModel
     participant API as ApiService
     participant SyncSvc as SyncService
-    participant PoiCtrl as PoiController (api/mobile/pois)
+    participant PoiCtrl as PoiController 
 
     MobileUser ->> SearchPage: openSearchTab()
     MobileUser ->> SearchPage: enterSearchKeyword()
@@ -788,17 +766,17 @@ sequenceDiagram
     alt HasInternet
         SearchVM ->> API: GetPoisAsync(lang, query, category)
         API ->> PoiCtrl: GET /api/mobile/pois
-        PoiCtrl -->> API: 200 OK + List<POI>
+        PoiCtrl -->> API: 200 OK + List[POI]
         API -->> SearchVM: pois[]
         SearchVM ->> SyncSvc: GetToursAsync(lang)
         Note over SearchVM: Lọc tour theo keyword trên client
         SyncSvc -->> SearchVM: tours[]
     else NoInternet
-        SearchVM ->> SearchVM: OfflineSearchAsync(query)
+        SearchVM ->> SearchVM: OfflineSearchAsync
         SearchVM ->> SyncSvc: GetPoisAsync(lang)
-        SyncSvc -->> SearchVM: poisFromSqlite[]
+        SyncSvc -->> SearchVM: poisFromSqlite
         SearchVM ->> SyncSvc: GetToursAsync(lang)
-        SyncSvc -->> SearchVM: toursFromSqlite[]
+        SyncSvc -->> SearchVM: toursFromSqlite
     end
 
     SearchVM -->> SearchPage: renderSearchResults()
@@ -807,8 +785,6 @@ sequenceDiagram
 ---
 
 ### 10.8. Lọc POI Theo Category (📱 Mobile — UC8)
-
-
 
 ```mermaid
 sequenceDiagram
@@ -824,7 +800,7 @@ sequenceDiagram
     alt SyncSvc uses HTTP
         SyncSvc ->> API: GetCategoriesAsync(lang)
         API ->> CatCtrl: GET /api/mobile/categories
-        CatCtrl -->> API: 200 OK + List<CategoryDto>
+        CatCtrl -->> API: 200 OK + List[CategoryDto]
         API -->> SyncSvc: categories[]
     end
     SyncSvc -->> SearchVM: categories[]
@@ -839,7 +815,6 @@ sequenceDiagram
 ---
 
 ### 10.9. Xem Thông Tin POI (📱 Mobile — UC9)
-
 
 ```mermaid
 sequenceDiagram
@@ -934,7 +909,7 @@ sequenceDiagram
         Note over SyncSvc: RefreshToursFromServerAsync fills SQLite
     end
 
-    SyncSvc -->> TourListVM: List<TourSummaryDto>
+    SyncSvc -->> TourListVM: List[TourSummaryDto]
     TourListVM -->> TourListPage: renderTourList()
 ```
 
@@ -981,8 +956,6 @@ sequenceDiagram
 
 ### 10.14. Chọn Ngôn Ngữ (📱 Mobile — UC14)
 
-
-
 ```mermaid
 sequenceDiagram
     participant User as Người dùng
@@ -997,7 +970,7 @@ sequenceDiagram
     SettingsVM ->> MainVM: ChangeLanguageAsync(langCode)
     MainVM ->> SyncSvc: SwitchLanguageAsync(langCode)
     SyncSvc ->> API: GetPoisAsync(langCode)
-    API -->> SyncSvc: List<POI>
+    API -->> SyncSvc: List[POI]
     SyncSvc ->> SyncSvc: ReplaceMetadataAsync(serverPois)
     MainVM ->> MainVM: AppSettings.SetAppLanguage(langCode)
     SettingsVM -->> SettingsPage: reloadLocalizedUi()
@@ -1006,8 +979,6 @@ sequenceDiagram
 ---
 
 ### 10.15. Đồng Bộ Dữ Liệu Khi Đang Sử Dụng (📱 Mobile — UC15)
-
-
 
 ```mermaid
 sequenceDiagram
@@ -1027,7 +998,7 @@ sequenceDiagram
             SyncSvc ->> SQLite: SavePoiAsync(entity)
             SyncSvc ->> SQLite: DeletePoiAsync(stale)
         end
-        SyncSvc -->> MainVM: List<POI> hoặc null
+        SyncSvc -->> MainVM: List[POI] hoặc null
         opt updated != null
             MainVM ->> MainVM: Pois = updated + NotifyPoisUpdated()
         end
@@ -1084,11 +1055,7 @@ sequenceDiagram
     end
 ```
 
-
-
 ### 10.20. CMS — Đăng Nhập (🌐 Web CMS — UC20)
-
-
 
 ```mermaid
 sequenceDiagram
@@ -1137,7 +1104,7 @@ sequenceDiagram
     CMS ->> PoiCtrl: GET /api/cms/pois
     PoiCtrl ->> DB: GetAllForCmsAsync()
     DB -->> PoiCtrl: returnPoiList()
-    PoiCtrl -->> CMS: 200 OK + List<PoiListDto>
+    PoiCtrl -->> CMS: 200 OK + List[PoiListDto]
     CMS -->> User: renderPoiTable()
 ```
 
@@ -1195,7 +1162,6 @@ sequenceDiagram
 
 ### 10.22a. CMS — Owner Gửi Yêu Cầu TẠO POI (🌐 Web CMS — UC22)
 
-
 ```mermaid
 sequenceDiagram
     participant Owner
@@ -1229,7 +1195,7 @@ sequenceDiagram
 
     Admin ->> CMS: openPoiRequestReviewTab()
     CMS ->> PoiCtrl: GET /api/cms/pois/requests
-    PoiCtrl -->> CMS: 200 OK + List<PoiRequestListDto>
+    PoiCtrl -->> CMS: 200 OK + List[PoiRequestListDto]
     CMS -->> Admin: renderRequestTable()
 
     Admin ->> CMS: openRequestDetail()
@@ -1271,7 +1237,7 @@ sequenceDiagram
     Owner ->> CMS: openPricingPlansPage()
     CMS ->> SubCtrl: GET /api/cms/subscriptions/plans
     SubCtrl ->> DB: GetPlans()
-    DB -->> SubCtrl: List<SubscriptionPlan>
+    DB -->> SubCtrl: List[SubscriptionPlan]
     SubCtrl -->> CMS: 200 OK + plans[]
     
     CMS ->> SubCtrl: GET /api/cms/subscriptions/me
@@ -1324,7 +1290,6 @@ sequenceDiagram
 ```
 
 ---
-
 
 ### 10.25b. CMS — Dịch & TTS Sang Ngôn Ngữ Mới (🌐 Web CMS — UC37)
 
@@ -1426,7 +1391,7 @@ sequenceDiagram
     MobileUser ->> ListUI: openToursTab()
     ListUI ->> ListVM: LoadToursAsync()
     ListVM ->> SyncSvc: GetToursAsync(lang)
-    SyncSvc -->> ListVM: List<TourSummaryDto>
+    SyncSvc -->> ListVM: List[TourSummaryDto]
     ListVM -->> ListUI: renderTourList()
 
     MobileUser ->> ListUI: selectTourItem()
@@ -1458,7 +1423,7 @@ sequenceDiagram
     activate PipeCtrl
 
     PipeCtrl ->> DB: Pois.Include(Contents).Where(IsActive).ToListAsync()
-    DB -->> PipeCtrl: List<Poi>
+    DB -->> PipeCtrl: List[Poi]
 
     alt Không có Active POI
         PipeCtrl -->> CMS: 200 OK + { message: "Không có active POI" }
@@ -1526,7 +1491,7 @@ sequenceDiagram
     Repo ->> DB: GetAllAsync()
     DB -->> Repo: returnAccountList()
     Repo -->> AccCtrl: returnAccountList()
-    AccCtrl -->> CMS: 200 OK + List<AccountDto>
+    AccCtrl -->> CMS: 200 OK + List[AccountDto]
     CMS -->> Admin: renderAccountTable()
 
     Admin ->> CMS: submitCreateAccountForm()
@@ -1580,7 +1545,7 @@ sequenceDiagram
     CMS ->> CatCtrl: GET /api/cms/categories
     CatCtrl ->> Repo: GetAllAsync()
     Repo -->> CatCtrl: returnCategoryList()
-    CatCtrl -->> CMS: 200 OK + List<CategoryDto>
+    CatCtrl -->> CMS: 200 OK + List[CategoryDto]
     CMS -->> Admin: renderCategoryTable()
 
     Admin ->> CMS: submitCreateCategory()
@@ -1630,7 +1595,7 @@ sequenceDiagram
     CMS ->> TourCtrl: GET /api/cms/tours
     TourCtrl ->> Repo: GetAllAsync()
     Repo -->> TourCtrl: returnTourList()
-    TourCtrl -->> CMS: 200 OK + List<TourDto>
+    TourCtrl -->> CMS: 200 OK + List[TourDto]
     CMS -->> Admin: renderTourTable()
 
     Admin ->> CMS: submitCreateTourForm()
@@ -1722,7 +1687,7 @@ sequenceDiagram
     Admin ->> CMS: openAccessCodePage()
     CMS ->> CodeCtrl: GET /api/cms/accesscodes
     CodeCtrl ->> DB: GetAccessCodes()
-    DB -->> CodeCtrl: List<AppAccessCode> + pagination
+    DB -->> CodeCtrl: List[AppAccessCode] + pagination
     CodeCtrl -->> CMS: 200 OK + { data, pagination }
     CMS -->> Admin: renderAccessCodeTable()
 
