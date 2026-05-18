@@ -126,6 +126,7 @@ namespace AudioGo.ViewModels
         // ── Commands ───────────────────────────────────────────────
         public ICommand PlayPoiCommand       { get; }
         public ICommand OpenPoiDetailCommand { get; }
+        public ICommand OpenCategoryCommand  { get; }
 
         private POI? _activePoi;
         public POI? ActivePoi
@@ -205,6 +206,16 @@ namespace AudioGo.ViewModels
                 if (poi is null) return;
                 await Shell.Current.GoToAsync(
                     $"{nameof(AudioGo_Mobile.Views.PoiDetailPage)}?poiId={poi.PoiId}");
+            });
+
+            OpenCategoryCommand = new Command<CategoryDto>(async cat =>
+            {
+                if (cat is null) return;
+                var catValue = !string.IsNullOrEmpty(cat.PlainName) ? cat.PlainName : cat.Name;
+                if (!string.IsNullOrEmpty(catValue))
+                {
+                    await Shell.Current.GoToAsync($"//Search?categoryId={Uri.EscapeDataString(catValue)}");
+                }
             });
         }
 

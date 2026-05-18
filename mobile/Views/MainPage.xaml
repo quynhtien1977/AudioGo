@@ -74,6 +74,10 @@
                                                TextColor="{StaticResource Primary}"
                                                FontAttributes="Bold"
                                                VerticalOptions="Center"/>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding BindingContext.OpenCategoryCommand, Source={x:Reference ThisPage}}"
+                                                                  CommandParameter="{Binding .}"/>
+                                        </Border.GestureRecognizers>
                                     </Border>
                                 </DataTemplate>
                             </CollectionView.ItemTemplate>
