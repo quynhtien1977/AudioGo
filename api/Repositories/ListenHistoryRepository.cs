@@ -41,6 +41,62 @@ namespace Server.Repositories
                 .Select(x => ValueTuple.Create(x.PoiId, x.Count))
                 .ToListAsync();
         }
+
+        /// <inheritdoc/>
+        public async Task<List<ListenHistoryItemDto>> GetByDeviceAsync(
+            string deviceId, string lang = "vi", int limit = 5)
+        {
+            // 1. Lấy record mới nhất (Timestamp, TotalDuration) cho mỗi PoiId của device
+            var grouped = await _db.ListenHistories.AsNoTracking()
+                .Where(lh => lh.DeviceId == deviceId)
+                .GroupBy(lh => lh.PoiId)
+                .Select(g => new
+                {
+                    PoiId             = g.Key,
+                    LastListenedAt    = g.Max(x => x.Timestamp),
+                    TotalListenDuration = g.Sum(x => x.ListenDuration)
+                })
+                .OrderByDescending(x => x.LastListenedAt)
+                .Take(limit)
+                .ToListAsync();
+
+            if (grouped.Count == 0)
+                return new List<ListenHistoryItemDto>();
+
+            var poiIds = grouped.Select(x => x.PoiId).ToList();
+
+            // 2. Load POI data (LogoUrl) + localized title theo lang
+            var pois = await _db.Pois.AsNoTracking()
+                .Where(p => poiIds.Contains(p.PoiId) && p.IsActive)
+                .Include(p => p.Contents)
+                .ToListAsync();
+
+            // 3. Map sang DTO — giữ thứ tự theo LastListenedAt
+            var poiMap = pois.ToDictionary(p => p.PoiId);
+            var result = new List<ListenHistoryItemDto>();
+
+            foreach (var g in grouped)
+            {
+                if (!poiMap.TryGetValue(g.PoiId, out var poi)) continue;
+
+                // Ưu tiên ngôn ngữ yêu cầu → fallback vi → bất kỳ content nào
+                var content = poi.Contents.FirstOrDefault(c => c.LanguageCode == lang)
+                           ?? poi.Contents.FirstOrDefault(c => c.LanguageCode == "vi")
+                           ?? poi.Contents.FirstOrDefault();
+
+                result.Add(new ListenHistoryItemDto
+                {
+                    PoiId               = g.PoiId,
+                    Title               = content?.Title ?? g.PoiId,
+                    LogoUrl             = poi.LogoUrl,
+                    LastListenedAt      = g.LastListenedAt,
+                    TotalListenDuration = g.TotalListenDuration
+                });
+            }
+
+            return result;
+        }
+
         public async Task<int> GetTotalListensAsync()
         {
             return await _db.ListenHistories.CountAsync();

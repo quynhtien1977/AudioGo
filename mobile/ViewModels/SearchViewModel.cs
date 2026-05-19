@@ -11,6 +11,7 @@ using System.Windows.Input;
 namespace AudioGo.ViewModels
 {
     // ── SearchPage Main ViewModel ──────────────────────────────────────
+    [QueryProperty(nameof(IncomingCategoryId), "categoryId")]
     public class SearchViewModel : BaseViewModel
     {
         private readonly IApiService _api;
@@ -21,6 +22,25 @@ namespace AudioGo.ViewModels
         {
             get => base.IsLoading;
             set { base.IsLoading = value; UpdateStates(); }
+        }
+
+        private string? _incomingCategoryId;
+        public string? IncomingCategoryId
+        {
+            get => _incomingCategoryId;
+            set
+            {
+                _incomingCategoryId = value;
+                if (!string.IsNullOrEmpty(value))
+                {
+                    var targetValue = Uri.UnescapeDataString(value);
+                    foreach (var c in CategoryChips)
+                    {
+                        c.IsActive = string.Equals(c.Value, targetValue, StringComparison.OrdinalIgnoreCase);
+                    }
+                    ActiveCategory = targetValue;
+                }
+            }
         }
 
         private string _query = string.Empty;
@@ -146,21 +166,30 @@ namespace AudioGo.ViewModels
 
                 var newChips = CategoryChipVm.BuildFromApiCategories(apiCategories, lang);
 
-                // Preserve active category if any
-                var currentActive = CategoryChips.FirstOrDefault(c => c.IsActive)?.Value ?? "";
+                // Preserve active category if any, fallback to ActiveCategory (from incoming navigation)
+                var currentActive = CategoryChips.FirstOrDefault(c => c.IsActive && !string.IsNullOrEmpty(c.Value))?.Value;
+                if (string.IsNullOrEmpty(currentActive))
+                    currentActive = ActiveCategory;
 
                 await MainThread.InvokeOnMainThreadAsync(() =>
                 {
                     CategoryChips.Clear();
                     foreach (var chip in newChips)
                     {
-                        if (chip.Value == currentActive)
+                        if (string.Equals(chip.Value, currentActive, StringComparison.OrdinalIgnoreCase))
                             chip.IsActive = true;
                         CategoryChips.Add(chip);
                     }
                     // Default activate first chip if nothing is active
                     if (!CategoryChips.Any(c => c.IsActive) && CategoryChips.Count > 0)
+                    {
                         CategoryChips[0].IsActive = true;
+                        ActiveCategory = CategoryChips[0].Value;
+                    }
+                    else if (CategoryChips.Any(c => c.IsActive))
+                    {
+                        ActiveCategory = CategoryChips.First(c => c.IsActive).Value;
+                    }
                 });
             }
             catch
