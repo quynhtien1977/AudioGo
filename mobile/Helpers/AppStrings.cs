@@ -105,6 +105,11 @@ public static class AppStrings
             ["vi"] = "Khám phá theo chủ đề", ["en"] = "Explore by Categories", ["ja"] = "カテゴリーで探索",
             ["ko"] = "카테고리별 탐색", ["zh-Hans"] = "按类别探索", ["fr"] = "Explorer par catégories", ["th"] = "สำรวจตามหมวดหมู่"
         },
+        ["continue_listening_title"] = new()
+        {
+            ["vi"] = "Tiếp tục nghe", ["en"] = "Continue Listening", ["ja"] = "聴き続ける",
+            ["ko"] = "이어 듣기", ["zh-Hans"] = "继续收听", ["fr"] = "Continuer l'écoute", ["th"] = "ฟังต่อ"
+        },
 
         // ═══════════════════════════════════════════════════════════════
         // MainPage — Status & Mini player

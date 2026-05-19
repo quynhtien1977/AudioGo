@@ -17,6 +17,7 @@ namespace AudioGo.ViewModels
         private readonly ILocationService _location;
         private readonly ISignalRService _signalR;
         private readonly IApiService _api;
+        private readonly AudioGo.Data.AppDatabase _db;
 
         // ── Delta polling ────────────────────────────────────────────
         private CancellationTokenSource? _deltaCts;
@@ -114,6 +115,11 @@ namespace AudioGo.ViewModels
         private ObservableCollection<CategoryDto> _categories = new();
         public ObservableCollection<CategoryDto> Categories => _categories;
 
+        private ObservableCollection<AudioGo.Mobile.Models.HistoryPoiViewModel> _continueListening = new();
+        public ObservableCollection<AudioGo.Mobile.Models.HistoryPoiViewModel> ContinueListening => _continueListening;
+        public bool HasContinueListening => _continueListening.Count > 0;
+        public string ContinueListeningTitle => AppStrings.Get("continue_listening_title");
+
         public bool HasNearbyPois => _nearbyPois.Count > 0;
         public bool NearbyEmpty   => _nearbyPois.Count == 0;
         public bool HasTopPois    => _topPois.Count > 0;
@@ -124,9 +130,10 @@ namespace AudioGo.ViewModels
         public string MiniPlayerPlayIcon => _audio.IsPlaying ? "\ue034" : "\ue037";
 
         // ── Commands ───────────────────────────────────────────────
-        public ICommand PlayPoiCommand       { get; }
-        public ICommand OpenPoiDetailCommand { get; }
-        public ICommand OpenCategoryCommand  { get; }
+        public ICommand PlayPoiCommand          { get; }
+        public ICommand OpenPoiDetailCommand   { get; }
+        public ICommand OpenCategoryCommand    { get; }
+        public ICommand OpenHistoryItemCommand { get; }
 
         private POI? _activePoi;
         public POI? ActivePoi
@@ -164,7 +171,8 @@ namespace AudioGo.ViewModels
 
         public MainViewModel(SyncService sync, IGeofenceService geofence,
                              IAudioService audio, ILocationService location,
-                             ISignalRService signalR, IApiService api)
+                             ISignalRService signalR, IApiService api,
+                             AudioGo.Data.AppDatabase db)
         {
             _sync = sync;
             _geofence = geofence;
@@ -172,6 +180,7 @@ namespace AudioGo.ViewModels
             _location = location;
             _signalR = signalR;
             _api = api;
+            _db = db;
 
             _geofence.PoiTriggered += OnPoiTriggered;
             _location.LocationUpdated += OnLocationUpdated;
@@ -184,13 +193,14 @@ namespace AudioGo.ViewModels
                 OnPropertyChanged(nameof(IsAudioPaused));
                 OnPropertyChanged(nameof(MiniPlayerPlayIcon));
 
-                // 🔴 Ghi lịch sử nghe khi audio kết thúc tự nhiên
+                // 🔴 Ghi lịch sử nghe khi audio kết thúc tự nhiên (PlaybackEnded = người dùng nghe xong)
                 if (e.PlaybackEnded && _activePoi is { } poi)
                 {
                     var durationSec = (int)Math.Round(e.DurationSeconds > 0
                         ? e.DurationSeconds
                         : _audio.CurrentPositionSeconds);
                     _ = PostListenHistoryFireAndForgetAsync(poi.PoiId, durationSec);
+                    _ = UpsertLocalHistoryAsync(poi, durationSec, isCompleted: true);
                 }
             };
 
@@ -217,6 +227,13 @@ namespace AudioGo.ViewModels
                     await Shell.Current.GoToAsync($"//Search?categoryId={Uri.EscapeDataString(catValue)}");
                 }
             });
+
+            OpenHistoryItemCommand = new Command<AudioGo.Mobile.Models.HistoryPoiViewModel>(async item =>
+            {
+                if (item is null) return;
+                await Shell.Current.GoToAsync(
+                    $"{nameof(AudioGo_Mobile.Views.PoiDetailPage)}?poiId={item.PoiId}");
+            });
         }
 
         public async Task InitAsync()
@@ -229,6 +246,9 @@ namespace AudioGo.ViewModels
                 await LoadCategoriesAsync();
                 await _geofence.StartMonitoringAsync(Pois);
                 await _location.StartAsync();
+
+                // Load lịch sử nghe từ local cache (instant) + sync server ngầm
+                await LoadContinueListeningAsync();
 
                 // Kết nối SignalR sau khi location service đã chạy
                 // JWT đã có trong SecureStorage từ bước QR scan
@@ -431,7 +451,20 @@ namespace AudioGo.ViewModels
 
         public void StopAudio()
         {
+            // 🔴 Ghi lịch sử trước khi dừng (nút X mini-player)
+            // Phải snapshot trước khi StopAsync() reset vị trí về 0
+            if (_activePoi is { } poi)
+            {
+                var positionSec = (int)Math.Round(_audio.CurrentPositionSeconds);
+                if (positionSec > 0)
+                {
+                    _ = PostListenHistoryFireAndForgetAsync(poi.PoiId, positionSec);
+                    _ = UpsertLocalHistoryAsync(poi, positionSec, isCompleted: false);
+                }
+            }
+
             _ = _audio.StopAsync();
+            _pausedPoiId = null;
             ActivePoi = null;
             StatusMessage = AppStrings.Get("status_tracking", Pois.Count.ToString());
             OnPropertyChanged(nameof(IsAudioPlaying));
@@ -548,6 +581,110 @@ namespace AudioGo.ViewModels
                 // Không làm crash app — offline/network failure là bình thường
                 System.Diagnostics.Debug.WriteLine($"[ListenHistory] Failed to log: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Upsert local SQLite history sau mỗi lần nghe,
+        /// rồi refresh ContinueListening collection trên UI thread.
+        /// </summary>
+        /// <param name="isCompleted">
+        /// True khi audio phát xong hoàn toàn (không bị dừng giữa chừng).
+        /// Khi true → reset TotalListenDuration = durationSec (không cộng dồn nữa).
+        /// </param>
+        private async Task UpsertLocalHistoryAsync(POI poi, int durationSec, bool isCompleted = false)
+        {
+            try
+            {
+                int totalDuration;
+                if (isCompleted)
+                {
+                    // Người dùng nghe xong → ghi lại thời lượng chính xác, không cộng dồn
+                    totalDuration = durationSec;
+                }
+                else
+                {
+                    // Dừng giữa chừng → cộng dồn (giữ tiến trình cũ)
+                    var existing = await _db.GetRecentListenHistoryAsync(20);
+                    var old = existing.FirstOrDefault(h => h.PoiId == poi.PoiId);
+                    totalDuration = (old?.TotalListenDuration ?? 0) + durationSec;
+                }
+
+                await _db.UpsertListenHistoryAsync(new AudioGo.Mobile.Models.ListenHistoryEntity
+                {
+                    PoiId               = poi.PoiId,
+                    LastListenedAt      = DateTime.UtcNow,
+                    TotalListenDuration = totalDuration,
+                    IsCompleted         = isCompleted
+                });
+
+                await RefreshContinueListeningFromDbAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ContinueListening] UpsertLocal error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Local-first load: hiển thị từ SQLite ngay lập tức,
+        /// sau đó sync server ngầm để merge dữ liệu từ device khác / lần trước.
+        /// </summary>
+        private async Task LoadContinueListeningAsync()
+        {
+            // 1. Load từ local cache — instant (chỉ hiện nếu Pois đã có data)
+            await RefreshContinueListeningFromDbAsync();
+
+            // 2. Sync từ server ngầm (background, không block UI)
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var deviceId = await SecureStorage.GetAsync("AppDeviceId") ?? "unknown";
+                    var serverItems = await _api.GetListenHistoryAsync(deviceId, CurrentLanguage, limit: 5);
+                    if (serverItems is null || serverItems.Count == 0) return;
+
+                    // Mỗi item từ server chỉ được merge khi PoiId tồn tại trong Pois local
+                    // (tránh hiện POI chưa có meta trong DB)
+                    var knownPoiIds = _pois.Select(p => p.PoiId).ToHashSet();
+                    var localItems  = await _db.GetRecentListenHistoryAsync(20);
+
+                    // Parallel upsert — nhanh hơn sequential
+                    var tasks = serverItems
+                        .Where(s => knownPoiIds.Contains(s.PoiId))
+                        .Select(s =>
+                        {
+                            var old = localItems.FirstOrDefault(h => h.PoiId == s.PoiId);
+                            return _db.UpsertListenHistoryAsync(new AudioGo.Mobile.Models.ListenHistoryEntity
+                            {
+                                PoiId               = s.PoiId,
+                                LastListenedAt      = s.LastListenedAt,
+                                TotalListenDuration = Math.Max(old?.TotalListenDuration ?? 0, s.TotalListenDuration),
+                                IsCompleted         = old?.IsCompleted ?? false // giữ local IsCompleted
+                            });
+                        })
+                        .ToList();
+
+                    await Task.WhenAll(tasks);
+                    await RefreshContinueListeningFromDbAsync();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[ContinueListening] Server sync error: {ex.Message}");
+                }
+            });
+        }
+
+        private async Task RefreshContinueListeningFromDbAsync()
+        {
+            // Join với PoiEntity để lấy Title + LogoUrl — một query duy nhất
+            var items = await _db.GetRecentHistoryWithPoiAsync(5);
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                _continueListening.Clear();
+                foreach (var item in items) _continueListening.Add(item);
+                OnPropertyChanged(nameof(HasContinueListening));
+                OnPropertyChanged(nameof(ContinueListeningTitle));
+            });
         }
     }
 }

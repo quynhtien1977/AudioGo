@@ -347,6 +347,24 @@ namespace AudioGo.Services
             }
         }
 
+        public async Task<List<ListenHistoryItemDto>?> GetListenHistoryAsync(
+            string deviceId, string lang = "vi", int limit = 5, CancellationToken ct = default)
+        {
+            try
+            {
+                var url = $"api/mobile/listen-history/{Uri.EscapeDataString(deviceId)}" +
+                          $"?lang={Uri.EscapeDataString(lang)}&limit={limit}";
+
+                var items = await _http.GetFromJsonAsync<List<ListenHistoryItemDto>>(url, ct);
+                return items;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] GetListenHistoryAsync: {ex.Message}");
+                return null;
+            }
+        }
+
         private class InitRawResponse
         {
             public string?  TransactionId   { get; set; }

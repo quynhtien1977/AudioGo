@@ -55,72 +55,72 @@
                     </Border>
 
 
-                    <!-- ── Khám phá theo chủ đề (Categories) ── -->
-                    <VerticalStackLayout Spacing="12" IsVisible="{Binding HasCategories}">
-                        <Label Text="{Binding CategoriesTitle}" Style="{StaticResource SectionTitle}"/>
-                        <CollectionView ItemsSource="{Binding Categories}"
+                    <!-- ── Tiếp tục nghe (Continue Listening) ── -->
+                    <VerticalStackLayout Spacing="12" IsVisible="{Binding HasContinueListening}">
+                        <Label Text="{Binding ContinueListeningTitle}" Style="{StaticResource SectionTitle}"/>
+                        <CollectionView ItemsSource="{Binding ContinueListening}"
                                         ItemsLayout="HorizontalList"
                                         HorizontalScrollBarVisibility="Never"
                                         SelectionMode="None">
                             <CollectionView.ItemTemplate>
                                 <DataTemplate>
-                                    <Border StrokeShape="RoundRectangle 20"
-                                            Stroke="{StaticResource Primary}"
-                                            StrokeThickness="1"
-                                            BackgroundColor="{StaticResource Surface}"
-                                            Padding="16,8"
-                                            Margin="0,0,12,0">
-                                        <Label Text="{Binding Name}" 
-                                               TextColor="{StaticResource Primary}"
-                                               FontAttributes="Bold"
-                                               VerticalOptions="Center"/>
-                                        <Border.GestureRecognizers>
-                                            <TapGestureRecognizer Command="{Binding BindingContext.OpenCategoryCommand, Source={x:Reference ThisPage}}"
-                                                                  CommandParameter="{Binding .}"/>
-                                        </Border.GestureRecognizers>
-                                    </Border>
-                                </DataTemplate>
-                            </CollectionView.ItemTemplate>
-                        </CollectionView>
-                    </VerticalStackLayout>
-
-                    <!-- ── Địa điểm nổi bật (Top POIs) ── -->
-                    <VerticalStackLayout Spacing="12" IsVisible="{Binding HasTopPois}">
-                        <Label Text="{Binding TopPoisTitle}" Style="{StaticResource SectionTitle}"/>
-                        <CollectionView ItemsSource="{Binding TopPois}"
-                                        ItemsLayout="HorizontalList"
-                                        HorizontalScrollBarVisibility="Never"
-                                        SelectionMode="None">
-                            <CollectionView.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Style="{StaticResource CardBorder}" 
-                                            WidthRequest="220" 
-                                            HeightRequest="160"
-                                            Margin="0,0,16,10" 
+                                    <Border Style="{StaticResource CardBorder}"
+                                            WidthRequest="160"
+                                            HeightRequest="200"
+                                            Margin="0,0,16,10"
                                             Padding="0">
                                         <Grid RowDefinitions="*,Auto">
-                                            <!-- POI Image with emoji fallback -->
+
+                                            <!-- Thumbnail + progress overlay -->
                                             <Grid Grid.Row="0">
+                                                <!-- Fallback icon background -->
                                                 <Border BackgroundColor="{StaticResource PrimaryLight}" StrokeThickness="0">
-                                                    <Label Text="&#xe0c8;" FontFamily="MaterialIcons" FontSize="40" TextColor="{StaticResource Primary}"
+                                                    <Label Text="&#xe310;" FontFamily="MaterialIcons" FontSize="36"
+                                                           TextColor="{StaticResource Primary}"
                                                            HorizontalOptions="Center" VerticalOptions="Center"/>
                                                 </Border>
-                                                <Image Source="{Binding LogoUrl}" Aspect="AspectFill"/>
+                                                <Image Source="{Binding DisplayLogoSource}" Aspect="AspectFill"/>
+                                                <!-- Progress bar overlay: chỉ hiện khi đã có ghi nhận nghe -->
+                                                <ProgressBar Progress="{Binding ProgressFraction}"
+                                                             ProgressColor="{StaticResource Primary}"
+                                                             BackgroundColor="#66000000"
+                                                             VerticalOptions="End"
+                                                             IsVisible="{Binding HasProgress}"
+                                                             Margin="0"
+                                                             HeightRequest="4"/>
                                             </Grid>
-                                            
-                                            <!-- Info overlay/bottom part -->
-                                            <Grid Grid.Row="1" BackgroundColor="{StaticResource Surface}" Padding="12">
-                                                <VerticalStackLayout Spacing="2">
-                                                    <Label Text="{Binding Title}" Style="{StaticResource SectionTitle}" FontSize="14" LineBreakMode="TailTruncation"/>
-                                                    <HorizontalStackLayout Spacing="4">
-                                                        <Label Text="&#xe838;" FontFamily="MaterialIcons" TextColor="{StaticResource Primary}" FontSize="12" VerticalOptions="Center"/>
-                                                        <Label Text="{Binding Priority}" Style="{StaticResource CaptionLabel}" VerticalOptions="Center"/>
-                                                    </HorizontalStackLayout>
-                                                </VerticalStackLayout>
+
+                                            <!-- Title + play button -->
+                                            <Grid Grid.Row="1" BackgroundColor="{StaticResource Surface}" Padding="10,8">
+                                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                                                    <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
+                                                        <Label Text="{Binding Title}"
+                                                               Style="{StaticResource SectionTitle}"
+                                                               FontSize="13"
+                                                               LineBreakMode="TailTruncation"
+                                                               MaxLines="2"/>
+                                                    </VerticalStackLayout>
+                                                    <!-- Mini play button -->
+                                                    <Border Grid.Column="1"
+                                                            BackgroundColor="{StaticResource Primary}"
+                                                            StrokeShape="RoundRectangle 16"
+                                                            StrokeThickness="0"
+                                                            WidthRequest="32" HeightRequest="32"
+                                                            VerticalOptions="Center">
+                                                        <Label Text="&#xe037;" FontFamily="MaterialIcons"
+                                                               TextColor="White" FontSize="18"
+                                                               HorizontalOptions="Center" VerticalOptions="Center"/>
+                                                        <Border.GestureRecognizers>
+                                                            <TapGestureRecognizer Command="{Binding BindingContext.OpenHistoryItemCommand, Source={x:Reference ThisPage}}"
+                                                                                  CommandParameter="{Binding .}"/>
+                                                        </Border.GestureRecognizers>
+                                                    </Border>
+                                                </Grid>
                                             </Grid>
+
                                         </Grid>
                                         <Border.GestureRecognizers>
-                                            <TapGestureRecognizer Command="{Binding BindingContext.OpenPoiDetailCommand, Source={x:Reference ThisPage}}"
+                                            <TapGestureRecognizer Command="{Binding BindingContext.OpenHistoryItemCommand, Source={x:Reference ThisPage}}"
                                                                   CommandParameter="{Binding .}"/>
                                         </Border.GestureRecognizers>
                                     </Border>
@@ -182,7 +182,7 @@
                                             </Border>
                                             <!-- Info -->
                                             <VerticalStackLayout Grid.Column="1" Spacing="3" VerticalOptions="Center">
-                                                <Label Text="{Binding Title}" Style="{StaticResource SectionTitle}" FontSize="15"/>
+                                                <Label Text="{Binding Title}" Style="{StaticResource SectionTitle}" FontSize="15" MaxLines="2" LineBreakMode="TailTruncation"/>
                                                 <Label Text="{Binding Description}" Style="{StaticResource CaptionLabel}"
                                                        LineBreakMode="TailTruncation" MaxLines="2"/>
                                             </VerticalStackLayout>
@@ -200,6 +200,75 @@
                                                                           CommandParameter="{Binding .}"/>
                                                 </Border.GestureRecognizers>
                                             </Border>
+                                        </Grid>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding BindingContext.OpenPoiDetailCommand, Source={x:Reference ThisPage}}"
+                                                                  CommandParameter="{Binding .}"/>
+                                        </Border.GestureRecognizers>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+
+                    <!-- ── Khám phá theo chủ đề (Categories) ── -->
+                    <VerticalStackLayout Spacing="12" IsVisible="{Binding HasCategories}">
+                        <Label Text="{Binding CategoriesTitle}" Style="{StaticResource SectionTitle}"/>
+                        <CollectionView ItemsSource="{Binding Categories}"
+                                        ItemsLayout="HorizontalList"
+                                        HorizontalScrollBarVisibility="Never"
+                                        SelectionMode="None">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border StrokeShape="RoundRectangle 20"
+                                            Stroke="{StaticResource Primary}"
+                                            StrokeThickness="1"
+                                            BackgroundColor="{StaticResource Surface}"
+                                            Padding="16,8"
+                                            Margin="0,0,12,0">
+                                        <Label Text="{Binding Name}" 
+                                               TextColor="{StaticResource Primary}"
+                                               FontAttributes="Bold"
+                                               VerticalOptions="Center"/>
+                                        <Border.GestureRecognizers>
+                                            <TapGestureRecognizer Command="{Binding BindingContext.OpenCategoryCommand, Source={x:Reference ThisPage}}"
+                                                                  CommandParameter="{Binding .}"/>
+                                        </Border.GestureRecognizers>
+                                    </Border>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+
+                    <!-- ── Địa điểm nổi bật (Top POIs) ── -->
+                    <VerticalStackLayout Spacing="12" IsVisible="{Binding HasTopPois}">
+                        <Label Text="{Binding TopPoisTitle}" Style="{StaticResource SectionTitle}"/>
+                        <CollectionView ItemsSource="{Binding TopPois}"
+                                        ItemsLayout="HorizontalList"
+                                        HorizontalScrollBarVisibility="Never"
+                                        SelectionMode="None">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource CardBorder}" 
+                                            WidthRequest="220" 
+                                            HeightRequest="160"
+                                            Margin="0,0,16,10" 
+                                            Padding="0">
+                                        <Grid RowDefinitions="*,Auto">
+                                            <!-- POI Image with emoji fallback -->
+                                            <Grid Grid.Row="0">
+                                                <Border BackgroundColor="{StaticResource PrimaryLight}" StrokeThickness="0">
+                                                    <Label Text="&#xe0c8;" FontFamily="MaterialIcons" FontSize="40" TextColor="{StaticResource Primary}"
+                                                           HorizontalOptions="Center" VerticalOptions="Center"/>
+                                                </Border>
+                                                <Image Source="{Binding LogoUrl}" Aspect="AspectFill"/>
+                                            </Grid>
+                                            
+                                            <!-- Info bottom -->
+                                            <Grid Grid.Row="1" BackgroundColor="{StaticResource Surface}" Padding="12">
+                                                <Label Text="{Binding Title}" Style="{StaticResource SectionTitle}" FontSize="14"
+                                                       LineBreakMode="TailTruncation" MaxLines="2"/>
+                                            </Grid>
                                         </Grid>
                                         <Border.GestureRecognizers>
                                             <TapGestureRecognizer Command="{Binding BindingContext.OpenPoiDetailCommand, Source={x:Reference ThisPage}}"
