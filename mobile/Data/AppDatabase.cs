@@ -26,6 +26,7 @@ namespace AudioGo.Data
         {
             await _db.CreateTableAsync<PoiEntity>();
             await _db.CreateTableAsync<TourEntity>();
+            await _db.CreateTableAsync<ArticleEntity>();
 
             // Migration: nếu schema version cũ → xóa bảng và tạo lại
             bool needRebuild = await NeedsListenHistoryRebuildAsync();
@@ -133,6 +134,36 @@ namespace AudioGo.Data
         {
             await EnsureInitAsync();
             await _db.DeleteAllAsync<TourEntity>();
+        }
+
+        // ── Articles ──────────────────────────────────────────────
+
+        public async Task<List<ArticleEntity>> GetArticlesByTypeAsync(string type, string lang, int limit = 10)
+        {
+            await EnsureInitAsync();
+            return await _db.Table<ArticleEntity>()
+                            .Where(a => a.Type == type && a.Lang == lang)
+                            .OrderByDescending(a => a.PublishedAt)
+                            .Take(limit)
+                            .ToListAsync();
+        }
+
+        public async Task<ArticleEntity?> GetArticleAsync(string articleId)
+        {
+            await EnsureInitAsync();
+            return await _db.FindAsync<ArticleEntity>(articleId);
+        }
+
+        public async Task ClearArticlesByTypeAsync(string type, string lang)
+        {
+            await EnsureInitAsync();
+            await _db.ExecuteAsync("DELETE FROM Articles WHERE Type = ? AND Lang = ?", type, lang);
+        }
+
+        public async Task UpsertArticleAsync(ArticleEntity entity)
+        {
+            await EnsureInitAsync();
+            await _db.InsertOrReplaceAsync(entity);
         }
 
         // ── Listen History ─────────────────────────────────────────

@@ -20,6 +20,10 @@ namespace AudioGo.Services.Interfaces
         /// <summary>Lấy delta thay đổi kể từ <paramref name="since"/> (UTC). Trả null nếu lỗi network.</summary>
         Task<PoiDeltaDto?> GetDeltaAsync(DateTime since, string languageCode, CancellationToken ct = default);
 
+        // ── Articles ────────────────────────────────────────────────────────────
+        Task<List<ArticleItemDto>> GetArticlesAsync(string type = "tip", string lang = "vi", int limit = 10, CancellationToken ct = default);
+        Task<ArticleItemDto?> GetArticleDetailAsync(string articleId, string lang = "vi", CancellationToken ct = default);
+
         // ── Tourist Access Payment ─────────────────────────────────────────────
         /// <summary>Khởi tạo giao dịch thanh toán du khách. Trả null nếu lỗi network.</summary>
         Task<TouristPaymentInitResult?> InitTouristPaymentAsync(string deviceId, CancellationToken ct = default);

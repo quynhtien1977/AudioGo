@@ -980,6 +980,26 @@ public static class AppStrings
         {
             ["vi"] = "Thử lại", ["en"] = "Retry"
         },
+        ["news_title"] = new()
+        {
+            ["vi"] = "Tin tức", ["en"] = "News", ["ja"] = "ニュース",
+            ["ko"] = "뉴스", ["zh-Hans"] = "新闻", ["fr"] = "Actualités", ["th"] = "ข่าวสาร"
+        },
+        ["travel_tips_title"] = new()
+        {
+            ["vi"] = "Mẹo du lịch", ["en"] = "Travel Tips", ["ja"] = "旅行のヒント",
+            ["ko"] = "여행 팁", ["zh-Hans"] = "旅游小贴士", ["fr"] = "Conseils de voyage", ["th"] = "เคล็ดลับการเดินทาง"
+        },
+        ["view_all_label"] = new()
+        {
+            ["vi"] = "Xem tất cả →", ["en"] = "View all →", ["ja"] = "すべて見る →",
+            ["ko"] = "모두 보기 →", ["zh-Hans"] = "查看全部 →", ["fr"] = "Voir tout →", ["th"] = "ดูทั้งหมด →"
+        },
+        ["article_read_more"] = new()
+        {
+            ["vi"] = "Xem thêm", ["en"] = "Read more", ["ja"] = "詳細を見る",
+            ["ko"] = "더 읽어보기", ["zh-Hans"] = "阅读更多", ["fr"] = "Lire plus", ["th"] = "อ่านเพิ่มเติม"
+        }
     };
 
     /// <summary>

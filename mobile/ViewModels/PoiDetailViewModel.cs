@@ -565,7 +565,7 @@ namespace AudioGo.ViewModels
         // ── Cleanup ────────────────────────────────────────────────
         /// <summary>
         /// Gọi từ PoiDetailPage.OnDisappearing để dừng timer và hủy event subscription.
-        /// Chạy logic này khi trang bị che lấp (đi vào nền hoặc mở popup) để tiết kiệm CPU & Pin.
+        /// Chạy logic này khi trang bị che lấp (đi vào nền hoặc mở popup) để tiết kiệm CPU &amp; Pin.
         /// </summary>
         public void Cleanup()
         {

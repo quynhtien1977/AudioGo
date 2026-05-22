@@ -17,6 +17,8 @@ public partial class AppShell : Shell
         // Đăng ký routes — MAUI Shell tự resolve từ DI khi page được register vào Services.
         Routing.RegisterRoute(nameof(PoiDetailPage), typeof(PoiDetailPage));
         Routing.RegisterRoute(nameof(TourDetailPage), typeof(TourDetailPage));
+        Routing.RegisterRoute(nameof(ArticleListPage), typeof(ArticleListPage));
+        Routing.RegisterRoute(nameof(ArticleDetailPage), typeof(ArticleDetailPage));
 
 
         // Subscribe to language changes to refresh tab bar labels

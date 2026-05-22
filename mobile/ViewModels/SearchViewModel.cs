@@ -2,6 +2,9 @@ using AudioGo.Services.Interfaces;
 using AudioGo.Helpers;
 using AudioGo_Mobile.Views;
 using AudioGo.Services;
+using AudioGo.Data;
+using AudioGo.Models;
+using AudioGo.Mobile.Models;
 using Shared;
 using Shared.DTOs;
 using System.Collections.ObjectModel;
@@ -16,6 +19,7 @@ namespace AudioGo.ViewModels
     {
         private readonly IApiService _api;
         private readonly SyncService _sync;
+        private readonly AppDatabase _db;
 
         // Shadow base.IsLoading to also call UpdateStates
         public new bool IsLoading
@@ -23,6 +27,11 @@ namespace AudioGo.ViewModels
             get => base.IsLoading;
             set { base.IsLoading = value; UpdateStates(); }
         }
+
+        // ── Article Collections & UI Helpers ──────────────────────
+        public ObservableCollection<ArticleViewModel> NewsArticles { get; } = new();
+        public ObservableCollection<ArticleViewModel> TipArticles { get; } = new();
+        public bool ShowArticles => string.IsNullOrEmpty(Query);
 
         private string? _incomingCategoryId;
         public string? IncomingCategoryId
@@ -47,7 +56,16 @@ namespace AudioGo.ViewModels
         public string Query
         {
             get => _query;
-            set { SetProperty(ref _query, value); _ = SearchAsync(value); }
+            set
+            {
+                if (SetProperty(ref _query, value))
+                {
+                    OnPropertyChanged(nameof(ShowArticles));
+                    OnPropertyChanged(nameof(ShowNewsArticlesSection));
+                    OnPropertyChanged(nameof(ShowTipArticlesSection));
+                    _ = SearchAsync(value);
+                }
+            }
         }
 
         // Alias used by some XAML bindings
@@ -75,6 +93,9 @@ namespace AudioGo.ViewModels
         public string WelcomeSubtitle => AppStrings.Get("search_welcome_subtitle");
         public string PoiSectionTitle => AppStrings.Get("search_section_poi");
         public string TourSectionTitle => AppStrings.Get("search_section_tour");
+        public string NewsTitle => AppStrings.Get("news_title");
+        public string TravelTipsTitle => AppStrings.Get("travel_tips_title");
+        public string ViewAllLabel => AppStrings.Get("view_all_label");
 
         // Legacy string list kept for any leftover bindings
         public List<string> Categories { get; } = CategoryChipVm.GetDefaultChips().Select(c => c.label).ToList();
@@ -94,11 +115,14 @@ namespace AudioGo.ViewModels
         public ICommand FilterCommand  { get; }
         public ICommand OpenPoiCommand { get; }
         public ICommand OpenTourCommand { get; }
+        public ICommand OpenArticleCommand { get; }
+        public ICommand ViewAllArticlesCommand { get; }
 
-        public SearchViewModel(IApiService api, SyncService sync)
+        public SearchViewModel(IApiService api, SyncService sync, AppDatabase db)
         {
             _api = api;
             _sync = sync;
+            _db = db;
 
             // Start with default chips while API loads
             CategoryChips = new ObservableCollection<CategoryChipVm>(
@@ -125,7 +149,20 @@ namespace AudioGo.ViewModels
                 await Shell.Current.GoToAsync($"{nameof(TourDetailPage)}?tourId={vm.TourId}");
             });
 
-            // Load real categories from API asynchronously
+            OpenArticleCommand = new Command<ArticleViewModel>(async vm =>
+            {
+                if (vm is null) return;
+                await Shell.Current.GoToAsync($"ArticleDetailPage?articleId={vm.ArticleId}");
+            });
+
+            ViewAllArticlesCommand = new Command<string>(async type =>
+            {
+                if (string.IsNullOrEmpty(type)) return;
+                await Shell.Current.GoToAsync($"ArticleListPage?type={type}");
+            });
+
+            // Load articles and categories asynchronously
+            _ = InitializeArticlesAsync();
             _ = LoadCategoriesAsync();
 
             _sync.LanguageChanged += OnLanguageChanged;
@@ -149,7 +186,11 @@ namespace AudioGo.ViewModels
             OnPropertyChanged(nameof(WelcomeSubtitle));
             OnPropertyChanged(nameof(PoiSectionTitle));
             OnPropertyChanged(nameof(TourSectionTitle));
+            OnPropertyChanged(nameof(NewsTitle));
+            OnPropertyChanged(nameof(TravelTipsTitle));
+            OnPropertyChanged(nameof(ViewAllLabel));
             _ = LoadCategoriesAsync();
+            _ = InitializeArticlesAsync();
             Pois.Clear();
             Tours.Clear();
             Query = string.Empty;
@@ -311,6 +352,124 @@ namespace AudioGo.ViewModels
                 EmptyTitle = AppStrings.Get("search_empty_title");
                 EmptySubtitle = AppStrings.Get("search_empty_subtitle");
             }
+        }
+
+        // ── Articles Core Logic ──
+
+        public bool HasNewsArticles => NewsArticles.Count > 0;
+        public bool HasTipArticles => TipArticles.Count > 0;
+        public bool ShowNewsArticlesSection => ShowArticles && HasNewsArticles;
+        public bool ShowTipArticlesSection => ShowArticles && HasTipArticles;
+
+        private void UpdateHasArticlesProperties()
+        {
+            OnPropertyChanged(nameof(HasNewsArticles));
+            OnPropertyChanged(nameof(HasTipArticles));
+            OnPropertyChanged(nameof(ShowNewsArticlesSection));
+            OnPropertyChanged(nameof(ShowTipArticlesSection));
+        }
+
+        private async Task InitializeArticlesAsync()
+        {
+            string lang = AppSettings.GetAppLanguage();
+
+            // Load local SQLite cache immediately to keep page loading instant
+            await LoadArticlesLocalAsync("news", lang);
+            await LoadArticlesLocalAsync("tip", lang);
+
+            // Fetch and sync from server in background thread
+            _ = Task.Run(async () =>
+            {
+                await SyncArticlesRemoteAsync("news", lang);
+                await SyncArticlesRemoteAsync("tip", lang);
+            });
+        }
+
+        private async Task LoadArticlesLocalAsync(string type, string lang)
+        {
+            int limit = type == "news" ? 3 : 5;
+            var localEntities = await _db.GetArticlesByTypeAsync(type, lang, limit);
+
+            await MainThread.InvokeOnMainThreadAsync(() =>
+            {
+                var collection = type == "news" ? NewsArticles : TipArticles;
+                collection.Clear();
+                foreach (var entity in localEntities)
+                {
+                    collection.Add(MapToViewModel(entity));
+                }
+                UpdateHasArticlesProperties();
+            });
+        }
+
+        private async Task SyncArticlesRemoteAsync(string type, string lang)
+        {
+            try
+            {
+                if (!NetworkHelper.HasInternet()) return;
+
+                int limit = type == "news" ? 3 : 5;
+                var dtos = await _api.GetArticlesAsync(type, lang, limit);
+                if (dtos == null || dtos.Count == 0) return;
+
+                // Sync: clear current cache of this type & lang, then upsert
+                await _db.ClearArticlesByTypeAsync(type, lang);
+                foreach (var dto in dtos)
+                {
+                    await _db.UpsertArticleAsync(MapToEntity(dto, lang));
+                }
+
+                // Query from local SQLite again to maintain correct limit and ordering
+                var refreshedEntities = await _db.GetArticlesByTypeAsync(type, lang, limit);
+
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    var collection = type == "news" ? NewsArticles : TipArticles;
+                    collection.Clear();
+                    foreach (var entity in refreshedEntities)
+                    {
+                        collection.Add(MapToViewModel(entity));
+                    }
+                    UpdateHasArticlesProperties();
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[SearchViewModel] SyncArticlesRemoteAsync error for type {type}: {ex.Message}");
+            }
+        }
+
+        // ── Mapping Helpers ──
+
+        private ArticleViewModel MapToViewModel(ArticleEntity entity)
+        {
+            return new ArticleViewModel
+            {
+                ArticleId = entity.ArticleId,
+                Type = entity.Type,
+                ImageUrl = entity.ImageUrl,
+                Title = entity.Title,
+                Summary = entity.Summary,
+                Body = entity.Body,
+                PublishedAt = entity.PublishedAt,
+                Lang = entity.Lang
+            };
+        }
+
+        private ArticleEntity MapToEntity(ArticleItemDto dto, string lang)
+        {
+            return new ArticleEntity
+            {
+                ArticleId = dto.ArticleId,
+                Type = dto.Type,
+                ImageUrl = dto.ImageUrl,
+                Title = dto.Title,
+                Summary = dto.Summary,
+                Body = dto.Body,
+                PublishedAt = dto.PublishedAt,
+                Lang = lang,
+                SyncedAt = DateTime.UtcNow
+            };
         }
     }
 

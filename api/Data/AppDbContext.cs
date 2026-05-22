@@ -23,6 +23,8 @@ namespace Server.Data
         public DbSet<OwnerSubscription>   OwnerSubscriptions => Set<OwnerSubscription>();
         public DbSet<PaymentTransaction>  PaymentTransactions => Set<PaymentTransaction>();
         
+        public DbSet<Article>             Articles          => Set<Article>();
+        public DbSet<ArticleContent>      ArticleContents   => Set<ArticleContent>();
 
         protected override void OnModelCreating(ModelBuilder m)
         {
@@ -44,6 +46,8 @@ namespace Server.Data
             m.Entity<SubscriptionPlan>   ().ToTable("SubscriptionPlan");
             m.Entity<OwnerSubscription>  ().ToTable("OwnerSubscription",  t => t.HasTrigger("TR_OwnerSubscription_UpdateTimestamp"));
             m.Entity<PaymentTransaction> ().ToTable("PaymentTransaction",  t => t.HasTrigger("TR_PaymentTransaction_UpdateTimestamp"));
+            m.Entity<Article>            ().ToTable("Article",            t => t.HasTrigger("TR_Article_UpdateTimestamp"));
+            m.Entity<ArticleContent>     ().ToTable("ArticleContent");
 
             // ── 2. Primary Keys ─────────────────────────────────────────
             m.Entity<PoiContent>   ().HasKey(e => e.ContentId);
@@ -54,6 +58,7 @@ namespace Server.Data
             // Composite PKs — PHẢI khai báo trước relationships
             m.Entity<CategoryPoi>().HasKey(e => new { e.CategoryId, e.PoiId });
             m.Entity<TourPoi>    ().HasKey(e => new { e.TourId,     e.PoiId });
+            m.Entity<ArticleContent>().HasKey(e => new { e.ArticleId, e.Lang });
 
             // ── 3. Relationships — PHẢI chỉ rõ CÙNG nav prop ở CẢ 2 phía
             //       để EF Core không tự tạo relationship thứ 2 (gây shadow FK)
@@ -113,6 +118,13 @@ namespace Server.Data
                 .WithMany()           // Poi KHÔNG có ICollection<ListenHistory>
                 .HasForeignKey(lh => lh.PoiId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Article → ArticleContent
+            m.Entity<Article>()
+                .HasMany(a => a.Contents)
+                .WithOne(c => c.Article)
+                .HasForeignKey(c => c.ArticleId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // ── 4. Unique index ─────────────────────────────────────────
             m.Entity<PoiContent>()
