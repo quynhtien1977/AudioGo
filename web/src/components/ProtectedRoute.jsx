@@ -11,7 +11,7 @@ export default function ProtectedRoute({ children, roles }) {
 
   // sai role
   if (roles && !roles.includes(user.role)) {
-    return <Navigate to="/" />;
+    return <Navigate to="/404" replace />;
   }
 
   return children;

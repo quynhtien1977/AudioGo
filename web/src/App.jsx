@@ -33,6 +33,7 @@ import AdminTransactionDashboard from "@/pages/AdminTransactionDashboard";
 
 
 import ProtectedRoute from "@/components/ProtectedRoute";
+import NotFoundPage from "@/pages/NotFoundPage";
 
 export default function App() {
   return (
@@ -356,10 +357,11 @@ export default function App() {
           }
         />
 
-
+        {/* 404 Route */}
+        <Route path="/404" element={<NotFoundPage />} />
 
         {/* fallback */}
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="*" element={<NotFoundPage />} />
         </Routes>
         </SubscriptionProvider>
       </SearchProvider>
