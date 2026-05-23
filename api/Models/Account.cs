@@ -12,6 +12,7 @@ namespace Server.Models
         public bool IsLocked { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
+        public DateTime? DeletedAt { get; set; }
 
         /// <summary>
         /// Cột shortcut — gói đăng ký hiện tại của Owner.

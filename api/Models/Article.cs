@@ -14,6 +14,7 @@ namespace Server.Models
         public DateTime PublishedAt { get; set; } = DateTime.UtcNow;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
+        public DateTime? DeletedAt { get; set; }
 
         // Navigation
         [JsonIgnore]

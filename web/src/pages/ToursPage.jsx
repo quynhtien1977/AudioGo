@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
-  Plus, MapPin, Calendar, ShieldCheck, Eye, ExternalLink
+  Plus, MapPin, Calendar, ShieldCheck, Eye, ExternalLink, Trash2
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -20,6 +20,8 @@ const ToursPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isCreatingTour, setIsCreatingTour] = useState(false);
   const [toggleConfirmId, setToggleConfirmId] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedTourId, setSelectedTourId] = useState(null);
 
   // Fetch tours from API
   useEffect(() => {
@@ -125,6 +127,26 @@ const ToursPage = () => {
     navigate(`/tours/${tourId}`);
   };
 
+  const openDeleteConfirm = (id) => {
+    setSelectedTourId(id);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      setIsLoading(true);
+      await deleteTourApi(selectedTourId);
+      setTours(prev => prev.filter(t => t.tourId !== selectedTourId));
+      toast.success("Xóa Tour thành công");
+    } catch (err) {
+      console.error("Error deleting tour:", err);
+      toast.error(err?.response?.data || "Xóa Tour thất bại");
+    } finally {
+      setIsLoading(false);
+      setShowDeleteModal(false);
+    }
+  };
+
   return (
     <div className="p-8 bg-[#FDF8FA]/50 min-h-screen space-y-8 font-sans">
       {/* HEADER SECTION */}
@@ -184,6 +206,16 @@ const ToursPage = () => {
             }`}>
               <div className="relative h-48 w-full overflow-hidden">
                 <img src={tour.thumbnailUrl || "https://via.placeholder.com/400x200?text=No+Image"} alt={tour.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openDeleteConfirm(tour.tourId);
+                  }}
+                  className="absolute top-4 right-4 bg-white/95 hover:bg-red-50 text-red-500 p-2.5 rounded-full border border-red-100 shadow-md hover:scale-110 active:scale-95 transition-all z-10"
+                  title="Xóa Tour"
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
 
               <div className="p-8 pt-6 space-y-4">
@@ -253,6 +285,19 @@ const ToursPage = () => {
         cancelText="Hủy"
         message={tours.find(t => t.tourId === toggleConfirmId)?.isActive ? "Bạn có chắc chắn muốn ẩn Tour này?" : "Bạn có chắc chắn muốn hiện Tour này?"}
       />
+
+      {/* MODAL DELETE TOUR */}
+      {showDeleteModal && (
+        <ConfirmModal
+          open={showDeleteModal}
+          title="Xác nhận xóa Tour?"
+          message="Bạn có chắc chắn muốn xóa Tour này không? Tour sẽ bị xóa mềm khỏi hệ thống."
+          confirmText="Xóa"
+          cancelText="Hủy"
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setShowDeleteModal(false)}
+        />
+      )}
     </div>
   );
 };

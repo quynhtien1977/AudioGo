@@ -18,7 +18,7 @@ namespace Server.Repositories
         {
             var articles = await _db.Articles
                 .AsNoTracking()
-                .Where(a => a.Type == type && a.IsActive)
+                .Where(a => a.Type == type && a.IsActive && a.DeletedAt == null)
                 .OrderByDescending(a => a.PublishedAt)
                 .Take(limit)
                 .Include(a => a.Contents)
@@ -41,7 +41,7 @@ namespace Server.Repositories
         {
             return await _db.Articles
                 .Include(a => a.Contents)
-                .FirstOrDefaultAsync(a => a.ArticleId == articleId);
+                .FirstOrDefaultAsync(a => a.ArticleId == articleId && a.DeletedAt == null);
         }
 
         public async Task<Article?> GetByIdWithLangAsync(string articleId, string lang)
@@ -49,7 +49,7 @@ namespace Server.Repositories
             var article = await _db.Articles
                 .AsNoTracking()
                 .Include(a => a.Contents)
-                .FirstOrDefaultAsync(a => a.ArticleId == articleId);
+                .FirstOrDefaultAsync(a => a.ArticleId == articleId && a.DeletedAt == null);
 
             if (article != null)
             {
@@ -110,14 +110,16 @@ namespace Server.Repositories
         {
             var article = await _db.Articles.FindAsync(articleId);
             if (article is null) return false;
-            _db.Articles.Remove(article);
+            article.DeletedAt = DateTime.UtcNow;
+            article.IsActive = false;
+            article.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
             return true;
         }
 
         public async Task<List<Article>> GetAllCmsAsync(string? type, string lang)
         {
-            IQueryable<Article> query = _db.Articles.AsNoTracking();
+            IQueryable<Article> query = _db.Articles.AsNoTracking().Where(a => a.DeletedAt == null);
             if (!string.IsNullOrEmpty(type))
             {
                 query = query.Where(a => a.Type == type);
