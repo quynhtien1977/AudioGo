@@ -77,7 +77,13 @@ namespace Server.Controllers.Cms
         public async Task<IActionResult> Delete(string id)
         {
             var ok = await _repo.DeleteAsync(id);
-            return ok ? NoContent() : NotFound();
+            if (!ok)
+            {
+                var exists = await _repo.GetByIdAsync(id);
+                if (exists == null) return NotFound();
+                return Conflict("Danh mục này đang được sử dụng bởi một số POI. Vui lòng gỡ POI khỏi danh mục trước khi xóa.");
+            }
+            return NoContent();
         }
 
         private static CategoryDto ToDto(Category c) =>

@@ -12,7 +12,7 @@ namespace Server.Repositories
 
         public Task<List<Poi>> GetAllAsync() =>
             _db.Pois.AsNoTracking()
-                .Where(p => p.IsActive)
+                .Where(p => p.IsActive && p.DeletedAt == null)
                 .Include(p => p.Contents)
                 .Include(p => p.Gallery)
                 .Include(p => p.CategoryPois)
@@ -27,7 +27,7 @@ namespace Server.Repositories
         public async Task<List<Poi>> SearchAsync(string? query, string? category)
         {
             var q = _db.Pois.AsNoTracking()
-                .Where(p => p.IsActive)
+                .Where(p => p.IsActive && p.DeletedAt == null)
                 .Include(p => p.Contents)
                 .Include(p => p.Gallery)
                 .Include(p => p.CategoryPois)
@@ -64,7 +64,7 @@ namespace Server.Repositories
                 .Include(p => p.Gallery)
                 .Include(p => p.CategoryPois)
                     .ThenInclude(cp => cp.Category)
-                .FirstOrDefaultAsync(p => p.PoiId == poiId && p.IsActive);
+                .FirstOrDefaultAsync(p => p.PoiId == poiId && p.IsActive && p.DeletedAt == null);
 
         /// <summary>
         /// Tìm POI theo ID cho CMS — không filter IsActive (có thể lấy POI bị ẩn).
@@ -75,7 +75,7 @@ namespace Server.Repositories
                 .Include(p => p.Gallery)
                 .Include(p => p.CategoryPois)
                     .ThenInclude(cp => cp.Category)
-                .FirstOrDefaultAsync(p => p.PoiId == poiId);
+                .FirstOrDefaultAsync(p => p.PoiId == poiId && p.DeletedAt == null);
 
         /// <summary>
         /// Haversine filter: lấy POI trong bán kính (metres) từ toạ độ cho trước.
@@ -91,7 +91,7 @@ namespace Server.Repositories
             double lonDelta = radiusMeters / (111_000 * Math.Cos(latRad));
 
             var candidates = await _db.Pois.AsNoTracking()
-                .Where(p => p.IsActive
+                .Where(p => p.IsActive && p.DeletedAt == null
                          && p.Latitude  >= lat - latDelta && p.Latitude  <= lat + latDelta
                          && p.Longitude >= lon - lonDelta && p.Longitude <= lon + lonDelta)
                 .Include(p => p.Contents)
@@ -119,6 +119,7 @@ namespace Server.Repositories
                 .Include(p => p.Gallery)
                 .Include(p => p.CategoryPois)
                     .ThenInclude(cp => cp.Category)
+                .Where(p => p.DeletedAt == null)
                 .AsQueryable();
 
             // isActive null → trả hết (CMS cần thấy toàn bộ)
@@ -175,7 +176,9 @@ namespace Server.Repositories
         {
             var poi = await _db.Pois.FindAsync(poiId);
             if (poi is null) return false;
-            _db.Pois.Remove(poi);
+            poi.DeletedAt = DateTime.UtcNow;
+            poi.IsActive = false; // ensure delta sync can spot it too
+            poi.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
             return true;
         }

@@ -17,6 +17,7 @@ namespace Server.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
+        public DateTime? DeletedAt { get; set; }
 
         // Navigation
         public ICollection<CategoryPoi> CategoryPois { get; set; } = new List<CategoryPoi>();

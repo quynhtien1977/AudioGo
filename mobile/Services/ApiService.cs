@@ -5,7 +5,6 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Json;
-using Shared.DTOs;
 
 namespace AudioGo.Services
 {
@@ -361,6 +360,61 @@ namespace AudioGo.Services
             catch (Exception ex)
             {
                 Debug.WriteLine($"[ApiService] GetListenHistoryAsync: {ex.Message}");
+                return null;
+            }
+        }
+
+        public async Task<List<ArticleItemDto>> GetArticlesAsync(string type = "tip", string lang = "vi", int limit = 10, CancellationToken ct = default)
+        {
+            try
+            {
+                var url = $"api/mobile/articles?type={Uri.EscapeDataString(type)}&lang={Uri.EscapeDataString(lang)}&limit={limit}";
+                var result = await _http.GetFromJsonAsync<List<ArticleItemDto>>(url, ct);
+                if (result != null)
+                {
+                    var baseUrl = _http.BaseAddress?.ToString().TrimEnd('/');
+                    if (!string.IsNullOrEmpty(baseUrl))
+                    {
+                        foreach (var a in result)
+                        {
+                            if (!string.IsNullOrEmpty(a.ImageUrl) && !a.ImageUrl.StartsWith("http"))
+                            {
+                                a.ImageUrl = $"{baseUrl}/{a.ImageUrl.TrimStart('/')}";
+                            }
+                        }
+                    }
+                }
+                return result ?? new List<ArticleItemDto>();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] GetArticlesAsync error: {ex.Message}");
+                return new List<ArticleItemDto>();
+            }
+        }
+
+        public async Task<ArticleItemDto?> GetArticleDetailAsync(string articleId, string lang = "vi", CancellationToken ct = default)
+        {
+            try
+            {
+                var url = $"api/mobile/articles/{Uri.EscapeDataString(articleId)}?lang={Uri.EscapeDataString(lang)}";
+                var result = await _http.GetFromJsonAsync<ArticleItemDto>(url, ct);
+                if (result != null)
+                {
+                    var baseUrl = _http.BaseAddress?.ToString().TrimEnd('/');
+                    if (!string.IsNullOrEmpty(baseUrl))
+                    {
+                        if (!string.IsNullOrEmpty(result.ImageUrl) && !result.ImageUrl.StartsWith("http"))
+                        {
+                            result.ImageUrl = $"{baseUrl}/{result.ImageUrl.TrimStart('/')}";
+                        }
+                    }
+                }
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ApiService] GetArticleDetailAsync error: {ex.Message}");
                 return null;
             }
         }

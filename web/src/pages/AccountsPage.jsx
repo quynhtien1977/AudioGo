@@ -4,6 +4,7 @@ import {
   ChevronRight,
   Lock,
   Unlock,
+  Trash2,
 } from "lucide-react"
 import toast from "react-hot-toast"
 
@@ -274,7 +275,7 @@ export default function AccountsPage() {
   )
 
   const gridLayout =
-    "grid grid-cols-[1.5fr_1.5fr_2fr_1fr_1.2fr_1.5fr_1.2fr_1fr_0.5fr]"
+    "grid grid-cols-[1.5fr_1.5fr_2fr_1fr_1.2fr_1.5fr_1.2fr_1fr_0.8fr]"
 
   return (
     <div>
@@ -377,21 +378,32 @@ export default function AccountsPage() {
                 {formatDate(user.updatedAt)}
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-center items-center gap-3">
                 {isSelf ? (
                   <span className="text-gray-300">—</span>
                 ) : (
-                  <button
-                    onClick={() =>
-                      handleToggleLock(user.accountId, user.isLocked)
-                    }
-                  >
-                    {user.isLocked ? (
-                      <Lock size={16} />
-                    ) : (
-                      <Unlock size={16} />
-                    )}
-                  </button>
+                  <>
+                    <button
+                      onClick={() =>
+                        handleToggleLock(user.accountId, user.isLocked)
+                      }
+                      title={user.isLocked ? "Mở khóa tài khoản" : "Khóa tài khoản"}
+                      className="text-gray-400 hover:text-pink-500 transition"
+                    >
+                      {user.isLocked ? (
+                        <Lock size={16} />
+                      ) : (
+                        <Unlock size={16} />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleDelete(user.accountId)}
+                      title="Xóa tài khoản"
+                      className="text-gray-400 hover:text-red-500 transition"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </>
                 )}
               </div>
             </div>

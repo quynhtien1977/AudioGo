@@ -1,5 +1,6 @@
 import { useEffect, useState, useContext } from "react"
 import { Edit3, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
+import toast from "react-hot-toast"
 
 import {
   getCategoriesApi,
@@ -68,11 +69,18 @@ export default function CategoryPage() {
         prev.filter(c => c.categoryId !== selectedCategoryId)
       )
 
+      toast.success("Xóa danh mục thành công")
+
       if (paginatedData.length === 1 && currentPage > 1) {
         setCurrentPage(currentPage - 1)
       }
     } catch (err) {
       console.error(err)
+      if (err.response?.status === 409) {
+        toast.error(err.response.data || "Danh mục đang có POI liên kết, không thể xóa.")
+      } else {
+        toast.error("Xóa danh mục thất bại")
+      }
     }
 
     setShowDeleteModal(false)

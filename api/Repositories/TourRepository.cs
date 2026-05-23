@@ -20,7 +20,7 @@ namespace Server.Repositories
         /// </summary>
         public Task<List<Tour>> GetAllAsync() =>
             BaseQuery().AsNoTracking()
-                .Where(t => t.IsActive)
+                .Where(t => t.IsActive && t.DeletedAt == null)
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
 
@@ -29,6 +29,7 @@ namespace Server.Repositories
         /// </summary>
         public Task<List<Tour>> GetAllIncludingInactiveAsync() =>
             BaseQuery().AsNoTracking()
+                .Where(t => t.DeletedAt == null)
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
 
@@ -42,7 +43,7 @@ namespace Server.Repositories
                     .ThenInclude(tp => tp.Poi)
                         .ThenInclude(p => p!.CategoryPois)
                             .ThenInclude(cp => cp.Category)
-                .FirstOrDefaultAsync(t => t.TourId == tourId);
+                .FirstOrDefaultAsync(t => t.TourId == tourId && t.DeletedAt == null);
 
         public async Task<Tour> CreateAsync(Tour tour)
         {
@@ -72,6 +73,7 @@ namespace Server.Repositories
         {
             var tour = await _db.Tours.FindAsync(tourId);
             if (tour is null) return false;
+            tour.DeletedAt = DateTime.UtcNow;
             tour.IsActive = false;
             tour.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
@@ -86,6 +88,7 @@ namespace Server.Repositories
             var tour = await _db.Tours.FindAsync(tourId);
             if (tour is null) return false;
             tour.IsActive = true;
+            tour.DeletedAt = null;
             tour.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
             return true;

@@ -35,6 +35,7 @@ namespace Server.Models
 
         /// <summary>Soft-delete flag. False = tour đã bị ẩn bởi admin.</summary>
         public bool IsActive { get; set; } = true;
+        public DateTime? DeletedAt { get; set; }
 
         // Navigation
         public ICollection<TourPoi> TourPois { get; set; } = new List<TourPoi>();

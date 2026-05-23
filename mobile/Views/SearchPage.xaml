@@ -2,6 +2,7 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:AudioGo.ViewModels"
+             xmlns:models="clr-namespace:AudioGo.Mobile.Models"
              x:Class="AudioGo_Mobile.Views.SearchPage"
              x:Name="ThisPage"
              Shell.NavBarIsVisible="False"
@@ -187,6 +188,88 @@
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
                 </CollectionView>
+
+                <!-- ── Tin tức ── -->
+                <VerticalStackLayout IsVisible="{Binding ShowNewsArticlesSection}" Spacing="12" Margin="0,10,0,10">
+                    <Grid ColumnDefinitions="*,Auto" Padding="0,4">
+                        <Label Text="{Binding NewsTitle}" Style="{StaticResource SectionTitle}" VerticalOptions="Center"/>
+                        <Label Grid.Column="1" Text="{Binding ViewAllLabel}" Style="{StaticResource PrimaryLabel}" VerticalOptions="Center">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding ViewAllArticlesCommand}" CommandParameter="news"/>
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </Grid>
+                    <CollectionView ItemsSource="{Binding NewsArticles}" ItemsLayout="HorizontalList"
+                                    HorizontalScrollBarVisibility="Never" SelectionMode="None" HeightRequest="190">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:ArticleViewModel">
+                                <Border Style="{StaticResource TourCard}" Margin="0,0,12,0" Padding="0">
+                                    <Grid RowDefinitions="100,*" RowSpacing="0">
+                                        <!-- Thumbnail -->
+                                        <Grid Grid.Row="0">
+                                            <Border BackgroundColor="{StaticResource DarkSurface}" StrokeThickness="0">
+                                                <Label Text="{Binding TypeEmoji}" FontSize="32" HorizontalOptions="Center" VerticalOptions="Center"/>
+                                            </Border>
+                                            <Image Source="{Binding DisplayImageSource}" Aspect="AspectFill" IsVisible="{Binding HasImage}"/>
+                                        </Grid>
+                                        <!-- Card Info -->
+                                        <VerticalStackLayout Grid.Row="1" Padding="10,8" Spacing="4">
+                                            <Label Text="{Binding Title}" Style="{StaticResource SectionTitle}" FontSize="13" MaxLines="2" LineBreakMode="TailTruncation"/>
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <Label Grid.Column="0" Text="{Binding Summary}" Style="{StaticResource CaptionLabel}" FontSize="11" MaxLines="1" LineBreakMode="TailTruncation"/>
+                                                <Label Grid.Column="1" Text="{Binding DateDisplay}" Style="{StaticResource CaptionLabel}" FontSize="11"/>
+                                            </Grid>
+                                        </VerticalStackLayout>
+                                    </Grid>
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding BindingContext.OpenArticleCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}"/>
+                                    </Border.GestureRecognizers>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+
+                <!-- ── Mẹo du lịch ── -->
+                <VerticalStackLayout IsVisible="{Binding ShowTipArticlesSection}" Spacing="12" Margin="0,10,0,10">
+                    <Grid ColumnDefinitions="*,Auto" Padding="0,4">
+                        <Label Text="{Binding TravelTipsTitle}" Style="{StaticResource SectionTitle}" VerticalOptions="Center"/>
+                        <Label Grid.Column="1" Text="{Binding ViewAllLabel}" Style="{StaticResource PrimaryLabel}" VerticalOptions="Center">
+                            <Label.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding ViewAllArticlesCommand}" CommandParameter="tip"/>
+                            </Label.GestureRecognizers>
+                        </Label>
+                    </Grid>
+                    <CollectionView ItemsSource="{Binding TipArticles}" ItemsLayout="HorizontalList"
+                                    HorizontalScrollBarVisibility="Never" SelectionMode="None" HeightRequest="190">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:ArticleViewModel">
+                                <Border Style="{StaticResource TourCard}" Margin="0,0,12,0" Padding="0">
+                                    <Grid RowDefinitions="100,*" RowSpacing="0">
+                                        <!-- Thumbnail -->
+                                        <Grid Grid.Row="0">
+                                            <Border BackgroundColor="{StaticResource DarkSurface}" StrokeThickness="0">
+                                                <Label Text="{Binding TypeEmoji}" FontSize="32" HorizontalOptions="Center" VerticalOptions="Center"/>
+                                            </Border>
+                                            <Image Source="{Binding DisplayImageSource}" Aspect="AspectFill" IsVisible="{Binding HasImage}"/>
+                                        </Grid>
+                                        <!-- Card Info -->
+                                        <VerticalStackLayout Grid.Row="1" Padding="10,8" Spacing="4">
+                                            <Label Text="{Binding Title}" Style="{StaticResource SectionTitle}" FontSize="13" MaxLines="2" LineBreakMode="TailTruncation"/>
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <Label Grid.Column="0" Text="{Binding Summary}" Style="{StaticResource CaptionLabel}" FontSize="11" MaxLines="1" LineBreakMode="TailTruncation"/>
+                                                <Label Grid.Column="1" Text="{Binding DateDisplay}" Style="{StaticResource CaptionLabel}" FontSize="11"/>
+                                            </Grid>
+                                        </VerticalStackLayout>
+                                    </Grid>
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding BindingContext.OpenArticleCommand, Source={x:Reference ThisPage}}" CommandParameter="{Binding .}"/>
+                                    </Border.GestureRecognizers>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
 
                 <BoxView HeightRequest="16" Color="Transparent"/>
             </VerticalStackLayout>

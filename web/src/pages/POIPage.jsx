@@ -374,22 +374,27 @@ export default function POIPage() {
 
   const handleConfirmDelete = async () => {
     try {
-      const payload = {
-        ActionType: "DELETE",
-        PoiId: selectedPoiId,
-        // Draft = null: backend tự resolve tên POI từ DB và lưu vào ProposedData
-        Draft: null
-      }
+      if (role === "Admin") {
+        await deletePOI(selectedPoiId)
+        setPois(prev => prev.filter(p => p.rank !== selectedPoiId))
+        toast.success("Xóa POI thành công!")
+      } else {
+        const payload = {
+          ActionType: "DELETE",
+          PoiId: selectedPoiId,
+          Draft: null
+        }
 
-      await createPoiRequest(payload)
-      toast.success("Gửi yêu cầu xóa thành công! Admin sẽ xem xét.")
-      
-      // Refresh danh sách request
-      const requests = await getMyPoiRequests()
-      setPoiRequests(requests || [])
+        await createPoiRequest(payload)
+        toast.success("Gửi yêu cầu xóa thành công! Admin sẽ xem xét.")
+        
+        // Refresh danh sách request
+        const requests = await getMyPoiRequests()
+        setPoiRequests(requests || [])
+      }
     } catch (err) {
       console.error(err)
-      toast.error("Gửi yêu cầu thất bại!")
+      toast.error("Thao tác thất bại!")
     }
 
     setShowDeleteModal(false)
@@ -640,18 +645,29 @@ export default function POIPage() {
                 <td className="p-4">  
                   <div className="flex items-center gap-1">
                     {role === "Admin" && (
-                      <button
-                          onClick={() => openHideConfirm(poi.rank)}
-                          className={`w-8 h-8 flex items-center justify-end rounded-full transition-colors text-pink-500`}
-                          title={!poi.isActive ? "Hiện POI" : "Ẩn POI"}
-                      >
-                          {!poi.isActive ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>)}
+                      <>
+                        <button
+                            onClick={() => openHideConfirm(poi.rank)}
+                            className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors text-pink-500 hover:bg-pink-50`}
+                            title={!poi.isActive ? "Hiện POI" : "Ẩn POI"}
+                        >
+                            {!poi.isActive ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                        <button
+                            onClick={() => openDeleteConfirm(poi.rank)}
+                            className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors text-red-500 hover:text-red-600 hover:bg-red-50`}
+                            title="Xóa POI"
+                        >
+                            <Trash size={18} />
+                        </button>
+                      </>
+                    )}
 
                       {role === "Owner" && (
                         <button
                             onClick={() => openDeleteConfirm(poi.rank)}
-                            className={`w-8 h-8 flex items-center justify-end rounded-full transition-colors text-pink-500`}
+                            className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors text-red-500 hover:text-red-600 hover:bg-red-50`}
+                            title="Xóa POI"
                         >
                             <Trash size={18}/>
                         </button>
@@ -659,7 +675,7 @@ export default function POIPage() {
 
                     <NavLink
                       to={`/pois/${poi.rank}`}
-                      className="w-8 h-8 flex items-center justify-center rounded-full transition-colors text-pink-500 hover:text-pink-600"
+                      className="w-8 h-8 flex items-center justify-center rounded-full transition-colors text-pink-500 hover:text-pink-600 hover:bg-pink-50"
                       title="Xem chi tiết POI"
                       >
                       <List size={18} />
@@ -929,9 +945,12 @@ export default function POIPage() {
       { showDeleteModal && (
         <ConfirmModal
           open={showDeleteModal}
-          title="Xác nhận xóa?"
-          message="Hệ thống sẽ gửi yêu cầu phê duyệt xóa điểm này đến Quản trị viên (Admin). Bạn có muốn tiếp tục?"
-          confirmText="Gửi yêu cầu"
+          title={role === "Admin" ? "Xác nhận xóa POI?" : "Xác nhận xóa?"}
+          message={role === "Admin"
+            ? "Bạn có chắc chắn muốn xóa điểm du lịch này không? Điểm du lịch sẽ bị xóa mềm khỏi hệ thống."
+            : "Hệ thống sẽ gửi yêu cầu phê duyệt xóa điểm này đến Quản trị viên (Admin). Bạn có muốn tiếp tục?"
+          }
+          confirmText={role === "Admin" ? "Xóa" : "Gửi yêu cầu"}
           cancelText="Hủy bỏ"
           onConfirm={handleConfirmDelete}
           onCancel={() => setShowDeleteModal(false)}

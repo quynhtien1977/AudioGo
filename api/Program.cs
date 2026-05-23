@@ -83,6 +83,8 @@ builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<ITourRepository, TourRepository>();
 builder.Services.AddScoped<IListenHistoryRepository, ListenHistoryRepository>();
 builder.Services.AddScoped<ILocationLogRepository, LocationLogRepository>();
+builder.Services.AddScoped<IArticleRepository, ArticleRepository>();
+builder.Services.AddScoped<IArticleTranslationService, ArticleTranslationService>();
 builder.Services.AddScoped<AuthService>();
 
 // ── Background Queues ────────────────────────────────────────────────
@@ -111,6 +113,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<SubscriptionService>();
 builder.Services.AddScoped<PaymentWebhookService>();
 builder.Services.AddHostedService<PaymentCleanupService>(); // Tự động expire PENDING tx sau 30 phút
+builder.Services.AddHostedService<DataRetentionService>(); // Tự động xóa dữ liệu định vị (30 ngày) và lịch sử nghe (90 ngày)
 
 
 // ── Controllers & OpenAPI ─────────────────────────────────────────────

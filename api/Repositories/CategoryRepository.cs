@@ -12,13 +12,14 @@ namespace Server.Repositories
 
         public Task<List<Category>> GetAllAsync() =>
             _db.Categories.AsNoTracking()
+                .Where(c => c.DeletedAt == null)
                 .Include(c => c.CategoryPois)
                 .ToListAsync();
 
         public Task<Category?> GetByIdAsync(string categoryId) =>
             _db.Categories.AsNoTracking()
                 .Include(c => c.CategoryPois)
-                .FirstOrDefaultAsync(c => c.CategoryId == categoryId);
+                .FirstOrDefaultAsync(c => c.CategoryId == categoryId && c.DeletedAt == null);
 
         public async Task<Category> CreateAsync(Category category)
         {
@@ -40,9 +41,17 @@ namespace Server.Repositories
 
         public async Task<bool> DeleteAsync(string categoryId)
         {
+            // Guard: không xóa nếu category đang có POI active
+            var hasActivePois = await _db.CategoryPois
+                .AnyAsync(cp => cp.CategoryId == categoryId 
+                             && cp.Poi != null 
+                             && cp.Poi.DeletedAt == null);
+            if (hasActivePois) return false;
+
             var category = await _db.Categories.FindAsync(categoryId);
             if (category is null) return false;
-            _db.Categories.Remove(category);
+            category.DeletedAt = DateTime.UtcNow;
+            category.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
             return true;
         }

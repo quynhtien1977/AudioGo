@@ -17,19 +17,21 @@ namespace Server.Repositories
         // ================= GET =================
         public async Task<List<Account>> GetAllAsync()
         {
-            return await _db.Accounts.AsNoTracking().ToListAsync();
+            return await _db.Accounts.AsNoTracking().Where(a => a.DeletedAt == null).ToListAsync();
         }
 
         public async Task<Account?> GetByIdAsync(string id)
         {
-            return await _db.Accounts.FindAsync(id);
+            var acc = await _db.Accounts.FindAsync(id);
+            if (acc == null || acc.DeletedAt != null) return null;
+            return acc;
         }
 
         // 🔥 BONUS (nên có cho login)
         public async Task<Account?> GetByUsernameAsync(string username)
         {
             return await _db.Accounts
-                .FirstOrDefaultAsync(x => x.Username == username);
+                .FirstOrDefaultAsync(x => x.Username == username && x.DeletedAt == null);
         }
 
         // ================= CREATE =================
@@ -87,7 +89,9 @@ namespace Server.Repositories
             var acc = await _db.Accounts.FindAsync(id);
             if (acc == null) return false;
 
-            _db.Accounts.Remove(acc);
+            acc.DeletedAt = DateTime.UtcNow;
+            acc.IsLocked = true; // cũng lock để ngăn login tức thời
+            acc.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
             return true;
         }

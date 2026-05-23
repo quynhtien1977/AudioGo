@@ -9,11 +9,11 @@ import {
   BadgeCheck,
   QrCode,
   Smartphone,
-  Route as RouteIcon2,
   BarChart3,
   CreditCard,
   DollarSign,
   Sparkles,
+  Newspaper,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useState } from "react";
@@ -28,81 +28,79 @@ export default function Sidebar() {
 
   return (
     <div className="sticky top-0 h-screen w-64 border-r bg-white p-4 flex flex-col">
-      <h1 className="mb-6 flex items-center text-lg font-bold text-pink-500">
+      <h1 className="mb-6 flex items-center text-lg font-bold text-pink-500 select-none">
         <Map size={20} className="mr-2" />
         AudioGo
       </h1>
 
-      <div className="space-y-2 flex-1 overflow-y-auto">
-        <MenuItem to="/dashboard" icon={<LayoutDashboard size={18} />}>
-          Tổng quan
-        </MenuItem>
+      <div className="space-y-5 flex-1 overflow-y-auto pr-1">
+        <SidebarGroup label="TỔNG QUAN">
+          <MenuItem to="/dashboard" icon={<LayoutDashboard size={18} />}>
+            Tổng quan
+          </MenuItem>
+        </SidebarGroup>
 
         {role === "Admin" && (
           <>
-            <MenuItem to="/pois" icon={<MapPin size={18} />}>
-              POIs
-            </MenuItem>
+            <SidebarGroup label="NỘI DUNG">
+              <MenuItem to="/pois" icon={<MapPin size={18} />}>
+                POIs
+              </MenuItem>
+              <MenuItem to="/tours" icon={<RouteIcon size={18} />}>
+                Tour
+              </MenuItem>
+              <MenuItem to="/categories" icon={<Layers size={18} />}>
+                Danh mục
+              </MenuItem>
+              <MenuItem to="/audio" icon={<Headphones size={18} />}>
+                Bản dịch & Audio
+              </MenuItem>
+              <MenuItem to="/cms/articles" icon={<Newspaper size={18} />}>
+                Bài viết
+              </MenuItem>
+            </SidebarGroup>
 
-            <MenuItem to="/accounts" icon={<Users size={18} />}>
-              Tài khoản
-            </MenuItem>
+            <SidebarGroup label="VẬN HÀNH">
+              <MenuItem to="/accounts" icon={<Users size={18} />}>
+                Tài khoản
+              </MenuItem>
+              <MenuItem to="/access-codes" icon={<QrCode size={18} />}>
+                Mã Truy Cập
+              </MenuItem>
+              <MenuItem to="/poi/management" icon={<BadgeCheck size={18} />}>
+                Xét duyệt
+              </MenuItem>
+              <MenuItem to="/tracking" icon={<Smartphone size={18} />}>
+                Quản lý thiết bị
+              </MenuItem>
+              <MenuItem to="/device-activity" icon={<RouteIcon size={18} />}>
+                Hoạt động thiết bị
+              </MenuItem>
+            </SidebarGroup>
 
-            <MenuItem to="/categories" icon={<Layers size={18} />}>
-              Danh mục
-            </MenuItem>
-
-            <MenuItem to="/tours" icon={<RouteIcon size={18} />}>
-              Tour
-            </MenuItem>
-
-            <MenuItem to="/audio" icon={<Headphones size={18} />}>
-              Bản dịch & Audio
-            </MenuItem>
-
-            <MenuItem to="/poi/management" icon={<BadgeCheck size={18} />}>
-              Xét duyệt
-            </MenuItem>
-
-            <MenuItem to="/analytics" icon={<BarChart3 size={18} />}>
-              Phân tích
-            </MenuItem>
-
-            <MenuItem to="/access-codes" icon={<QrCode size={18} />}>
-              Mã Truy Cập
-            </MenuItem>
-
-            <MenuItem to="/admin/subscriptions" icon={<CreditCard size={18} />}>
-              Quản lý gói
-            </MenuItem>
-
-            <MenuItem to="/admin/transactions" icon={<DollarSign size={18} />}>
-              Quản lý giao dịch
-            </MenuItem>
-
-            <MenuItem to="/tracking" icon={<Smartphone size={18} />}>
-              Quản lý thiết bị
-            </MenuItem>
-
-            <MenuItem to="/device-activity" icon={<RouteIcon2 size={18} />}>
-              Hoạt động thiết bị
-            </MenuItem>
-
-
-
+            <SidebarGroup label="KINH DOANH">
+              <MenuItem to="/analytics" icon={<BarChart3 size={18} />}>
+                Phân tích
+              </MenuItem>
+              <MenuItem to="/admin/subscriptions" icon={<CreditCard size={18} />}>
+                Quản lý gói
+              </MenuItem>
+              <MenuItem to="/admin/transactions" icon={<DollarSign size={18} />}>
+                Quản lý giao dịch
+              </MenuItem>
+            </SidebarGroup>
           </>
         )}
 
         {role === "Owner" && (
-          <>
+          <SidebarGroup label="NỘI DUNG">
             <MenuItem to="/pois" icon={<MapPin size={18} />}>
               POIs
             </MenuItem>
-
             <MenuItem to="/audio" icon={<Headphones size={18} />}>
               Audio
             </MenuItem>
-          </>
+          </SidebarGroup>
         )}
       </div>
 
@@ -124,6 +122,20 @@ export default function Sidebar() {
       />
     </div>
   );
+
+  function SidebarGroup({ label, children }) {
+    return (
+      <div className="flex flex-col gap-1 pt-3.5 first:pt-0 border-t border-gray-100/70 first:border-t-0">
+        <div className="text-[10px] font-extrabold uppercase tracking-widest text-pink-500/50 hover:text-pink-500/70 px-3 py-1 select-none flex items-center gap-1.5 transition-colors duration-150">
+          <span className="w-1 h-1 rounded-full bg-pink-400/80 shadow-sm shadow-pink-500/20"></span>
+          <span>{label}</span>
+        </div>
+        <div className="flex flex-col gap-1">
+          {children}
+        </div>
+      </div>
+    );
+  }
 
   function MenuItem({ to, icon, children, isDisabled = false }) {
     return (

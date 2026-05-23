@@ -33,6 +33,8 @@ import AdminTransactionDashboard from "@/pages/AdminTransactionDashboard";
 
 
 import ProtectedRoute from "@/components/ProtectedRoute";
+import NotFoundPage from "@/pages/NotFoundPage";
+import ArticlesPage from "@/pages/ArticlesPage";
 
 export default function App() {
   return (
@@ -236,6 +238,18 @@ export default function App() {
           }
         />
 
+        {/* Articles CMS (ADMIN only) */}
+        <Route
+          path="/cms/articles"
+          element={
+            <ProtectedRoute roles={["Admin"]}>
+              <MainLayout>
+                <ArticlesPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
         {/* Access Codes (ADMIN only) */}
         <Route
           path="/access-codes"
@@ -356,10 +370,11 @@ export default function App() {
           }
         />
 
-
+        {/* 404 Route */}
+        <Route path="/404" element={<NotFoundPage />} />
 
         {/* fallback */}
-        <Route path="*" element={<Navigate to="/" />} />
+        <Route path="*" element={<NotFoundPage />} />
         </Routes>
         </SubscriptionProvider>
       </SearchProvider>
