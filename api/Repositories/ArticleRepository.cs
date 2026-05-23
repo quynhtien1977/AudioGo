@@ -17,6 +17,7 @@ namespace Server.Repositories
         public async Task<List<Article>> GetByTypeAsync(string type, string lang, int limit = 10)
         {
             var articles = await _db.Articles
+                .AsNoTracking()
                 .Where(a => a.Type == type && a.IsActive)
                 .OrderByDescending(a => a.PublishedAt)
                 .Take(limit)
@@ -46,6 +47,7 @@ namespace Server.Repositories
         public async Task<Article?> GetByIdWithLangAsync(string articleId, string lang)
         {
             var article = await _db.Articles
+                .AsNoTracking()
                 .Include(a => a.Contents)
                 .FirstOrDefaultAsync(a => a.ArticleId == articleId);
 
@@ -81,14 +83,23 @@ namespace Server.Repositories
             existing.ImageUrl = article.ImageUrl;
             existing.IsActive = article.IsActive;
             existing.SortOrder = article.SortOrder;
-            existing.PublishedAt = article.PublishedAt;
             existing.UpdatedAt = DateTime.UtcNow;
 
-            _db.ArticleContents.RemoveRange(existing.Contents);
-            foreach (var content in article.Contents)
+            // Update ArticleContent collection instead of deleting to prevent tracking issues and preserve other translations
+            foreach (var incomingContent in article.Contents)
             {
-                content.ArticleId = existing.ArticleId;
-                _db.ArticleContents.Add(content);
+                var existingContent = existing.Contents.FirstOrDefault(c => c.Lang == incomingContent.Lang);
+                if (existingContent != null)
+                {
+                    existingContent.Title = incomingContent.Title;
+                    existingContent.Summary = incomingContent.Summary;
+                    existingContent.Body = incomingContent.Body;
+                }
+                else
+                {
+                    incomingContent.ArticleId = existing.ArticleId;
+                    existing.Contents.Add(incomingContent);
+                }
             }
 
             await _db.SaveChangesAsync();
@@ -102,6 +113,33 @@ namespace Server.Repositories
             _db.Articles.Remove(article);
             await _db.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<List<Article>> GetAllCmsAsync(string? type, string lang)
+        {
+            IQueryable<Article> query = _db.Articles.AsNoTracking();
+            if (!string.IsNullOrEmpty(type))
+            {
+                query = query.Where(a => a.Type == type);
+            }
+
+            var articles = await query
+                .OrderBy(a => a.SortOrder)
+                .ThenByDescending(a => a.PublishedAt)
+                .Include(a => a.Contents)
+                .ToListAsync();
+
+            foreach (var a in articles)
+            {
+                var resolvedContent = a.Contents.FirstOrDefault(c => c.Lang == lang) 
+                                      ?? a.Contents.FirstOrDefault(c => c.Lang == "vi");
+                
+                a.Contents = resolvedContent != null 
+                    ? new List<ArticleContent> { resolvedContent } 
+                    : new List<ArticleContent>();
+            }
+
+            return articles;
         }
     }
 }

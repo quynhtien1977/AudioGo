@@ -34,6 +34,7 @@ import AdminTransactionDashboard from "@/pages/AdminTransactionDashboard";
 
 import ProtectedRoute from "@/components/ProtectedRoute";
 import NotFoundPage from "@/pages/NotFoundPage";
+import ArticlesPage from "@/pages/ArticlesPage";
 
 export default function App() {
   return (
@@ -232,6 +233,18 @@ export default function App() {
             <ProtectedRoute roles={["Admin"]}>
               <MainLayout>
                 <AccountsPage />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Articles CMS (ADMIN only) */}
+        <Route
+          path="/cms/articles"
+          element={
+            <ProtectedRoute roles={["Admin"]}>
+              <MainLayout>
+                <ArticlesPage />
               </MainLayout>
             </ProtectedRoute>
           }

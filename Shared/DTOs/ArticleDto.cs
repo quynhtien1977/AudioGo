@@ -13,6 +13,8 @@ namespace Shared.DTOs
         public string Summary { get; set; } = string.Empty;
         public string? Body { get; set; } // Chỉ có khi get detail
         public DateTime PublishedAt { get; set; }
+        public bool IsActive { get; set; }
+        public int SortOrder { get; set; }
     }
 
     /// <summary>Request khi Admin tạo / cập nhật bài viết.</summary>

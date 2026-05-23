@@ -56,7 +56,7 @@ export default function Sidebar() {
                 Bản dịch & Audio
               </MenuItem>
               <MenuItem to="/cms/articles" icon={<Newspaper size={18} />}>
-                Bài viết CMS
+                Bài viết
               </MenuItem>
             </SidebarGroup>
 

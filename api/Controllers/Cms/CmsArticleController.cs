@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Server.Models;
 using Server.Repositories.Interfaces;
 using Server.Services.Interfaces;
@@ -17,18 +18,18 @@ namespace Server.Controllers.Cms
     public class CmsArticleController : ControllerBase
     {
         private readonly IArticleRepository _repo;
-        private readonly IArticleTranslationService _translationService;
+        private readonly IServiceScopeFactory _scopeFactory;
 
-        public CmsArticleController(IArticleRepository repo, IArticleTranslationService translationService)
+        public CmsArticleController(IArticleRepository repo, IServiceScopeFactory scopeFactory)
         {
             _repo = repo;
-            _translationService = translationService;
+            _scopeFactory = scopeFactory;
         }
 
         [HttpGet]
         public async Task<ActionResult<List<ArticleItemDto>>> GetAll([FromQuery] string? type)
         {
-            var articles = await _repo.GetByTypeAsync(type ?? "tip", "vi", 100);
+            var articles = await _repo.GetAllCmsAsync(type, "vi");
             return Ok(articles.Select(a => ToItemDto(a)).ToList());
         }
 
@@ -60,9 +61,45 @@ namespace Server.Controllers.Cms
         [HttpPost]
         public async Task<ActionResult<ArticleItemDto>> Create([FromBody] ArticleUpsertDto req)
         {
-            if (req is null || !req.Contents.ContainsKey("vi"))
+            if (req is null || !req.Contents.TryGetValue("vi", out var viContent))
             {
-                return BadRequest("Vietnamese (vi) content is required.");
+                return BadRequest("Nội dung Tiếng Việt (vi) là bắt buộc.");
+            }
+
+            if (string.IsNullOrWhiteSpace(viContent.Title))
+            {
+                return BadRequest("Tiêu đề bài viết không được để trống.");
+            }
+
+            if (string.IsNullOrWhiteSpace(viContent.Summary))
+            {
+                return BadRequest("Tóm tắt ngắn không được để trống.");
+            }
+
+            if (string.IsNullOrWhiteSpace(viContent.Body))
+            {
+                return BadRequest("Nội dung chi tiết không được để trống.");
+            }
+
+            if (string.IsNullOrWhiteSpace(req.ImageUrl))
+            {
+                return BadRequest("Ảnh bìa bài viết không được để trống.");
+            }
+
+            // Resolve SortOrder default or collision
+            var articlesOfSameType = await _repo.GetAllCmsAsync(req.Type, "vi");
+            int finalSortOrder = req.SortOrder;
+            if (finalSortOrder <= 0)
+            {
+                var currentMax = articlesOfSameType.Any() ? articlesOfSameType.Max(a => a.SortOrder) : 0;
+                finalSortOrder = currentMax + 1;
+            }
+            else
+            {
+                while (articlesOfSameType.Any(a => a.SortOrder == finalSortOrder))
+                {
+                    finalSortOrder++;
+                }
             }
 
             var article = new Article
@@ -71,7 +108,7 @@ namespace Server.Controllers.Cms
                 Type = req.Type,
                 ImageUrl = req.ImageUrl,
                 IsActive = req.IsActive,
-                SortOrder = req.SortOrder,
+                SortOrder = finalSortOrder,
                 PublishedAt = DateTime.UtcNow,
                 CreatedAt = DateTime.UtcNow
             };
@@ -92,13 +129,17 @@ namespace Server.Controllers.Cms
 
             _ = Task.Run(async () =>
             {
-                try
+                using (var scope = _scopeFactory.CreateScope())
                 {
-                    await _translationService.TranslateArticleAsync(created.ArticleId);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"[CmsArticleController] Background translation failed: {ex.Message}");
+                    var scopedTranslationService = scope.ServiceProvider.GetRequiredService<IArticleTranslationService>();
+                    try
+                    {
+                        await scopedTranslationService.TranslateArticleAsync(created.ArticleId);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[CmsArticleController] Background translation failed: {ex.Message}");
+                    }
                 }
             });
 
@@ -108,9 +149,46 @@ namespace Server.Controllers.Cms
         [HttpPut("{id}")]
         public async Task<ActionResult<ArticleItemDto>> Update(string id, [FromBody] ArticleUpsertDto req)
         {
-            if (req is null || !req.Contents.ContainsKey("vi"))
+            if (req is null || !req.Contents.TryGetValue("vi", out var viContent))
             {
-                return BadRequest("Vietnamese (vi) content is required.");
+                return BadRequest("Nội dung Tiếng Việt (vi) là bắt buộc.");
+            }
+
+            if (string.IsNullOrWhiteSpace(viContent.Title))
+            {
+                return BadRequest("Tiêu đề bài viết không được để trống.");
+            }
+
+            if (string.IsNullOrWhiteSpace(viContent.Summary))
+            {
+                return BadRequest("Tóm tắt ngắn không được để trống.");
+            }
+
+            if (string.IsNullOrWhiteSpace(viContent.Body))
+            {
+                return BadRequest("Nội dung chi tiết không được để trống.");
+            }
+
+            if (string.IsNullOrWhiteSpace(req.ImageUrl))
+            {
+                return BadRequest("Ảnh bìa bài viết không được để trống.");
+            }
+
+            // Resolve SortOrder default or collision (excluding the current article ID)
+            var articlesOfSameType = await _repo.GetAllCmsAsync(req.Type, "vi");
+            var otherArticles = articlesOfSameType.Where(a => a.ArticleId != id).ToList();
+            int finalSortOrder = req.SortOrder;
+            if (finalSortOrder <= 0)
+            {
+                var currentMax = otherArticles.Any() ? otherArticles.Max(a => a.SortOrder) : 0;
+                finalSortOrder = currentMax + 1;
+            }
+            else
+            {
+                while (otherArticles.Any(a => a.SortOrder == finalSortOrder))
+                {
+                    finalSortOrder++;
+                }
             }
 
             var article = new Article
@@ -119,7 +197,7 @@ namespace Server.Controllers.Cms
                 Type = req.Type,
                 ImageUrl = req.ImageUrl,
                 IsActive = req.IsActive,
-                SortOrder = req.SortOrder,
+                SortOrder = finalSortOrder,
                 PublishedAt = DateTime.UtcNow
             };
 
@@ -140,13 +218,17 @@ namespace Server.Controllers.Cms
 
             _ = Task.Run(async () =>
             {
-                try
+                using (var scope = _scopeFactory.CreateScope())
                 {
-                    await _translationService.TranslateArticleAsync(id);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"[CmsArticleController] Background translation failed: {ex.Message}");
+                    var scopedTranslationService = scope.ServiceProvider.GetRequiredService<IArticleTranslationService>();
+                    try
+                    {
+                        await scopedTranslationService.TranslateArticleAsync(id);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[CmsArticleController] Background translation failed: {ex.Message}");
+                    }
                 }
             });
 
@@ -160,9 +242,11 @@ namespace Server.Controllers.Cms
             return ok ? NoContent() : NotFound();
         }
 
-        private static ArticleItemDto ToItemDto(Article a)
+        private static ArticleItemDto ToItemDto(Article a, string lang = "vi")
         {
-            var content = a.Contents.FirstOrDefault();
+            var content = a.Contents.FirstOrDefault(c => c.Lang == lang) 
+                          ?? a.Contents.FirstOrDefault(c => c.Lang == "vi")
+                          ?? a.Contents.FirstOrDefault();
             return new ArticleItemDto
             {
                 ArticleId = a.ArticleId,
@@ -171,7 +255,9 @@ namespace Server.Controllers.Cms
                 Title = content?.Title ?? string.Empty,
                 Summary = content?.Summary ?? string.Empty,
                 Body = content?.Body,
-                PublishedAt = a.PublishedAt
+                PublishedAt = a.PublishedAt,
+                IsActive = a.IsActive,
+                SortOrder = a.SortOrder
             };
         }
     }
