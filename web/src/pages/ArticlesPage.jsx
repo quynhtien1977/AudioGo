@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useContext } from "react"
 import { getAllArticles, deleteArticle, updateArticle } from "../api/articleApi"
 import ArticleFormModal from "../components/ArticleFormModal"
 import StatsCard from "@/components/StatsCard"
 import PageHeader from "@/components/PageHeader"
+import { SearchContext } from "@/context/SearchContext"
 import {
   Newspaper,
   Compass,
@@ -20,9 +21,11 @@ import {
 } from "lucide-react"
 
 export default function ArticlesPage() {
+  const { searchFilter } = useContext(SearchContext)
   const [articles, setArticles] = useState([])
   const [loading, setLoading] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
+  
+  const searchQuery = (searchFilter?.pageType === "article" && searchFilter?.query) ? searchFilter.query : ""
   const [filterType, setFilterType] = useState("") // "" for all, "tip", "news"
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedArticleId, setSelectedArticleId] = useState(null)
@@ -183,7 +186,7 @@ export default function ArticlesPage() {
       </div>
 
       {/* FILTER & SEARCH */}
-      <div className="bg-white p-5 rounded-[2rem] border border-pink-50/80 shadow-sm space-y-4">
+      <div className="bg-white rounded-2xl p-6 border border-pink-100/30 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           
           {/* TABS */}
@@ -220,52 +223,44 @@ export default function ArticlesPage() {
             </button>
           </div>
 
-          {/* SEARCH BAR */}
-          <div className="relative flex-1 max-w-md w-full">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#D1B9C5]" size={18} />
-            <input
-              type="text"
-              placeholder="Tìm kiếm tiêu đề hoặc nội dung tóm tắt..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-[#FFF0F5] border-none rounded-2xl outline-none text-[#8E707E] placeholder-[#D1B9C5] focus:ring-2 focus:ring-pink-200 transition-all font-medium text-xs"
-            />
-          </div>
+
 
         </div>
+      </div>
 
-        {/* ARTICLES TABLE */}
-        {loading ? (
-          <div className="flex flex-col items-center justify-center p-20 text-pink-500">
-            <Loader2 className="animate-spin mb-3" size={32} />
-            <p className="text-sm font-semibold">Đang tải dữ liệu bài viết...</p>
-          </div>
-        ) : filteredArticles.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Newspaper size={48} className="text-pink-200 mb-3" />
-            <h3 className="text-base font-bold text-gray-700">Không tìm thấy bài viết nào</h3>
-            <p className="text-xs text-gray-400 mt-1 max-w-sm">
-              Thử thay đổi bộ lọc hoặc tạo bài viết mới để bắt đầu hiển thị thông tin lên mobile.
-            </p>
-          </div>
-        ) : (
+      {/* ARTICLES TABLE CONTAINER */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center p-20 text-pink-500 bg-white rounded-2xl border border-pink-100/30 shadow-sm">
+          <Loader2 className="animate-spin mb-3" size={32} />
+          <p className="text-sm font-semibold text-gray-700">Đang tải dữ liệu bài viết...</p>
+        </div>
+      ) : filteredArticles.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-pink-100/30 shadow-sm">
+          <Newspaper size={48} className="text-pink-200 mb-3" />
+          <h3 className="text-base font-bold text-gray-700">Không tìm thấy bài viết nào</h3>
+          <p className="text-xs text-gray-400 mt-1 max-w-sm">
+            Thử thay đổi bộ lọc hoặc tạo bài viết mới để bắt đầu hiển thị thông tin lên mobile.
+          </p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-pink-100/30 overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-pink-50 text-[10px] uppercase tracking-wider text-[#8E707E] font-bold">
-                  <th className="pb-3 pl-2">Ảnh / Phân loại</th>
-                  <th className="pb-3">Tiêu đề & Tóm tắt</th>
-                  <th className="pb-3 text-center">Độ ưu tiên</th>
-                  <th className="pb-3 text-center">Ngày đăng</th>
-                  <th className="pb-3 text-center">Hiển thị</th>
-                  <th className="pb-3 pr-2 text-right">Thao tác</th>
+            <table className="w-full text-sm">
+              <thead className="bg-pink-50/20 text-[11px] font-bold text-pink-500 tracking-wider uppercase border-b border-pink-100/20 text-left">
+                <tr>
+                  <th className="px-6 py-4">Ảnh / Phân loại</th>
+                  <th className="px-6 py-4">Tiêu đề & Tóm tắt</th>
+                  <th className="px-6 py-4 text-center">Sắp xếp</th>
+                  <th className="px-6 py-4 text-center">Ngày đăng</th>
+                  <th className="px-6 py-4 text-center">Hiển thị</th>
+                  <th className="px-6 py-4 pr-6 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-pink-50/50">
                 {filteredArticles.map((article) => (
-                  <tr key={article.articleId} className="group hover:bg-pink-50/20 transition-colors">
+                  <tr key={article.articleId} className="hover:bg-pink-50/10 transition-colors">
                     {/* COVER IMAGE & TYPE BADGE */}
-                    <td className="py-4 pl-2">
+                    <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-16 h-12 rounded-xl overflow-hidden bg-pink-100/50 flex-shrink-0 relative border border-pink-50">
                           {article.imageUrl ? (
@@ -293,8 +288,8 @@ export default function ArticlesPage() {
                     </td>
 
                     {/* TITLE & SUMMARY */}
-                    <td className="py-4 max-w-sm lg:max-w-md">
-                      <h4 className="text-sm font-bold text-gray-700 line-clamp-1 group-hover:text-pink-600 transition-colors">
+                    <td className="px-6 py-4 max-w-sm lg:max-w-md">
+                      <h4 className="text-sm font-bold text-gray-700 line-clamp-1 hover:text-pink-600 transition-colors">
                         {article.title}
                       </h4>
                       <p className="text-xs text-gray-400 line-clamp-2 mt-0.5">
@@ -303,7 +298,7 @@ export default function ArticlesPage() {
                     </td>
 
                     {/* SORT ORDER */}
-                    <td className="py-4 text-center">
+                    <td className="px-6 py-4 text-center">
                       <span className="inline-flex items-center justify-center px-2.5 py-1 bg-pink-50 text-pink-600 rounded-lg text-xs font-bold border border-pink-100/50">
                         <Sliders size={12} className="mr-1" />
                         {article.sortOrder}
@@ -311,7 +306,7 @@ export default function ArticlesPage() {
                     </td>
 
                     {/* PUBLISHED DATE */}
-                    <td className="py-4 text-center text-xs text-gray-400 font-medium">
+                    <td className="px-6 py-4 text-center text-xs text-gray-400 font-medium">
                       <div className="flex items-center justify-center gap-1">
                         <Calendar size={12} />
                         {new Date(article.publishedAt).toLocaleDateString("vi-VN", {
@@ -323,7 +318,7 @@ export default function ArticlesPage() {
                     </td>
 
                     {/* ACTIVE TOGGLE */}
-                    <td className="py-4 text-center">
+                    <td className="px-6 py-4 text-center">
                       <button
                         onClick={() => handleToggleActive(article)}
                         className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
@@ -347,7 +342,7 @@ export default function ArticlesPage() {
                     </td>
 
                     {/* ACTIONS */}
-                    <td className="py-4 pr-2 text-right">
+                    <td className="px-6 py-4 pr-6 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => {
@@ -373,8 +368,8 @@ export default function ArticlesPage() {
               </tbody>
             </table>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* CONFIRM DELETE MODAL */}
       {confirmDeleteId && (

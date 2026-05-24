@@ -8,6 +8,8 @@ import { getUsersApi } from "../api/accountApi"
 import { audioContentApi } from "../api/audioContentApi"
 import { SearchContext } from "../context/SearchContext"
 import { useSubscription } from "../context/SubscriptionContext"
+import { getAllArticles } from "../api/articleApi"
+import * as subscriptionApi from "../api/subscriptionApi"
 
 export default function Topbar() {
   const navigate = useNavigate()
@@ -54,12 +56,15 @@ export default function Topbar() {
       return "Tìm Tài khoản...";
     } else if (location.pathname.includes("/categories")) {
       return "Tìm Thể loại...";
-    }else if (location.pathname.includes("/tours")) {
+    } else if (location.pathname.includes("/tours")) {
       return "Tìm Tour...";
-    }else if (location.pathname.includes("/audio")) {
+    } else if (location.pathname.includes("/audio")) {
       return "Tìm Audio...";
-    }
-    else {
+    } else if (location.pathname.includes("/articles")) {
+      return "Tìm Bài viết (Tiêu đề, Tóm tắt)...";
+    } else if (location.pathname.includes("/transactions")) {
+      return "Tìm Giao dịch (ID, Tên)...";
+    } else {
       return "Tìm...";
     }
   }
@@ -68,7 +73,12 @@ export default function Topbar() {
   const shouldDisplaySearch = !location.pathname.includes("/dashboard") && 
                              !location.pathname.includes("/access-codes") &&
                              !location.pathname.includes("/poi/management") &&
-                             !location.pathname.includes("/tracking")
+                             !location.pathname.includes("/tracking") &&
+                             !location.pathname.includes("/analytics") &&
+                             !location.pathname.includes("/admin/subscriptions") &&
+                             !location.pathname.includes("/requests") &&
+                             !location.pathname.includes("/profile") &&
+                             !location.pathname.includes("/device-activity")
 
   // Determine current page type
   const getCurrentPageType = () => {
@@ -82,6 +92,10 @@ export default function Topbar() {
       return "tour"
     } else if (location.pathname.includes("/audio")) {
       return "audio"
+    } else if (location.pathname.includes("/articles")) {
+      return "article"
+    } else if (location.pathname.includes("/transactions")) {
+      return "transaction"
     }
     return null
   }
@@ -117,6 +131,14 @@ export default function Topbar() {
             const audioRes = await audioContentApi.getAllTranslations(1, 1000)
             const audioData = audioRes?.data?.data || []
             setAllData(audioData)
+            break
+          case "article":
+            const articles = await getAllArticles()
+            setAllData(articles || [])
+            break
+          case "transaction":
+            const txRes = await subscriptionApi.getAllTransactionsApi(1, 1000)
+            setAllData(txRes?.data || [])
             break
           default:
             setAllData([])
@@ -183,6 +205,21 @@ export default function Topbar() {
             item.description?.toLowerCase().includes(searchTerm)
         )
         break
+      case "article":
+        results = allData.filter(
+          (art) =>
+            art.title?.toLowerCase().includes(searchTerm) ||
+            art.summary?.toLowerCase().includes(searchTerm)
+        )
+        break
+      case "transaction":
+        results = allData.filter(
+          (tx) =>
+            tx.transactionId?.toLowerCase().includes(searchTerm) ||
+            tx.accountUsername?.toLowerCase().includes(searchTerm) ||
+            tx.contactInfo?.toLowerCase().includes(searchTerm)
+        )
+        break
       default:
         results = []
     }
@@ -237,6 +274,10 @@ export default function Topbar() {
         return item.username || item.email
       case "audio":
         return item.poiName || "Audio"
+      case "article":
+        return item.title
+      case "transaction":
+        return item.transactionId ? (item.transactionId.substring(0, 10) + "...") : "Giao dịch"
       default:
         return ""
     }

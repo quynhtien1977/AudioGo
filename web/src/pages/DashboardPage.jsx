@@ -157,13 +157,13 @@ export default function DashboardPage() {
       <TrendingChart data={chartData} />
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border p-6">
+      <div className="bg-white rounded-2xl border border-pink-100/30 overflow-hidden shadow-sm">
 
-        <div className="flex justify-between mb-4">
-          <h2 className="font-semibold">CÁC POIs PHỔ BIẾN</h2>
+        <div className="p-6 border-b border-pink-100/20 flex justify-between items-center bg-white">
+          <h2 className="font-bold text-base text-pink-500 uppercase tracking-wider">CÁC POIs PHỔ BIẾN</h2>
           <span
             onClick={() => setShowModal(true)}
-            className="text-pink-500 cursor-pointer hover:text-pink-400"
+            className="text-xs font-bold text-pink-500 cursor-pointer hover:text-pink-600 transition-colors uppercase tracking-widest"
           >
             Xem Tất Cả →
           </span>
@@ -176,40 +176,42 @@ export default function DashboardPage() {
           />
         )}
 
-        <table className="w-full text-sm">
-          <thead className="text-gray-400 text-left">
-            <tr>
-              <th>XẾP HẠNG</th>
-              <th>TÊN POI</th>
-              <th>VỊ TRÍ</th>
-              <th>THỂ LOẠI</th>
-              <th>LƯỢT NGHE</th>
-            </tr>
-          </thead>
-
-          <tbody className="text-gray-700">
-            {pois.slice(0, 3).map((poi) => (
-              <tr key={poi.rank} className="border-t">
-                <td className="py-3 font-semibold">
-                  {String(poi.rank).padStart(2, "0")}
-                </td> 
-                <td className="py-3">{poi.name}</td>
-
-                <td>
-                  {poi.lat}, {poi.lng}
-                </td>
-
-                <td>
-                  <span className={`px-2 py-1 rounded text-xs font-semibold ${getCategoryColor(poi.category)}`}>
-                    {poi.category}
-                  </span>
-                </td>
-
-                <td>{poi.listens} lượt</td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-pink-50/20 text-[11px] font-bold text-pink-500 tracking-wider uppercase border-b border-pink-100/20 text-left">
+              <tr>
+                <th className="px-6 py-4">XẾP HẠNG</th>
+                <th className="px-6 py-4">TÊN POI</th>
+                <th className="px-6 py-4">VỊ TRÍ</th>
+                <th className="px-6 py-4">THỂ LOẠI</th>
+                <th className="px-6 py-4">LƯỢT NGHE</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody className="divide-y divide-pink-50/50">
+              {pois.slice(0, 3).map((poi) => (
+                <tr key={poi.rank} className="hover:bg-pink-50/10 transition-colors">
+                  <td className="px-6 py-4 font-mono font-bold text-gray-700">
+                    {String(poi.rank).padStart(2, "0")}
+                  </td> 
+                  <td className="px-6 py-4 font-semibold text-gray-700">{poi.name}</td>
+
+                  <td className="px-6 py-4 text-gray-400 font-medium">
+                    {poi.lat}, {poi.lng}
+                  </td>
+
+                  <td className="px-6 py-4">
+                    <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${getCategoryColor(poi.category)}`}>
+                      {poi.category}
+                    </span>
+                  </td>
+
+                  <td className="px-6 py-4 font-bold text-gray-700">{poi.listens} lượt</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )

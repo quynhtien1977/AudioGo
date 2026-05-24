@@ -458,18 +458,21 @@ export default function POIPage() {
           title="TỔNG SỐ POIs" 
           value={totalItems} 
           sub="hiện có trong hệ thống" 
+          icon={<MapPin size={20} />}
         />
         <StatsCard 
           title="POI KHÔNG HOẠT ĐỘNG" 
           value={pois.filter(p => !p.isActive).length} 
           sub="Cần xem xét" 
           color="text-orange-500" 
+          icon={<EyeOff size={20} />}
         />
         <StatsCard 
           title="ƯU TIÊN CAO" 
           value={pois.filter(p => p.priority === 4).length} 
           sub="quản lý mức độ ưu tiên" 
           color="text-red-500" 
+          icon={<SquareMenu size={20} />}
         />
       </div>
 
@@ -747,22 +750,25 @@ export default function POIPage() {
 
       </div>
       
-      {role === "Owner" && (<div className="bg-white rounded-2xl border overflow-hidden">
-        <div className="p-4 border-b">
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-pink-400"><SquareMenu size={18} /> DANH SÁCH YÊU CẦU</h2>
-        </div>
-        <table className="w-full text-sm">
-          
-          <thead className="bg-gray-50 text-gray-400">
-            <tr>
-              <th className="p-4 text-left">TÊN POI</th>
-              <th className="p-4 text-left">LOẠI HÀNH ĐỘNG</th>
-              <th className="p-4 text-left">TRẠNG THÁI</th>
-              <th className="p-4 text-left">NGÀY TẠO</th>
-              <th className="p-4 text-left">GHI CHÚ</th>
-              <th className="p-4 text-left">THAO TÁC</th>
-            </tr>
-          </thead>
+      {role === "Owner" && (
+        <div className="bg-white rounded-2xl border border-pink-100/30 overflow-hidden shadow-sm">
+          <div className="p-4 border-b border-pink-100/20 bg-white">
+            <h2 className="flex items-center gap-2 text-sm font-bold text-pink-500 uppercase tracking-wider">
+              <SquareMenu size={18} /> DANH SÁCH YÊU CẦU
+            </h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-pink-50/20 text-[11px] font-bold text-pink-500 tracking-wider uppercase border-b border-pink-100/20">
+                <tr>
+                  <th className="px-6 py-4 text-left">TÊN POI</th>
+                  <th className="px-6 py-4 text-left">LOẠI HÀNH ĐỘNG</th>
+                  <th className="px-6 py-4 text-left">TRẠNG THÁI</th>
+                  <th className="px-6 py-4 text-left">NGÀY TẠO</th>
+                  <th className="px-6 py-4 text-left">GHI CHÚ</th>
+                  <th className="px-6 py-4 text-left">THAO TÁC</th>
+                </tr>
+              </thead>
 
           <tbody>
             {poiRequests.length === 0 ? (
@@ -824,46 +830,45 @@ export default function POIPage() {
                 }
 
                 return (
-                  <tr key={request.requestId} className="border-t hover:bg-gray-50 transition-all">
-                    <td className="p-4">
-                      <p className="font-semibold">{title}</p>
-                      
+                  <tr key={request.requestId} className="hover:bg-pink-50/10 transition-colors border-t border-pink-50/50">
+                    <td className="px-6 py-4">
+                      <p className="font-semibold text-gray-700">{title}</p>
                     </td>
 
-                    <td className="p-4">
-                      <span className={`px-2 py-1 rounded text-xs font-semibold ${getActionTypeBadge(request.actionType)}`}>
+                    <td className="px-6 py-4">
+                      <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${getActionTypeBadge(request.actionType)}`}>
                         {request.actionType}
                       </span>
                     </td>
 
-                    <td className="p-4">
-                      <span className={`px-2 py-1 rounded text-xs font-semibold ${getStatusBadge(request.status)}`}>
+                    <td className="px-6 py-4">
+                      <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${getStatusBadge(request.status)}`}>
                         {request.status}
                       </span>
                     </td>
 
-                    <td className="p-4">
-                      <p className="text-sm text-gray-600">
+                    <td className="px-6 py-4">
+                      <p className="text-xs text-gray-400 font-medium">
                         {formatDate(request.createdAt)}
                       </p>
                     </td>
 
-                    <td className="p-4">
+                    <td className="px-6 py-4">
                       {request.rejectReason ? (
-                        <p className="text-xs text-red-600 line-clamp-2">
+                        <p className="text-xs text-red-600 line-clamp-2 leading-relaxed">
                           {request.rejectReason}
                         </p>
                       ) : (
-                        <p className="text-xs text-gray-400">-</p>
+                        <p className="text-xs text-gray-400 font-medium">—</p>
                       )}
                     </td>
 
-                    <td className="p-4">
+                    <td className="px-6 py-4">
                       <div className="flex items-center gap-1">
                           {request.actionType !== "DELETE" && (
                             <NavLink
                               to={`/pois/requests/${request.requestId}`}
-                              className="w-8 h-8 flex items-center justify-center rounded-full transition-colors text-pink-500 hover:text-pink-600"
+                              className="w-8 h-8 flex items-center justify-center rounded-full transition-colors text-pink-500 hover:text-pink-600 hover:bg-pink-50"
                               title="Xem chi tiết POI"
                             >
                               <List size={18} />
@@ -877,6 +882,7 @@ export default function POIPage() {
             )}
           </tbody>
         </table>
+      </div>
         {/* PAGINATION */}
         {requestsTotalPages > 0 && (
           <div className="flex justify-between items-center px-6 py-4 text-sm text-gray-500 bg-gray-50/50">

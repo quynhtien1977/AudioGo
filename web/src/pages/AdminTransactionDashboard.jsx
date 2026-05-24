@@ -1,16 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useContext } from 'react'
 import { DollarSign, CheckCircle, AlertCircle, RotateCw } from 'lucide-react'
 import * as subscriptionApi from '../api/subscriptionApi'
 import { formatDateVN } from '../utils/formatDate'
 import toast from 'react-hot-toast'
 import PageHeader from "@/components/PageHeader"
 import StatsCard from "@/components/StatsCard"
+import { SearchContext } from '../context/SearchContext'
 
 /**
  * AdminTransactionDashboard - Admin view for monitoring all payment transactions
  * Shows transaction history, status tracking, and refund management
  */
 export const AdminTransactionDashboard = () => {
+  const { searchFilter } = useContext(SearchContext)
   const [transactions, setTransactions] = useState([])
   const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0, totalPages: 1 })
   const [loading, setLoading] = useState(true)
@@ -50,34 +52,44 @@ export const AdminTransactionDashboard = () => {
     return tx.contactInfo || '-'
   }
 
+  const searchQuery = (searchFilter?.pageType === "transaction" && searchFilter?.query) ? searchFilter.query.toLowerCase() : ""
+
+  const filteredTransactions = transactions.filter(tx => {
+    if (!searchQuery) return true
+    const payer = getPayerDisplay(tx).toLowerCase()
+    const txId = (tx.transactionId || "").toLowerCase()
+    const plan = (tx.planId || "").toLowerCase()
+    return payer.includes(searchQuery) || txId.includes(searchQuery) || plan.includes(searchQuery)
+  })
+
   const stats = [
     {
       label: 'Tổng giao dịch',
-      value: transactions.length,
+      value: filteredTransactions.length,
       icon: DollarSign,
       color: 'blue'
     },
     {
       label: 'Thành công',
-      value: transactions.filter(t => t.status === 'SUCCESS').length,
+      value: filteredTransactions.filter(t => t.status === 'SUCCESS').length,
       icon: CheckCircle,
       color: 'green'
     },
     {
       label: 'Thất bại',
-      value: transactions.filter(t => t.status === 'FAILED').length,
+      value: filteredTransactions.filter(t => t.status === 'FAILED').length,
       icon: AlertCircle,
       color: 'red'
     },
     {
       label: 'Đang xử lý',
-      value: transactions.filter(t => t.status === 'PENDING').length,
+      value: filteredTransactions.filter(t => t.status === 'PENDING').length,
       icon: RotateCw,
       color: 'yellow'
     }
   ]
 
-  const totalRevenue = transactions
+  const totalRevenue = filteredTransactions
     .filter(t => t.status === 'SUCCESS')
     .reduce((sum, t) => sum + (t.amount || 0), 0)
 
@@ -108,27 +120,27 @@ export const AdminTransactionDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
           title="TỔNG GIAO DỊCH"
-          value={transactions.length}
+          value={filteredTransactions.length}
           sub="Tất cả các giao dịch"
           icon={<DollarSign size={20} />}
         />
         <StatsCard
           title="GIAO DỊCH THÀNH CÔNG"
-          value={transactions.filter(t => t.status === 'SUCCESS').length}
+          value={filteredTransactions.filter(t => t.status === 'SUCCESS').length}
           sub="Giao dịch thành công"
           color="text-green-600"
           icon={<CheckCircle size={20} />}
         />
         <StatsCard
           title="GIAO DỊCH THẤT BẠI"
-          value={transactions.filter(t => t.status === 'FAILED').length}
+          value={filteredTransactions.filter(t => t.status === 'FAILED').length}
           sub="Giao dịch thất bại"
           color="text-red-600"
           icon={<AlertCircle size={20} />}
         />
         <StatsCard
           title="ĐANG XỬ LÝ"
-          value={transactions.filter(t => t.status === 'PENDING').length}
+          value={filteredTransactions.filter(t => t.status === 'PENDING').length}
           sub="Giao dịch đang xử lý"
           color="text-yellow-600"
           icon={<RotateCw size={20} />}
@@ -146,7 +158,7 @@ export const AdminTransactionDashboard = () => {
           }).format(totalRevenue)}
         </p>
         <p className="text-pink-100 text-xs mt-2 font-medium">
-          Từ {transactions.filter(t => t.status === 'SUCCESS').length} giao dịch thành công
+          Từ {filteredTransactions.filter(t => t.status === 'SUCCESS').length} giao dịch thành công
         </p>
       </div>
 
@@ -207,8 +219,8 @@ export const AdminTransactionDashboard = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-pink-50/50">
-                {transactions && transactions.length > 0 ? (
-                  transactions.map((tx, idx) => (
+                {filteredTransactions && filteredTransactions.length > 0 ? (
+                  filteredTransactions.map((tx, idx) => (
                     <tr key={idx} className="hover:bg-pink-50/10 transition-colors">
                       <td className="px-6 py-4 text-sm font-mono text-gray-500">{tx.transactionId?.substring(0, 10)}...</td>
                       <td className="px-6 py-4 text-sm font-semibold text-gray-700">{getPayerDisplay(tx)}</td>
