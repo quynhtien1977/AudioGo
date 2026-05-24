@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from "react";
-import { Headphones, Play, Pause, RefreshCw, Search, ChevronDown, ChevronUp, Languages, ChevronLeft, ChevronRight } from "lucide-react";
+import { Headphones, Play, Pause, RefreshCw, Search, ChevronDown, ChevronUp, Languages, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { formatDateVN } from "@/utils/formatDate";
 import PageHeader from "@/components/PageHeader";
 import { audioContentApi } from "../api/audioContentApi";
@@ -159,12 +159,18 @@ export default function AudioContentPage() {
 
                         {/* LOAD / EMPTY */}
                         {loading && filteredAudioContents.length === 0 && (
-                            <div className="p-10 text-center text-gray-400">Đang tải dữ liệu...</div>
+                            <div className="flex flex-col items-center justify-center p-20 text-pink-500 animate-fadeIn">
+                                <Loader2 className="animate-spin mb-3" size={32} />
+                                <p className="text-sm font-semibold text-gray-700">Đang tải dữ liệu âm thanh...</p>
+                            </div>
                         )}
                         {!loading && filteredAudioContents.length === 0 && (
-                            <div className="p-10 text-center text-gray-400 flex flex-col items-center">
-                                <Search className="w-10 h-10 text-gray-200 mb-2" />
-                                Chưa có nội dung âm thanh nào.
+                            <div className="flex flex-col items-center justify-center py-16 text-center animate-fadeIn">
+                                <Headphones size={48} className="text-pink-200 mb-3 animate-pulse" />
+                                <h3 className="text-base font-bold text-gray-700">Không tìm thấy bản ghi âm nào</h3>
+                                <p className="text-xs text-gray-400 mt-1 max-w-sm">
+                                    Thử thay đổi từ khóa tìm kiếm hoặc làm mới dữ liệu để cập nhật danh sách âm thanh.
+                                </p>
                             </div>
                         )}
 

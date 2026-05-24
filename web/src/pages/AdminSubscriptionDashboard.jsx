@@ -9,6 +9,7 @@ import {
   Package,
   Activity,
   Archive,
+  Loader2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as subscriptionApi from "../api/subscriptionApi";
@@ -336,6 +337,10 @@ export const AdminSubscriptionDashboard = () => {
   const inactivePlans =
     totalPlans - activePlans;
 
+  const displayPlans = editingPlanId === "NEW_PLAN"
+    ? [{ planId: "NEW_PLAN" }, ...plans]
+    : plans;
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -383,20 +388,21 @@ export const AdminSubscriptionDashboard = () => {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-100 border-t-pink-500" />
+        <div className="flex flex-col items-center justify-center p-20 text-pink-500 bg-white rounded-2xl border border-pink-100/30 shadow-sm animate-fadeIn">
+          <Loader2 className="animate-spin mb-3" size={32} />
+          <p className="text-sm font-semibold text-gray-700">Đang tải danh sách gói đăng ký...</p>
+        </div>
+      ) : displayPlans.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-pink-100/30 shadow-sm animate-fadeIn">
+          <Package size={48} className="text-pink-200 mb-3 animate-pulse" />
+          <h3 className="text-base font-bold text-gray-700">Không tìm thấy gói đăng ký nào</h3>
+          <p className="text-xs text-gray-400 mt-1 max-w-sm">
+            Hiện chưa có gói đăng ký nào được cấu hình trong hệ thống. Hãy bấm nút "Tạo Gói Mới" ở góc phải để bắt đầu.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {(editingPlanId === "NEW_PLAN"
-            ? [
-                {
-                  planId: "NEW_PLAN",
-                },
-                ...plans,
-              ]
-            : plans
-          ).map((plan) => (
+          {displayPlans.map((plan) => (
             <div
               key={plan.planId}
               className={`bg-white rounded-[2.5rem] border shadow-sm overflow-hidden group transition-all ${

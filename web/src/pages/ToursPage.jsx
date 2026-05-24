@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
-  Plus, MapPin, Calendar, ShieldCheck, Eye, ExternalLink, Trash2, Route
+  Plus, MapPin, Calendar, ShieldCheck, Eye, ExternalLink, Trash2, Route, Loader2
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -193,13 +193,22 @@ const ToursPage = () => {
       </div>
 
       {/* GRID LIST */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {isLoading ? (
-          <div className="col-span-full text-center py-12 text-gray-500">Đang tải dữ liệu...</div>
-        ) : filteredTours.length === 0 ? (
-          <div className="col-span-full text-center py-12 text-gray-500">Chưa có Tour nào</div>
-        ) : (
-          filteredTours.map((tour) => (
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center p-20 text-pink-500 bg-white rounded-[2.5rem] border border-pink-100/30 shadow-sm animate-fadeIn">
+          <Loader2 className="animate-spin mb-3" size={32} />
+          <p className="text-sm font-semibold text-gray-700">Đang tải dữ liệu tours...</p>
+        </div>
+      ) : filteredTours.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-[2.5rem] border border-pink-100/30 shadow-sm animate-fadeIn">
+          <Route size={48} className="text-pink-200 mb-3" />
+          <h3 className="text-base font-bold text-gray-700">Không tìm thấy Tour nào</h3>
+          <p className="text-xs text-gray-400 mt-1 max-w-sm">
+            Thử thay đổi từ khóa tìm kiếm hoặc tạo một tour trải nghiệm mới để bắt đầu.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-fadeIn">
+          {filteredTours.map((tour) => (
             <div key={tour.tourId} className={`bg-white rounded-[2.5rem] border shadow-sm overflow-hidden group hover:shadow-xl transition-all ${
               tour.isActive ? 'border-gray-100' : 'border-gray-200 opacity-60'
             }`}>
@@ -262,9 +271,9 @@ const ToursPage = () => {
                 </div>
               </div>
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* MODAL TẠO TOUR MỚI */}
       <CreateTourModal

@@ -1,5 +1,5 @@
 import { useEffect, useState, useContext } from 'react'
-import { DollarSign, CheckCircle, AlertCircle, RotateCw } from 'lucide-react'
+import { DollarSign, CheckCircle, AlertCircle, RotateCw, Loader2 } from 'lucide-react'
 import * as subscriptionApi from '../api/subscriptionApi'
 import { formatDateVN } from '../utils/formatDate'
 import toast from 'react-hot-toast'
@@ -164,31 +164,40 @@ export const AdminTransactionDashboard = () => {
 
       {/* Filters */}
       <div className="bg-white rounded-2xl p-6 border border-pink-100/30 shadow-sm">
-        <h3 className="font-bold text-gray-700 text-sm mb-4">Bộ lọc trạng thái</h3>
-        <div className="flex flex-wrap gap-2.5">
-          {[
-            { value: null, label: 'Tất cả' },
-            { value: 'SUCCESS', label: 'Thành công' },
-            { value: 'PENDING', label: 'Đang xử lý' },
-            { value: 'FAILED', label: 'Thất bại' }
-          ].map(filter => (
-            <button
-              key={filter.value}
-              onClick={() => {
-                setFilterStatus(filter.value)
-                setPage(1)
-              }}
-              className={`
-                px-4 py-2 rounded-full text-xs font-bold transition-all transform active:scale-95
-                ${filterStatus === filter.value
-                  ? 'bg-pink-500 text-white shadow-sm shadow-pink-100'
-                  : 'bg-gray-50 text-gray-600 hover:bg-pink-50 hover:text-pink-600'
-                }
-              `}
-            >
-              {filter.label}
-            </button>
-          ))}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          
+          {/* TABS FOR STATUS */}
+          <div className="flex bg-[#FFF0F5] p-1 rounded-2xl gap-1 self-start flex-wrap md:flex-nowrap">
+            {[
+              { value: null, label: `Tất cả (${transactions.length})` },
+              { value: 'SUCCESS', label: `Thành công (${transactions.filter(t => t.status === 'SUCCESS').length})` },
+              { value: 'PENDING', label: `Đang xử lý (${transactions.filter(t => t.status === 'PENDING').length})` },
+              { value: 'FAILED', label: `Thất bại (${transactions.filter(t => t.status === 'FAILED').length})` }
+            ].map(filter => (
+              <button
+                key={filter.value}
+                onClick={() => {
+                  setFilterStatus(filter.value)
+                  setPage(1)
+                }}
+                className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  filterStatus === filter.value
+                    ? "bg-white text-pink-600 shadow-sm"
+                    : "text-[#8E707E] hover:text-pink-600"
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Results Indicator */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="text-xs font-bold text-[#8E707E] bg-[#FFF0F5] px-4 py-2.5 rounded-2xl shadow-sm border border-pink-100/10">
+              Kết quả: <span className="text-pink-600">{filteredTransactions.length}</span> / {transactions.length}
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -201,8 +210,9 @@ export const AdminTransactionDashboard = () => {
         )}
 
         {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="animate-spin rounded-full h-10 h-10 border-4 border-gray-100 border-t-pink-500"></div>
+          <div className="flex flex-col items-center justify-center p-20 text-pink-500 animate-fadeIn">
+            <Loader2 className="animate-spin mb-3" size={32} />
+            <p className="text-sm font-semibold text-gray-700">Đang tải danh sách giao dịch...</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -252,8 +262,14 @@ export const AdminTransactionDashboard = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="7" className="px-6 py-12 text-center text-gray-400">
-                      Không tìm thấy giao dịch nào
+                    <td colSpan="7" className="px-6 py-16 text-center text-gray-400 animate-fadeIn">
+                      <div className="flex flex-col items-center justify-center">
+                        <DollarSign size={48} className="text-pink-200 mb-3 animate-pulse" />
+                        <h3 className="text-base font-bold text-gray-700">Không tìm thấy giao dịch nào</h3>
+                        <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
+                          Không tìm thấy dữ liệu giao dịch nào khớp với bộ lọc hiện tại của bạn.
+                        </p>
+                      </div>
                     </td>
                   </tr>
                 )}

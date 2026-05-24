@@ -1,5 +1,5 @@
 import { useEffect, useState, useContext } from "react"
-import { Edit3, Trash2, ChevronLeft, ChevronRight, Layers } from "lucide-react"
+import { Edit3, Trash2, ChevronLeft, ChevronRight, Layers, Loader2 } from "lucide-react"
 import toast from "react-hot-toast"
 import PageHeader from "@/components/PageHeader"
 
@@ -23,12 +23,14 @@ export default function CategoryPage() {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedCategoryId, setSelectedCategoryId] = useState(null)
+  const [loading, setLoading] = useState(false)
 
   const pageSize = 5
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true)
         const res = await getCategoriesApi()
 
         // ✅ handle cả 2 kiểu BE trả về
@@ -37,6 +39,8 @@ export default function CategoryPage() {
         setCategories(data)
       } catch (err) {
         console.error("Load categories error:", err)
+      } finally {
+        setLoading(false)
       }
     }
 
@@ -87,7 +91,7 @@ export default function CategoryPage() {
     setShowDeleteModal(false)
   }
 
-  const displayData = filteredCategories.length > 0 ? filteredCategories : categories
+  const displayData = filteredCategories
   const totalPages = Math.ceil(displayData.length / pageSize)
 
   const paginatedData = displayData.slice(
@@ -116,109 +120,114 @@ export default function CategoryPage() {
       />
 
       {/* TABLE */}
-      <div className="bg-white rounded-2xl border border-pink-100/30 shadow-sm overflow-hidden">
-
-        {/* HEADER ROW */}
-        <div className={`${gridLayout} px-8 py-4 text-[11px] font-bold text-pink-500 tracking-wider uppercase border-b bg-pink-50/20`}>
-          <span>Tên danh mục</span>
-          <span>Ngày tạo</span>
-          <span>Ngày cập nhật</span>
-          <span className="text-right">Hành động</span>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center p-20 text-pink-500 bg-white rounded-2xl border border-pink-100/30 shadow-sm animate-fadeIn">
+          <Loader2 className="animate-spin mb-3" size={32} />
+          <p className="text-sm font-semibold text-gray-700">Đang tải dữ liệu danh mục...</p>
         </div>
+      ) : paginatedData.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-pink-100/30 shadow-sm animate-fadeIn">
+          <Layers size={48} className="text-pink-200 mb-3" />
+          <h3 className="text-base font-bold text-gray-700">Không tìm thấy danh mục nào</h3>
+          <p className="text-xs text-gray-400 mt-1 max-w-sm">
+            Thử thay đổi từ khóa tìm kiếm hoặc tạo một danh mục mới để bắt đầu liên kết POI.
+          </p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-pink-100/30 shadow-sm overflow-hidden animate-fadeIn">
+          {/* HEADER ROW */}
+          <div className={`${gridLayout} px-8 py-4 text-[11px] font-bold text-pink-500 tracking-wider uppercase border-b bg-pink-50/20`}>
+            <span>Tên danh mục</span>
+            <span>Ngày tạo</span>
+            <span>Ngày cập nhật</span>
+            <span className="text-right">Hành động</span>
+          </div>
 
-        {/* BODY */}
-        <div className="divide-y">
+          {/* BODY */}
+          <div className="divide-y">
+            {paginatedData.map((c) => (
+              <div
+                key={c.categoryId}
+                className={`${gridLayout} px-8 py-4 hover:bg-pink-50/20 transition-colors`}
+              >
+                {/* NAME */}
+                <div className="font-bold text-gray-700 truncate">{c.name}</div>
 
-          {paginatedData.map((c) => (
-            <div
-              key={c.categoryId}
-              className={`${gridLayout} px-8 py-4 hover:bg-pink-50/20 transition-colors`}
-            >
+                {/* CREATED */}
+                <div className="text-sm text-gray-500 truncate">{c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "-"}</div>
 
-              {/* NAME */}
-              <div className="font-bold text-gray-700 truncate">{c.name}</div>
+                {/* UPDATED */}
+                <div className="text-sm text-gray-500 truncate">{c.updatedAt ? new Date(c.updatedAt).toLocaleDateString() : "-"}</div>
 
-              {/* CREATED */}
-              <div className="text-sm text-gray-500 truncate">{c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "-"}</div>
+                {/* ACTIONS */}
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => setEditingCategory(c)}
+                    className="p-2 rounded-xl text-gray-400 hover:text-pink-500 hover:bg-pink-50 transition-colors"
+                    title="Chỉnh sửa"
+                  >
+                    <Edit3 size={16} />
+                  </button>
 
-              {/* UPDATED */}
-              <div className="text-sm text-gray-500 truncate">{c.updatedAt ? new Date(c.updatedAt).toLocaleDateString() : "-"}</div>
+                  <button
+                    onClick={() => openDeleteConfirm(c.categoryId)}
+                    className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                    title="Xóa danh mục"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
 
-              {/* ACTIONS */}
-              <div className="flex justify-end gap-2">
+          {/* PAGINATION */}
+          {totalPages > 0 && (
+            <div className="flex justify-between px-8 py-4 text-sm text-gray-500 items-center bg-gray-50/50">
+              <p>Hiển thị {paginatedData.length} / {displayData.length} danh mục</p>
 
+              <div className="flex gap-1 items-center">
                 <button
-                  onClick={() => setEditingCategory(c)}
-                  className="p-2 rounded-xl text-gray-400 hover:text-pink-500 hover:bg-pink-50 transition-colors"
-                  title="Chỉnh sửa"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => p - 1)}
+                  className={`p-2 rounded-full ${currentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
                 >
-                  <Edit3 size={16} />
+                  <ChevronLeft size={16} />
                 </button>
 
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(i => i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1))
+                  .reduce((acc, curr, idx, arr) => {
+                    if (idx > 0 && curr - arr[idx - 1] > 1) acc.push('...');
+                    acc.push(curr);
+                    return acc;
+                  }, [])
+                  .map((p, idx) => (
+                    p === '...' ? (
+                      <span key={`dots-${idx}`} className="px-2 text-gray-400">...</span>
+                    ) : (
+                      <button
+                        key={p}
+                        onClick={() => setCurrentPage(p)}
+                        className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === p ? "bg-pink-500 text-white shadow-sm" : "hover:bg-pink-50 hover:text-pink-600"}`}
+                      >
+                        {p}
+                      </button>
+                    )
+                  ))}
+
                 <button
-                  onClick={() =>
-                    openDeleteConfirm(c.categoryId)
-                  }
-                  className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                  title="Xóa danh mục"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                  className={`p-2 rounded-full ${currentPage === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
                 >
-                  <Trash2 size={16} />
+                  <ChevronRight size={16} />
                 </button>
               </div>
             </div>
-          ))}
-
-          {categories.length === 0 && (
-            <div className="p-10 text-center text-gray-400">
-              No categories found
-            </div>
           )}
         </div>
-
-        {/* PAGINATION */}
-        <div className="flex justify-between px-8 py-4 text-sm text-gray-500 items-center">
-          <p>Hiển thị {paginatedData.length} / {displayData.length} danh mục</p>
-
-            <div className="flex gap-1 items-center">
-              <button
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((p) => p - 1)}
-                className={`p-2 rounded-full ${currentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
-              >
-                <ChevronLeft size={16} />
-              </button>
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(i => i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1))
-                .reduce((acc, curr, idx, arr) => {
-                  if (idx > 0 && curr - arr[idx - 1] > 1) acc.push('...');
-                  acc.push(curr);
-                  return acc;
-                }, [])
-                .map((p, idx) => (
-                  p === '...' ? (
-                    <span key={`dots-${idx}`} className="px-2 text-gray-400">...</span>
-                  ) : (
-                    <button
-                      key={p}
-                      onClick={() => setCurrentPage(p)}
-                      className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === p ? "bg-pink-500 text-white shadow-sm" : "hover:bg-pink-50 hover:text-pink-600"}`}
-                    >
-                      {p}
-                    </button>
-                  )
-                ))}
-
-              <button
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((p) => p + 1)}
-                className={`p-2 rounded-full ${currentPage === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          </div>
-      </div>
+      )}
 
       {/* MODALS */}
       {showModal && (
