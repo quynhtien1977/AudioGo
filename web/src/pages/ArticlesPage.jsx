@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react"
 import { getAllArticles, deleteArticle, updateArticle } from "../api/articleApi"
 import ArticleFormModal from "../components/ArticleFormModal"
+import StatsCard from "@/components/StatsCard"
+import PageHeader from "@/components/PageHeader"
 import {
   Newspaper,
   Compass,
@@ -115,30 +117,25 @@ export default function ArticlesPage() {
   const activeCount = articles.filter((a) => a.isActive).length
 
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto animate-fadeIn">
+    <div className="space-y-6 animate-fadeIn">
       {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-            <Newspaper className="text-pink-500" />
-            Quản lý bài viết
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Đăng tải, sắp xếp và phân loại tin tức & mẹo du lịch cho du khách ứng dụng AudioGo.
-          </p>
-        </div>
-
-        <button
-          onClick={() => {
-            setSelectedArticleId(null)
-            setIsModalOpen(true)
-          }}
-          className="flex items-center justify-center gap-2 px-5 py-3.5 bg-gradient-to-r from-[#A3437B] via-[#D15993] to-[#F172AC] hover:scale-[1.02] active:scale-[0.98] text-white font-bold rounded-2xl shadow-lg shadow-pink-200 transition-all text-sm self-start md:self-auto"
-        >
-          <Plus size={18} />
-          Tạo bài viết mới
-        </button>
-      </div>
+      <PageHeader
+        title="QUẢN LÝ BÀI VIẾT"
+        description="Đăng tải, sắp xếp và phân loại tin tức & mẹo du lịch cho du khách ứng dụng AudioGo."
+        icon={<Newspaper size={24} />}
+        actionButton={
+          <button
+            onClick={() => {
+              setSelectedArticleId(null)
+              setIsModalOpen(true)
+            }}
+            className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 active:scale-95 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-pink-100 hover:shadow-lg transition-all text-sm self-start md:self-auto"
+          >
+            <Plus size={18} />
+            Tạo bài viết mới
+          </button>
+        }
+      />
 
       {/* NOTIFICATION TOAST */}
       {notification.message && (
@@ -155,34 +152,33 @@ export default function ArticlesPage() {
       )}
 
       {/* STATS CARDS */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
-          title="Tổng bài viết"
+          title="TỔNG BÀI VIẾT"
           value={totalCount}
-          subtitle={`${activeCount} đang hiển thị`}
-          icon={<Newspaper className="text-pink-500" />}
-          gradient="from-pink-50 to-pink-100/50"
+          sub={`${activeCount} đang hiển thị`}
+          icon={<Newspaper size={20} />}
         />
         <StatsCard
-          title="Mẹo Du Lịch"
+          title="MẸO DU LỊCH"
           value={tipsCount}
-          subtitle="Tips du lịch nổi bật"
-          icon={<Compass className="text-emerald-500" />}
-          gradient="from-emerald-50/50 to-emerald-100/30"
+          sub="Tips du lịch nổi bật"
+          color="text-emerald-600"
+          icon={<Compass size={20} />}
         />
         <StatsCard
-          title="Tin Tức & Sự Kiện"
+          title="TIN TỨC & SỰ KIỆN"
           value={newsCount}
-          subtitle="News & sự kiện hot"
-          icon={<TrendingUp className="text-blue-500" />}
-          gradient="from-blue-50/50 to-blue-100/30"
+          sub="News & sự kiện hot"
+          color="text-blue-600"
+          icon={<TrendingUp size={20} />}
         />
         <StatsCard
-          title="Ẩn khỏi mobile"
+          title="ẨN KHỎI MOBILE"
           value={totalCount - activeCount}
-          subtitle="Đang lưu dưới dạng bản nháp"
-          icon={<EyeOff className="text-amber-500" />}
-          gradient="from-amber-50/50 to-amber-100/30"
+          sub="Đang lưu dưới dạng bản nháp"
+          color="text-amber-600"
+          icon={<EyeOff size={20} />}
         />
       </div>
 
@@ -420,29 +416,6 @@ export default function ArticlesPage() {
           onSaved={loadArticles}
         />
       )}
-    </div>
-  )
-}
-
-function StatsCard({ title, value, subtitle, icon, gradient }) {
-  return (
-    <div className={`p-6 rounded-[2rem] bg-white border border-pink-50/50 shadow-sm relative overflow-hidden bg-gradient-to-br ${gradient}`}>
-      <div className="flex justify-between items-start">
-        <div>
-          <span className="text-[10px] font-bold text-[#8E707E] tracking-widest uppercase block">
-            {title}
-          </span>
-          <span className="text-3xl font-extrabold text-gray-800 block mt-2">
-            {value}
-          </span>
-          <span className="text-[11px] text-gray-400 font-medium block mt-1">
-            {subtitle}
-          </span>
-        </div>
-        <div className="p-3 bg-white rounded-2xl shadow-sm border border-pink-50/20">
-          {icon}
-        </div>
-      </div>
     </div>
   )
 }

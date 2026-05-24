@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as subscriptionApi from "../api/subscriptionApi";
+import PageHeader from "../components/PageHeader";
+import StatsCard from "../components/StatsCard";
 
 const parseFeatures = (value) => {
   if (!value) return [];
@@ -335,80 +337,54 @@ export const AdminSubscriptionDashboard = () => {
     totalPlans - activePlans;
 
   return (
-    <div className="p-8 bg-[#FDF8FA]/50 min-h-screen space-y-8 font-sans">
-      <div className="flex justify-between items-end">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800 tracking-tight">
-            QUẢN LÝ GÓI ĐĂNG KÝ
-          </h1>
+    <div className="space-y-6">
+      <PageHeader
+        title="QUẢN LÝ GÓI ĐĂNG KÝ"
+        description="Quản lý các gói đăng ký VIP cho đối tác và người dùng."
+        icon={<Package size={24} />}
+        actionButton={
+          <button
+            onClick={handleCreateClick}
+            className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-pink-100 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all text-sm cursor-pointer"
+          >
+            <Plus size={18} />
+            <span>Tạo Gói Mới</span>
+          </button>
+        }
+      />
 
-          <p className="text-gray-500 mt-1 font-medium">
-            Quản lý các gói đăng ký VIP.
-          </p>
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 text-red-800 text-sm font-semibold rounded-2xl">
+          {error}
         </div>
-
-        <button
-          onClick={handleCreateClick}
-          className="flex items-center gap-2 bg-gradient-to-r from-[#D81B60] to-[#EC4899] text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-pink-100 hover:scale-105 transition-all active:scale-95"
-        >
-          <Plus size={20} />
-          Tạo Gói Mới
-        </button>
-      </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-3xl p-6 border border-pink-50 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-[#8E707E] font-bold text-sm">
-              TỔNG SỐ GÓI
-            </p>
-
-            <p className="text-3xl font-black text-gray-800 mt-1">
-              {totalPlans}
-            </p>
-          </div>
-
-          <div className="bg-[#FFF0F5] p-4 rounded-full text-[#EE4B8E]">
-            <Package size={24} />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-3xl p-6 border border-emerald-50 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-[#8E707E] font-bold text-sm">
-              ĐANG HOẠT ĐỘNG
-            </p>
-
-            <p className="text-3xl font-black text-emerald-600 mt-1">
-              {activePlans}
-            </p>
-          </div>
-
-          <div className="bg-emerald-50 p-4 rounded-full text-emerald-500">
-            <Activity size={24} />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-[#8E707E] font-bold text-sm">
-              KHÔNG HOẠT ĐỘNG
-            </p>
-
-            <p className="text-3xl font-black text-gray-400 mt-1">
-              {inactivePlans}
-            </p>
-          </div>
-
-          <div className="bg-gray-50 p-4 rounded-full text-gray-400">
-            <Archive size={24} />
-          </div>
-        </div>
+        <StatsCard
+          title="TỔNG SỐ GÓI"
+          value={totalPlans}
+          sub="Tất cả các gói VIP"
+          icon={<Package size={20} />}
+        />
+        <StatsCard
+          title="ĐANG HOẠT ĐỘNG"
+          value={activePlans}
+          sub="Các gói đang hoạt động"
+          color="text-emerald-600"
+          icon={<Activity size={20} />}
+        />
+        <StatsCard
+          title="KHÔNG HOẠT ĐỘNG"
+          value={inactivePlans}
+          sub="Các gói đã bị ẩn"
+          color="text-gray-400"
+          icon={<Archive size={20} />}
+        />
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-[#EE4B8E]" />
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-100 border-t-pink-500" />
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

@@ -5,6 +5,7 @@ import {
   Lock,
   Unlock,
   Trash2,
+  Users,
 } from "lucide-react"
 import toast from "react-hot-toast"
 
@@ -20,6 +21,7 @@ import {
 
 import CreateAccountModal from "@/components/CreateAccountModal"
 import ConfirmModal from "@/components/ConfirmModal"
+import PageHeader from "@/components/PageHeader"
 import { SearchContext } from "@/context/SearchContext"
 
 const roleStyle = (role) => {
@@ -27,7 +29,7 @@ const roleStyle = (role) => {
     return "bg-pink-100 text-pink-500"
 
   if (role === "Owner")
-    return "bg-blue-100 text-blue-500"
+    return "bg-[#FFF0F5] text-[#EE4B8E]"
 
   return "bg-gray-100 text-gray-500"
 }
@@ -278,30 +280,26 @@ export default function AccountsPage() {
     "grid grid-cols-[1.5fr_1.5fr_2fr_1fr_1.2fr_1.5fr_1.2fr_1fr_0.8fr]"
 
   return (
-    <div>
+    <div className="space-y-6">
       {/* HEADER */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">
-            QUẢN LÝ TÀI KHOẢN
-          </h1>
-          <p className="text-gray-500 text-sm">
-            Quản lý danh sách người dùng
-          </p>
-        </div>
-
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-pink-500 text-white rounded-lg"
-        >
-          + Tạo tài khoản
-        </button>
-      </div>
+      <PageHeader
+        title="QUẢN LÝ TÀI KHOẢN"
+        description="Quản lý danh sách người dùng"
+        icon={<Users size={24} />}
+        actionButton={
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 active:scale-95 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-pink-100 hover:shadow-lg transition-all text-sm animate-fadeIn"
+          >
+            + Tạo tài khoản
+          </button>
+        }
+      />
 
       {/* TABLE */}
-      <div className="bg-white rounded-2xl border overflow-hidden">
+      <div className="bg-white rounded-2xl border border-pink-100/30 overflow-hidden shadow-sm">
         {/* HEADER */}
-        <div className={`${gridLayout} px-6 py-3 border-b text-sm font-bold text-center text-pink-400`}>
+        <div className={`${gridLayout} px-6 py-4 border-b text-[11px] font-bold text-center text-pink-500 bg-pink-50/20 tracking-wider uppercase`}>
           <span className="text-left">Họ và tên</span>
           <span>Username</span>
           <span>Email</span>
@@ -334,7 +332,7 @@ export default function AccountsPage() {
           return (
             <div
               key={user.accountId}
-              className={`${gridLayout} px-6 py-4 border-b items-center hover:bg-gray-50`}
+              className={`${gridLayout} px-6 py-4 border-b items-center hover:bg-pink-50/10 transition-colors`}
             >
               <div className="text-left font-semibold text-sm">
                 {safe(user.fullName)}
@@ -359,7 +357,7 @@ export default function AccountsPage() {
                   onChange={(e) =>
                     handleChangeRole(user.accountId, e.target.value)
                   }
-                  className={`px-2 py-1 text-xs rounded-full ${roleStyle(user.role)}`}
+                  className={`px-2 py-1 text-xs rounded-full cursor-pointer ${roleStyle(user.role)}`}
                 >
                   <option value="Admin">Admin</option>
                   <option value="Owner">Owner</option>
@@ -378,7 +376,7 @@ export default function AccountsPage() {
                 {formatDate(user.updatedAt)}
               </div>
 
-              <div className="flex justify-center items-center gap-3">
+              <div className="flex justify-center items-center gap-2">
                 {isSelf ? (
                   <span className="text-gray-300">—</span>
                 ) : (
@@ -388,7 +386,7 @@ export default function AccountsPage() {
                         handleToggleLock(user.accountId, user.isLocked)
                       }
                       title={user.isLocked ? "Mở khóa tài khoản" : "Khóa tài khoản"}
-                      className="text-gray-400 hover:text-pink-500 transition"
+                      className="p-2 rounded-xl text-gray-400 hover:text-pink-500 hover:bg-pink-50 transition-colors"
                     >
                       {user.isLocked ? (
                         <Lock size={16} />
@@ -399,7 +397,7 @@ export default function AccountsPage() {
                     <button
                       onClick={() => handleDelete(user.accountId)}
                       title="Xóa tài khoản"
-                      className="text-gray-400 hover:text-red-500 transition"
+                      className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                     >
                       <Trash2 size={16} />
                     </button>

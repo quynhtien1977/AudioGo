@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react"
-import { MapPin, Headphones } from "lucide-react"
+import { MapPin, Headphones, LayoutDashboard } from "lucide-react"
 
 import StatsCard from "@/components/StatsCard"
 import TrendingChart from "@/components/TrendingChart"
 import TopPOIModal from "@/components/TopPOIModal"
+import PageHeader from "@/components/PageHeader"
 
 import { getTopPOIs, getListenStats } from "@/api/analyticsApi"
 import { getAllPOIs } from "@/api/poiApi"
@@ -30,117 +31,113 @@ export default function DashboardPage() {
     }
   }, [])
 
-useEffect(() => {
-  if (!userRole || !userId) return
+  useEffect(() => {
+    if (!userRole || !userId) return
 
-  const fetchData = async () => {
-    try {
-      const [topPoisRes, allPoisRes, statsRes] = await Promise.all([
-        getTopPOIs(10),
-        getAllPOIs(),
-        getListenStats()
-      ])
+    const fetchData = async () => {
+      try {
+        const [topPoisRes, allPoisRes, statsRes] = await Promise.all([
+          getTopPOIs(10),
+          getAllPOIs(),
+          getListenStats()
+        ])
 
-      if (!Array.isArray(topPoisRes)) {
-        throw new Error("getTopPOIs did not return an array")
-      }
+        if (!Array.isArray(topPoisRes)) {
+          throw new Error("getTopPOIs did not return an array")
+        }
 
-      // Filter POIs based on role
-      let filteredPois = allPoisRes
-      if (userRole === "Owner") {
-        filteredPois = allPoisRes.filter(p => p.accountId === userId)
-      }
+        // Filter POIs based on role
+        let filteredPois = allPoisRes
+        if (userRole === "Owner") {
+          filteredPois = allPoisRes.filter(p => p.accountId === userId)
+        }
 
-      // map poiId -> full info
-      const poiMap = {}
-      filteredPois.forEach(p => {
-        poiMap[p.poiId] = p
-      })
+        // map poiId -> full info
+        const poiMap = {}
+        filteredPois.forEach(p => {
+          poiMap[p.poiId] = p
+        })
 
-      // merge top POIs (filtered by role)
-      const merged = topPoisRes
-        .filter(tp => poiMap[tp.poiId]) // Only include POIs that match filtered list
-        .map((tp, index) => {
-          const poi = poiMap[tp.poiId]
+        // merge top POIs (filtered by role)
+        const merged = topPoisRes
+          .filter(tp => poiMap[tp.poiId]) // Only include POIs that match filtered list
+          .map((tp, index) => {
+            const poi = poiMap[tp.poiId]
 
-          return {
-            rank: index + 1,
-            name: tp.title || "Unknown",
-            listens: tp.listenCount || 0,
-            lat: poi?.latitude ?? "N/A",
-            lng: poi?.longitude ?? "N/A",
-            category: tp.category || "Unknown"
+            return {
+              rank: index + 1,
+              name: tp.title || "Unknown",
+              listens: tp.listenCount || 0,
+              lat: poi?.latitude ?? "N/A",
+              lng: poi?.longitude ?? "N/A",
+              category: tp.category || "Unknown"
+            }
+          })
+
+        // Calculate stats based on filtered POIs
+        const totalListens = merged.reduce((sum, p) => sum + p.listens, 0)
+
+        setStats({
+          pois: {
+            total: filteredPois.length,
+          },
+          audio: {
+            total: totalListens,
           }
         })
 
-      // Calculate stats based on filtered POIs
-      const totalListens = merged.reduce((sum, p) => sum + p.listens, 0)
+        const ownerHasNoPoi = userRole === "Owner" && filteredPois.length === 0
+        setChartData(ownerHasNoPoi ? [] : (statsRes.dailyListens || []))
+        setPois(merged)
 
-      setStats({
-        pois: {
-          total: filteredPois.length,
-        },
-        audio: {
-          total: totalListens,
-        }
-      })
-
-      const ownerHasNoPoi = userRole === "Owner" && filteredPois.length === 0
-      setChartData(ownerHasNoPoi ? [] : (statsRes.dailyListens || []))
-      setPois(merged)
-
-    } catch (err) {
-      console.error("Dashboard error:", err)
+      } catch (err) {
+        console.error("Dashboard error:", err)
+      }
     }
-  }
 
-  fetchData()
-}, [userRole, userId])
+    fetchData()
+  }, [userRole, userId])
 
   if (!stats) {
     return <div className="p-6">Loading dashboard...</div>
   }
 
   const getCategoryColor = (category) => {
-  switch (category) {
-    case "Di tích lịch sử":
-      return "bg-blue-100 text-blue-500"
+    switch (category) {
+      case "Di tích lịch sử":
+        return "bg-blue-100 text-blue-500"
 
-    case "Ẩm thực":
-      return "bg-pink-100 text-pink-500"
+      case "Ẩm thực":
+        return "bg-pink-100 text-pink-500"
 
-    case "Hải sản & Ốc":
-      return "bg-cyan-100 text-cyan-500"
+      case "Hải sản & Ốc":
+        return "bg-cyan-100 text-cyan-500"
 
-    case "Cà phê & Giải khát":
-      return "bg-orange-100 text-orange-500"
+      case "Cà phê & Giải khát":
+        return "bg-orange-100 text-orange-500"
 
-    case "Chùa & Tôn giáo":
-      return "bg-purple-100 text-purple-500"
+      case "Chùa & Tôn giáo":
+        return "bg-purple-100 text-purple-500"
 
-    case "Giải trí":
-      return "bg-green-100 text-green-500"
+      case "Giải trí":
+        return "bg-green-100 text-green-500"
 
-    case "Mua sắm":
-      return "bg-yellow-100 text-yellow-600"
+      case "Mua sắm":
+        return "bg-yellow-100 text-yellow-600"
 
-    default:
-      return "bg-gray-100 text-gray-500"
+      default:
+        return "bg-gray-100 text-gray-500"
+    }
   }
-}
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
 
-      {/* Title */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-800">
-          TỔNG QUAN
-        </h1>
-        <p className="text-gray-500 mt-2">
-          Chào mừng đến với hệ thống quản lý AudioGo!
-        </p>
-      </div>
+      <PageHeader
+        title="TỔNG QUAN"
+        description="Chào mừng đến với hệ thống quản lý AudioGo!"
+        icon={<LayoutDashboard size={24} />}
+      />
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-6">

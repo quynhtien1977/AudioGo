@@ -75,7 +75,7 @@ export default function POIManagementListComponent({
   }
 
   return (
-    <div className="p-6">
+    <div className="space-y-6">
       {/* HEADER */}
       <div className="flex items-center gap-4 mb-6">
         <button

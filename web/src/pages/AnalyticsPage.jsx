@@ -7,6 +7,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Map as MapIcon, BarChart3, TrendingUp, Headphones, Clock, Calendar } from 'lucide-react'
 import { getHeatmap, getListenStats, getHeatmapByTime } from '@/api/analyticsApi'
 import { getAllPOIs } from '@/api/poiApi'
+import PageHeader from "@/components/PageHeader"
+import StatsCard from "@/components/StatsCard"
 
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
@@ -129,9 +131,9 @@ export default function AnalyticsPage() {
       const sec = data.totalSeconds;
       const timeText = sec < 60 ? `${sec} giây` : `${Math.floor(sec / 60)} phút ${sec % 60 > 0 ? (sec % 60) + ' giây' : ''}`;
       return (
-        <div style={{ backgroundColor: 'white', padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '0.5rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-          <p style={{ margin: '0 0 0.5rem 0', fontWeight: '600', color: '#374151' }}>{label}</p>
-          <p style={{ margin: 0, color: '#8b5cf6', fontWeight: '500' }}>Tổng thời gian: {timeText}</p>
+        <div className="bg-white p-4 rounded-xl border border-pink-100/50 shadow-lg">
+          <p className="font-semibold text-gray-700 text-sm mb-1">{label}</p>
+          <p className="text-pink-500 font-bold text-xs">Tổng thời gian: {timeText}</p>
         </div>
       );
     }
@@ -142,58 +144,56 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: '#6b7280' }}>
-        Đang tải dữ liệu phân tích...
+      <div className="flex flex-col gap-3 justify-center items-center h-[50vh] text-gray-500">
+        <div className="w-10 h-10 border-4 border-gray-100 border-t-pink-500 rounded-full animate-spin" />
+        <span className="text-sm font-medium">Đang tải dữ liệu phân tích...</span>
       </div>
-    )
+    );
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '1200px', margin: '0 auto', padding: '2rem 0', width: '100%' }}>
-      
+    <div className="space-y-6">
       {/* HEADER */}
-      <div>
-        <h1 style={{ fontSize: '2rem', fontWeight: '800', color: '#1f2937', margin: '0 0 0.5rem 0', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <BarChart3 size={32} className="text-pink-500" />
-          Analytics & Heatmap
-        </h1>
-        <p style={{ color: '#6b7280', margin: 0 }}>
-          Phân tích xu hướng người dùng và mật độ di chuyển trên bản đồ.
-        </p>
-      </div>
+      <PageHeader
+        title="ANALYTICS & HEATMAP"
+        description="Phân tích xu hướng người dùng và mật độ di chuyển trên bản đồ."
+        icon={<BarChart3 size={24} />}
+      />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* STATS OVERVIEW */}
-        <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '1rem', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem', color: '#4b5563', fontWeight: '600' }}>
-            <Headphones size={20} className="text-purple-500" /> Tổng Lượt Nghe (Toàn Hệ Thống)
-          </div>
-          <div style={{ fontSize: '3rem', fontWeight: '800', color: '#1f2937' }}>
-            {totalListens.toLocaleString()}
-          </div>
-          <div style={{ fontSize: '0.9rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.5rem' }}>
-            <TrendingUp size={16} /> Tăng trưởng ổn định
-          </div>
-        </div>
+        <StatsCard
+          title="TỔNG LƯỢT NGHE (TOÀN HỆ THỐNG)"
+          value={totalListens.toLocaleString()}
+          sub="Tăng trưởng ổn định 🟢"
+          icon={<Headphones size={20} />}
+        />
 
         {/* CHART CONTAINER */}
-        <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '1rem', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', gridColumn: 'span 2' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', color: '#4b5563', fontWeight: '600' }}>
-            <BarChart3 size={20} className="text-blue-500" /> Biểu Đồ Tổng Thời Gian Nghe (Phút) - 30 Ngày Qua
+        <div className="bg-white p-6 rounded-2xl border border-pink-100/30 shadow-sm lg:col-span-2">
+          <div className="flex items-center gap-3 mb-6 text-gray-700 font-bold text-xs uppercase tracking-wider">
+            <BarChart3 size={18} className="text-pink-500" />
+            Biểu Đồ Tổng Thời Gian Nghe (Phút) - 30 Ngày Qua
           </div>
-          <div style={{ height: '300px', width: '100%' }}>
+          <div className="h-[300px] w-full">
             {chartData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} dy={10} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f3f4f6' }} />
-                  <Bar dataKey="durationMinutes" fill="#8b5cf6" radius={[4, 4, 0, 0]} maxBarSize={40} name="Phút" />
+                  <defs>
+                    <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#ec4899" stopOpacity={0.9}/>
+                      <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.6}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9ca3af' }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#9ca3af' }} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: '#fff5f7' }} />
+                  <Bar dataKey="durationMinutes" fill="url(#barGradient)" radius={[6, 6, 0, 0]} maxBarSize={40} name="Phút" />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: '#9ca3af' }}>
+              <div className="flex justify-center items-center h-full text-gray-400 text-sm">
                 Chưa có dữ liệu lượt nghe
               </div>
             )}
@@ -202,49 +202,38 @@ export default function AnalyticsPage() {
       </div>
 
       {/* HEATMAP SECTION */}
-      <div style={{ backgroundColor: 'white', borderRadius: '1rem', border: '1px solid #e5e7eb', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-        <div style={{ padding: '1.5rem', borderBottom: '1px solid #e5e7eb' }}>
+      <div className="bg-white rounded-2xl border border-pink-100/30 overflow-hidden shadow-sm">
+        <div className="p-6 border-b border-pink-50">
           {/* Tiêu đề + Thông tin */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#4b5563', fontWeight: '600' }}>
-              <MapIcon size={20} className="text-red-500" /> Bản Đồ Nhiệt Mật Độ Di Chuyển (Heatmap)
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-3 text-gray-700 font-bold text-xs uppercase tracking-wider">
+              <MapIcon size={18} className="text-pink-500" />
+              Bản Đồ Nhiệt Mật Độ Di Chuyển (Heatmap)
             </div>
-            <div style={{ fontSize: '0.85rem', color: '#6b7280', backgroundColor: '#f3f4f6', padding: '0.25rem 0.75rem', borderRadius: '1rem' }}>
+            <div className="text-xs text-pink-500 bg-pink-50 font-bold px-3 py-1 rounded-full">
               {viewMode === 'overview' ? heatmapData.length : heatmapByTimeData.length} điểm tọa độ
             </div>
           </div>
 
           {/* Tab chọn view mode */}
-          <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '1rem' }}>
+          <div className="flex gap-2 mb-6 border-b border-pink-50/50 pb-4">
             <button
               onClick={() => setViewMode('overview')}
-              style={{
-                padding: '0.75rem 1.5rem',
-                borderRadius: '0.5rem',
-                border: 'none',
-                cursor: 'pointer',
-                fontWeight: '500',
-                fontSize: '0.95rem',
-                transition: 'all 0.2s',
-                backgroundColor: viewMode === 'overview' ? '#f472b6' : '#f3f4f6',
-                color: viewMode === 'overview' ? 'white' : '#6b7280',
-              }}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                viewMode === 'overview'
+                  ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-sm shadow-pink-100'
+                  : 'bg-gray-50 text-gray-500 hover:bg-pink-50/50 hover:text-pink-500'
+              }`}
             >
               📊 Tổng Quan
             </button>
             <button
               onClick={() => setViewMode('by-time')}
-              style={{
-                padding: '0.75rem 1.5rem',
-                borderRadius: '0.5rem',
-                border: 'none',
-                cursor: 'pointer',
-                fontWeight: '500',
-                fontSize: '0.95rem',
-                transition: 'all 0.2s',
-                backgroundColor: viewMode === 'by-time' ? '#f472b6' : '#f3f4f6',
-                color: viewMode === 'by-time' ? 'white' : '#6b7280',
-              }}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                viewMode === 'by-time'
+                  ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-sm shadow-pink-100'
+                  : 'bg-gray-50 text-gray-500 hover:bg-pink-50/50 hover:text-pink-500'
+              }`}
             >
               ⏰ Theo Thời Gian
             </button>
@@ -252,36 +241,25 @@ export default function AnalyticsPage() {
 
           {/* Controls cho chế độ theo thời gian */}
           {viewMode === 'by-time' && (
-            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', backgroundColor: '#f9fafb', padding: '1rem', borderRadius: '0.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Calendar size={18} style={{ color: '#6b7280' }} />
-                <label style={{ fontSize: '0.9rem', fontWeight: '500', color: '#374151' }}>Ngày:</label>
+            <div className="flex gap-4 flex-wrap items-center bg-pink-50/10 p-4 rounded-xl border border-pink-100/20">
+              <div className="flex items-center gap-2">
+                <Calendar size={16} className="text-pink-500" />
+                <label className="text-xs font-bold text-gray-500 uppercase">Ngày:</label>
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  style={{
-                    padding: '0.5rem 0.75rem',
-                    borderRadius: '0.375rem',
-                    border: '1px solid #d1d5db',
-                    fontSize: '0.9rem',
-                  }}
+                  className="px-3 py-1.5 bg-white border border-pink-100/50 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-pink-300 font-medium"
                 />
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Clock size={18} style={{ color: '#6b7280' }} />
-                <label style={{ fontSize: '0.9rem', fontWeight: '500', color: '#374151' }}>Giờ:</label>
+              <div className="flex items-center gap-2">
+                <Clock size={16} className="text-pink-500" />
+                <label className="text-xs font-bold text-gray-500 uppercase">Giờ:</label>
                 <select
                   value={selectedHour === null ? '' : selectedHour}
                   onChange={(e) => setSelectedHour(e.target.value === '' ? null : parseInt(e.target.value))}
-                  style={{
-                    padding: '0.5rem 0.75rem',
-                    borderRadius: '0.375rem',
-                    border: '1px solid #d1d5db',
-                    fontSize: '0.9rem',
-                    cursor: 'pointer',
-                  }}
+                  className="px-3 py-1.5 bg-white border border-pink-100/50 rounded-lg text-sm text-gray-700 cursor-pointer focus:outline-none focus:ring-2 focus:ring-pink-300 font-medium"
                 >
                   <option value="">Tất cả giờ</option>
                   {Array.from({ length: 24 }, (_, i) => (
@@ -292,7 +270,7 @@ export default function AnalyticsPage() {
                 </select>
               </div>
 
-              <div style={{ fontSize: '0.85rem', color: '#6b7280', marginLeft: 'auto' }}>
+              <div className="text-xs font-semibold text-pink-500 ml-auto bg-pink-50/50 px-3 py-1.5 rounded-lg border border-pink-100/30">
                 {selectedHour !== null 
                   ? `${new Date(selectedDate).toLocaleDateString('vi-VN')} • Giờ ${selectedHour.toString().padStart(2, '0')}:00` 
                   : `${new Date(selectedDate).toLocaleDateString('vi-VN')} • Toàn bộ ngày`
@@ -302,7 +280,7 @@ export default function AnalyticsPage() {
           )}
         </div>
         
-        <div style={{ height: '600px', width: '100%', position: 'relative', zIndex: 0 }}>
+        <div className="h-[600px] w-full relative z-0">
           <MapContainer 
             center={[10.7769, 106.7009]} 
             zoom={14} 
@@ -328,8 +306,8 @@ export default function AnalyticsPage() {
                 position={[poi.latitude, poi.longitude]} 
               >
                 <Popup>
-                  <div style={{ fontWeight: '600' }}>{poi.title}</div>
-                  <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                  <div className="font-semibold text-gray-800 text-xs">{poi.title}</div>
+                  <div className="text-[10px] text-gray-500 font-mono mt-0.5">
                     {poi.latitude.toFixed(5)}, {poi.longitude.toFixed(5)}
                   </div>
                 </Popup>
@@ -339,42 +317,15 @@ export default function AnalyticsPage() {
 
           {/* Loading Overlay - By Time */}
           {viewMode === 'by-time' && loadingByTime && (
-            <div style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1000,
-              borderRadius: '0.5rem'
-            }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ 
-                  width: '40px', 
-                  height: '40px', 
-                  border: '4px solid #f3f4f6', 
-                  borderTop: '4px solid #f472b6',
-                  borderRadius: '50%',
-                  animation: 'spin 1s linear infinite',
-                  margin: '0 auto 1rem'
-                }} />
-                <p style={{ color: '#6b7280', fontSize: '0.95rem' }}>Đang tải dữ liệu...</p>
+            <div className="absolute inset-0 bg-white/90 flex items-center justify-center z-[1000] rounded-xl transition-all duration-200">
+              <div className="text-center">
+                <div className="w-10 h-10 border-4 border-gray-100 border-t-pink-500 rounded-full animate-spin mx-auto mb-3" />
+                <p className="text-sm font-semibold text-gray-500">Đang tải dữ liệu...</p>
               </div>
             </div>
           )}
-
-          <style>{`
-            @keyframes spin {
-              to { transform: rotate(360deg); }
-            }
-          `}</style>
         </div>
       </div>
-
     </div>
-  )
+  );
 }

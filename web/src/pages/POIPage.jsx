@@ -11,11 +11,13 @@ import {
   CircleX,
   Trash,
   Plus,
-  SquareMenu
+  SquareMenu,
+  MapPin
 } from "lucide-react"
 
 import POIMap from "@/components/POIMap"
-import Card from "@/components/Card"
+import StatsCard from "@/components/StatsCard"
+import PageHeader from "@/components/PageHeader"
 import StatusBadge from "@/components/StatusBadge"
 import ConfirmModal from "@/components/ConfirmModal"
 import { getPriorityColor, getPriorityInfo } from "@/components/PriorityBadge"
@@ -442,23 +444,28 @@ export default function POIPage() {
   };
 
   return (
-    <div className="p-6 bg-pink-50/30 min-h-screen space-y-6">
+    <div className="space-y-6">
 
-      <h1 className="text-2xl font-bold">QUẢN LÝ DỮ LIỆU POIs</h1>
+      <PageHeader
+        title="QUẢN LÝ DỮ LIỆU POIs"
+        description="Đăng tải, phê duyệt và quản lý các điểm quan tâm (POI) của AudioGo."
+        icon={<MapPin size={24} />}
+      />
 
       {/* STATCARD */}
       <div className="grid grid-cols-3 gap-6">
-        <Card 
+        <StatsCard 
           title="TỔNG SỐ POIs" 
           value={totalItems} 
           sub="hiện có trong hệ thống" 
         />
-        <Card 
-        title="POI KHÔNG HOẠT ĐỘNG" 
-        value={pois.filter(p => !p.isActive).length} 
-        sub="Cần xem xét" color="text-orange-500" />
-
-        <Card 
+        <StatsCard 
+          title="POI KHÔNG HOẠT ĐỘNG" 
+          value={pois.filter(p => !p.isActive).length} 
+          sub="Cần xem xét" 
+          color="text-orange-500" 
+        />
+        <StatsCard 
           title="ƯU TIÊN CAO" 
           value={pois.filter(p => p.priority === 4).length} 
           sub="quản lý mức độ ưu tiên" 
@@ -547,10 +554,10 @@ export default function POIPage() {
       </div>
 
       {/* TABLE */}
-      <div className="bg-white rounded-2xl border overflow-hidden">
+      <div className="bg-white rounded-2xl border border-pink-100/30 overflow-hidden shadow-sm">
         <table className="w-full text-sm">
           
-          <thead className="bg-gray-50 text-gray-400">
+          <thead className="bg-pink-50/20 text-[11px] font-bold text-pink-500 tracking-wider uppercase">
             <tr>
               <th className="p-4 text-left w-12">LOGO</th>
               <th className="p-4 text-left">TÊN</th>

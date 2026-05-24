@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
-  Plus, MapPin, Calendar, ShieldCheck, Eye, ExternalLink, Trash2
+  Plus, MapPin, Calendar, ShieldCheck, Eye, ExternalLink, Trash2, Route
 } from "lucide-react";
 import toast from "react-hot-toast";
 
 import ConfirmModal from "@/components/ConfirmModal";
 import CreateTourModal from "@/components/CreateTourModal";
-import Card from "@/components/Card";
+import StatsCard from "@/components/StatsCard";
+import PageHeader from "@/components/PageHeader";
 import { getAllToursApi, createTourApi, deleteTourApi, addPoiToTourApi, restoreTourApi } from "@/api/tourApi";
 import { SearchContext } from "@/context/SearchContext";
 
@@ -148,49 +149,47 @@ const ToursPage = () => {
   };
 
   return (
-    <div className="p-8 bg-[#FDF8FA]/50 min-h-screen space-y-8 font-sans">
+    <div className="space-y-6">
       {/* HEADER SECTION */}
-      <div className="flex justify-between items-end">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800 tracking-tight">QUẢN LÝ TOUR</h1>
-          <p className="text-gray-500 mt-1 font-medium">Thiết kế và quản lý tour trải nghiệm ẩm thực.</p>
-        </div>
-        <button 
-          onClick={() => navigate('/tours/create')}
-          className="flex items-center gap-2 bg-gradient-to-r from-[#D81B60] to-[#EC4899] text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-pink-100 hover:scale-105 transition-all active:scale-95"
-        >
-          <Plus size={20} /> Tạo Tour Mới
-        </button>
-      </div>
+      <PageHeader
+        title="QUẢN LÝ TOUR"
+        description="Thiết kế và quản lý tour trải nghiệm ẩm thực."
+        icon={<Route size={24} />}
+        actionButton={
+          <button 
+            onClick={() => navigate('/tours/create')}
+            className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 active:scale-95 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-pink-100 hover:shadow-lg transition-all text-sm"
+          >
+            <Plus size={18} /> Tạo Tour Mới
+          </button>
+        }
+      />
 
       {/* STATS BARS */}
       <div className="grid grid-cols-3 gap-6">
-        <Card
-            title = "TỔNG SỐ TOUR"
-            value = {tours.length}
-            color = "text-blue-600"
-            sub = "Tất cả các Tour đã tạo"
-            icon = {<ExternalLink size={16} className="text-blue-600" />}>
-        </Card>
-        <Card
-            title = "TOUR ĐANG HOẠT ĐỘNG"
-            value = {tours.filter(t => t.isActive).length}
-            color = "text-green-600"
-            sub = "Các Tour đang hoạt động trong hệ thống"
-            icon = {<ShieldCheck size={16} className="text-green-600" />}>
-        </Card>
-        <Card
-            title = "TỔNG POI ĐÃ GẮN"
-            value = {
-              tours.reduce((uniquePois, tour) => {
-                tour.pois?.forEach(poi => uniquePois.add(poi.poiId));
-                return uniquePois;
-              }, new Set()).size
-            }
-            color = "text-pink-600"
-            sub = "Số lượng điểm đến đã được gắn vào các Tour"
-            icon = {<MapPin size={16} className="text-pink-600" />} >
-        </Card>
+        <StatsCard
+          title="TỔNG SỐ TOUR"
+          value={tours.length}
+          sub="Tất cả các Tour đã tạo"
+          icon={<ExternalLink size={16} />}
+        />
+        <StatsCard
+          title="TOUR ĐANG HOẠT ĐỘNG"
+          value={tours.filter(t => t.isActive).length}
+          sub="Các Tour đang hoạt động trong hệ thống"
+          icon={<ShieldCheck size={16} />}
+        />
+        <StatsCard
+          title="TỔNG POI ĐÃ GẮN"
+          value={
+            tours.reduce((uniquePois, tour) => {
+              tour.pois?.forEach(poi => uniquePois.add(poi.poiId));
+              return uniquePois;
+            }, new Set()).size
+          }
+          sub="Số lượng điểm đến đã được gắn vào các Tour"
+          icon={<MapPin size={16} />}
+        />
       </div>
 
       {/* GRID LIST */}

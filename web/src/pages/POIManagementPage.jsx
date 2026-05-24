@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { CheckCircle, AlertCircle, Trash2 } from "lucide-react"
+import { CheckCircle, AlertCircle, Trash2, BadgeCheck } from "lucide-react"
 
 import { getPoiRequestStats } from "@/api/poiRequestApi"
+import PageHeader from "../components/PageHeader"
 
 export default function POIManagementPage() {
   const navigate = useNavigate()
@@ -82,16 +83,13 @@ export default function POIManagementPage() {
   ]
 
   return (
-    <div className="p-6">
+    <div className="space-y-6">
       {/* HEADER */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
-          QUẢN LÝ POI
-        </h1>
-        <p className="text-gray-600 text-base">
-          Duyệt và quản lý vòng đời điểm tham quan
-        </p>
-      </div>
+      <PageHeader
+        title="QUẢN LÝ XÉT DUYỆT POIs"
+        description="Duyệt và quản lý vòng đời, yêu cầu chỉnh sửa/xóa điểm tham quan từ cộng đồng."
+        icon={<BadgeCheck size={24} />}
+      />
 
       {/* MANAGEMENT CARDS GRID */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

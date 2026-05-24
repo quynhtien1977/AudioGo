@@ -15,6 +15,7 @@ import {
 import { formatDateVN } from "@/utils/formatDate";
 import { accessCodeApi } from "../api/accessCodeApi";
 import ConfirmModal from "@/components/ConfirmModal";
+import PageHeader from "../components/PageHeader";
 
 export default function AccessCodePage() {
     const [codes, setCodes] = useState([]);
@@ -114,18 +115,13 @@ export default function AccessCodePage() {
     const gridLayout = "grid grid-cols-[1.5fr_1.2fr_1.2fr_1.2fr_1.2fr_1fr] lg:grid-cols-[1.2fr_1fr_1fr_1fr_1fr_0.8fr]";
 
     return (
-        <div>
+        <div className="space-y-6">
             {/* HEADER */}
-            <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h1 className="text-2xl font-bold uppercase">
-                        Quản lý Mã truy cập
-                    </h1>
-                    <p className="text-gray-500 text-sm mt-1">
-                        Khách du lịch chỉ cần quét mã tĩnh để nhận vé (Token 7 ngày) truy cập tất cả tính năng.
-                    </p>
-                </div>
-            </div>
+            <PageHeader
+                title="QUẢN LÝ MÃ TRUY CẬP"
+                description="Khách du lịch chỉ cần quét mã tĩnh để nhận vé (Token 7 ngày) truy cập tất cả tính năng."
+                icon={<QrCode size={24} />}
+            />
 
             {/* Content box */}
             <div className="flex flex-col xl:flex-row gap-6 items-start">

@@ -1,6 +1,7 @@
 import { useEffect, useState, useContext } from "react"
-import { Edit3, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
+import { Edit3, Trash2, ChevronLeft, ChevronRight, Layers } from "lucide-react"
 import toast from "react-hot-toast"
+import PageHeader from "@/components/PageHeader"
 
 import {
   getCategoriesApi,
@@ -97,32 +98,28 @@ export default function CategoryPage() {
   const gridLayout = "grid grid-cols-[2fr_2fr_2fr_1fr] items-center"
 
   return (
-    <div className="p-6">
+    <div className="space-y-6">
 
       {/* HEADER */}
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">
-            QUẢN LÝ DANH MỤC
-          </h1>
-          <p className="text-gray-500 text-sm">
-            Tổ chức và quản lý danh mục POI
-          </p>
-        </div>
-
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-5 py-2.5 bg-pink-500 text-white font-semibold rounded-xl hover:bg-pink-600 transition"
-        >
-          + Thêm danh mục mới
-        </button>
-      </div>
+      <PageHeader
+        title="QUẢN LÝ DANH MỤC"
+        description="Tổ chức và quản lý danh mục POI"
+        icon={<Layers size={24} />}
+        actionButton={
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 active:scale-95 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-pink-100 hover:shadow-lg transition-all text-sm animate-fadeIn"
+          >
+            + Thêm danh mục mới
+          </button>
+        }
+      />
 
       {/* TABLE */}
-      <div className="bg-white rounded-2xl border shadow-md overflow-hidden">
+      <div className="bg-white rounded-2xl border border-pink-100/30 shadow-sm overflow-hidden">
 
         {/* HEADER ROW */}
-        <div className={`${gridLayout} px-8 py-4 text-sm font-bold text-pink-400 border-b bg-gray-50`}>
+        <div className={`${gridLayout} px-8 py-4 text-[11px] font-bold text-pink-500 tracking-wider uppercase border-b bg-pink-50/20`}>
           <span>Tên danh mục</span>
           <span>Ngày tạo</span>
           <span>Ngày cập nhật</span>
@@ -135,7 +132,7 @@ export default function CategoryPage() {
           {paginatedData.map((c) => (
             <div
               key={c.categoryId}
-              className={`${gridLayout} px-8 py-4 hover:bg-pink-50/20 transition`}
+              className={`${gridLayout} px-8 py-4 hover:bg-pink-50/20 transition-colors`}
             >
 
               {/* NAME */}
@@ -148,22 +145,24 @@ export default function CategoryPage() {
               <div className="text-sm text-gray-500 truncate">{c.updatedAt ? new Date(c.updatedAt).toLocaleDateString() : "-"}</div>
 
               {/* ACTIONS */}
-              <div className="flex justify-end gap-3">
+              <div className="flex justify-end gap-2">
 
                 <button
                   onClick={() => setEditingCategory(c)}
-                  className="p-2 text-gray-400 hover:text-blue-500 transition"
+                  className="p-2 rounded-xl text-gray-400 hover:text-pink-500 hover:bg-pink-50 transition-colors"
+                  title="Chỉnh sửa"
                 >
-                  <Edit3 size={18} />
+                  <Edit3 size={16} />
                 </button>
 
                 <button
                   onClick={() =>
                     openDeleteConfirm(c.categoryId)
                   }
-                  className="p-2 text-gray-400 hover:text-red-500 transition"
+                  className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                  title="Xóa danh mục"
                 >
-                  <Trash2 size={18} />
+                  <Trash2 size={16} />
                 </button>
               </div>
             </div>
