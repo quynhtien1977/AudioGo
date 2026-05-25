@@ -7,6 +7,7 @@ import { getPoiRequestDetail, reviewPoiRequest } from "@/api/poiRequestApi"
 import { getCategoriesApi } from "@/api/categoryApi"
 import ConfirmModal from "@/components/ConfirmModal"
 import { formatPriority } from "@/components/PriorityBadge"
+import { getPoiChanges } from "@/utils/poiChangeDetector"
 
 // Bug #4: chuẩn hóa null/undefined/"" về "" để so sánh audio đúng
 const normalizeAudio = (v) => (v == null ? "" : v.trim())
@@ -79,6 +80,7 @@ export default function POIUpdateDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [categoryMap, setCategoryMap] = useState({}) // id → name
+  const [changeCount, setChangeCount] = useState(0)
   
   // Modal states
   const [showApproveModal, setShowApproveModal] = useState(false)
@@ -117,55 +119,11 @@ export default function POIUpdateDetailPage() {
         }
         console.log("Proposed Data:", proposedData)
 
-        // ── OLD: lấy từ database ──────────────────────────────────────────
-        const masterContent  = poiDetail.contents?.find(c => c.isMaster)
-        const oldCategoryId  = poiDetail.categoryIds?.[0] || ""
-        // Ngôn ngữ của master content (bản mà owner đã chọn làm nội dung chính)
-        const oldLanguageCode = masterContent?.languageCode || ""
-
-        const oldPoiFormatted = {
-          id: poiDetail.poiId,
-          name: masterContent?.title || "Không có tên",
-          categoryId: oldCategoryId,
-          categoryName: catMap[oldCategoryId] || poiDetail.category || "Không xác định",
-          description: masterContent?.description || "",
-          latitude: String(poiDetail.latitude || ""),
-          longitude: String(poiDetail.longitude || ""),
-          priority: Number(poiDetail.priority ?? 2),
-          // Hiển thị ngôn ngữ của master content
-          language: oldLanguageCode,
-          audio: normalizeAudio(masterContent?.audioUrl),
-          images: (() => {
-            const gallery = poiDetail.gallery?.map(g => g.imageUrl) || []
-            const logo = poiDetail.logoUrl
-            if (logo) return [logo, ...gallery.filter(u => u !== logo)]
-            return gallery
-          })(),
-        }
-
-        // ── NEW: lấy từ proposedData ─────────────────────────────────────
-        const newCategoryId = proposedData.CategoryIds?.[0] ?? oldCategoryId
-        // LanguageCode từ proposedData — AddPOI & Update đều gửi LanguageCode
-        const newLanguageCode = proposedData.LanguageCode ?? oldLanguageCode
-
-        const newPoiFormatted = {
-          id: proposedData.poiId || oldPoiFormatted.id,
-          name: proposedData.Title ?? oldPoiFormatted.name,
-          categoryId: newCategoryId,
-          categoryName: catMap[newCategoryId] || oldPoiFormatted.categoryName,
-          description: proposedData.Description ?? oldPoiFormatted.description,
-          latitude: proposedData.Latitude != null ? String(proposedData.Latitude) : oldPoiFormatted.latitude,
-          longitude: proposedData.Longitude != null ? String(proposedData.Longitude) : oldPoiFormatted.longitude,
-          priority: proposedData.Priority != null ? Number(proposedData.Priority) : oldPoiFormatted.priority,
-          language: newLanguageCode,
-          audio: proposedData.AudioUrl !== undefined
-            ? normalizeAudio(proposedData.AudioUrl)
-            : oldPoiFormatted.audio,
-          images: proposedData.GalleryImageUrls ?? oldPoiFormatted.images,
-        }
+        const { oldPoi: oldPoiFormatted, newPoi: newPoiFormatted, changeCount: count } = getPoiChanges(poiDetail, proposedData, catMap)
 
         setOldPoi(oldPoiFormatted)
         setNewPoi(newPoiFormatted)
+        setChangeCount(count)
       } catch (err) {
         console.error("Load POI detail error:", err)
         setError("Không thể tải dữ liệu. Vui lòng thử lại.")
@@ -259,17 +217,8 @@ export default function POIUpdateDetailPage() {
     )
   }
 
-  // Fix: đếm trường thay đổi dùng các key semantic đúng
-  const changedFields = [
-    oldPoi.name !== newPoi.name ? 1 : 0,
-    oldPoi.categoryId !== newPoi.categoryId ? 1 : 0,
-    (oldPoi.latitude !== newPoi.latitude || oldPoi.longitude !== newPoi.longitude) ? 1 : 0,
-    oldPoi.priority !== newPoi.priority ? 1 : 0,
-    oldPoi.language !== newPoi.language ? 1 : 0,
-    isAudioChanged(oldPoi.audio, newPoi.audio) ? 1 : 0,
-    oldPoi.description !== newPoi.description ? 1 : 0,
-    JSON.stringify(oldPoi.images) !== JSON.stringify(newPoi.images) ? 1 : 0,
-  ].reduce((a, b) => a + b, 0)
+  // changedFields bây giờ sử dụng state changeCount được tính toán đồng bộ từ getPoiChanges
+  const changedFields = changeCount
 
   return (
     <div className="bg-gradient-to-b from-gray-50 to-white min-h-screen pb-32">

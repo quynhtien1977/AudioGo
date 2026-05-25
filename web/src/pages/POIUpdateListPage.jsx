@@ -9,6 +9,7 @@ import { getAllPoiRequests, getAllPoiRequestsAll, reviewPoiRequest } from "@/api
 import { getUsersApi } from "@/api/accountApi"
 import { getCategoriesApi } from "@/api/categoryApi"
 import { getPoiDetail } from "@/api/poiApi"
+import { getPoiChanges } from "@/utils/poiChangeDetector"
 
 export default function POIUpdateListPage() {
   const navigate = useNavigate()
@@ -88,37 +89,7 @@ export default function POIUpdateListPage() {
             }
 
             // 🔥 TÍNH SỐ TRƯỜNG THAY ĐỔI
-            const oldPoi = {
-              name: poiDetail?.contents?.find(c => c.isMaster)?.title || "",
-              category: poiDetail?.categoryIds?.[0] || "",
-              description: poiDetail?.contents?.find(c => c.isMaster)?.description || "",
-              latitude: poiDetail?.latitude || "",
-              longitude: poiDetail?.longitude || "",
-              address: poiDetail?.contents?.find(c => c.isMaster)?.address || "",
-              priority: poiDetail?.priority || 2,
-              language: poiDetail?.contents?.map(c => c.language).join(", ") || "",
-              // Bug #4: dùng audioUrl và imageUrl (Azure URL)
-              audio: poiDetail?.contents?.find(c => c.isMaster)?.audioUrl?.trim() || "",
-              images: poiDetail?.gallery?.map(g => g.imageUrl).join(",") || "",
-            }
-
-            const newPoi = {
-              name: data.Title || "",
-              category: data.CategoryIds?.[0] || "",
-              description: data.Description || "",
-              latitude: data.Latitude?.toString() || "",
-              longitude: data.Longitude?.toString() || "",
-              address: data.Address || "",
-              priority: data.Priority ?? 2,
-              language: data.Language || "",
-              // Bug #4: AudioUrl từ proposedData
-              audio: data.AudioUrl?.trim() ?? "",
-              images: data.GalleryImageUrls?.join(",") || "",
-            }
-
-            const changeCount = Object.keys(oldPoi).filter(
-              key => oldPoi[key] !== newPoi[key]
-            ).length
+            const { changeCount } = getPoiChanges(poiDetail, data)
 
             return {
               id: r.requestId,
