@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { ArrowLeft, X, Check, MapPin, Zap, Layers, FileText, Volume2, Globe } from "lucide-react"
+import { ArrowLeft, X, Check, MapPin, Zap, Layers, FileText, Volume2, Globe, Loader2, AlertCircle } from "lucide-react"
 import toast from "react-hot-toast"
 import { getPoiDetail } from "@/api/poiApi"
 import { getPoiRequestDetail, reviewPoiRequest } from "@/api/poiRequestApi"
@@ -232,24 +232,29 @@ export default function POIUpdateDetailPage() {
 
   if (loading) {
     return (
-      <div className="p-6 text-center text-gray-500">
-        Đang tải...
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-pink-500 bg-white rounded-2xl border border-pink-100/30 shadow-sm m-6 animate-fadeIn">
+        <Loader2 className="animate-spin mb-3" size={32} />
+        <p className="text-sm font-semibold text-gray-700">Đang tải thông tin chi tiết yêu cầu...</p>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="p-6 text-center text-red-500">
-        {error}
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center bg-white rounded-2xl border border-red-100 shadow-sm m-6 animate-fadeIn">
+        <AlertCircle size={48} className="text-red-500 mb-3" />
+        <h3 className="text-base font-bold text-gray-700">Đã xảy ra lỗi</h3>
+        <p className="text-xs text-red-500 mt-1 max-w-sm">{error}</p>
       </div>
     )
   }
 
   if (!oldPoi || !newPoi) {
     return (
-      <div className="p-6 text-center text-gray-500">
-        Không tìm thấy dữ liệu
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center bg-white rounded-2xl border border-pink-100/30 shadow-sm m-6 animate-fadeIn">
+        <MapPin size={48} className="text-pink-200 mb-3" />
+        <h3 className="text-base font-bold text-gray-700">Không tìm thấy dữ liệu</h3>
+        <p className="text-xs text-gray-400 mt-1 max-w-sm">Yêu cầu chỉnh sửa này không tồn tại hoặc đã bị xóa.</p>
       </div>
     )
   }

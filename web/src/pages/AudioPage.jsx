@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { UploadCloud, Sparkles, Search, Filter, X, Music, Trash2, AlertCircle } from "lucide-react";
+import { UploadCloud, Sparkles, Search, Filter, X, Music, Trash2, AlertCircle, Cloud } from "lucide-react";
 
 import AudioTable from "@/components/AudioTable";
 import ConfirmModal from "@/components/ConfirmModal";
+import StatsCard from "@/components/StatsCard";
 import { getAudios, uploadAudio, generateAudio } from "@/api/audioApi";
 
 const voices = [
@@ -65,8 +66,8 @@ const AudioContent = () => {
         </div>
 
         <div className="flex gap-4">
-          <StatCard label="Tổng số lượng audio" value={audios.length} icon="🎵" />
-          <StatCard label="Dung lượng sử dụng" value="4.2 GB" subValue="/ 10GB" icon="☁️" />
+          <StatsCard title="Tổng số lượng audio" value={audios.length} icon={<Music size={20} />} />
+          <StatsCard title="Dung lượng sử dụng" value="4.2 GB" sub="/ 10GB" icon={<Cloud size={20} />} />
         </div>
       </div>
 
@@ -275,17 +276,6 @@ const AudioContent = () => {
   );
 };
 
-const StatCard = ({ label, value, icon, subValue }) => (
-  <div className="bg-white p-4 px-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4 min-w-[210px] text-left">
-    <div className="w-10 h-10 bg-pink-50 rounded-xl flex items-center justify-center text-lg">{icon}</div>
-    <div className="text-left">
-      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</p>
-      <div className="flex items-baseline gap-1">
-        <h4 className="text-2xl font-black text-gray-800">{value}</h4>
-        {subValue && <span className="text-[10px] text-gray-300 font-bold">{subValue}</span>}
-      </div>
-    </div>
-  </div>
-);
+
 
 export default AudioContent;

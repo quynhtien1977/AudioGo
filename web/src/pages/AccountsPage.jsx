@@ -21,6 +21,7 @@ import {
 import {
   getSubscriptionPlansApi,
 } from "@/api/subscriptionApi"
+import { formatDateVN } from "@/utils/formatDate"
 
 import CreateAccountModal from "@/components/CreateAccountModal"
 import ConfirmModal from "@/components/ConfirmModal"
@@ -39,8 +40,7 @@ const roleStyle = (role) => {
 }
 
 const formatDate = (dateString) => {
-  if (!dateString) return "—"
-  return new Date(dateString).toLocaleDateString("vi-VN")
+  return formatDateVN(dateString, false)
 }
 
 const safe = (value) => value || "—"

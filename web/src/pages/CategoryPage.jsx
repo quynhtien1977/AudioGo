@@ -12,6 +12,7 @@ import CreateCategoryModal from "@/components/CreateCategoryModal"
 import EditCategoryModal from "@/components/EditCategoryModal"
 import ConfirmModal from "@/components/ConfirmModal"
 import { SearchContext } from "@/context/SearchContext"
+import { formatDateVN } from "@/utils/formatDate"
 
 export default function CategoryPage() {
   const { searchFilter } = useContext(SearchContext)
@@ -154,10 +155,10 @@ export default function CategoryPage() {
                 <div className="font-bold text-gray-700 truncate">{c.name}</div>
 
                 {/* CREATED */}
-                <div className="text-sm text-gray-500 truncate">{c.createdAt ? new Date(c.createdAt).toLocaleDateString() : "-"}</div>
+                <div className="text-sm text-gray-500 truncate">{formatDateVN(c.createdAt, false)}</div>
 
                 {/* UPDATED */}
-                <div className="text-sm text-gray-500 truncate">{c.updatedAt ? new Date(c.updatedAt).toLocaleDateString() : "-"}</div>
+                <div className="text-sm text-gray-500 truncate">{formatDateVN(c.updatedAt, false)}</div>
 
                 {/* ACTIONS */}
                 <div className="flex justify-end gap-2">

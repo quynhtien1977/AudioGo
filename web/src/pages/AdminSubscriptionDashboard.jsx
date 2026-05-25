@@ -12,9 +12,9 @@ import {
   Loader2,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import * as subscriptionApi from "../api/subscriptionApi";
-import PageHeader from "../components/PageHeader";
-import StatsCard from "../components/StatsCard";
+import * as subscriptionApi from "@/api/subscriptionApi";
+import PageHeader from "@/components/PageHeader";
+import StatsCard from "@/components/StatsCard";
 
 const parseFeatures = (value) => {
   if (!value) return [];

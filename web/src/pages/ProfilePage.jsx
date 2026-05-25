@@ -7,6 +7,7 @@ import ConfirmModal from "@/components/ConfirmModal"
 import { getUserByIdApi, updateMyProfileApi } from "@/api/accountApi"
 import { isValidEmailFormat, isValidPhone, isEmailDomainValid } from "@/utils/validators"
 import useAuth from "@/hooks/useAuth"
+import { formatDateVN } from "@/utils/formatDate"
 
 const ProfilePage = () => {
   const navigate = useNavigate()
@@ -138,7 +139,14 @@ const ProfilePage = () => {
     setErrors({ email: "", phoneNumber: "" })
   }
 
-  if (loading) return <div className="p-6">Loading...</div>
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-pink-500 bg-white rounded-2xl border border-pink-100/30 shadow-sm m-8 animate-fadeIn">
+        <Loader2 className="animate-spin mb-3" size={32} />
+        <p className="text-sm font-semibold text-gray-700">Đang tải thông tin cá nhân...</p>
+      </div>
+    )
+  }
   if (!user) return <div className="p-6 text-red-500">Not found</div>
 
   return (
@@ -305,11 +313,11 @@ const ProfilePage = () => {
             <div className="space-y-2 text-xs text-gray-600">
               <p>
                 <span className="font-bold">Ngày tạo:</span>{" "}
-                {user.createdAt ? new Date(user.createdAt).toLocaleDateString("vi-VN") : "N/A"}
+                {formatDateVN(user.createdAt, false)}
               </p>
               <p>
                 <span className="font-bold">Cập nhật lần cuối:</span>{" "}
-                {user.updatedAt ? new Date(user.updatedAt).toLocaleDateString("vi-VN") : "N/A"}
+                {formatDateVN(user.updatedAt, false)}
               </p>
             </div>
           </div>

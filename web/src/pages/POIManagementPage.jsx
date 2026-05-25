@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { CheckCircle, AlertCircle, Trash2, BadgeCheck } from "lucide-react"
 
 import { getPoiRequestStats } from "@/api/poiRequestApi"
-import PageHeader from "../components/PageHeader"
+import PageHeader from "@/components/PageHeader"
 
 export default function POIManagementPage() {
   const navigate = useNavigate()

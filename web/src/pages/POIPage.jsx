@@ -29,6 +29,7 @@ import { getMyPoiRequests, getPoiRequestDetail, createPoiRequest } from "@/api/p
 
 import useAuth from "@/hooks/useAuth"
 import { SearchContext } from "@/context/SearchContext"
+import { formatDateVN } from "@/utils/formatDate"
 
 
 export default function POIPage() {
@@ -642,19 +643,11 @@ export default function POIPage() {
                     <div className="flex flex-col text-xs text-gray-500 gap-1">
                       <span>
                         <strong className="text-gray-700">Tạo:</strong>{" "}
-                        {poi.createdAt ? new Date(poi.createdAt).toLocaleDateString("vi-VN", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric"
-                        }) : "N/A"}
+                        {formatDateVN(poi.createdAt, false)}
                       </span>
                       <span>
                         <strong className="text-gray-700">Cập nhật:</strong>{" "}
-                        {poi.updatedAt ? new Date(poi.updatedAt).toLocaleDateString("vi-VN", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric"
-                        }) : "N/A"}
+                        {formatDateVN(poi.updatedAt, false)}
                       </span>
                     </div>
                   </td>
@@ -826,14 +819,7 @@ export default function POIPage() {
                 }
 
                 const formatDate = (dateString) => {
-                  const date = new Date(dateString)
-                  return date.toLocaleDateString('vi-VN', {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    // hour: '2-digit',
-                    // minute: '2-digit'
-                  })
+                  return formatDateVN(dateString, false)
                 }
 
                 return (

@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react"
-import { getLocationLogs, getLocationStats } from "../api/locationLogApi"
-import DeviceTrackingTable from "../components/DeviceTrackingTable"
-import StatsCard from "../components/StatsCard"
-import PageHeader from "../components/PageHeader"
+import { getLocationLogs, getLocationStats } from "@/api/locationLogApi"
+import DeviceTrackingTable from "@/components/DeviceTrackingTable"
+import StatsCard from "@/components/StatsCard"
+import PageHeader from "@/components/PageHeader"
 import { Activity, Calendar, BarChart3, Wifi, WifiOff, Smartphone } from "lucide-react"
-import { signalRService } from "../lib/signalRService"
+import { signalRService } from "@/lib/signalRService"
 
 export default function DeviceTrackingPage() {
   const [currentPage, setCurrentPage] = useState(1)

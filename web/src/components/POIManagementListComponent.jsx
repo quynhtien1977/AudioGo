@@ -1,4 +1,4 @@
-import { ArrowLeft, ChartBarStacked, Calendar1, User, ChevronLeft, ChevronRight } from "lucide-react"
+import { ArrowLeft, ChartBarStacked, Calendar1, User, ChevronLeft, ChevronRight, Loader2, MapPin } from "lucide-react"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
@@ -108,12 +108,17 @@ export default function POIManagementListComponent({
       {/* POI LIST */}
       <div className="bg-white rounded-2xl overflow-hidden shadow-md">
         {loading ? (
-          <div className="p-10 text-center text-gray-500">
-            Đang tải...
+          <div className="flex flex-col items-center justify-center p-20 text-pink-500 bg-white animate-fadeIn">
+            <Loader2 className="animate-spin mb-3" size={32} />
+            <p className="text-sm font-semibold text-gray-700">Đang tải danh sách địa điểm...</p>
           </div>
         ) : sortedPoiList.length === 0 ? (
-          <div className="p-10 text-center text-gray-500">
-            {emptyMessage}
+          <div className="flex flex-col items-center justify-center py-16 text-center bg-white animate-fadeIn">
+            <MapPin size={48} className="text-pink-200 mb-3" />
+            <h3 className="text-base font-bold text-gray-700">Không tìm thấy địa điểm nào</h3>
+            <p className="text-xs text-gray-400 mt-1 max-w-sm">
+              {emptyMessage || "Hiện tại chưa có địa điểm nào cần phê duyệt."}
+            </p>
           </div>
         ) : (
           <div className="divide-y relative">

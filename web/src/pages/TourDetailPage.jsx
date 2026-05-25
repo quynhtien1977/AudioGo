@@ -12,6 +12,7 @@ import ConfirmModal from "@/components/ConfirmModal";
 import { getTourByIdApi, updateTourApi, addPoiToTourApi, removePoiFromTourApi, reorderPoiInTourApi } from "@/api/tourApi";
 import { getAllPOIs, updatePOI } from "@/api/poiApi";
 import { uploadImage } from "@/api/mediaApi";
+import { formatDateVN } from "@/utils/formatDate";
 
 const TourDetailPage = () => {
   const navigate = useNavigate();
@@ -330,7 +331,7 @@ const TourDetailPage = () => {
               <div className="flex gap-8 pt-4">
                 <div className="flex items-center gap-2">
                   <Calendar className="text-pink-500" size={18} />
-                  <span className="text-sm font-bold text-gray-700">Ngày tạo: {new Date(tour.createdAt).toLocaleDateString('vi-VN')}</span>
+                  <span className="text-sm font-bold text-gray-700">Ngày tạo: {formatDateVN(tour.createdAt, false)}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <MapPin className="text-pink-500" size={18} />
@@ -340,7 +341,7 @@ const TourDetailPage = () => {
               {tour.updatedAt && (
                 <div className="flex items-center gap-2 pt-2">
                   <Calendar className="text-pink-400" size={18} />
-                  <span className="text-sm font-bold text-gray-600">Cập nhật: {new Date(tour.updatedAt).toLocaleDateString('vi-VN')}</span>
+                  <span className="text-sm font-bold text-gray-600">Cập nhật: {formatDateVN(tour.updatedAt, false)}</span>
                 </div>
               )}
             </div>

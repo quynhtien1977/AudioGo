@@ -10,12 +10,13 @@ import {
     Clock,
     RefreshCw,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Loader2
 } from "lucide-react";
 import { formatDateVN } from "@/utils/formatDate";
-import { accessCodeApi } from "../api/accessCodeApi";
+import { accessCodeApi } from "@/api/accessCodeApi";
 import ConfirmModal from "@/components/ConfirmModal";
-import PageHeader from "../components/PageHeader";
+import PageHeader from "@/components/PageHeader";
 
 export default function AccessCodePage() {
     const [codes, setCodes] = useState([]);
@@ -189,148 +190,157 @@ export default function AccessCodePage() {
                         </button>
                     </div>
 
-                    <div className="w-full overflow-x-auto">
-                        <div className="min-w-[800px]">
-                            {/* THE HEAD */}
-                            <div className={`${gridLayout} text-[13px] text-pink-400 px-6 py-3 border-b font-bold uppercase text-center`}>
-                                <span className="text-left">Mã Code</span>
-                                <span>Trạng Thái</span>
-                                <span>Ngày Tạo</span>
-                                <span>Kích Hoạt</span>
-                                <span>Hạn Dùng</span>
-                                <span className="text-right">Action</span>
-                            </div>
-
-                            {/* LOAD / EMPTY */}
-                            {loading && codes.length === 0 && (
-                                <div className="p-10 text-center text-gray-400">Đang tải...</div>
-                            )}
-                            {!loading && codes.length === 0 && (
-                                <div className="p-10 text-center text-gray-400">Chưa có mã truy cập nào...</div>
-                            )}
-
-                            {/* LIST */}
-                            {codes.length > 0 && codes.map(c => {
-                                const isUsed = !!c.usedByDeviceId;
-                                const isExpired = c.expireAt && new Date(c.expireAt) < new Date();
-                                return (
-                                    <div
-                                        key={c.codeId}
-                                        className={`${gridLayout} items-center px-6 py-4 border-b hover:bg-gray-50 transition-colors bg-white`}
-                                    >
-                                        {/* CODE */}
-                                        <div className="text-left font-mono font-bold text-gray-800 text-sm">
-                                            {c.code}
-                                        </div>
-                                        
-                                        {/* STATUS */}
-                                        <div className="text-center flex justify-center text-sm">
-                                            {isUsed ? (
-                                                isExpired ? (
-                                                    <div className="inline-flex items-center text-red-500 font-medium">
-                                                        <XCircle className="w-4 h-4 mr-1" /> Hết hạn
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex flex-col items-center">
-                                                        <div className="inline-flex items-center text-green-500 font-medium">
-                                                            <CheckCircle2 className="w-4 h-4 mr-1" /> Đã dùng
-                                                        </div>
-                                                        <span className="text-[10px] text-gray-400 max-w-[120px] truncate mt-0.5" title={c.usedByDeviceId}>
-                                                            {c.usedByDeviceId}
-                                                        </span>
-                                                    </div>
-                                                )
-                                            ) : (
-                                                <div className="inline-flex items-center text-gray-400 font-medium">
-                                                    <Clock className="w-4 h-4 mr-1" /> Chưa dùng
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* CREATED AT */}
-                                        <div className="text-center text-sm text-gray-500">
-                                            {c.createdAt ? formatDateVN(c.createdAt, false) : "-"}
-                                        </div>
-
-                                        {/* ACTIVATED AT */}
-                                        <div className="text-center text-sm text-gray-500">
-                                            {c.activatedAt ? formatDateVN(c.activatedAt, false) : "-"}
-                                        </div>
-
-                                        {/* EXPIRE AT */}
-                                        <div className="text-center text-sm text-gray-500">
-                                            {c.expireAt ? formatDateVN(c.expireAt, false) : "-"}
-                                        </div>
-
-                                        {/* ACTION */}
-                                        <div className="flex justify-end items-center gap-2">
-                                            <button 
-                                                onClick={() => handleShowQr(c.code)}
-                                                className="text-xs font-semibold bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-pink-50 hover:text-pink-500 transition-colors whitespace-nowrap"
-                                            >
-                                                Xem QR
-                                            </button>
-                                            
-                                            <button 
-                                                onClick={() => checkDelete(c.codeId)}
-                                                className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors flex-shrink-0"
-                                                title="Xóa mã"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                    {loading && codes.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center p-20 text-pink-500 bg-white animate-fadeIn">
+                            <Loader2 className="animate-spin mb-3" size={32} />
+                            <p className="text-sm font-semibold text-gray-700">Đang tải mã truy cập...</p>
                         </div>
-                    </div>
-
-                    {/* PAGINATION */}
-                    {totalPages > 0 && (
-                        <div className="flex justify-between px-6 py-4 text-sm text-gray-500 items-center bg-gray-50/50">
-                            <p>
-                                Hiển thị trang <span className="font-bold text-gray-800">{page}</span> / <span className="font-bold">{totalPages}</span>
+                    ) : !loading && codes.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-16 text-center bg-white animate-fadeIn">
+                            <QrCode size={48} className="text-pink-200 mb-3" />
+                            <h3 className="text-base font-bold text-gray-700">Không tìm thấy mã truy cập nào</h3>
+                            <p className="text-xs text-gray-400 mt-1 max-w-sm">
+                                Chưa có mã truy cập nào được tạo hoặc không phù hợp với bộ lọc.
                             </p>
-
-                            <div className="flex gap-1 items-center">
-                                <button
-                                    disabled={page === 1}
-                                    onClick={() => setPage((p) => p - 1)}
-                                    className={`p-2 rounded-full ${page === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
-                                >
-                                    <ChevronLeft size={16} />
-                                </button>
-                                
-                                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                                    .filter(i => i === 1 || i === totalPages || (i >= page - 1 && i <= page + 1))
-                                    .reduce((acc, curr, idx, arr) => {
-                                        if (idx > 0 && curr - arr[idx - 1] > 1) acc.push('...');
-                                        acc.push(curr);
-                                        return acc;
-                                    }, [])
-                                    .map((p, idx) => (
-                                        p === '...' ? (
-                                            <span key={`dots-${idx}`} className="px-2 text-gray-400">...</span>
-                                        ) : (
-                                            <button
-                                                key={p}
-                                                onClick={() => setPage(p)}
-                                                className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${page === p ? "bg-pink-500 text-white shadow-sm" : "hover:bg-pink-50 hover:text-pink-600"}`}
-                                            >
-                                                {p}
-                                            </button>
-                                        )
-                                    ))}
-
-                                <button
-                                    disabled={page === totalPages}
-                                    onClick={() => setPage((p) => p + 1)}
-                                    className={`p-2 rounded-full ${page === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
-                                >
-                                    <ChevronRight size={16} />
-                                </button>
-                            </div>
                         </div>
+                    ) : (
+                        <>
+                            <div className="w-full overflow-x-auto">
+                                <div className="min-w-[800px]">
+                                    {/* THE HEAD */}
+                                    <div className={`${gridLayout} text-[13px] text-pink-400 px-6 py-3 border-b font-bold uppercase text-center`}>
+                                        <span className="text-left">Mã Code</span>
+                                        <span>Trạng Thái</span>
+                                        <span>Ngày Tạo</span>
+                                        <span>Kích Hoạt</span>
+                                        <span>Hạn Dùng</span>
+                                        <span className="text-right">Action</span>
+                                    </div>
+
+                                    {/* LIST */}
+                                    {codes.map(c => {
+                                        const isUsed = !!c.usedByDeviceId;
+                                        const isExpired = c.expireAt && new Date(c.expireAt) < new Date();
+                                        return (
+                                            <div
+                                                key={c.codeId}
+                                                className={`${gridLayout} items-center px-6 py-4 border-b hover:bg-gray-50 transition-colors bg-white`}
+                                            >
+                                                {/* CODE */}
+                                                <div className="text-left font-mono font-bold text-gray-800 text-sm">
+                                                    {c.code}
+                                                </div>
+                                                
+                                                {/* STATUS */}
+                                                <div className="text-center flex justify-center text-sm">
+                                                    {isUsed ? (
+                                                        isExpired ? (
+                                                            <div className="inline-flex items-center text-red-500 font-medium">
+                                                                <XCircle className="w-4 h-4 mr-1" /> Hết hạn
+                                                            </div>
+                                                        ) : (
+                                                            <div className="flex flex-col items-center">
+                                                                <div className="inline-flex items-center text-green-500 font-medium">
+                                                                    <CheckCircle2 className="w-4 h-4 mr-1" /> Đã dùng
+                                                                </div>
+                                                                <span className="text-[10px] text-gray-400 max-w-[120px] truncate mt-0.5" title={c.usedByDeviceId}>
+                                                                    {c.usedByDeviceId}
+                                                                </span>
+                                                            </div>
+                                                        )
+                                                    ) : (
+                                                        <div className="inline-flex items-center text-gray-400 font-medium">
+                                                            <Clock className="w-4 h-4 mr-1" /> Chưa dùng
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* CREATED AT */}
+                                                <div className="text-center text-sm text-gray-500">
+                                                    {c.createdAt ? formatDateVN(c.createdAt, false) : "-"}
+                                                </div>
+
+                                                {/* ACTIVATED AT */}
+                                                <div className="text-center text-sm text-gray-500">
+                                                    {c.activatedAt ? formatDateVN(c.activatedAt, false) : "-"}
+                                                </div>
+
+                                                {/* EXPIRE AT */}
+                                                <div className="text-center text-sm text-gray-500">
+                                                    {c.expireAt ? formatDateVN(c.expireAt, false) : "-"}
+                                                </div>
+
+                                                {/* ACTION */}
+                                                <div className="flex justify-end items-center gap-2">
+                                                    <button 
+                                                        onClick={() => handleShowQr(c.code)}
+                                                        className="text-xs font-semibold bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-pink-50 hover:text-pink-500 transition-colors whitespace-nowrap"
+                                                    >
+                                                        Xem QR
+                                                    </button>
+                                                    
+                                                    <button 
+                                                        onClick={() => checkDelete(c.codeId)}
+                                                        className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors flex-shrink-0"
+                                                        title="Xóa mã"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* PAGINATION */}
+                            {totalPages > 0 && (
+                                <div className="flex justify-between px-6 py-4 text-sm text-gray-500 items-center bg-gray-50/50">
+                                    <p>
+                                        Hiển thị trang <span className="font-bold text-gray-800">{page}</span> / <span className="font-bold">{totalPages}</span>
+                                    </p>
+
+                                    <div className="flex gap-1 items-center">
+                                        <button
+                                            disabled={page === 1}
+                                            onClick={() => setPage((p) => p - 1)}
+                                            className={`p-2 rounded-full ${page === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
+                                        >
+                                            <ChevronLeft size={16} />
+                                        </button>
+                                        
+                                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                            .filter(i => i === 1 || i === totalPages || (i >= page - 1 && i <= page + 1))
+                                            .reduce((acc, curr, idx, arr) => {
+                                                if (idx > 0 && curr - arr[idx - 1] > 1) acc.push('...');
+                                                acc.push(curr);
+                                                return acc;
+                                            }, [])
+                                            .map((p, idx) => (
+                                                p === '...' ? (
+                                                    <span key={`dots-${idx}`} className="px-2 text-gray-400">...</span>
+                                                ) : (
+                                                    <button
+                                                        key={p}
+                                                        onClick={() => setPage(p)}
+                                                        className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${page === p ? "bg-pink-500 text-white shadow-sm" : "hover:bg-pink-50 hover:text-pink-600"}`}
+                                                    >
+                                                        {p}
+                                                    </button>
+                                                )
+                                            ))}
+
+                                        <button
+                                            disabled={page === totalPages}
+                                            onClick={() => setPage((p) => p + 1)}
+                                            className={`p-2 rounded-full ${page === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
+                                        >
+                                            <ChevronRight size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             </div>

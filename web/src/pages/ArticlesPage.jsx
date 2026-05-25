@@ -4,6 +4,7 @@ import ArticleFormModal from "../components/ArticleFormModal"
 import StatsCard from "@/components/StatsCard"
 import PageHeader from "@/components/PageHeader"
 import { SearchContext } from "@/context/SearchContext"
+import { formatDateVN } from "@/utils/formatDate"
 import {
   Newspaper,
   Compass,
@@ -309,11 +310,7 @@ export default function ArticlesPage() {
                     <td className="px-6 py-4 text-center text-xs text-gray-400 font-medium">
                       <div className="flex items-center justify-center gap-1">
                         <Calendar size={12} />
-                        {new Date(article.publishedAt).toLocaleDateString("vi-VN", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                        })}
+                        {formatDateVN(article.publishedAt, false)}
                       </div>
                     </td>
 

@@ -11,6 +11,7 @@ import StatsCard from "@/components/StatsCard";
 import PageHeader from "@/components/PageHeader";
 import { getAllToursApi, createTourApi, deleteTourApi, addPoiToTourApi, restoreTourApi } from "@/api/tourApi";
 import { SearchContext } from "@/context/SearchContext";
+import { formatDateVN } from "@/utils/formatDate";
 
 const ToursPage = () => {
   const navigate = useNavigate();
@@ -249,7 +250,7 @@ const ToursPage = () => {
                   </div>
                   <div className="flex items-center gap-2 text-gray-400 font-bold text-[10px]">
                     <Calendar size={14} />
-                    <span>{new Date(tour.createdAt).toLocaleDateString('vi-VN')}</span>
+                    <span>{formatDateVN(tour.createdAt, false)}</span>
                   </div>
                 </div>
 
