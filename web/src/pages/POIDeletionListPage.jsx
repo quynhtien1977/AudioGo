@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react"
-import { CheckCircle, XCircle, Trash2 } from "lucide-react"
+import { XCircle, Trash2, Eye } from "lucide-react"
 import toast from "react-hot-toast"
 
 import POIManagementListComponent from "@/components/POIManagementListComponent"
 import ConfirmModal from "@/components/ConfirmModal"
-import { getAllPoiRequests, getAllPoiRequestsAll, reviewPoiRequest } from "@/api/poiRequestApi"
+import { getAllPoiRequestsAll, reviewPoiRequest } from "@/api/poiRequestApi"
 import { getUsersApi } from "@/api/accountApi"
 
 export default function POIDeletionListPage() {
@@ -24,31 +24,23 @@ export default function POIDeletionListPage() {
 
         const [requests, users] = await Promise.all([
           getAllPoiRequestsAll(),
-          getUsersApi()
+          getUsersApi(),
         ])
 
-        // ================= FILTER DELETE =================
-        const deleteRequests = requests.filter(
-          r => r.actionType === "DELETE"
-        )
+        // Filter DELETE
+        const deleteRequests = requests
+          .filter(r => r.actionType === "DELETE")
           .sort((a, b) => {
-            // PENDING trước, APPROVED/REJECTED sau
             if (a.status === "PENDING" && b.status !== "PENDING") return -1
             if (a.status !== "PENDING" && b.status === "PENDING") return 1
-            return 0
+            return new Date(b.createdAt) - new Date(a.createdAt)
           })
 
-        // ================= MAP USER =================
+        // Map user
         const userMap = {}
-        users.forEach(u => {
-          userMap[u.accountId] = u.fullName
-        })
+        users.forEach(u => { userMap[u.accountId] = u.fullName })
 
-        // ================= MAP REQUESTS =================
-        // Dùng r.poiName đã được server resolve (từ ProposedData hoặc live DB)
-        // Không gọi getPoiDetail() vì POI có thể chưa được duyệt hoặc đã bị xóa
         const mapped = deleteRequests.map((r) => {
-          // Ưu tiên: poiName từ API → parse proposedData → fallback
           let name = r.poiName || "N/A"
           if (name === "N/A" && r.proposedData) {
             try {
@@ -72,7 +64,7 @@ export default function POIDeletionListPage() {
       } catch (err) {
         console.error("DELETE PAGE ERROR:", err)
       } finally {
-    setLoading(false)
+        setLoading(false)
       }
     }
 
@@ -88,18 +80,7 @@ export default function POIDeletionListPage() {
     try {
       await reviewPoiRequest(selectedPoiId, { approved: true })
       setPoiList(prev =>
-        prev
-          .map(p =>
-            p.id === selectedPoiId
-              ? { ...p, status: "approved" }
-              : p
-          )
-          .sort((a, b) => {
-            // PENDING trước, APPROVED/REJECTED sau
-            if (a.status === "pending" && b.status !== "pending") return -1
-            if (a.status !== "pending" && b.status === "pending") return 1
-            return 0
-          })
+        prev.map(p => p.id === selectedPoiId ? { ...p, status: "approved" } : p)
       )
       setShowApproveModal(false)
       setSelectedPoiId(null)
@@ -118,23 +99,12 @@ export default function POIDeletionListPage() {
 
   const handleConfirmReject = async () => {
     try {
-      await reviewPoiRequest(selectedPoiId, { 
+      await reviewPoiRequest(selectedPoiId, {
         approved: false,
-        rejectReason: rejectReason 
+        rejectReason: rejectReason,
       })
       setPoiList(prev =>
-        prev
-          .map(p =>
-            p.id === selectedPoiId
-              ? { ...p, status: "rejected" }
-              : p
-          )
-          .sort((a, b) => {
-            // PENDING trước, APPROVED/REJECTED sau
-            if (a.status === "pending" && b.status !== "pending") return -1
-            if (a.status !== "pending" && b.status === "pending") return 1
-            return 0
-          })
+        prev.map(p => p.id === selectedPoiId ? { ...p, status: "rejected" } : p)
       )
       setShowRejectModal(false)
       setSelectedPoiId(null)
@@ -148,38 +118,44 @@ export default function POIDeletionListPage() {
 
   return (
     <>
-    <POIManagementListComponent
-      title="POI Cần Xóa"
+      <POIManagementListComponent
+        title="POI Cần Xóa"
         description="Xử lý yêu cầu loại bỏ các điểm tham quan"
-      type="deletion"
-      badgeColor="bg-red-100"
-      badgeTextColor="text-red-700"
-      hoverBg="hover:bg-red-50/30"
-      poiList={poiList}
-      loading={loading}
-      statsLabel="chờ xử lý"
-      emptyMessage="Không có POI nào cần xóa"
-
-      renderActions={(poi) => (
-        <>
-          <button
-            onClick={() => handleApprove(poi.id)}
-            className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition font-semibold"
-          >
-            <Trash2 size={18} />
-            Xóa
-          </button>
-
-          <button
-            onClick={() => handleReject(poi.id)}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition font-semibold"
-          >
-            <XCircle size={18} />
-            Từ chối
-          </button>
-        </>
-      )}
-
+        type="deletion"
+        badgeColor="bg-red-100"
+        badgeTextColor="text-red-700"
+        hoverBg="hover:bg-red-50/30"
+        poiList={poiList}
+        loading={loading}
+        statsLabel="chờ xử lý"
+        emptyMessage="Không có POI nào cần xóa"
+        renderActions={(poi) => (
+          <>
+            <button
+              onClick={() => handleApprove(poi.id)}
+              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition font-semibold text-sm"
+            >
+              <Trash2 size={16} />
+              Xóa
+            </button>
+            <button
+              onClick={() => handleReject(poi.id)}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition font-semibold text-sm"
+            >
+              <XCircle size={16} />
+              Từ chối
+            </button>
+          </>
+        )}
+        renderReviewAction={(poi) => (
+          <span className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full ${
+            poi.status === "approved"
+              ? "bg-red-50 text-red-500"
+              : "bg-gray-100 text-gray-500"
+          }`}>
+            {poi.status === "approved" ? "✓ Đã cho phép xóa" : "✕ Đã từ chối xóa"}
+          </span>
+        )}
         warningNote="⚠️ Hành động xóa không thể hoàn tác. Kiểm tra kỹ trước khi duyệt."
       />
 
@@ -194,7 +170,7 @@ export default function POIDeletionListPage() {
           onCancel={() => setShowApproveModal(false)}
         />
       )}
-      
+
       {showRejectModal && (
         <ConfirmModal
           open={showRejectModal}
@@ -203,10 +179,11 @@ export default function POIDeletionListPage() {
             <div>
               <p>Bạn có chắc chắn muốn từ chối yêu cầu xóa POI này không?</p>
               <textarea
-                className="w-full mt-2 p-2 border rounded"
+                className="w-full mt-2 p-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
                 placeholder="Nhập lý do từ chối..."
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
+                rows={3}
               />
             </div>
           }

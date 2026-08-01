@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from "react-router-dom"
 import { Search, X, User } from "lucide-react"
 import { useState, useEffect, useRef, useContext } from "react"
 import { getAllPOIs } from "../api/poiApi"
+import { getAllPoiRequestsAll } from "../api/poiRequestApi"
 import { getCategoriesApi } from "../api/categoryApi"
 import { getAllToursApi } from "../api/tourApi"
 import { getUsersApi } from "../api/accountApi"
@@ -50,7 +51,9 @@ export default function Topbar() {
 
   // Determine placeholder text based on the current route
   const getPlaceholder = () => {
-    if (location.pathname.includes("/poi")) {
+    if (location.pathname.includes("/poi/management")) {
+      return "Tìm đơn yêu cầu (Tên POI, Người gửi)...";
+    } else if (location.pathname.includes("/poi")) {
       return "Tìm POIs...";
     } else if (location.pathname.includes("/account")) {
       return "Tìm Tài khoản...";
@@ -72,7 +75,6 @@ export default function Topbar() {
   // Determine if the search bar should be displayed
   const shouldDisplaySearch = !location.pathname.includes("/dashboard") && 
                              !location.pathname.includes("/access-codes") &&
-                             !location.pathname.includes("/poi/management") &&
                              !location.pathname.includes("/tracking") &&
                              !location.pathname.includes("/analytics") &&
                              !location.pathname.includes("/admin/subscriptions") &&
@@ -82,7 +84,9 @@ export default function Topbar() {
 
   // Determine current page type
   const getCurrentPageType = () => {
-    if (location.pathname.includes("/poi")) {
+    if (location.pathname.includes("/poi/management")) {
+      return "poi-management"
+    } else if (location.pathname.includes("/poi")) {
       return "poi"
     } else if (location.pathname.includes("/accounts")) {
       return "account"
@@ -110,6 +114,10 @@ export default function Topbar() {
         const pageType = getCurrentPageType()
 
         switch (pageType) {
+          case "poi-management":
+            const poiRequests = await getAllPoiRequestsAll()
+            setAllData(poiRequests || [])
+            break
           case "poi":
             const pois = await getAllPOIs()
             setAllData(pois)
@@ -171,6 +179,21 @@ export default function Topbar() {
     const searchTerm = query.toLowerCase()
 
     switch (pageType) {
+      case "poi-management":
+        results = allData.filter(
+          (req) => {
+            // Tìm trong proposedData (parse name) hoặc poiName
+            let name = req.poiName || ""
+            if (!name && req.proposedData) {
+              try {
+                const parsed = typeof req.proposedData === "string" ? JSON.parse(req.proposedData) : req.proposedData
+                name = parsed?.Title || parsed?.title || parsed?.name || ""
+              } catch {}
+            }
+            return name.toLowerCase().includes(searchTerm)
+          }
+        )
+        break
       case "poi":
         results = allData.filter(
           (poi) =>
@@ -264,6 +287,16 @@ export default function Topbar() {
   const getItemDisplayName = (item) => {
     const pageType = getCurrentPageType()
     switch (pageType) {
+      case "poi-management": {
+        let name = item.poiName || ""
+        if (!name && item.proposedData) {
+          try {
+            const parsed = typeof item.proposedData === "string" ? JSON.parse(item.proposedData) : item.proposedData
+            name = parsed?.Title || parsed?.title || parsed?.name || ""
+          } catch {}
+        }
+        return name || "Yêu cầu POI"
+      }
       case "poi":
         return item.name
       case "category":

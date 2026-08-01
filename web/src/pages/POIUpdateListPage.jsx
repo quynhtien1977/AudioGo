@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Edit2, CheckCircle, XCircle } from "lucide-react"
+import { Edit2, CheckCircle, XCircle, Eye } from "lucide-react"
 import toast from "react-hot-toast"
 
 import POIManagementListComponent from "@/components/POIManagementListComponent"
 import ConfirmModal from "@/components/ConfirmModal"
-import { getAllPoiRequests, getAllPoiRequestsAll, reviewPoiRequest } from "@/api/poiRequestApi"
+import { getAllPoiRequestsAll, reviewPoiRequest } from "@/api/poiRequestApi"
 import { getUsersApi } from "@/api/accountApi"
 import { getCategoriesApi } from "@/api/categoryApi"
 import { getPoiDetail } from "@/api/poiApi"
@@ -31,32 +31,26 @@ export default function POIUpdateListPage() {
         const [requests, users, categories] = await Promise.all([
           getAllPoiRequestsAll(),
           getUsersApi(),
-          getCategoriesApi()
+          getCategoriesApi(),
         ])
 
-        // ================= FILTER UPDATE =================
+        // Filter UPDATE
         const updateRequests = requests
           .filter(r => r.actionType === "UPDATE")
           .sort((a, b) => {
-            // PENDING trước, APPROVED/REJECTED sau
             if (a.status === "PENDING" && b.status !== "PENDING") return -1
             if (a.status !== "PENDING" && b.status === "PENDING") return 1
-            return 0
+            return new Date(b.createdAt) - new Date(a.createdAt)
           })
 
-        // ================= MAP USER =================
+        // Map user + category
         const userMap = {}
-        users.forEach(u => {
-          userMap[u.accountId] = u.fullName
-        })
+        users.forEach(u => { userMap[u.accountId] = u.fullName })
 
-        // ================= MAP CATEGORY =================
         const categoryMap = {}
-        categories.forEach(c => {
-          categoryMap[c.categoryId] = c.name
-        })
+        categories.forEach(c => { categoryMap[c.categoryId] = c.name })
 
-        // ================= FETCH POI DETAIL =================
+        // Fetch POI details & map
         const mapped = await Promise.all(
           updateRequests.map(async (r) => {
             let poiDetail = null
@@ -66,42 +60,33 @@ export default function POIUpdateListPage() {
               if (r.poiId) {
                 poiDetail = await getPoiDetail(r.poiId)
               }
-
               if (r.proposedData) {
-                data = typeof r.proposedData === 'string' 
+                data = typeof r.proposedData === "string"
                   ? JSON.parse(r.proposedData)
                   : r.proposedData
               }
             } catch (err) {
-              console.log("Error:", err)
+              console.warn("Error fetching POI detail:", err)
             }
 
-            // 🔥 LẤY TITLE TỪ DB
             const title =
-              poiDetail?.contents?.find(c => c.isMaster)?.title ||
-              "Không có tên"
+              poiDetail?.contents?.find(c => c.isMaster)?.title || "Không có tên"
 
-            // 🔥 LẤY CATEGORY TỪ PROPOSED DATA RỒI MAPPING
             let categoryName = "Không xác định"
             const categoryIds = data.CategoryIds || data.categoryIds
             if (categoryIds && categoryIds.length > 0) {
               categoryName = categoryMap[categoryIds[0]] || "Không xác định"
             }
 
-            // 🔥 TÍNH SỐ TRƯỜNG THAY ĐỔI
             const { changeCount } = getPoiChanges(poiDetail, data)
 
             return {
               id: r.requestId,
               name: title,
               category: categoryName,
-
-              changeCount: changeCount,
-
+              changeCount,
               requestedAt: r.createdAt,
-
               requester: userMap[r.accountId] || "Không xác định",
-
               status: r.status === "PENDING" ? "pending" : r.status.toLowerCase(),
             }
           })
@@ -111,16 +96,14 @@ export default function POIUpdateListPage() {
       } catch (err) {
         console.error("UPDATE PAGE ERROR:", err)
       } finally {
-    setLoading(false)
+        setLoading(false)
       }
     }
 
     fetchData()
   }, [])
 
-  const handleReview = (id) => {
-    navigate("/poi/management/updates/" + id)
-  }
+  const handleReview = (id) => navigate("/poi/management/updates/" + id)
 
   const handleApprove = (id) => {
     setSelectedPoiId(id)
@@ -131,18 +114,7 @@ export default function POIUpdateListPage() {
     try {
       await reviewPoiRequest(selectedPoiId, { approved: true })
       setPoiList(prev =>
-        prev
-          .map(p =>
-            p.id === selectedPoiId
-              ? { ...p, status: "approved" }
-              : p
-          )
-          .sort((a, b) => {
-            // PENDING trước, APPROVED/REJECTED sau
-            if (a.status === "pending" && b.status !== "pending") return -1
-            if (a.status !== "pending" && b.status === "pending") return 1
-            return 0
-          })
+        prev.map(p => p.id === selectedPoiId ? { ...p, status: "approved" } : p)
       )
       setShowApproveModal(false)
       setSelectedPoiId(null)
@@ -161,23 +133,12 @@ export default function POIUpdateListPage() {
 
   const handleConfirmReject = async () => {
     try {
-      await reviewPoiRequest(selectedPoiId, { 
+      await reviewPoiRequest(selectedPoiId, {
         approved: false,
-        rejectReason: rejectReason 
+        rejectReason: rejectReason,
       })
       setPoiList(prev =>
-        prev
-          .map(p =>
-            p.id === selectedPoiId
-              ? { ...p, status: "rejected" }
-              : p
-          )
-          .sort((a, b) => {
-            // PENDING trước, APPROVED/REJECTED sau
-            if (a.status === "pending" && b.status !== "pending") return -1
-            if (a.status !== "pending" && b.status === "pending") return 1
-            return 0
-          })
+        prev.map(p => p.id === selectedPoiId ? { ...p, status: "rejected" } : p)
       )
       setShowRejectModal(false)
       setSelectedPoiId(null)
@@ -191,50 +152,57 @@ export default function POIUpdateListPage() {
 
   return (
     <>
-    <POIManagementListComponent
-      title="POI Cần Cập Nhật"
-      description="Xem xét yêu cầu sửa đổi và cải thiện dữ liệu"
-      type="update"
-      badgeColor="bg-amber-100"
-      badgeTextColor="text-amber-700"
-      hoverBg="hover:bg-amber-50/30"
-      poiList={poiList}
-      loading={loading}
-      statsLabel="chờ xử lý"
-      emptyMessage="Không có POI nào cần cập nhật"
-      renderExtraInfo={(poi) => (
-        <div className="bg-amber-50 px-3 py-1 inline-block rounded-full text-sm font-semibold text-amber-700">
-          📝 {poi.changeCount} thay đổi
-        </div>
-      )}
-      renderActions={(poi) => (
-        <>
+      <POIManagementListComponent
+        title="POI Cần Cập Nhật"
+        description="Xem xét yêu cầu sửa đổi và cải thiện dữ liệu"
+        type="update"
+        badgeColor="bg-amber-100"
+        badgeTextColor="text-amber-700"
+        hoverBg="hover:bg-amber-50/30"
+        poiList={poiList}
+        loading={loading}
+        statsLabel="chờ xử lý"
+        emptyMessage="Không có POI nào cần cập nhật"
+        renderExtraInfo={(poi) => (
+          <div className="bg-amber-50 px-3 py-1 inline-block rounded-full text-sm font-semibold text-amber-700">
+            📝 {poi.changeCount} thay đổi
+          </div>
+        )}
+        renderActions={(poi) => (
+          <>
+            <button
+              onClick={() => handleReview(poi.id)}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition font-semibold text-sm"
+            >
+              <Edit2 size={16} />
+              Xem xét
+            </button>
+            <button
+              onClick={() => handleApprove(poi.id)}
+              className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition font-semibold text-sm"
+            >
+              <CheckCircle size={16} />
+              Duyệt
+            </button>
+            <button
+              onClick={() => handleReject(poi.id)}
+              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition font-semibold text-sm"
+            >
+              <XCircle size={16} />
+              Từ chối
+            </button>
+          </>
+        )}
+        renderReviewAction={(poi) => (
           <button
             onClick={() => handleReview(poi.id)}
-            className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition font-semibold"
+            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition font-semibold text-sm"
           >
-            <Edit2 size={18} />
-            Xem xét
+            <Eye size={16} />
+            Xem lại
           </button>
-
-          <button
-            onClick={() => handleApprove(poi.id)}
-            className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition font-semibold"
-          >
-            <CheckCircle size={18} />
-            Chấp nhận
-          </button>
-
-          <button
-            onClick={() => handleReject(poi.id)}
-            className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition font-semibold"
-          >
-            <XCircle size={18} />
-            Từ chối
-          </button>
-        </>
-      )}
-    />
+        )}
+      />
 
       {showApproveModal && (
         <ConfirmModal
@@ -256,10 +224,11 @@ export default function POIUpdateListPage() {
             <div>
               <p>Bạn có chắc chắn muốn từ chối cập nhật POI này không?</p>
               <textarea
-                className="w-full mt-2 p-2 border rounded"
+                className="w-full mt-2 p-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
                 placeholder="Nhập lý do từ chối..."
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
+                rows={3}
               />
             </div>
           }
