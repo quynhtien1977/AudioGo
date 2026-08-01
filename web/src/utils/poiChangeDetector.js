@@ -1,4 +1,7 @@
-const normalizeAudio = (v) => (v == null ? "" : v.trim())
+const normalizeAudio = (v) => {
+  if (v == null) return ""
+  return v.trim().split("?")[0].toLowerCase()
+}
 const isAudioChanged = (oldAudio, newAudio) => normalizeAudio(oldAudio) !== normalizeAudio(newAudio)
 
 // Kiểm tra xem key có thực sự tồn tại trong proposedData (không phải undefined)
@@ -37,13 +40,13 @@ export function getPoiChanges(poiDetail, proposedData, categoryMap = {}) {
     images: (() => {
       const gallery = poiDetail?.gallery?.map(g => g.imageUrl) || []
       const logo = poiDetail?.logoUrl
-      // Chuẩn hóa: chỉ dùng gallery (không merge logo) để so sánh nhất quán với GalleryImageUrls
+      if (logo) return [logo, ...gallery.filter(u => u !== logo)]
       return gallery
     })(),
   }
 
   const newCategoryId = proposedData?.CategoryIds?.[0] ?? proposedData?.categoryIds?.[0] ?? oldCategoryId
-  const newLanguageCode = (proposedData?.LanguageCode ?? proposedData?.Language ?? oldLanguageCode || "").toLowerCase()
+  const newLanguageCode = ((proposedData?.LanguageCode ?? proposedData?.Language ?? oldLanguageCode) || "").toLowerCase()
 
   const newPoi = {
     id: proposedData?.poiId || oldPoi.id,
@@ -86,9 +89,9 @@ export function getPoiChanges(poiDetail, proposedData, categoryMap = {}) {
     description: hasKey(proposedData, 'Description')
       && oldPoi.description !== newPoi.description,
 
-    // So sánh mảng ảnh: sort để tránh false-positive do thứ tự khác
+    // So sánh mảng ảnh: loại bỏ query params (SAS token), sort để tránh false-positive do thứ tự
     images: hasKey(proposedData, 'GalleryImageUrls')
-      && JSON.stringify([...oldPoi.images].sort()) !== JSON.stringify([...(newPoi.images || [])].sort()),
+      && JSON.stringify([...oldPoi.images].map(v => v.split('?')[0].toLowerCase()).sort()) !== JSON.stringify([...(newPoi.images || [])].map(v => v.split('?')[0].toLowerCase()).sort()),
   }
 
   const changeCount = Object.values(changedFields).filter(Boolean).length

@@ -12,9 +12,14 @@ namespace Shared.DTOs
         int      Priority,
         string?  LogoUrl,
 
-        // ── Nội dung bản Master (tiếng Việt) — bảng PoiContent ──────────
+        // ── Nội dung bản Master — bảng PoiContent ────────────────────────
+        // LanguageCode: null = backward-compatible (sẽ fallback về "vi")
         string   Title,
         string   Description,
+
+        // ── Ngôn ngữ của content Master ───────────────────────────────────
+        // Ví dụ: "vi", "en", "ja", "ko", "fr", "th", "zh-Hans"
+        string?  LanguageCode,
 
         // ── Audio URL — đã upload lên Blob Storage ────────────────────────
         string?  AudioUrl,
@@ -26,6 +31,7 @@ namespace Shared.DTOs
         // URL tạm đã upload lên Blob Storage, chờ Admin duyệt mới gắn chính thức
         List<string> GalleryImageUrls
     );
+
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     //  Request/Response DTO cho API PoiRequest (CMS & Owner)

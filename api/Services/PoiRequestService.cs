@@ -308,12 +308,16 @@ namespace Server.Services
                                 {
                                     ContentId = Guid.NewGuid().ToString(),
                                     PoiId = targetPoiId,
-                                    LanguageCode = "vi",
+                                    // Dùng LanguageCode từ draft; fallback "vi" nếu null/empty (backward-compatible)
+                                    LanguageCode = !string.IsNullOrWhiteSpace(draft.LanguageCode)
+                                        ? draft.LanguageCode.Trim().ToLowerInvariant()
+                                        : "vi",
                                     Title = draft.Title ?? string.Empty,
                                     Description = draft.Description ?? string.Empty,
                                     AudioUrl = draft.AudioUrl,
                                     IsMaster = true
                                 });
+
 
                                 if (draft.CategoryIds != null)
                                 {

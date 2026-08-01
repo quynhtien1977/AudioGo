@@ -79,7 +79,8 @@ const POIDetailPage = () => {
             name: data.Title || "Unknown POI",
             description: data.Description || "",
             audio: data.AudioUrl || "",
-            languageCode: "vi",
+            // Đọc LanguageCode từ proposedData; fallback "vi" cho requests cũ
+            languageCode: data.LanguageCode || data.languageCode || "vi",
             categories: data.CategoryIds || [],
             lat: Number(data.Latitude) || 0,
             lng: Number(data.Longitude) || 0,
@@ -93,6 +94,7 @@ const POIDetailPage = () => {
             })(),
             ActivityRadius: Number(data.ActivationRadius) || 100,
           }
+
 
           setRejectReason(res.rejectReason || "")
           setRequestStatus(res.status)
