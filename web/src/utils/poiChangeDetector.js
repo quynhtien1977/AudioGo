@@ -1,12 +1,21 @@
 const normalizeAudio = (v) => (v == null ? "" : v.trim())
 const isAudioChanged = (oldAudio, newAudio) => normalizeAudio(oldAudio) !== normalizeAudio(newAudio)
 
+// Kiểm tra xem key có thực sự tồn tại trong proposedData (không phải undefined)
+const hasKey = (obj, ...keys) => {
+  if (obj == null) return false
+  return keys.some(k => k in obj && obj[k] !== undefined)
+}
+
 /**
  * Compares current POI detail data and proposed update data to determine the changes.
- * 
- * @param {Object} poiDetail The current POI details from DB
- * @param {Object} proposedData The proposed draft data (PoiDraftDto)
- * @param {Object} categoryMap Map of categoryId to categoryName
+ *
+ * FIX: Chỉ đánh dấu field là "thay đổi" khi key đó THỰC SỰ có trong proposedData.
+ * Tránh trường hợp Owner chỉ đổi 1 field nhưng bị đếm thừa các field khác.
+ *
+ * @param {Object} poiDetail     The current POI details from DB
+ * @param {Object} proposedData  The proposed draft data (PoiDraftDto)
+ * @param {Object} categoryMap   Map of categoryId to categoryName
  * @returns {Object} { oldPoi, newPoi, changedFields, changeCount }
  */
 export function getPoiChanges(poiDetail, proposedData, categoryMap = {}) {
@@ -23,18 +32,18 @@ export function getPoiChanges(poiDetail, proposedData, categoryMap = {}) {
     latitude: String(poiDetail?.latitude || ""),
     longitude: String(poiDetail?.longitude || ""),
     priority: Number(poiDetail?.priority ?? 2),
-    language: oldLanguageCode,
+    language: (oldLanguageCode || "").toLowerCase(),
     audio: normalizeAudio(masterContent?.audioUrl),
     images: (() => {
       const gallery = poiDetail?.gallery?.map(g => g.imageUrl) || []
       const logo = poiDetail?.logoUrl
-      if (logo) return [logo, ...gallery.filter(u => u !== logo)]
+      // Chuẩn hóa: chỉ dùng gallery (không merge logo) để so sánh nhất quán với GalleryImageUrls
       return gallery
     })(),
   }
 
-  const newCategoryId = proposedData?.CategoryIds?.[0] ?? oldCategoryId
-  const newLanguageCode = proposedData?.LanguageCode ?? proposedData?.Language ?? oldLanguageCode
+  const newCategoryId = proposedData?.CategoryIds?.[0] ?? proposedData?.categoryIds?.[0] ?? oldCategoryId
+  const newLanguageCode = (proposedData?.LanguageCode ?? proposedData?.Language ?? oldLanguageCode || "").toLowerCase()
 
   const newPoi = {
     id: proposedData?.poiId || oldPoi.id,
@@ -43,24 +52,43 @@ export function getPoiChanges(poiDetail, proposedData, categoryMap = {}) {
     categoryName: categoryMap[newCategoryId] || oldPoi.categoryName,
     description: proposedData?.Description ?? oldPoi.description,
     latitude: proposedData?.Latitude != null ? String(proposedData.Latitude) : oldPoi.latitude,
-    longitude: proposedData?.Longitude != null ? String(proposedData.longitude ?? proposedData.Longitude) : oldPoi.longitude,
+    longitude: proposedData?.Longitude != null ? String(proposedData.Longitude) : oldPoi.longitude,
     priority: proposedData?.Priority != null ? Number(proposedData.Priority) : oldPoi.priority,
     language: newLanguageCode,
-    audio: proposedData?.AudioUrl !== undefined
+    audio: hasKey(proposedData, 'AudioUrl')
       ? normalizeAudio(proposedData.AudioUrl)
       : oldPoi.audio,
-    images: proposedData?.GalleryImageUrls ?? oldPoi.images,
+    images: hasKey(proposedData, 'GalleryImageUrls')
+      ? (proposedData.GalleryImageUrls ?? [])
+      : oldPoi.images,
   }
 
+  // FIX: chỉ tính thay đổi khi key thực sự có trong proposedData
   const changedFields = {
-    name: oldPoi.name !== newPoi.name,
-    category: oldPoi.categoryId !== newPoi.categoryId,
-    location: oldPoi.latitude !== newPoi.latitude || oldPoi.longitude !== newPoi.longitude,
-    priority: oldPoi.priority !== newPoi.priority,
-    language: oldPoi.language !== newPoi.language,
-    audio: isAudioChanged(oldPoi.audio, newPoi.audio),
-    description: oldPoi.description !== newPoi.description,
-    images: JSON.stringify(oldPoi.images) !== JSON.stringify(newPoi.images)
+    name: hasKey(proposedData, 'Title')
+      && oldPoi.name !== newPoi.name,
+
+    category: hasKey(proposedData, 'CategoryIds', 'categoryIds')
+      && oldPoi.categoryId !== newPoi.categoryId,
+
+    location: (hasKey(proposedData, 'Latitude') || hasKey(proposedData, 'Longitude'))
+      && (oldPoi.latitude !== newPoi.latitude || oldPoi.longitude !== newPoi.longitude),
+
+    priority: hasKey(proposedData, 'Priority')
+      && oldPoi.priority !== newPoi.priority,
+
+    language: hasKey(proposedData, 'LanguageCode', 'Language')
+      && oldPoi.language !== newPoi.language,
+
+    audio: hasKey(proposedData, 'AudioUrl')
+      && isAudioChanged(oldPoi.audio, newPoi.audio),
+
+    description: hasKey(proposedData, 'Description')
+      && oldPoi.description !== newPoi.description,
+
+    // So sánh mảng ảnh: sort để tránh false-positive do thứ tự khác
+    images: hasKey(proposedData, 'GalleryImageUrls')
+      && JSON.stringify([...oldPoi.images].sort()) !== JSON.stringify([...(newPoi.images || [])].sort()),
   }
 
   const changeCount = Object.values(changedFields).filter(Boolean).length
@@ -69,6 +97,6 @@ export function getPoiChanges(poiDetail, proposedData, categoryMap = {}) {
     oldPoi,
     newPoi,
     changedFields,
-    changeCount
+    changeCount,
   }
 }

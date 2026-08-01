@@ -26,7 +26,10 @@ export default function Topbar() {
   const [isLoading, setIsLoading] = useState(false)
   const [allData, setAllData] = useState([])
   const [showResults, setShowResults] = useState(false)
+  const [searchFocused, setSearchFocused] = useState(false)
   const searchRef = useRef(null)
+  // Cache: track which pageType đã được fetch, tránh re-fetch khi không cần
+  const hasFetchedRef = useRef(null)
 
   const role = user?.role
 
@@ -104,14 +107,31 @@ export default function Topbar() {
     return null
   }
 
-  // Fetch data based on current page
+  // LAZY LOAD: Chỉ fetch data khi người dùng focus vào ô search
+  // Cache per pageType để tránh re-fetch không cần thiết
   useEffect(() => {
-    const fetchData = async () => {
-      if (!shouldDisplaySearch) return
+    const pageType = getCurrentPageType()
 
+    // Reset cache khi đổi route (pageType thay đổi)
+    if (hasFetchedRef.current !== pageType) {
+      setAllData([])
+      setSearchQuery("")
+      setSearchResults([])
+      hasFetchedRef.current = null
+    }
+  }, [location.pathname])
+
+  useEffect(() => {
+    if (!searchFocused || !shouldDisplaySearch) return
+
+    const pageType = getCurrentPageType()
+
+    // Đã fetch rồi → không fetch lại
+    if (hasFetchedRef.current === pageType && allData.length > 0) return
+
+    const fetchData = async () => {
       try {
         setIsLoading(true)
-        const pageType = getCurrentPageType()
 
         switch (pageType) {
           case "poi-management":
@@ -135,7 +155,6 @@ export default function Topbar() {
             setAllData(accounts)
             break
           case "audio":
-            // Fetch all audio content (use high limit to get all at once)
             const audioRes = await audioContentApi.getAllTranslations(1, 1000)
             const audioData = audioRes?.data?.data || []
             setAllData(audioData)
@@ -151,6 +170,8 @@ export default function Topbar() {
           default:
             setAllData([])
         }
+
+        hasFetchedRef.current = pageType
       } catch (error) {
         console.error("Error fetching data for search:", error)
         setAllData([])
@@ -160,7 +181,7 @@ export default function Topbar() {
     }
 
     fetchData()
-  }, [location.pathname, shouldDisplaySearch])
+  }, [searchFocused, location.pathname, shouldDisplaySearch])
 
   // Search and filter data
   const handleSearch = (query) => {
@@ -328,7 +349,11 @@ export default function Topbar() {
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
             onKeyDown={handleKeyDown}
-            onFocus={() => searchQuery && setShowResults(true)}
+            onFocus={() => {
+              setSearchFocused(true)
+              if (searchQuery) setShowResults(true)
+            }}
+            onBlur={() => setSearchFocused(false)}
             className="w-full px-12 py-2 rounded-full bg-gray-100 outline-none focus:ring-2 focus:ring-pink-500 focus:bg-white transition"
           />
           {searchQuery && (
