@@ -38,6 +38,9 @@ namespace Server.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
 
+        /// <summary>Đã dọn dẹp các tệp media mồ côi liên quan (cho request REJECTED).</summary>
+        public bool MediaCleaned { get; set; } = false;
+
         // ── Navigation Properties ────────────────────────────────────────────
         public Account? Account { get; set; }
         public Poi?     Poi     { get; set; }
