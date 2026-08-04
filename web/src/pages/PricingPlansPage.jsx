@@ -3,6 +3,7 @@ import { Check, AlertCircle } from "lucide-react";
 import { useSubscription } from "@/context/SubscriptionContext";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import PageLoader from "@/components/PageLoader";
 
 export default function PricingPlansPage() {
   const navigate = useNavigate();
@@ -14,11 +15,7 @@ export default function PricingPlansPage() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
-      </div>
-    );
+    return <PageLoader text="Đang tải gói cước..." />;
   }
 
   const handleSelectPlan = (plan) => {

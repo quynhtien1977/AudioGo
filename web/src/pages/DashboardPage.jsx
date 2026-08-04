@@ -9,6 +9,7 @@ import StatsCard from "@/components/StatsCard"
 import TrendingChart from "@/components/TrendingChart"
 import TopPOIModal from "@/components/TopPOIModal"
 import PageHeader from "@/components/PageHeader"
+import PageLoader from "@/components/PageLoader"
 
 import { getTopPOIs, getListenStats } from "@/api/analyticsApi"
 import { getAllPOIs } from "@/api/poiApi"
@@ -129,7 +130,16 @@ export default function DashboardPage() {
   }, [userRole])
 
   if (!stats) {
-    return <div className="p-6">Loading dashboard...</div>
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="TỔNG QUAN"
+          description="Chào mững đến với hệ thống quản lý AudioGo!"
+          icon={<LayoutDashboard size={24} />}
+        />
+        <PageLoader text="Đang tải tổng quan..." />
+      </div>
+    )
   }
 
   const getCategoryColor = (category) => {

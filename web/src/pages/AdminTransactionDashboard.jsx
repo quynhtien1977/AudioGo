@@ -1,5 +1,6 @@
 import { useEffect, useState, useContext } from 'react'
 import { DollarSign, CheckCircle, AlertCircle, RotateCw, Loader2 } from 'lucide-react'
+import PageLoader from "@/components/PageLoader"
 import * as subscriptionApi from '../api/subscriptionApi'
 import { formatDateVN } from '../utils/formatDate'
 import toast from 'react-hot-toast'
@@ -210,10 +211,7 @@ export const AdminTransactionDashboard = () => {
         )}
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center p-20 text-pink-500 animate-fadeIn">
-            <Loader2 className="animate-spin mb-3" size={32} />
-            <p className="text-sm font-semibold text-gray-700">Đang tải danh sách giao dịch...</p>
-          </div>
+          <PageLoader text="Đang tải danh sách giao dịch..." />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

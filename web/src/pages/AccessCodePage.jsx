@@ -17,6 +17,7 @@ import { formatDateVN } from "@/utils/formatDate";
 import { accessCodeApi } from "@/api/accessCodeApi";
 import ConfirmModal from "@/components/ConfirmModal";
 import PageHeader from "@/components/PageHeader";
+import PageLoader from "@/components/PageLoader";
 
 export default function AccessCodePage() {
     const [codes, setCodes] = useState([]);
@@ -191,10 +192,7 @@ export default function AccessCodePage() {
                     </div>
 
                     {loading && codes.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center p-20 text-pink-500 bg-white animate-fadeIn">
-                            <Loader2 className="animate-spin mb-3" size={32} />
-                            <p className="text-sm font-semibold text-gray-700">Đang tải mã truy cập...</p>
-                        </div>
+                        <PageLoader text="Đang tải mã truy cập..." />
                     ) : !loading && codes.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-16 text-center bg-white animate-fadeIn">
                             <QrCode size={48} className="text-pink-200 mb-3" />

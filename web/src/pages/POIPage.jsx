@@ -12,9 +12,9 @@ import {
   Trash,
   Plus,
   SquareMenu,
-  MapPin,
-  Loader2
+  MapPin
 } from "lucide-react"
+import PageLoader from "@/components/PageLoader"
 
 import POIMap from "@/components/POIMap"
 import StatsCard from "@/components/StatsCard"
@@ -552,10 +552,7 @@ export default function POIPage() {
 
       {/* TABLE */}
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center p-20 text-pink-500 bg-white rounded-2xl border border-pink-100/30 shadow-sm animate-fadeIn">
-          <Loader2 className="animate-spin mb-3" size={32} />
-          <p className="text-sm font-semibold text-gray-700">Đang tải dữ liệu POIs...</p>
-        </div>
+        <PageLoader text="Đang tải dữ liệu POIs..." />
       ) : displayData.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-pink-100/30 shadow-sm animate-fadeIn">
           <MapPin size={48} className="text-pink-200 mb-3" />

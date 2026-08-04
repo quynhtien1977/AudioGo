@@ -1,6 +1,7 @@
 import { useParams, useLocation, useNavigate } from "react-router-dom"
 import { useEffect, useRef, useState } from "react"
 import { PencilLine, CornerDownLeft, Loader2, MapPin } from "lucide-react"
+import PageLoader from "@/components/PageLoader"
 import toast from "react-hot-toast"
 
 import POIGallery from "@/components/POIGallery"
@@ -257,12 +258,7 @@ const POIDetailPage = () => {
   }
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center p-20 text-pink-500 bg-white rounded-2xl border border-pink-100/30 shadow-sm animate-fadeIn m-6">
-        <Loader2 className="animate-spin mb-3" size={32} />
-        <p className="text-sm font-semibold text-gray-700">Đang tải chi tiết địa điểm POI...</p>
-      </div>
-    )
+    return <PageLoader text="Đang tải chi tiết địa điểm POI..." />
   }
 
   if (!poi) {

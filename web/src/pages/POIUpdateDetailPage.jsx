@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { ArrowLeft, X, Check, MapPin, Zap, Layers, FileText, Volume2, Globe, Loader2, AlertCircle } from "lucide-react"
+import PageLoader from "@/components/PageLoader"
 import toast from "react-hot-toast"
 import { getPoiDetail } from "@/api/poiApi"
 import { getPoiRequestDetail, reviewPoiRequest } from "@/api/poiRequestApi"
@@ -55,6 +56,44 @@ const InfoCard = ({ icon: Icon, label, value, isChanged = false }) => (
         <p className={`text-sm break-words ${isChanged ? "font-bold text-amber-900" : "text-gray-700"}`}>
           {value || "—"}
         </p>
+      </div>
+    </div>
+  </div>
+)
+
+// Category badges (hỗ trợ hiển thị nhiều category)
+const CategoryCard = ({ categories = [], isChanged = false }) => (
+  <div className={`p-4 rounded-lg border transition ${
+    isChanged
+      ? "bg-amber-50 border-amber-200"
+      : "bg-gray-50 border-gray-200 hover:border-gray-300"
+  }`}>
+    <div className="flex items-start gap-3">
+      <div className={`p-2 rounded-lg ${isChanged ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600"}`}>
+        <Layers size={20} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">
+          Danh mục
+        </label>
+        {categories.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {categories.map((name, i) => (
+              <span
+                key={i}
+                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                  isChanged
+                    ? "bg-amber-100 text-amber-800 border border-amber-200"
+                    : "bg-blue-50 text-blue-700 border border-blue-100"
+                }`}
+              >
+                {name}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400 italic">—</p>
+        )}
       </div>
     </div>
   </div>
@@ -189,12 +228,7 @@ export default function POIUpdateDetailPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-pink-500 bg-white rounded-2xl border border-pink-100/30 shadow-sm m-6 animate-fadeIn">
-        <Loader2 className="animate-spin mb-3" size={32} />
-        <p className="text-sm font-semibold text-gray-700">Đang tải thông tin chi tiết yêu cầu...</p>
-      </div>
-    )
+    return <PageLoader text="Đang tải thông tin chi tiết yêu cầu..." />
   }
 
   if (error) {
@@ -283,11 +317,9 @@ export default function POIUpdateDetailPage() {
                   value={oldPoi.name}
                   isChanged={isDifferent(oldPoi.name, newPoi.name)}
                 />
-                <InfoCard 
-                  icon={Layers}
-                  label="Danh mục"
-                  value={oldPoi.categoryName}
-                  isChanged={isDifferent(oldPoi.categoryId, newPoi.categoryId)}
+                <CategoryCard
+                  categories={oldPoi.categoryNames}
+                  isChanged={false}
                 />
                 <InfoCard 
                   icon={MapPin}
@@ -387,11 +419,9 @@ export default function POIUpdateDetailPage() {
                   value={newPoi.name}
                   isChanged={isDifferent(oldPoi.name, newPoi.name)}
                 />
-                <InfoCard 
-                  icon={Layers}
-                  label="Danh mục"
-                  value={newPoi.categoryName}
-                  isChanged={isDifferent(oldPoi.categoryId, newPoi.categoryId)}
+                <CategoryCard
+                  categories={newPoi.categoryNames}
+                  isChanged={JSON.stringify([...(oldPoi.categoryIds || [])].sort()) !== JSON.stringify([...(newPoi.categoryIds || [])].sort())}
                 />
                 <InfoCard 
                   icon={MapPin}

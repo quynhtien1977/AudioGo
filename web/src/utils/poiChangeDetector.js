@@ -23,14 +23,16 @@ const hasKey = (obj, ...keys) => {
  */
 export function getPoiChanges(poiDetail, proposedData, categoryMap = {}) {
   const masterContent = poiDetail?.contents?.find(c => c.isMaster)
-  const oldCategoryId = poiDetail?.categoryIds?.[0] || ""
+  const oldCategoryIds = poiDetail?.categoryIds || []
   const oldLanguageCode = masterContent?.languageCode || ""
 
   const oldPoi = {
     id: poiDetail?.poiId || "",
     name: masterContent?.title || "Không có tên",
-    categoryId: oldCategoryId,
-    categoryName: categoryMap[oldCategoryId] || poiDetail?.category || "Không xác định",
+    categoryId: oldCategoryIds[0] || "",
+    categoryIds: oldCategoryIds,
+    categoryNames: oldCategoryIds.map(id => categoryMap[id] || id).filter(Boolean),
+    categoryName: oldCategoryIds.map(id => categoryMap[id] || id).join(", ") || "Không xác định",
     description: masterContent?.description || "",
     latitude: String(poiDetail?.latitude || ""),
     longitude: String(poiDetail?.longitude || ""),
@@ -45,14 +47,20 @@ export function getPoiChanges(poiDetail, proposedData, categoryMap = {}) {
     })(),
   }
 
-  const newCategoryId = proposedData?.CategoryIds?.[0] ?? proposedData?.categoryIds?.[0] ?? oldCategoryId
+  const newCategoryIds = [
+    ...(proposedData?.CategoryIds || []),
+    ...(proposedData?.categoryIds || []),
+  ].filter((v, i, a) => v && a.indexOf(v) === i)  // unique, non-empty
+  const resolvedCategoryIds = newCategoryIds.length > 0 ? newCategoryIds : oldPoi.categoryIds
   const newLanguageCode = ((proposedData?.LanguageCode ?? proposedData?.Language ?? oldLanguageCode) || "").toLowerCase()
 
   const newPoi = {
     id: proposedData?.poiId || oldPoi.id,
     name: proposedData?.Title ?? oldPoi.name,
-    categoryId: newCategoryId,
-    categoryName: categoryMap[newCategoryId] || oldPoi.categoryName,
+    categoryId: resolvedCategoryIds[0] || oldPoi.categoryId,
+    categoryIds: resolvedCategoryIds,
+    categoryNames: resolvedCategoryIds.map(id => categoryMap[id] || id).filter(Boolean),
+    categoryName: resolvedCategoryIds.map(id => categoryMap[id] || id).join(", ") || oldPoi.categoryName,
     description: proposedData?.Description ?? oldPoi.description,
     latitude: proposedData?.Latitude != null ? String(proposedData.Latitude) : oldPoi.latitude,
     longitude: proposedData?.Longitude != null ? String(proposedData.Longitude) : oldPoi.longitude,
@@ -71,8 +79,9 @@ export function getPoiChanges(poiDetail, proposedData, categoryMap = {}) {
     name: hasKey(proposedData, 'Title')
       && oldPoi.name !== newPoi.name,
 
+    // So sánh mảng categoryIds (thành phần có thể thay đổi cả số lượng lẫn nội dung)
     category: hasKey(proposedData, 'CategoryIds', 'categoryIds')
-      && oldPoi.categoryId !== newPoi.categoryId,
+      && JSON.stringify([...oldPoi.categoryIds].sort()) !== JSON.stringify([...newPoi.categoryIds].sort()),
 
     location: (hasKey(proposedData, 'Latitude') || hasKey(proposedData, 'Longitude'))
       && (oldPoi.latitude !== newPoi.latitude || oldPoi.longitude !== newPoi.longitude),

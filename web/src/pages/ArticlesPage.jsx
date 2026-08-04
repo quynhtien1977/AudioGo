@@ -4,6 +4,7 @@ import ArticleFormModal from "../components/ArticleFormModal"
 import StatsCard from "@/components/StatsCard"
 import PageHeader from "@/components/PageHeader"
 import { SearchContext } from "@/context/SearchContext"
+import PageLoader from "@/components/PageLoader"
 import { formatDateVN } from "@/utils/formatDate"
 import {
   Newspaper,
@@ -231,10 +232,7 @@ export default function ArticlesPage() {
 
       {/* ARTICLES TABLE CONTAINER */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center p-20 text-pink-500 bg-white rounded-2xl border border-pink-100/30 shadow-sm">
-          <Loader2 className="animate-spin mb-3" size={32} />
-          <p className="text-sm font-semibold text-gray-700">Đang tải dữ liệu bài viết...</p>
-        </div>
+        <PageLoader text="Đang tải dữ liệu bài viết..." />
       ) : filteredArticles.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-pink-100/30 shadow-sm">
           <Newspaper size={48} className="text-pink-200 mb-3" />

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
-  Plus, MapPin, Calendar, ShieldCheck, Eye, ExternalLink, Trash2, Route, Loader2
-} from "lucide-react";
+  Plus, MapPin, Calendar, ShieldCheck, Eye, ExternalLink, Trash2, Route
+} from "lucide-react"
+import PageLoader from "@/components/PageLoader";
 import toast from "react-hot-toast";
 
 import ConfirmModal from "@/components/ConfirmModal";
@@ -195,10 +196,7 @@ const ToursPage = () => {
 
       {/* GRID LIST */}
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center p-20 text-pink-500 bg-white rounded-[2.5rem] border border-pink-100/30 shadow-sm animate-fadeIn">
-          <Loader2 className="animate-spin mb-3" size={32} />
-          <p className="text-sm font-semibold text-gray-700">Đang tải dữ liệu tours...</p>
-        </div>
+        <PageLoader text="Đang tải dữ liệu tours..." />
       ) : filteredTours.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-[2.5rem] border border-pink-100/30 shadow-sm animate-fadeIn">
           <Route size={48} className="text-pink-200 mb-3" />

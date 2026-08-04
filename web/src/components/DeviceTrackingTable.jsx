@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 
 import { parseUTC, formatDateVN, getRelativeTime } from "../utils/formatDate";
 
@@ -41,21 +41,9 @@ export default function DeviceTrackingTable({
         boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)"
       }}>
         {isLoading ? (
-          <div style={{
-            padding: "2rem",
-            textAlign: "center",
-            color: "#6b7280"
-          }}>
-            <div style={{
-              animation: "spin 1s linear infinite",
-              display: "inline-block",
-              width: "32px",
-              height: "32px",
-              borderRadius: "50%",
-              borderTop: "3px solid #ec4899",
-              borderRight: "3px solid transparent"
-            }}></div>
-            <p style={{ marginTop: "0.5rem" }}>Đang tải dữ liệu...</p>
+          <div className="flex flex-col items-center justify-center py-20 text-pink-500">
+            <Loader2 className="animate-spin mb-3" size={32} />
+            <p className="text-sm font-semibold text-gray-500">Đang tải dữ liệu thiết bị...</p>
           </div>
         ) : data && data.length > 0 ? (
           <div style={{ overflowX: "auto" }}>

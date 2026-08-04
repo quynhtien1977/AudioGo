@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Save, CornerDownLeft, Loader2 } from "lucide-react"
+import PageLoader from "@/components/PageLoader"
 import toast from "react-hot-toast"
 
 import ConfirmModal from "@/components/ConfirmModal"
@@ -140,12 +141,7 @@ const ProfilePage = () => {
   }
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-pink-500 bg-white rounded-2xl border border-pink-100/30 shadow-sm m-8 animate-fadeIn">
-        <Loader2 className="animate-spin mb-3" size={32} />
-        <p className="text-sm font-semibold text-gray-700">Đang tải thông tin cá nhân...</p>
-      </div>
-    )
+    return <PageLoader text="Đang tải thông tin cá nhân..." />
   }
   if (!user) return <div className="p-6 text-red-500">Not found</div>
 

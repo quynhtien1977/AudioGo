@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { MapPin, Headphones, Clock, ArrowLeft, AlertCircle, Activity, Navigation } from 'lucide-react'
+import { MapPin, Headphones, Clock, ArrowLeft, AlertCircle, Activity, Navigation, Loader2 } from 'lucide-react'
 import { getDeviceActivity } from '@/api/analyticsApi'
 import { getAllPOIs } from '@/api/poiApi'
 import PageHeader from "@/components/PageHeader"
@@ -142,7 +142,7 @@ export default function DeviceActivityPage() {
               : "bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 shadow-md shadow-pink-100"
           }`}
         >
-          {loading ? <><Activity size={16} className="animate-spin" /> Đang tải...</> : 'Xem hoạt động'}
+          {loading ? <><Loader2 size={16} className="animate-spin" /> Đang tải...</> : 'Xem hoạt động'}
         </button>
       </div>
 

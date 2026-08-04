@@ -8,8 +8,8 @@ import {
   Users,
   Shield,
   Briefcase,
-  Loader2,
 } from "lucide-react"
+import PageLoader from "@/components/PageLoader"
 import toast from "react-hot-toast"
 
 import {
@@ -356,10 +356,7 @@ export default function AccountsPage() {
 
       {/* TABLE */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center p-20 text-pink-500 bg-white rounded-2xl border border-pink-100/30 shadow-sm animate-fadeIn">
-          <Loader2 className="animate-spin mb-3" size={32} />
-          <p className="text-sm font-semibold text-gray-700">Đang tải dữ liệu tài khoản...</p>
-        </div>
+        <PageLoader text="Đang tải dữ liệu tài khoản..." />
       ) : paginatedUsers.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-pink-100/30 shadow-sm animate-fadeIn">
           <Users size={48} className="text-pink-200 mb-3" />

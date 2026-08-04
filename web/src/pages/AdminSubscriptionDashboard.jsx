@@ -15,6 +15,7 @@ import toast from "react-hot-toast";
 import * as subscriptionApi from "@/api/subscriptionApi";
 import PageHeader from "@/components/PageHeader";
 import StatsCard from "@/components/StatsCard";
+import PageLoader from "@/components/PageLoader";
 
 const parseFeatures = (value) => {
   if (!value) return [];
@@ -388,10 +389,7 @@ export const AdminSubscriptionDashboard = () => {
       </div>
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center p-20 text-pink-500 bg-white rounded-2xl border border-pink-100/30 shadow-sm animate-fadeIn">
-          <Loader2 className="animate-spin mb-3" size={32} />
-          <p className="text-sm font-semibold text-gray-700">Đang tải danh sách gói đăng ký...</p>
-        </div>
+        <PageLoader text="Đang tải danh sách gói đăng ký..." />
       ) : displayPlans.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-pink-100/30 shadow-sm animate-fadeIn">
           <Package size={48} className="text-pink-200 mb-3 animate-pulse" />

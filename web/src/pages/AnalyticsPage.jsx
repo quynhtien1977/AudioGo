@@ -10,6 +10,7 @@ import {
 import { Map as MapIcon, BarChart3, Headphones, Clock, Calendar, MapPin, Activity } from 'lucide-react'
 import { getHeatmap, getListenStats, getHeatmapByTime, getTopPOIs } from '@/api/analyticsApi'
 import { getAllPOIs } from '@/api/poiApi'
+import PageLoader from "@/components/PageLoader"
 import PageHeader from "@/components/PageHeader"
 import StatsCard from "@/components/StatsCard"
 
@@ -174,12 +175,7 @@ export default function AnalyticsPage() {
   const currentHeatmapCount = viewMode === 'overview' ? heatmapData.length : heatmapByTimeData.length
 
   if (loading) {
-    return (
-      <div className="flex flex-col gap-3 justify-center items-center h-[50vh] text-gray-500">
-        <div className="w-10 h-10 border-4 border-gray-100 border-t-pink-500 rounded-full animate-spin" />
-        <span className="text-sm font-medium">Đang tải dữ liệu phân tích...</span>
-      </div>
-    )
+    return <PageLoader text="Đang tải dữ liệu phân tích..." />
   }
 
   return (
