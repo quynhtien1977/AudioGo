@@ -52,7 +52,7 @@ const LoginPage = () => {
       if (["Admin", "Owner"].includes(role)) {
         navigate("/dashboard");
       } else {
-        navigate("/");
+        navigate("/dashboard");
       }
 
     } catch (err) {

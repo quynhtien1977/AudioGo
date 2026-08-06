@@ -31,12 +31,16 @@ import SubscriptionCheckoutPage from "@/pages/SubscriptionCheckoutPage";
 import AdminSubscriptionDashboard from "@/pages/AdminSubscriptionDashboard";
 import AdminTransactionDashboard from "@/pages/AdminTransactionDashboard";
 
-
 import ProtectedRoute from "@/components/ProtectedRoute";
 import NotFoundPage from "@/pages/NotFoundPage";
 import ArticlesPage from "@/pages/ArticlesPage";
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
+
+// Landing Page & Admin Settings
+import LandingPage from "@/pages/landing/LandingPage";
+import LandingSettingsPage from "@/pages/LandingSettingsPage";
+
 
 export default function App() {
   return (
@@ -70,10 +74,11 @@ export default function App() {
         }}
       />
       <Routes>
-        {/* Login */}
-        <Route path="/" element={<LoginPage />} />
+        {/* ── Landing Page (PUBLIC) ── */}
+        <Route path="/" element={<LandingPage />} />
 
         {/* Auth public pages */}
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
 
@@ -371,6 +376,18 @@ export default function App() {
             <ProtectedRoute roles={["Admin"]}>
               <MainLayout>
                 <AdminTransactionDashboard />
+              </MainLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Landing Settings (ADMIN only) */}
+        <Route
+          path="/landing-settings"
+          element={
+            <ProtectedRoute roles={["Admin"]}>
+              <MainLayout>
+                <LandingSettingsPage />
               </MainLayout>
             </ProtectedRoute>
           }

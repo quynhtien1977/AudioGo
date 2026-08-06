@@ -14,6 +14,7 @@ import {
   DollarSign,
   Sparkles,
   Newspaper,
+  Globe,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import useAuth from "@/hooks/useAuth";
@@ -53,6 +54,9 @@ export default function Sidebar({ onShowPlans }) {
               </MenuItem>
               <MenuItem to="/cms/articles" icon={<Newspaper size={18} />}>
                 Bài viết
+              </MenuItem>
+              <MenuItem to="/landing-settings" icon={<Globe size={18} />}>
+                Landing Page
               </MenuItem>
             </SidebarGroup>
 

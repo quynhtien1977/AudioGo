@@ -6,7 +6,7 @@ export default function ProtectedRoute({ children, roles }) {
 
   // chưa login
   if (!isAuthenticated) {
-    return <Navigate to="/" />;
+    return <Navigate to="/login" />;
   }
 
   // sai role
