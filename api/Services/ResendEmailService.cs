@@ -166,5 +166,86 @@ namespace Server.Services
                 return false;
             }
         }
+
+        // ─── Consultation notification for Admin ──────────────────────────────
+        public async Task<bool> SendConsultationNotificationAsync(
+            string adminEmail,
+            string fullName,
+            string restaurantName,
+            string phoneNumber,
+            string? email,
+            string  area,
+            string? message)
+        {
+            var fromEmail = _config["EmailSettings:FromEmail"] ?? "noreply@audiogo.vn";
+            var fromName  = _config["EmailSettings:FromName"]  ?? "AudioGo";
+
+            var emailRow = string.IsNullOrEmpty(email)
+                ? "<tr><td style='padding:4px 0;color:#6b7280'>Email</td><td style='padding:4px 0;color:#374151'>—</td></tr>"
+                : $"<tr><td style='padding:4px 0;color:#6b7280'>Email</td><td style='padding:4px 0;color:#374151'>{email}</td></tr>";
+
+            var messageRow = string.IsNullOrEmpty(message)
+                ? ""
+                : $"<tr><td style='padding:4px 0;color:#6b7280;vertical-align:top'>Tin nhắn</td><td style='padding:4px 0;color:#374151'>{message}</td></tr>";
+
+            var html = $"""
+                <!DOCTYPE html>
+                <html lang="vi">
+                <head><meta charset="UTF-8"><title>Yêu cầu tư vấn mới</title></head>
+                <body style="margin:0;padding:0;background:#f3f4f6;font-family:system-ui,sans-serif">
+                  <div style="max-width:560px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.1)">
+                    <div style="background:linear-gradient(135deg,#f43f5e,#fb923c);padding:24px 32px">
+                      <p style="margin:0;color:#fff;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">AudioGo CMS</p>
+                      <h1 style="margin:8px 0 0;color:#fff;font-size:22px;font-weight:700">Yêu cầu tư vấn mới</h1>
+                    </div>
+                    <div style="padding:24px 32px">
+                      <p style="margin:0 0 20px;color:#374151">Có chủ quán mới đăng ký qua Landing Page. Thông tin chi tiết:</p>
+                      <table style="width:100%;border-collapse:collapse;font-size:14px">
+                        <tr><td style='padding:4px 0;color:#6b7280;width:110px'>Họ tên</td><td style='padding:4px 0;color:#111827;font-weight:600'>{fullName}</td></tr>
+                        <tr><td style='padding:4px 0;color:#6b7280'>Tên quán</td><td style='padding:4px 0;color:#111827;font-weight:600'>{restaurantName}</td></tr>
+                        <tr><td style='padding:4px 0;color:#6b7280'>Số điện thoại</td><td style='padding:4px 0;color:#111827;font-weight:700;font-size:16px'>{phoneNumber}</td></tr>
+                        <tr><td style='padding:4px 0;color:#6b7280'>Khu vực</td><td style='padding:4px 0;color:#374151'>{area}</td></tr>
+                        {emailRow}
+                        {messageRow}
+                      </table>
+                      <div style="margin:24px 0 0;padding:16px;background:#fef3c7;border-radius:8px;border-left:4px solid #f59e0b">
+                        <p style="margin:0;font-size:13px;color:#92400e">Hãy liên hệ trong vòng 24 giờ để đảm bảo trải nghiệm tốt nhất cho đối tác.</p>
+                      </div>
+                    </div>
+                    <div style="padding:16px 32px;background:#f9fafb;border-top:1px solid #e5e7eb">
+                      <p style="margin:0;font-size:12px;color:#9ca3af">Email này được gửi tự động từ hệ thống AudioGo CMS.</p>
+                    </div>
+                  </div>
+                </body>
+                </html>
+                """;
+
+            var payload = new
+            {
+                from    = $"{fromName} <{fromEmail}>",
+                to      = new[] { adminEmail },
+                subject = $"[AudioGo] Yêu cầu tư vấn mới — {restaurantName}",
+                html
+            };
+
+            try
+            {
+                var json    = JsonSerializer.Serialize(payload);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var response = await _http.PostAsync("emails", content);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var body = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning("[ResendEmail] Consultation notification thất bại ({Code}): {Body}", response.StatusCode, body);
+                    return false;
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[ResendEmail] Lỗi khi gửi consultation notification tới {To}", adminEmail);
+                return false;
+            }
+        }
     }
 }

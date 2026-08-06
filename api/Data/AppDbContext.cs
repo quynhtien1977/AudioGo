@@ -26,6 +26,11 @@ namespace Server.Data
         public DbSet<Article>             Articles          => Set<Article>();
         public DbSet<ArticleContent>      ArticleContents   => Set<ArticleContent>();
 
+        // ── Landing Page ─────────────────────────────────────────────────
+        public DbSet<LandingSection>      LandingSections   => Set<LandingSection>();
+        public DbSet<AppRelease>          AppReleases       => Set<AppRelease>();
+        public DbSet<ConsultationRequest> ConsultationRequests => Set<ConsultationRequest>();
+
         protected override void OnModelCreating(ModelBuilder m)
         {
             // ── 1. Map sang tên bảng singular trong DB ─────────────────
@@ -48,12 +53,37 @@ namespace Server.Data
             m.Entity<PaymentTransaction> ().ToTable("PaymentTransaction",  t => t.HasTrigger("TR_PaymentTransaction_UpdateTimestamp"));
             m.Entity<Article>            ().ToTable("Article",            t => t.HasTrigger("TR_Article_UpdateTimestamp"));
             m.Entity<ArticleContent>     ().ToTable("ArticleContent");
+            m.Entity<LandingSection>     ().ToTable("LandingSection");
+            m.Entity<AppRelease>         ().ToTable("AppRelease");
+            m.Entity<ConsultationRequest>().ToTable("ConsultationRequest");
 
             // ── 2. Primary Keys ─────────────────────────────────────────
-            m.Entity<PoiContent>   ().HasKey(e => e.ContentId);
-            m.Entity<PoiGallery>   ().HasKey(e => e.ImageId);
-            m.Entity<ListenHistory>().HasKey(e => e.HistoryId);
-            m.Entity<LocationLog>  ().HasKey(e => e.LocationId);
+            m.Entity<PoiContent>          ().HasKey(e => e.ContentId);
+            m.Entity<PoiGallery>          ().HasKey(e => e.ImageId);
+            m.Entity<ListenHistory>       ().HasKey(e => e.HistoryId);
+            m.Entity<LocationLog>         ().HasKey(e => e.LocationId);
+            m.Entity<LandingSection>      ().HasKey(e => e.SectionId);
+            m.Entity<AppRelease>          ().HasKey(e => e.ReleaseId);
+            m.Entity<ConsultationRequest> ().HasKey(e => e.RequestId);
+
+            // LandingSection.ContentJson — nvarchar(max)
+            m.Entity<LandingSection>().Property(s => s.ContentJson)
+                .HasColumnType("nvarchar(max)");
+
+            // Index: query landing sections theo SectionKey
+            m.Entity<LandingSection>()
+                .HasIndex(s => s.SectionKey)
+                .HasDatabaseName("IX_LandingSection_SectionKey");
+
+            // Index: tìm bản APK mới nhất nhanh
+            m.Entity<AppRelease>()
+                .HasIndex(r => r.IsLatest)
+                .HasDatabaseName("IX_AppRelease_IsLatest");
+
+            // Index: query consultation theo status
+            m.Entity<ConsultationRequest>()
+                .HasIndex(r => r.Status)
+                .HasDatabaseName("IX_ConsultationRequest_Status");
 
             // Composite PKs — PHẢI khai báo trước relationships
             m.Entity<CategoryPoi>().HasKey(e => new { e.CategoryId, e.PoiId });
@@ -308,6 +338,170 @@ namespace Server.Data
                     Features    = "[\"audio_guide\",\"analytics\",\"priority_support\",\"custom_branding\",\"dedicated_account_manager\"]",
                     IsActive    = true,
                     CreatedAt   = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                }
+            );
+
+            // ── Seed Data: Landing Sections mặc định ──────────────────────────
+            // Dùng ngày cố định để migration idempotent
+            var seedDate = new DateTime(2026, 8, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            m.Entity<LandingSection>().HasData(
+                new LandingSection
+                {
+                    SectionId   = "section-hero",
+                    SectionKey  = "hero",
+                    SortOrder   = 1,
+                    IsActive    = true,
+                    CreatedAt   = seedDate,
+                    ContentJson = """
+                    {
+                      "badge": "🎧 Thuyết minh du lịch bằng âm thanh",
+                      "heading1": "Khám Phá Phố Ẩm Thực",
+                      "heading2": "Qua Từng Câu Chuyện",
+                      "description": "Ứng dụng thuyết minh tự động theo vị trí cho Phố Ẩm Thực Vĩnh Khánh Q4. Tự động phát khi bạn đến gần quán, hỗ trợ 7 ngôn ngữ.",
+                      "cta1Text": "Tải App Android",
+                      "cta1Link": "#download",
+                      "cta2Text": "Xem cách hoạt động",
+                      "cta2Link": "#how-it-works",
+                      "backgroundImageUrl": "",
+                      "stats": [
+                        { "icon": "MapPin", "value": "50+", "label": "Quán ăn" },
+                        { "icon": "Globe", "value": "7", "label": "Ngôn ngữ" },
+                        { "icon": "Heart", "value": "100%", "label": "Miễn phí" }
+                      ]
+                    }
+                    """
+                },
+                new LandingSection
+                {
+                    SectionId   = "section-stats-bar",
+                    SectionKey  = "stats_bar",
+                    SortOrder   = 2,
+                    IsActive    = true,
+                    CreatedAt   = seedDate,
+                    ContentJson = """
+                    {
+                      "items": [
+                        { "icon": "WifiOff",      "text": "Không cần internet khi tham quan" },
+                        { "icon": "Navigation",   "text": "Tự động phát khi tới gần quán" },
+                        { "icon": "ShieldCheck",  "text": "Cập nhật bởi chủ quán địa phương" },
+                        { "icon": "BadgeDollarSign", "text": "Miễn phí 100%" }
+                      ]
+                    }
+                    """
+                },
+                new LandingSection
+                {
+                    SectionId   = "section-features",
+                    SectionKey  = "features",
+                    SortOrder   = 3,
+                    IsActive    = true,
+                    CreatedAt   = seedDate,
+                    ContentJson = """
+                    {
+                      "title": "Tính năng nổi bật",
+                      "subtitle": "Trải nghiệm ẩm thực theo cách chưa từng có",
+                      "items": [
+                        { "icon": "Navigation2",  "title": "Tự động phát theo vị trí",      "description": "Geofencing tự động phát audio khi bạn đến gần quán" },
+                        { "icon": "Globe",        "title": "Đa ngôn ngữ — 7 thứ tiếng",     "description": "Tiếng Việt, Anh, Nhật, Hàn, Trung, Pháp, Thái" },
+                        { "icon": "WifiOff",      "title": "Hoạt động Offline",              "description": "Đồng bộ lần đầu, dùng offline hoàn toàn" },
+                        { "icon": "QrCode",       "title": "Kích hoạt bằng QR Code",         "description": "Quét mã, dùng ngay 7 ngày không cần đăng ký" },
+                        { "icon": "Map",          "title": "Bản đồ & Lọc quán ăn",           "description": "Tìm kiếm, lọc theo danh mục, xem trên bản đồ" },
+                        { "icon": "Route",        "title": "Tour lộ trình gợi ý",            "description": "Theo tour được biên soạn sẵn hoặc tự khám phá" }
+                      ]
+                    }
+                    """
+                },
+                new LandingSection
+                {
+                    SectionId   = "section-how-it-works",
+                    SectionKey  = "how_it_works",
+                    SortOrder   = 4,
+                    IsActive    = true,
+                    CreatedAt   = seedDate,
+                    ContentJson = """
+                    {
+                      "title": "Cách hoạt động",
+                      "steps": [
+                        { "number": 1, "title": "Quét mã QR",        "description": "Quét mã tại điểm check-in để kích hoạt app 7 ngày" },
+                        { "number": 2, "title": "Mở bản đồ",         "description": "Xem bản đồ phố ẩm thực, dạo dọc Phố Vĩnh Khánh Q4" },
+                        { "number": 3, "title": "App tự phát audio", "description": "Khi bạn đến gần quán, thuyết minh tự động phát" },
+                        { "number": 4, "title": "Khám phá thêm",     "description": "Xem gallery ảnh, nghe lại hoặc đi theo Tour gợi ý" }
+                      ]
+                    }
+                    """
+                },
+                new LandingSection
+                {
+                    SectionId   = "section-screenshots",
+                    SectionKey  = "screenshots",
+                    SortOrder   = 5,
+                    IsActive    = true,
+                    CreatedAt   = seedDate,
+                    ContentJson = """
+                    {
+                      "title": "Giao diện ứng dụng",
+                      "images": [
+                        { "url": "", "alt": "Bản đồ với các pin POI" },
+                        { "url": "", "alt": "Chi tiết quán ăn và mini player" },
+                        { "url": "", "alt": "Danh sách Tour lộ trình" }
+                      ]
+                    }
+                    """
+                },
+                new LandingSection
+                {
+                    SectionId   = "section-consult-cta",
+                    SectionKey  = "consult_cta",
+                    SortOrder   = 6,
+                    IsActive    = true,
+                    CreatedAt   = seedDate,
+                    ContentJson = """
+                    {
+                      "title": "Đăng ký làm đối tác",
+                      "subtitle": "Chủ quán ẩm thực tại Phố Vĩnh Khánh Q4? Hãy để AudioGo kể câu chuyện của bạn bằng âm thanh — hoàn toàn miễn phí trong giai đoạn ra mắt.",
+                      "formNote": "Chúng tôi sẽ liên hệ trong vòng 24 giờ làm việc.",
+                      "benefits": [
+                        { "icon": "Zap",       "text": "Kích hoạt trong vòng 24 giờ" },
+                        { "icon": "Headphones", "text": "Audio chuyên nghiệp do đội ngũ AudioGo thực hiện" },
+                        { "icon": "BarChart3", "text": "Theo dõi lượt nghe, lượt ghé thăm" }
+                      ]
+                    }
+                    """
+                },
+                new LandingSection
+                {
+                    SectionId   = "section-download-cta",
+                    SectionKey  = "download_cta",
+                    SortOrder   = 7,
+                    IsActive    = true,
+                    CreatedAt   = seedDate,
+                    ContentJson = """
+                    {
+                      "title": "Sẵn sàng khám phá?",
+                      "subtitle": "Tải app ngay — miễn phí, không cần tài khoản.",
+                      "installGuide": "Cần bật 'Cài đặt từ nguồn không xác định' trong Cài đặt > Bảo mật trên Android.",
+                      "googlePlayText": "Sắp ra mắt trên Google Play"
+                    }
+                    """
+                },
+                new LandingSection
+                {
+                    SectionId   = "section-footer",
+                    SectionKey  = "footer",
+                    SortOrder   = 8,
+                    IsActive    = true,
+                    CreatedAt   = seedDate,
+                    ContentJson = """
+                    {
+                      "description": "AudioGo — Ứng dụng thuyết minh ẩm thực bằng âm thanh, kết nối du khách với văn hóa ẩm thực đường phố Việt Nam.",
+                      "address": "Phố Ẩm Thực Vĩnh Khánh, Quận 4, TP. Hồ Chí Minh",
+                      "email": "hello@audiogo.vn",
+                      "phone": "",
+                      "zaloLink": "",
+                      "socialLinks": []
+                    }
+                    """
                 }
             );
         }

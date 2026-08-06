@@ -17,9 +17,25 @@ namespace Server.Services.Interfaces
         /// Gửi email chứa link đặt lại mật khẩu.
         /// </summary>
         /// <returns>true nếu gửi thành công, false nếu thất bại</returns>
+        /// <summary>
+        /// Gửi email chứa link đặt lại mật khẩu.
+        /// </summary>
+        /// <returns>true nếu gửi thành công, false nếu thất bại</returns>
         Task<bool> SendPasswordResetEmailAsync(
             string toEmail,
             string fullName,
             string resetLink);
+
+        /// <summary>
+        /// Gửi email thông báo cho Admin khi có yêu cầu tư vấn mới từ landing page.
+        /// </summary>
+        Task<bool> SendConsultationNotificationAsync(
+            string adminEmail,
+            string fullName,
+            string restaurantName,
+            string phoneNumber,
+            string? email,
+            string  area,
+            string? message);
     }
 }
