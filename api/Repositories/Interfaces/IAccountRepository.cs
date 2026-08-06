@@ -29,6 +29,9 @@ namespace Server.Repositories.Interfaces
         // Check username tồn tại (tránh trùng)
         Task<bool> ExistsByUsernameAsync(string username);
 
+        // Check email tồn tại (tránh trùng)
+        Task<bool> ExistsByEmailAsync(string email, string? excludeAccountId = null);
+
         // 🛡️ Last Admin Rule: đếm Admin còn active
         Task<int> CountActiveAdminsAsync();
     }

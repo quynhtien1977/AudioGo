@@ -62,6 +62,10 @@ namespace Server.Controllers.Cms
             if (await _accounts.ExistsByUsernameAsync(req.Username))
                 return BadRequest("Username đã tồn tại");
 
+            // 🔥 check email trùng
+            if (!string.IsNullOrWhiteSpace(req.Email) && await _accounts.ExistsByEmailAsync(req.Email))
+                return BadRequest("Email này đã được sử dụng bởi tài khoản khác.");
+
             // ── 🛡️ V-BE: Validate email + SĐT ───────────────────────────────────
             var (validCreate, errCreate) = ValidateContactInfo(req.Email, req.PhoneNumber);
             if (!validCreate) return BadRequest(errCreate);
@@ -130,9 +134,13 @@ namespace Server.Controllers.Cms
             var existing = await _accounts.GetByIdAsync(currentUserId);
             if (existing is null) return NotFound();
 
-            // ── 🛡️ V-BE: Validate email + SĐT ──────────────────────────────────
+            // ── 🛡️ V-BE: Validate email + SĐT ───────────────────────────────────────
             var (validMe, errMe) = ValidateContactInfo(req.Email, req.PhoneNumber);
             if (!validMe) return BadRequest(errMe);
+
+            // 🔥 check email trùng (loại trừ chính mình)
+            if (!string.IsNullOrWhiteSpace(req.Email) && await _accounts.ExistsByEmailAsync(req.Email, currentUserId))
+                return BadRequest("Email này đã được sử dụng bởi tài khoản khác.");
 
             if (!string.IsNullOrWhiteSpace(req.FullName))
                 existing.FullName = req.FullName;

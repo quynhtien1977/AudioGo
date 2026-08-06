@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
 using Server.Services;
@@ -18,17 +19,20 @@ namespace Server.Controllers
         private readonly AppDbContext _db;
         private readonly IEmailService _email;
         private readonly IConfiguration _config;
+        private readonly IWebHostEnvironment _env;
 
-        public AuthController(AuthService auth, AppDbContext db, IEmailService email, IConfiguration config)
+        public AuthController(AuthService auth, AppDbContext db, IEmailService email, IConfiguration config, IWebHostEnvironment env)
         {
             _auth   = auth;
             _db     = db;
             _email  = email;
             _config = config;
+            _env    = env;
         }
 
         // POST /api/auth/login
         [HttpPost("login")]
+        [EnableRateLimiting("auth")]
         public async Task<IActionResult> Login([FromBody] LoginRequest req)
         {
             try
@@ -62,6 +66,7 @@ namespace Server.Controllers
         // LUÔN trả 200 OK dù email có tồn tại hay không (tránh email enumeration).
         // ─────────────────────────────────────────────────────────────────────
         [HttpPost("forgot-password")]
+        [EnableRateLimiting("auth")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest req)
         {
             const string genericMessage = "Nếu địa chỉ email tồn tại trong hệ thống, hướng dẫn đặt lại mật khẩu đã được gửi.";
@@ -101,6 +106,7 @@ namespace Server.Controllers
         // Verify token → hash mật khẩu mới → xóa token.
         // ─────────────────────────────────────────────────────────────────────
         [HttpPost("reset-password")]
+        [EnableRateLimiting("auth")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest req)
         {
             if (string.IsNullOrWhiteSpace(req.Token) || string.IsNullOrWhiteSpace(req.NewPassword))
@@ -136,6 +142,7 @@ namespace Server.Controllers
         // Người dùng tự đổi mật khẩu (verify mật khẩu cũ trước).
         // ─────────────────────────────────────────────────────────────────────
         [HttpPost("change-password")]
+        [EnableRateLimiting("auth")]
         [Authorize]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest req)
         {
@@ -175,6 +182,10 @@ namespace Server.Controllers
         [HttpPost("setup-dev")]
         public async Task<IActionResult> SetupDev([FromBody] LoginRequest req)
         {
+            // ⛔ Chỉ hoạt động trong môi trường Development — ẩn hoàn toàn ở Production
+            if (!_env.IsDevelopment())
+                return NotFound();
+
             var existing = await _db.Accounts.FirstOrDefaultAsync(a => a.Username == req.Identifier);
             if (existing is not null)
                 _db.Accounts.Remove(existing);

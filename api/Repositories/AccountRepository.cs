@@ -80,7 +80,17 @@ namespace Server.Repositories
         public async Task<bool> ExistsByUsernameAsync(string username)
         {
             return await _db.Accounts
-                .AnyAsync(x => x.Username == username);
+                .AnyAsync(x => x.Username == username && x.DeletedAt == null);
+        }
+
+        // 🔥 Check email tồn tại (excludeAccountId để bỏ qua chính account đang sửa)
+        public async Task<bool> ExistsByEmailAsync(string email, string? excludeAccountId = null)
+        {
+            if (string.IsNullOrWhiteSpace(email)) return false;
+            return await _db.Accounts
+                .AnyAsync(x => x.Email == email
+                            && x.DeletedAt == null
+                            && (excludeAccountId == null || x.AccountId != excludeAccountId));
         }
 
         // ================= DELETE =================
