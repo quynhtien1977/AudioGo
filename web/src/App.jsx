@@ -35,6 +35,8 @@ import AdminTransactionDashboard from "@/pages/AdminTransactionDashboard";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import NotFoundPage from "@/pages/NotFoundPage";
 import ArticlesPage from "@/pages/ArticlesPage";
+import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
 
 export default function App() {
   return (
@@ -70,6 +72,10 @@ export default function App() {
       <Routes>
         {/* Login */}
         <Route path="/" element={<LoginPage />} />
+
+        {/* Auth public pages */}
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* Dashboard */}
         <Route

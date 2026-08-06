@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using Server.Helpers;
 using Server.Models;
 using Server.Repositories.Interfaces;
+using Server.Services.Interfaces;
 using Shared.DTOs;
 using System.Security.Claims;
 
@@ -15,10 +17,12 @@ namespace Server.Controllers.Cms
     public class CmsAccountController : ControllerBase
     {
         private readonly IAccountRepository _accounts;
+        private readonly IEmailService _email;
 
-        public CmsAccountController(IAccountRepository accounts)
+        public CmsAccountController(IAccountRepository accounts, IEmailService email)
         {
             _accounts = accounts;
+            _email    = email;
         }
 
         // ── Helper: lấy AccountId của người đang gọi API từ JWT claim ──────────
@@ -52,27 +56,31 @@ namespace Server.Controllers.Cms
         // 🟢 CREATE
         // ======================
         [HttpPost]
-        public async Task<ActionResult<AccountDto>> Create([FromBody] AccountCreateRequest req)
+        public async Task<IActionResult> Create([FromBody] AccountCreateRequest req)
         {
             // 🔥 check username trùng
             if (await _accounts.ExistsByUsernameAsync(req.Username))
                 return BadRequest("Username đã tồn tại");
 
-            // ── 🛡️ V-BE: Validate email + SĐT ──────────────────────────────────
+            // ── 🛡️ V-BE: Validate email + SĐT ───────────────────────────────────
             var (validCreate, errCreate) = ValidateContactInfo(req.Email, req.PhoneNumber);
             if (!validCreate) return BadRequest(errCreate);
+
+            // ── Sinh mật khẩu ngẫu nhiên (crypto-safe) ─────────────────────────
+            var plainPassword = PasswordGenerator.Generate();
 
             var account = new Account
             {
                 AccountId    = Guid.NewGuid().ToString(),
                 Username     = req.Username,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(req.Password),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(plainPassword),
                 Role         = req.Role,
 
                 FullName    = req.FullName,
                 Email       = req.Email,
                 PhoneNumber = req.PhoneNumber,
 
+                MustChangePassword = true,
                 IsLocked  = false,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -80,11 +88,32 @@ namespace Server.Controllers.Cms
 
             var created = await _accounts.CreateAsync(account);
 
+            // ── Gửi email chào mừng + mật khẩu tạm ────────────────────────────
+            string? emailWarning = null;
+            if (!string.IsNullOrWhiteSpace(created.Email))
+            {
+                var sent = await _email.SendAccountCreatedEmailAsync(
+                    created.Email,
+                    created.FullName ?? created.Username,
+                    created.Username,
+                    plainPassword,
+                    created.PhoneNumber);
+
+                if (!sent)
+                    emailWarning = "Tạo tài khoản thành công nhưng gửi email thất bại. " +
+                                   "Vui lòng cấp mật khẩu thủ công cho người dùng.";
+            }
+
+            var response = new AccountCreateResponse
+            {
+                Account      = ToDto(created),
+                EmailWarning = emailWarning
+            };
+
             return CreatedAtAction(
                 nameof(GetById),
                 new { id = created.AccountId },
-                ToDto(created)
-            );
+                response);
         }
 
         // ======================

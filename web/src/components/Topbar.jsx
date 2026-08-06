@@ -409,7 +409,7 @@ export default function Topbar() {
           onClick={handleLogout}
           className="px-3 py-1 rounded-full text-sm bg-gray-200 hover:bg-pink-500 hover:text-white transition duration-200"
         >
-          Logout
+          Đăng xuất
         </button>
 
         {/*  User Info */}

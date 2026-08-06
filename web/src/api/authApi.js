@@ -17,7 +17,6 @@ export const loginApi = async (identifier, password) => {
     throw err || "Đăng nhập thất bại";
   }
 
-  // return res.json();
   const data = await res.json();
 
   return {
@@ -26,5 +25,54 @@ export const loginApi = async (identifier, password) => {
     accountId: data.accountId,
     fullName: data.fullName,
     isLocked: data.isLocked,
+    mustChangePassword: data.mustChangePassword ?? false,
   };
+};
+
+// POST /api/auth/forgot-password
+export const forgotPasswordApi = async (email) => {
+  const res = await fetch(`${BASE_URL}/auth/forgot-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw err || "Yêu cầu thất bại";
+  }
+  return res.json();
+};
+
+// POST /api/auth/reset-password
+export const resetPasswordApi = async (token, newPassword) => {
+  const res = await fetch(`${BASE_URL}/auth/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, newPassword }),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw err || "Đặt lại mật khẩu thất bại";
+  }
+  return res.json();
+};
+
+// POST /api/auth/change-password  (cần JWT token)
+export const changePasswordApi = async (oldPassword, newPassword) => {
+  const token =
+    localStorage.getItem("token") || sessionStorage.getItem("token");
+
+  const res = await fetch(`${BASE_URL}/auth/change-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ oldPassword, newPassword }),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw err || "Đổi mật khẩu thất bại";
+  }
+  return res.json();
 };
