@@ -4,28 +4,11 @@ import { Download, Phone, Mail, ArrowUp, X, MessageCircle } from "lucide-react";
 
 /* ── Social icons ── */
 function ZaloIcon() {
-  // Simple branded Zalo icon — white Z on Zalo blue
+  // Logo Zalo chuẩn (trắng)
   return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: 18,
-        height: 18,
-        borderRadius: 4,
-        background: "white",
-        color: "#0068FF",
-        fontWeight: 900,
-        fontSize: 12,
-        fontFamily: "Arial, sans-serif",
-        lineHeight: 1,
-        letterSpacing: "-0.5px",
-        flexShrink: 0,
-      }}
-    >
-      Za
-    </span>
+    <svg viewBox="0 0 460.1 436.6" width="18" height="18" fill="white">
+      <path d="M230.1 0C103 0 0 89.2 0 199.1c0 59.9 29.6 113.6 76 150.7l-26 94.4c-2.4 8.6 6.8 15.6 14.5 10.9l104.9-63.5c19.3 5.4 39.8 8.4 60.7 8.4 127 0 230-89.2 230-199.1S357.2 0 230.1 0zm71.7 282.8h-74.9c-4 0-7.3-3.3-7.3-7.3v-10.7c0-4 3.3-7.3 7.3-7.3h42l-51.1-66.2v-1.6c0-.5-.1-1-.1-1.4 0-4 3.3-7.3 7.3-7.3h73c4 0 7.3 3.3 7.3 7.3v10.7c0 4-3.3 7.3-7.3 7.3h-40l49 63.4v1.6c0 .5.1 1 .1 1.4.1 4-3.2 7.4-7.2 7.4zm-132.8-51.7c-9.1 0-16.5-7.4-16.5-16.5 0-9.1 7.4-16.5 16.5-16.5 9.1 0 16.5 7.4 16.5 16.5 0 9.1-7.4 16.5-16.5 16.5zM126.9 283h-16.6c-5.7 0-10.4-4.7-10.4-10.4v-46.7c0-17 13.8-30.8 30.8-30.8h11.2c5.7 0 10.4 4.7 10.4 10.4v11.9c0 5.7-4.7 10.4-10.4 10.4h-5.2c-5.1 0-9.3 4.2-9.3 9.3v35.4c.1 5.8-4.6 10.5-10.5 10.5z"/>
+    </svg>
   );
 }
 
@@ -136,18 +119,6 @@ export default function FloatingButtons({ apkUrl, zaloLink, facebookLink, phone,
         )}
       </AnimatePresence>
 
-      {/* ─── Nút Tải App ─── */}
-      {apkUrl && (
-        <a
-          href={apkUrl}
-          download
-          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r from-pink-500 to-orange-400 text-white shadow-lg hover:shadow-pink-500/40 hover:scale-[1.04] active:scale-95 transition-all text-sm font-semibold whitespace-nowrap"
-          title="Tải App"
-        >
-          <Download size={15} />
-          <span className="hidden sm:inline">Tải App</span>
-        </a>
-      )}
 
       {/* ─── Nút Back to top ─── */}
       <AnimatePresence>

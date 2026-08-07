@@ -8,28 +8,41 @@ function DynIcon({ name, ...props }) {
 
 export default function StatsBarSection({ data }) {
   const items = data?.items || [];
+  if (!items.length) return null;
+
+  const shouldMarquee = items.length > 4;
+
+  const ContentBlock = ({ hideLastDivider }) => (
+    <div className={`flex items-center gap-x-8 ${shouldMarquee ? "w-max shrink-0 px-4" : "flex-wrap justify-center w-full"}`}>
+      {items.map((item, i) => (
+        <div key={i} className="flex items-center gap-2 text-white text-sm font-medium whitespace-nowrap">
+          <DynIcon name={item.icon} size={15} className="text-white/80" />
+          <span>{item.text}</span>
+          {(!hideLastDivider || i < items.length - 1) && (
+            <span className={`${shouldMarquee ? "inline" : "hidden sm:inline"} text-white/30 ml-6`}>|</span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
 
   return (
-    <section className="bg-gradient-to-r from-orange-500 to-pink-500 py-4">
+    <section className="bg-gradient-to-r from-orange-500 to-pink-500 py-4 overflow-hidden">
       <div className="max-w-6xl mx-auto px-4">
-        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
-          {items.map((item, i) => (
+        {shouldMarquee ? (
+          <div className="flex w-full">
             <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.08 }}
-              className="flex items-center gap-2 text-white text-sm font-medium"
+              className="flex w-max"
+              animate={{ x: ["0%", "-50%"] }}
+              transition={{ repeat: Infinity, ease: "linear", duration: 15 }}
             >
-              <DynIcon name={item.icon} size={15} className="text-white/80" />
-              <span>{item.text}</span>
-              {i < items.length - 1 && (
-                <span className="hidden sm:inline text-white/30 ml-6">|</span>
-              )}
+              <ContentBlock hideLastDivider={false} />
+              <ContentBlock hideLastDivider={false} />
             </motion.div>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <ContentBlock hideLastDivider={true} />
+        )}
       </div>
     </section>
   );
