@@ -10,6 +10,8 @@ export default function DownloadSection({ data }) {
     subtitle = "Tải app ngay — miễn phí, không cần tài khoản.",
     installGuide = "Cần bật 'Cài đặt từ nguồn không xác định' trong Cài đặt > Bảo mật trên Android.",
     googlePlayText = "Sắp ra mắt trên Google Play",
+    appLogoUrl = "",
+    appName = "AudioGo Android",
   } = data || {};
 
   const [release, setRelease] = useState(null);
@@ -50,12 +52,20 @@ export default function DownloadSection({ data }) {
             viewport={{ once: true }}
             className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 flex flex-col items-center gap-5 min-w-[280px]"
           >
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500 to-orange-400 flex items-center justify-center shadow-lg">
-              <Smartphone size={32} className="text-white" />
-            </div>
+            {appLogoUrl ? (
+              <img
+                src={appLogoUrl}
+                alt="AudioGo"
+                className="w-16 h-16 rounded-2xl object-cover shadow-lg"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500 to-orange-400 flex items-center justify-center shadow-lg">
+                <Smartphone size={32} className="text-white" />
+              </div>
+            )}
 
             <div className="text-center">
-              <h3 className="text-white font-bold text-xl">AudioGo Android</h3>
+              <h3 className="text-white font-bold text-xl">{appName}</h3>
               {loadingRelease ? (
                 <p className="text-white/40 text-sm mt-1 flex items-center justify-center gap-1">
                   <Loader2 size={12} className="animate-spin" /> Đang tải...

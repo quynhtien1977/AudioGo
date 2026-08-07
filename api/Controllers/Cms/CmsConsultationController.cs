@@ -6,11 +6,12 @@ using Server.Data;
 namespace Server.Controllers.Cms;
 
 /// <summary>
-/// Quản lý yêu cầu tư vấn từ chủ quán qua landing page — Admin only.
+/// Quản lý yêu cầu tư vấn từ chủ quán qua landing page.
+/// Editor chỉ được xem (GET); Admin mới đổi status và xóa.
 /// </summary>
 [ApiController]
 [Route("api/cms/consultations")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin,Editor")]
 public class CmsConsultationController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -47,9 +48,10 @@ public class CmsConsultationController : ControllerBase
         return Ok(items);
     }
 
-    // ── PATCH /api/cms/consultations/{id}/status ──────────────────────────
-    /// <summary>Cập nhật trạng thái: "Contacted" hoặc "Done".</summary>
+    // ── PATCH /api/cms/consultations/{id}/status ──────────────────────────────────────────────────
+    /// <summary>Cập nhật trạng thái: "Contacted" hoặc "Done" — chỉ Admin.</summary>
     [HttpPatch("{id}/status")]
+    [Authorize(Roles = "Admin")]  // Editor chỉ xem, không đổi status
     public async Task<IActionResult> UpdateStatus(string id, [FromBody] UpdateConsultStatusRequest req)
     {
         var validStatuses = new[] { "New", "Contacted", "Done" };
@@ -67,8 +69,9 @@ public class CmsConsultationController : ControllerBase
         return NoContent();
     }
 
-    // ── DELETE /api/cms/consultations/{id} ────────────────────────────────
+    // ── DELETE /api/cms/consultations/{id} ─────────────────────────────────────────────────
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]  // chỉ Admin mới được xóa
     public async Task<IActionResult> Delete(string id)
     {
         var request = await _db.ConsultationRequests.FindAsync(id);

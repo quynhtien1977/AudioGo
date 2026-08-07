@@ -8,11 +8,11 @@ using Server.Services.Interfaces;
 namespace Server.Controllers.Cms;
 
 /// <summary>
-/// Quản lý phiên bản APK — Admin only.
+/// Quản lý phiên bản APK — Admin quản lý, Editor chỉ xem.
 /// </summary>
 [ApiController]
 [Route("api/cms/app-releases")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin,Editor")]
 public class CmsAppReleaseController : ControllerBase
 {
     private readonly AppDbContext        _db;
@@ -49,9 +49,10 @@ public class CmsAppReleaseController : ControllerBase
         return Ok(releases);
     }
 
-    // ── POST /api/cms/app-releases ───────────────────────────────────────
+    // ── POST /api/cms/app-releases ────────────────────────────────────────────────
     /// <summary>Upload APK mới. Tự động set IsLatest=true và bỏ flag các bản cũ.</summary>
     [HttpPost]
+    [Authorize(Roles = "Admin")]  // chỉ Admin upload APK
     [RequestSizeLimit(209_715_200)] // 200MB
     public async Task<IActionResult> Upload(
         IFormFile       file,
@@ -104,8 +105,9 @@ public class CmsAppReleaseController : ControllerBase
         return Ok(new { release.ReleaseId, release.Version, release.ApkUrl });
     }
 
-    // ── DELETE /api/cms/app-releases/{id} ────────────────────────────────
+    // ── DELETE /api/cms/app-releases/{id} ───────────────────────────────────────────────
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]  // chỉ Admin xóa APK
     public async Task<IActionResult> Delete(string id)
     {
         var release = await _db.AppReleases.FindAsync(id);

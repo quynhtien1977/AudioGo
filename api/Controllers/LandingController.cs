@@ -80,8 +80,13 @@ public class LandingController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(req.FullName) ||
             string.IsNullOrWhiteSpace(req.RestaurantName) ||
-            string.IsNullOrWhiteSpace(req.PhoneNumber))
-            return BadRequest(new { message = "Vui lòng điền đầy đủ thông tin bắt buộc." });
+            string.IsNullOrWhiteSpace(req.PhoneNumber) ||
+            string.IsNullOrWhiteSpace(req.Email))
+            return BadRequest(new { message = "Vui lòng điền đầy đủ thông tin bắt buộc (bao gồm email)." });
+
+        // Validate email cơ bản
+        if (!req.Email!.Contains('@') || !req.Email.Contains('.'))
+            return BadRequest(new { message = "Email không hợp lệ." });
 
         // Validate SĐT 10 chữ số Việt Nam
         var phone = req.PhoneNumber.Trim().Replace(" ", "");
@@ -134,6 +139,6 @@ public record ConsultationFormRequest(
     string  RestaurantName,
     string  PhoneNumber,
     string? Area,
-    string? Email,
+    string  Email,       // bắt buộc
     string? Message
 );

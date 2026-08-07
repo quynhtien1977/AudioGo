@@ -178,6 +178,7 @@ export default function CreateAccountModal({ onClose, onCreated }) {
               className={inputStyle}
             >
               <option value="Owner">QUẢN LÝ NHÀ HÀNG</option>
+              <option value="Editor">NHÂN VIÊN CMS</option>
               <option value="Admin">ADMIN</option>
             </select>
           </div>

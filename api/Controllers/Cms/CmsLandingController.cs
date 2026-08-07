@@ -8,11 +8,11 @@ using System.Text.Json;
 namespace Server.Controllers.Cms;
 
 /// <summary>
-/// Quản lý nội dung Landing Page — Admin only.
+/// Quản lý nội dung Landing Page — Admin + Editor.
 /// </summary>
 [ApiController]
 [Route("api/cms/landing")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin,Editor")]
 public class CmsLandingController : ControllerBase
 {
     private readonly AppDbContext         _db;
@@ -93,7 +93,7 @@ public class CmsLandingController : ControllerBase
     // ── POST /api/cms/landing/upload-image ───────────────────────────────
     [HttpPost("upload-image")]
     [RequestSizeLimit(20_971_520)] // 20MB
-    public async Task<IActionResult> UploadImage(IFormFile file)
+    public async Task<IActionResult> UploadImage(IFormFile file, [FromQuery] string? section)
     {
         if (file is null || file.Length == 0)
             return BadRequest(new { message = "Không có file nào được gửi lên." });
@@ -102,11 +102,21 @@ public class CmsLandingController : ControllerBase
         if (ext is not (".jpg" or ".jpeg" or ".png" or ".webp"))
             return BadRequest(new { message = "Chỉ chấp nhận ảnh JPG, PNG, WebP." });
 
-        var blobName  = $"landing/{Guid.NewGuid()}{ext}";
+        // Normalize section key để làm tên folder an toàn
+        var allowedSections = new[]
+        {
+            "hero", "stats_bar", "features", "how_it_works",
+            "screenshots", "consult_cta", "download_cta", "footer", "logo-app", "general"
+        };
+        var folderName = allowedSections.Contains(section) ? section! : "general";
+        // Chuyển underscore → hyphen cho URL đẹp hơn
+        folderName = folderName.Replace("_", "-");
+
+        var blobName = $"landing/{folderName}/{Guid.NewGuid()}{ext}";
         using var stream = file.OpenReadStream();
         var url = await _blob.UploadAsync("media", blobName, stream, file.ContentType);
 
-        return Ok(new { url });
+        return Ok(new { url, section = folderName });
     }
 }
 

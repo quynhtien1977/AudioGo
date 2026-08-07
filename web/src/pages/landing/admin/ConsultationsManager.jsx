@@ -19,7 +19,7 @@ const STATUS_STYLE = {
   Done:      { bg: "bg-green-50 text-green-600 border-green-200", icon: <Check size={11} /> },
 };
 
-export default function ConsultationsManager() {
+export default function ConsultationsManager({ isAdmin = false }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
@@ -160,30 +160,35 @@ export default function ConsultationsManager() {
                       )}
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {["New", "Contacted", "Done"].map((st) => (
+                    {/* Actions — chỉ Admin */}
+                    {isAdmin && (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {["New", "Contacted", "Done"].map((st) => (
+                          <button
+                            key={st}
+                            onClick={() => handleStatusChange(item, st)}
+                            disabled={item.status === st}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                              item.status === st
+                                ? "bg-gray-100 text-gray-400 cursor-default"
+                                : "bg-white border border-gray-200 text-gray-600 hover:border-pink-300 hover:text-pink-500"
+                            }`}
+                          >
+                            {st === "New" ? "Mới" : st === "Contacted" ? "Đã liên hệ" : "Hoàn tất"}
+                          </button>
+                        ))}
                         <button
-                          key={st}
-                          onClick={() => handleStatusChange(item, st)}
-                          disabled={item.status === st}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                            item.status === st
-                              ? "bg-gray-100 text-gray-400 cursor-default"
-                              : "bg-white border border-gray-200 text-gray-600 hover:border-pink-300 hover:text-pink-500"
-                          }`}
+                          onClick={() => handleDelete(item)}
+                          className="ml-auto p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                          title="Xóa"
                         >
-                          {st === "New" ? "Mới" : st === "Contacted" ? "Đã liên hệ" : "Hoàn tất"}
+                          <Trash2 size={15} />
                         </button>
-                      ))}
-                      <button
-                        onClick={() => handleDelete(item)}
-                        className="ml-auto p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                        title="Xóa"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
+                      </div>
+                    )}
+                    {!isAdmin && (
+                      <p className="text-xs text-gray-400 italic">Chỉ xem — liên hệ Admin để cập nhật trạng thái.</p>
+                    )}
                   </div>
                 )}
               </div>

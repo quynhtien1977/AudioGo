@@ -11,15 +11,21 @@ import DownloadSection from "./components/DownloadSection";
 import FooterSection from "./components/FooterSection";
 import FloatingButtons from "./components/FloatingButtons";
 
-/** Trả về data của section theo key, hoặc {} nếu không tìm thấy */
+/**
+ * Trả về content của section nếu isActive = true, ngược lại null.
+ * Cho phép ẩn từng section từ CMS admin.
+ */
 function getSectionData(sections, key) {
-  return sections.find((s) => s.sectionKey === key)?.content || {};
+  const sec = sections.find((s) => s.sectionKey === key);
+  if (!sec) return null;
+  if (sec.isActive === false) return null;   // respect toggle
+  return sec.content || {};
 }
 
 export default function LandingPage() {
   const [sections, setSections] = useState([]);
-  const [release, setRelease] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [release, setRelease]   = useState(null);
+  const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
     Promise.all([getLandingSections(), getLatestRelease()])
@@ -31,7 +37,6 @@ export default function LandingPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Trong thời gian loading, hiện skeleton tối giản
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -43,29 +48,46 @@ export default function LandingPage() {
     );
   }
 
-  const hero       = getSectionData(sections, "hero");
-  const statsBar   = getSectionData(sections, "stats_bar");
-  const features   = getSectionData(sections, "features");
-  const howItWorks = getSectionData(sections, "how_it_works");
-  const screenshots= getSectionData(sections, "screenshots");
-  const consultCta = getSectionData(sections, "consult_cta");
-  const downloadCta= getSectionData(sections, "download_cta");
-  const footer     = getSectionData(sections, "footer");
+  const hero        = getSectionData(sections, "hero");
+  const statsBar    = getSectionData(sections, "stats_bar");
+  const features    = getSectionData(sections, "features");
+  const howItWorks  = getSectionData(sections, "how_it_works");
+  const screenshots = getSectionData(sections, "screenshots");
+  const consultCta  = getSectionData(sections, "consult_cta");
+  const downloadCta = getSectionData(sections, "download_cta");
+  const footer      = getSectionData(sections, "footer");
+
+  // footer data cần cho FloatingButtons dù footer có ẩn hay không
+  const footerRaw = sections.find((s) => s.sectionKey === "footer")?.content || {};
 
   return (
     <div className="landing-root font-sans antialiased" style={{ fontFamily: "'Sora', system-ui, sans-serif" }}>
       <Navbar />
-      <HeroSection data={hero} />
-      <StatsBarSection data={statsBar} />
-      <FeaturesSection data={features} />
-      <HowItWorksSection data={howItWorks} />
-      <ScreenshotsSection data={screenshots} />
-      <ConsultSection data={consultCta} />
-      <DownloadSection data={downloadCta} />
-      <FooterSection data={footer} />
+
+      {/* Hero luôn hiển thị nếu active, fallback graceful nếu null */}
+      {hero !== null
+        ? <HeroSection data={hero} />
+        : (
+          <div className="min-h-screen bg-gradient-to-br from-gray-900 via-[#1a0a14] to-[#0d0d1a] flex items-center justify-center">
+            <p className="text-white/40 text-sm">Hero section đang ẩn</p>
+          </div>
+        )
+      }
+
+      {statsBar    && <StatsBarSection   data={statsBar}    />}
+      {features    && <FeaturesSection   data={features}    />}
+      {howItWorks  && <HowItWorksSection data={howItWorks}  />}
+      {screenshots && <ScreenshotsSection data={screenshots} />}
+      {consultCta  && <ConsultSection    data={consultCta}  />}
+      {downloadCta && <DownloadSection   data={downloadCta} />}
+      {footer      && <FooterSection     data={footer}      />}
+
       <FloatingButtons
         apkUrl={release?.apkUrl || null}
-        zaloLink={footer?.zaloLink || null}
+        zaloLink={footerRaw?.zaloLink || null}
+        facebookLink={footerRaw?.facebookLink || null}
+        phone={footerRaw?.phone || null}
+        email={footerRaw?.email || null}
       />
     </div>
   );

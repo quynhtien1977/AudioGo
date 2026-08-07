@@ -16,12 +16,14 @@ export async function updateSection(id, payload) {
   return data;
 }
 
-export async function uploadLandingImage(file) {
+export async function uploadLandingImage(file, sectionKey = "general") {
   const form = new FormData();
   form.append("file", file);
-  const { data } = await apiClient.post("/cms/landing/upload-image", form, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  const { data } = await apiClient.post(
+    `/cms/landing/upload-image?section=${encodeURIComponent(sectionKey)}`,
+    form,
+    { headers: { "Content-Type": "multipart/form-data" } }
+  );
   return data.url;
 }
 

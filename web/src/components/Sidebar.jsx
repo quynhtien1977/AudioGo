@@ -56,7 +56,7 @@ export default function Sidebar({ onShowPlans }) {
                 Bài viết
               </MenuItem>
               <MenuItem to="/landing-settings" icon={<Globe size={18} />}>
-                Landing Page
+                Trang chủ
               </MenuItem>
             </SidebarGroup>
 
@@ -101,6 +101,31 @@ export default function Sidebar({ onShowPlans }) {
               Audio
             </MenuItem>
           </SidebarGroup>
+        )}
+
+        {role === "Editor" && (
+          <>
+            <SidebarGroup label="NỘI DUNG">
+              <MenuItem to="/pois" icon={<MapPin size={18} />}>
+                POIs
+              </MenuItem>
+              <MenuItem to="/tours" icon={<RouteIcon size={18} />}>
+                Tour
+              </MenuItem>
+              <MenuItem to="/audio" icon={<Headphones size={18} />}>
+                Bản dịch &amp; Audio
+              </MenuItem>
+              <MenuItem to="/cms/articles" icon={<Newspaper size={18} />}>
+                Bài viết
+              </MenuItem>
+            </SidebarGroup>
+
+            <SidebarGroup label="LANDING PAGE">
+              <MenuItem to="/landing-settings" icon={<Globe size={18} />}>
+                Nội dung trang
+              </MenuItem>
+            </SidebarGroup>
+          </>
         )}
       </div>
 

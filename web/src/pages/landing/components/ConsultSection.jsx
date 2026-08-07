@@ -33,8 +33,13 @@ export default function ConsultSection({ data }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.fullName || !form.restaurantName || !form.phoneNumber) {
-      toast.error("Vui lòng điền đầy đủ thông tin bắt buộc.");
+    if (!form.fullName || !form.restaurantName || !form.phoneNumber || !form.email) {
+      toast.error("Vui lòng điền đầy đủ thông tin bắt buộc (bao gồm email).");
+      return;
+    }
+    // Validate email cơ bản
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      toast.error("Email không hợp lệ.");
       return;
     }
     setLoading(true);
@@ -147,7 +152,7 @@ export default function ConsultSection({ data }) {
 
                 <FormField
                   icon={<MessageSquare size={15} />}
-                  label="Email (không bắt buộc)"
+                  label="Email *"
                   value={form.email}
                   onChange={set("email")}
                   placeholder="example@gmail.com"

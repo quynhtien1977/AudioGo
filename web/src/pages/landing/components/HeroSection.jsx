@@ -1,14 +1,20 @@
-import { motion } from "framer-motion";
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 
 const iconMap = {
-  MapPin: LucideIcons.MapPin,
-  Globe: LucideIcons.Globe,
-  Heart: LucideIcons.Heart,
-  Star: LucideIcons.Star,
-  Users: LucideIcons.Users,
-  Music: LucideIcons.Music,
+  MapPin: LucideIcons.MapPin, Globe: LucideIcons.Globe, Heart: LucideIcons.Heart,
+  Star: LucideIcons.Star, Users: LucideIcons.Users, Music: LucideIcons.Music,
+  Headphones: LucideIcons.Headphones, Smartphone: LucideIcons.Smartphone,
+  Mic: LucideIcons.Mic, Volume2: LucideIcons.Volume2, PlayCircle: LucideIcons.PlayCircle,
+  Utensils: LucideIcons.Utensils, Coffee: LucideIcons.Coffee, ChefHat: LucideIcons.ChefHat,
+  Leaf: LucideIcons.Leaf, Flame: LucideIcons.Flame, Award: LucideIcons.Award,
+  BadgeCheck: LucideIcons.BadgeCheck, ShieldCheck: LucideIcons.ShieldCheck,
+  Zap: LucideIcons.Zap, Sparkles: LucideIcons.Sparkles, Layers: LucideIcons.Layers,
+  Route: LucideIcons.Route, Navigation: LucideIcons.Navigation, Clock: LucideIcons.Clock,
+  CheckCircle: LucideIcons.CheckCircle, ThumbsUp: LucideIcons.ThumbsUp,
+  MessageCircle: LucideIcons.MessageCircle, Download: LucideIcons.Download, QrCode: LucideIcons.QrCode,
 };
 
 function DynIcon({ name, ...props }) {
@@ -18,19 +24,41 @@ function DynIcon({ name, ...props }) {
 
 export default function HeroSection({ data }) {
   const {
-    badge = "🎧 Thuyết minh du lịch bằng âm thanh",
-    heading1 = "Khám Phá Phố Ẩm Thực",
-    heading2 = "Qua Từng Câu Chuyện",
+    badge       = "Thuyết minh du lịch bằng âm thanh",
+    heading1    = "Khám Phá Phố Ẩm Thực",
+    heading2    = "Qua Từng Câu Chuyện",
     description = "Ứng dụng thuyết minh tự động theo vị trí cho Phố Ẩm Thực Vĩnh Khánh Q4.",
-    cta1Text = "Tải App Android",
-    cta1Link = "#download",
-    cta2Text = "Xem cách hoạt động",
-    cta2Link = "#how-it-works",
-    backgroundImageUrl = "",
-    stats = [],
+    cta1Text    = "Tải App Android",
+    cta1Link    = "#download",
+    cta2Text    = "Xem cách hoạt động",
+    cta2Link    = "#how-it-works",
+    backgroundImages      = [],   // mảng { url, alt }
+    backgroundImageUrl    = "",   // legacy compat
+    stats                 = [],
   } = data || {};
 
+  // Resolve danh sách ảnh nền — hỗ trợ cả schema mới lẫn legacy
+  const bgList = backgroundImages?.length
+    ? backgroundImages.filter((b) => b.url)
+    : backgroundImageUrl
+      ? [{ url: backgroundImageUrl, alt: "" }]
+      : [];
+
+  const [bgIndex, setBgIndex] = useState(0);
+
+  // Auto-slide mỗi 5s
+  const tick = useCallback(() => {
+    if (bgList.length > 1) setBgIndex((i) => (i + 1) % bgList.length);
+  }, [bgList.length]);
+
+  useEffect(() => {
+    if (bgList.length <= 1) return;
+    const t = setInterval(tick, 5000);
+    return () => clearInterval(t);
+  }, [tick]);
+
   const scrollTo = (href) => {
+    if (!href?.startsWith("#")) { window.open(href, "_blank"); return; }
     const el = document.querySelector(href);
     if (el) el.scrollIntoView({ behavior: "smooth" });
   };
@@ -40,14 +68,36 @@ export default function HeroSection({ data }) {
       id="hero"
       className="relative min-h-screen flex items-center justify-center overflow-hidden"
     >
-      {/* Background */}
-      {backgroundImageUrl ? (
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${backgroundImageUrl})` }}
-        />
-      ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-[#1a0a14] to-[#0d0d1a]" />
+      {/* Background slideshow */}
+      <AnimatePresence mode="sync">
+        {bgList.length > 0 ? (
+          <motion.div
+            key={bgIndex}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.2, ease: "easeInOut" }}
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: `url(${bgList[bgIndex].url})` }}
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-[#1a0a14] to-[#0d0d1a]" />
+        )}
+      </AnimatePresence>
+
+      {/* Slideshow dots */}
+      {bgList.length > 1 && (
+        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+          {bgList.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setBgIndex(i)}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                i === bgIndex ? "w-6 bg-white" : "w-1.5 bg-white/40"
+              }`}
+            />
+          ))}
+        </div>
       )}
 
       {/* Decorative orbs */}

@@ -86,7 +86,7 @@ export default function App() {
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute roles={["Admin", "Owner"]}>
+            <ProtectedRoute roles={["Admin", "Owner", "Editor"]}>
               <MainLayout>
                 <DashboardPage />
               </MainLayout>
@@ -106,11 +106,11 @@ export default function App() {
           }
         />
 
-        {/* POIs (ADMIN + MANAGER only) */}
+        {/* POIs (ADMIN + OWNER + EDITOR) */}
         <Route
           path="/pois"
           element={
-            <ProtectedRoute roles={["Admin", "Owner"]}>
+            <ProtectedRoute roles={["Admin", "Owner", "Editor"]}>
               <MainLayout>
                 <POIPage />
               </MainLayout>
@@ -217,7 +217,7 @@ export default function App() {
         <Route
           path="/audio"
           element={
-            <ProtectedRoute roles={["Admin", "Owner"]}>
+            <ProtectedRoute roles={["Admin", "Owner", "Editor"]}>
               <MainLayout>
                 <AudioContentPage />
               </MainLayout>
@@ -249,11 +249,11 @@ export default function App() {
           }
         />
 
-        {/* Articles CMS (ADMIN only) */}
+        {/* Articles CMS (ADMIN + EDITOR) */}
         <Route
           path="/cms/articles"
           element={
-            <ProtectedRoute roles={["Admin"]}>
+            <ProtectedRoute roles={["Admin", "Editor"]}>
               <MainLayout>
                 <ArticlesPage />
               </MainLayout>
@@ -276,7 +276,7 @@ export default function App() {
         <Route
           path="/tours"
           element={
-            <ProtectedRoute roles={["Admin"]}>
+            <ProtectedRoute roles={["Admin", "Editor"]}>
               <MainLayout>
                 <ToursPage />
               </MainLayout>
@@ -381,11 +381,11 @@ export default function App() {
           }
         />
 
-        {/* Landing Settings (ADMIN only) */}
+        {/* Landing Settings (ADMIN + EDITOR) */}
         <Route
           path="/landing-settings"
           element={
-            <ProtectedRoute roles={["Admin"]}>
+            <ProtectedRoute roles={["Admin", "Editor"]}>
               <MainLayout>
                 <LandingSettingsPage />
               </MainLayout>
