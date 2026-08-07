@@ -1,6 +1,7 @@
 import { useParams, useLocation, useNavigate } from "react-router-dom"
 import { useEffect, useRef, useState } from "react"
-import { PencilLine, CornerDownLeft } from "lucide-react"
+import { PencilLine, CornerDownLeft, Loader2, MapPin } from "lucide-react"
+import PageLoader from "@/components/PageLoader"
 import toast from "react-hot-toast"
 
 import POIGallery from "@/components/POIGallery"
@@ -79,7 +80,8 @@ const POIDetailPage = () => {
             name: data.Title || "Unknown POI",
             description: data.Description || "",
             audio: data.AudioUrl || "",
-            languageCode: "vi",
+            // Đọc LanguageCode từ proposedData; fallback "vi" cho requests cũ
+            languageCode: data.LanguageCode || data.languageCode || "vi",
             categories: data.CategoryIds || [],
             lat: Number(data.Latitude) || 0,
             lng: Number(data.Longitude) || 0,
@@ -93,6 +95,7 @@ const POIDetailPage = () => {
             })(),
             ActivityRadius: Number(data.ActivationRadius) || 100,
           }
+
 
           setRejectReason(res.rejectReason || "")
           setRequestStatus(res.status)
@@ -254,8 +257,27 @@ const POIDetailPage = () => {
     }
   }
 
-  if (loading) return <div className="p-6">Loading...</div>
-  if (!poi) return <div className="p-6 text-red-500">Not found</div>
+  if (loading) {
+    return <PageLoader text="Đang tải chi tiết địa điểm POI..." />
+  }
+
+  if (!poi) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-pink-100/30 shadow-sm animate-fadeIn m-6">
+        <MapPin size={48} className="text-pink-200 mb-3" />
+        <h3 className="text-base font-bold text-gray-700">Không tìm thấy địa điểm POI này</h3>
+        <p className="text-xs text-gray-400 mt-1 max-w-sm">
+          Đường dẫn không hợp lệ hoặc địa điểm này đã bị gỡ khỏi hệ thống.
+        </p>
+        <button
+          onClick={() => navigate("/pois")}
+          className="mt-4 px-4 py-2 bg-pink-500 text-white font-bold rounded-xl text-xs hover:bg-pink-600 transition"
+        >
+          Quay lại danh sách
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="p-6 space-y-8">

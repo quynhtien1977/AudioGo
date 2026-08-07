@@ -210,21 +210,24 @@ namespace Server.Services
 
         public async Task<object> GetRequestStatsAsync()
         {
-            var stats = await _db.PoiRequests
+            // Đếm PENDING theo từng ActionType
+            var pendingStats = await _db.PoiRequests
                 .Where(x => x.Status == "PENDING")
                 .GroupBy(x => x.ActionType)
-                .Select(g => new
-                {
-                    ActionType = g.Key,
-                    Count = g.Count()
-                })
+                .Select(g => new { ActionType = g.Key, Count = g.Count() })
                 .ToListAsync();
+
+            // Đếm tổng APPROVED và REJECTED (toàn bộ, không phân ActionType)
+            var totalApproved = await _db.PoiRequests.CountAsync(x => x.Status == "APPROVED");
+            var totalRejected = await _db.PoiRequests.CountAsync(x => x.Status == "REJECTED");
 
             return new
             {
-                newCount    = stats.FirstOrDefault(x => x.ActionType == "CREATE")?.Count ?? 0,
-                updateCount = stats.FirstOrDefault(x => x.ActionType == "UPDATE")?.Count ?? 0,
-                deleteCount = stats.FirstOrDefault(x => x.ActionType == "DELETE")?.Count ?? 0
+                newCount      = pendingStats.FirstOrDefault(x => x.ActionType == "CREATE")?.Count ?? 0,
+                updateCount   = pendingStats.FirstOrDefault(x => x.ActionType == "UPDATE")?.Count ?? 0,
+                deleteCount   = pendingStats.FirstOrDefault(x => x.ActionType == "DELETE")?.Count ?? 0,
+                totalApproved = totalApproved,
+                totalRejected = totalRejected
             };
         }
 
@@ -305,12 +308,16 @@ namespace Server.Services
                                 {
                                     ContentId = Guid.NewGuid().ToString(),
                                     PoiId = targetPoiId,
-                                    LanguageCode = "vi",
+                                    // Dùng LanguageCode từ draft; fallback "vi" nếu null/empty (backward-compatible)
+                                    LanguageCode = !string.IsNullOrWhiteSpace(draft.LanguageCode)
+                                        ? draft.LanguageCode.Trim().ToLowerInvariant()
+                                        : "vi",
                                     Title = draft.Title ?? string.Empty,
                                     Description = draft.Description ?? string.Empty,
                                     AudioUrl = draft.AudioUrl,
                                     IsMaster = true
                                 });
+
 
                                 if (draft.CategoryIds != null)
                                 {

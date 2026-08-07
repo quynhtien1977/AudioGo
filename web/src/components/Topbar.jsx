@@ -2,12 +2,15 @@ import { useNavigate, useLocation } from "react-router-dom"
 import { Search, X, User } from "lucide-react"
 import { useState, useEffect, useRef, useContext } from "react"
 import { getAllPOIs } from "../api/poiApi"
+import { getAllPoiRequestsAll } from "../api/poiRequestApi"
 import { getCategoriesApi } from "../api/categoryApi"
 import { getAllToursApi } from "../api/tourApi"
 import { getUsersApi } from "../api/accountApi"
 import { audioContentApi } from "../api/audioContentApi"
 import { SearchContext } from "../context/SearchContext"
 import { useSubscription } from "../context/SubscriptionContext"
+import { getAllArticles } from "../api/articleApi"
+import * as subscriptionApi from "../api/subscriptionApi"
 
 export default function Topbar() {
   const navigate = useNavigate()
@@ -23,7 +26,10 @@ export default function Topbar() {
   const [isLoading, setIsLoading] = useState(false)
   const [allData, setAllData] = useState([])
   const [showResults, setShowResults] = useState(false)
+  const [searchFocused, setSearchFocused] = useState(false)
   const searchRef = useRef(null)
+  // Cache: track which pageType đã được fetch, tránh re-fetch khi không cần
+  const hasFetchedRef = useRef(null)
 
   const role = user?.role
 
@@ -48,18 +54,23 @@ export default function Topbar() {
 
   // Determine placeholder text based on the current route
   const getPlaceholder = () => {
-    if (location.pathname.includes("/poi")) {
+    if (location.pathname.includes("/poi/management")) {
+      return "Tìm đơn yêu cầu (Tên POI, Người gửi)...";
+    } else if (location.pathname.includes("/poi")) {
       return "Tìm POIs...";
     } else if (location.pathname.includes("/account")) {
       return "Tìm Tài khoản...";
     } else if (location.pathname.includes("/categories")) {
       return "Tìm Thể loại...";
-    }else if (location.pathname.includes("/tours")) {
+    } else if (location.pathname.includes("/tours")) {
       return "Tìm Tour...";
-    }else if (location.pathname.includes("/audio")) {
+    } else if (location.pathname.includes("/audio")) {
       return "Tìm Audio...";
-    }
-    else {
+    } else if (location.pathname.includes("/articles")) {
+      return "Tìm Bài viết (Tiêu đề, Tóm tắt)...";
+    } else if (location.pathname.includes("/transactions")) {
+      return "Tìm Giao dịch (ID, Tên)...";
+    } else {
       return "Tìm...";
     }
   }
@@ -67,12 +78,18 @@ export default function Topbar() {
   // Determine if the search bar should be displayed
   const shouldDisplaySearch = !location.pathname.includes("/dashboard") && 
                              !location.pathname.includes("/access-codes") &&
-                             !location.pathname.includes("/poi/management") &&
-                             !location.pathname.includes("/tracking")
+                             !location.pathname.includes("/tracking") &&
+                             !location.pathname.includes("/analytics") &&
+                             !location.pathname.includes("/admin/subscriptions") &&
+                             !location.pathname.includes("/requests") &&
+                             !location.pathname.includes("/profile") &&
+                             !location.pathname.includes("/device-activity")
 
   // Determine current page type
   const getCurrentPageType = () => {
-    if (location.pathname.includes("/poi")) {
+    if (location.pathname.includes("/poi/management")) {
+      return "poi-management"
+    } else if (location.pathname.includes("/poi")) {
       return "poi"
     } else if (location.pathname.includes("/accounts")) {
       return "account"
@@ -82,20 +99,45 @@ export default function Topbar() {
       return "tour"
     } else if (location.pathname.includes("/audio")) {
       return "audio"
+    } else if (location.pathname.includes("/articles")) {
+      return "article"
+    } else if (location.pathname.includes("/transactions")) {
+      return "transaction"
     }
     return null
   }
 
-  // Fetch data based on current page
+  // LAZY LOAD: Chỉ fetch data khi người dùng focus vào ô search
+  // Cache per pageType để tránh re-fetch không cần thiết
   useEffect(() => {
-    const fetchData = async () => {
-      if (!shouldDisplaySearch) return
+    const pageType = getCurrentPageType()
 
+    // Reset cache khi đổi route (pageType thay đổi)
+    if (hasFetchedRef.current !== pageType) {
+      setAllData([])
+      setSearchQuery("")
+      setSearchResults([])
+      hasFetchedRef.current = null
+    }
+  }, [location.pathname])
+
+  useEffect(() => {
+    if (!searchFocused || !shouldDisplaySearch) return
+
+    const pageType = getCurrentPageType()
+
+    // Đã fetch rồi → không fetch lại
+    if (hasFetchedRef.current === pageType && allData.length > 0) return
+
+    const fetchData = async () => {
       try {
         setIsLoading(true)
-        const pageType = getCurrentPageType()
 
         switch (pageType) {
+          case "poi-management":
+            const poiRequests = await getAllPoiRequestsAll()
+            setAllData(poiRequests || [])
+            break
           case "poi":
             const pois = await getAllPOIs()
             setAllData(pois)
@@ -113,14 +155,23 @@ export default function Topbar() {
             setAllData(accounts)
             break
           case "audio":
-            // Fetch all audio content (use high limit to get all at once)
             const audioRes = await audioContentApi.getAllTranslations(1, 1000)
             const audioData = audioRes?.data?.data || []
             setAllData(audioData)
             break
+          case "article":
+            const articles = await getAllArticles()
+            setAllData(articles || [])
+            break
+          case "transaction":
+            const txRes = await subscriptionApi.getAllTransactionsApi(1, 1000)
+            setAllData(txRes?.data || [])
+            break
           default:
             setAllData([])
         }
+
+        hasFetchedRef.current = pageType
       } catch (error) {
         console.error("Error fetching data for search:", error)
         setAllData([])
@@ -130,7 +181,7 @@ export default function Topbar() {
     }
 
     fetchData()
-  }, [location.pathname, shouldDisplaySearch])
+  }, [searchFocused, location.pathname, shouldDisplaySearch])
 
   // Search and filter data
   const handleSearch = (query) => {
@@ -149,6 +200,21 @@ export default function Topbar() {
     const searchTerm = query.toLowerCase()
 
     switch (pageType) {
+      case "poi-management":
+        results = allData.filter(
+          (req) => {
+            // Tìm trong proposedData (parse name) hoặc poiName
+            let name = req.poiName || ""
+            if (!name && req.proposedData) {
+              try {
+                const parsed = typeof req.proposedData === "string" ? JSON.parse(req.proposedData) : req.proposedData
+                name = parsed?.Title || parsed?.title || parsed?.name || ""
+              } catch {}
+            }
+            return name.toLowerCase().includes(searchTerm)
+          }
+        )
+        break
       case "poi":
         results = allData.filter(
           (poi) =>
@@ -181,6 +247,21 @@ export default function Topbar() {
           (item) =>
             item.poiName?.toLowerCase().includes(searchTerm) ||
             item.description?.toLowerCase().includes(searchTerm)
+        )
+        break
+      case "article":
+        results = allData.filter(
+          (art) =>
+            art.title?.toLowerCase().includes(searchTerm) ||
+            art.summary?.toLowerCase().includes(searchTerm)
+        )
+        break
+      case "transaction":
+        results = allData.filter(
+          (tx) =>
+            tx.transactionId?.toLowerCase().includes(searchTerm) ||
+            tx.accountUsername?.toLowerCase().includes(searchTerm) ||
+            tx.contactInfo?.toLowerCase().includes(searchTerm)
         )
         break
       default:
@@ -227,6 +308,16 @@ export default function Topbar() {
   const getItemDisplayName = (item) => {
     const pageType = getCurrentPageType()
     switch (pageType) {
+      case "poi-management": {
+        let name = item.poiName || ""
+        if (!name && item.proposedData) {
+          try {
+            const parsed = typeof item.proposedData === "string" ? JSON.parse(item.proposedData) : item.proposedData
+            name = parsed?.Title || parsed?.title || parsed?.name || ""
+          } catch {}
+        }
+        return name || "Yêu cầu POI"
+      }
       case "poi":
         return item.name
       case "category":
@@ -237,6 +328,10 @@ export default function Topbar() {
         return item.username || item.email
       case "audio":
         return item.poiName || "Audio"
+      case "article":
+        return item.title
+      case "transaction":
+        return item.transactionId ? (item.transactionId.substring(0, 10) + "...") : "Giao dịch"
       default:
         return ""
     }
@@ -254,7 +349,11 @@ export default function Topbar() {
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
             onKeyDown={handleKeyDown}
-            onFocus={() => searchQuery && setShowResults(true)}
+            onFocus={() => {
+              setSearchFocused(true)
+              if (searchQuery) setShowResults(true)
+            }}
+            onBlur={() => setSearchFocused(false)}
             className="w-full px-12 py-2 rounded-full bg-gray-100 outline-none focus:ring-2 focus:ring-pink-500 focus:bg-white transition"
           />
           {searchQuery && (
@@ -310,7 +409,7 @@ export default function Topbar() {
           onClick={handleLogout}
           className="px-3 py-1 rounded-full text-sm bg-gray-200 hover:bg-pink-500 hover:text-white transition duration-200"
         >
-          Logout
+          Đăng xuất
         </button>
 
         {/*  User Info */}

@@ -264,7 +264,7 @@ export default function SubscriptionPlansBanner({
   const Icon = SHARED_THEME.icon;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/45 p-3 backdrop-blur-sm md:p-5">
+    <div className="fixed inset-0 z-[9999] overflow-y-auto bg-black/45 p-3 backdrop-blur-sm md:p-5">
       <div className="relative mx-auto max-w-5xl rounded-[1.4rem] bg-[#FDF8FA] px-4 py-5 shadow-[0_20px_60px_rgba(15,23,42,0.16)] md:px-6 md:py-6">
         <button
           onClick={onClose}

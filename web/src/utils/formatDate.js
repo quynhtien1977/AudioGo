@@ -23,9 +23,14 @@ export const parseUTC = (timestamp) => {
  * @returns {string} Ví dụ: 23/04/2026 hoặc 23/04/2026 15:30
  */
 export const formatDateVN = (timestamp, includeTime = true) => {
-  if (!timestamp) return "N/A";
+  if (!timestamp) return "—";
   
   const date = parseUTC(timestamp);
+  
+  // Kiểm tra ngày mặc định/trống từ C# (DateTime.MinValue: 0001-01-01)
+  if (isNaN(date.getTime()) || date.getFullYear() <= 1) {
+    return "—";
+  }
   
   const options = {
     timeZone: "Asia/Ho_Chi_Minh",
@@ -51,8 +56,14 @@ export const formatDateVN = (timestamp, includeTime = true) => {
 export const getRelativeTime = (timestamp) => {
   if (!timestamp) return "";
   
-  const now = new Date();
   const date = parseUTC(timestamp);
+  
+  // Kiểm tra ngày mặc định/trống từ C# (DateTime.MinValue: 0001-01-01)
+  if (isNaN(date.getTime()) || date.getFullYear() <= 1) {
+    return "—";
+  }
+  
+  const now = new Date();
   const diffMs = now - date;
   
   const diffMins = Math.floor(diffMs / 60000);

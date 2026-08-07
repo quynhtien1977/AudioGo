@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Eye as EyeIcon, EyeOff as EyeOffIcon, Loader2 } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Loader2, Mail } from "lucide-react";
 import toast from "react-hot-toast";
 import { createUserApi } from "@/api/accountApi";
 import { isValidEmailFormat, isValidPhone, isEmailDomainValid } from "@/utils/validators";
@@ -10,37 +11,16 @@ export default function CreateAccountModal({ onClose, onCreated }) {
     email: "",
     username: "",
     phone: "",
-    password: "",
-    role: "",
+    role: "Owner",
   });
 
   const [loading, setLoading] = useState(false);
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({ email: "", phone: "" });
 
-  // Auto-generate password = username + phone
-  const generatePassword = (username, phone) => {
-    if (!username || !phone) return "";
-    return `${username}${phone}`;
-  };
-
   const handleChange = (key, value) => {
-    setForm((prev) => {
-      const updatedForm = { ...prev, [key]: value };
+    setForm((prev) => ({ ...prev, [key]: value }));
 
-      // Auto-gen password
-      if (key === "username" || key === "phone") {
-        updatedForm.password = generatePassword(
-          updatedForm.username,
-          updatedForm.phone
-        );
-      }
-
-      return updatedForm;
-    });
-
-    // Inline validation
     if (key === "email") {
       setErrors((prev) => ({
         ...prev,
@@ -84,13 +64,12 @@ export default function CreateAccountModal({ onClose, onCreated }) {
       setIsCheckingEmail(false);
     }
 
-    // ── Gọi API ────────────────────────────────────────────────────────
+    // ── Gọi API ─────────────────────────────────────────────────────────
     try {
       setLoading(true);
 
       const payload = {
         username: form.username,
-        password: form.password,
         role: form.role,
         fullName: form.name,
         email: form.email,
@@ -99,11 +78,17 @@ export default function CreateAccountModal({ onClose, onCreated }) {
 
       const res = await createUserApi(payload);
 
-      toast.success("Tạo tài khoản thành công!");
-      onCreated(res);
+      // Hiện cảnh báo email nếu có
+      if (res?.emailWarning) {
+        toast.error(res.emailWarning, { duration: 6000 });
+      } else {
+        toast.success(`Mật khẩu tạm đã được gửi tới email ${form.email}`);
+      }
+
+      onCreated(res?.account ?? res);
       onClose();
     } catch (err) {
-      const message = err?.response?.data || "Lỗi khi tạo tài khoản";
+      const message = err?.response?.data || err || "Lỗi khi tạo tài khoản";
       toast.error(message);
     } finally {
       setLoading(false);
@@ -116,8 +101,8 @@ export default function CreateAccountModal({ onClose, onCreated }) {
 
   const isProcessing = loading || isCheckingEmail;
 
-  return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+  return createPortal(
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white w-full max-w-[500px] rounded-[2.5rem] shadow-2xl p-10 relative">
 
         <button onClick={onClose} className="absolute top-6 right-8 text-[#D1B9C5] hover:text-[#8E707E]">✕</button>
@@ -175,25 +160,13 @@ export default function CreateAccountModal({ onClose, onCreated }) {
             )}
           </div>
 
-          {/* MẬT KHẨU */}
-          <div>
-            <label className={labelStyle}>Mật khẩu (tự động)</label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                value={form.password}
-                readOnly
-                className={inputStyle}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-5 top-1/2 -translate-y-1/2 text-[#8E707E]"
-              >
-                {showPassword ? <EyeOffIcon size={20} /> : <EyeIcon size={20} />}
-              </button>
-            </div>
-            <p className="text-xs text-[#D1B9C5] mt-1 ml-1 italic">Được tạo tự động từ Username + SĐT</p>
+          {/* MẬt khẩu sẽ được sinh tự động và gửi qua email */}
+          <div className="flex items-center gap-2 bg-[#FFF0F5] rounded-2xl px-5 py-3.5">
+            <Mail size={20} className="text-[#EE4B8E] flex-shrink-0" />
+            <p className="text-[13px] text-[#8E707E]">
+              Mật khẩu tạm thời sẽ được tự động sinh và gửi
+              thông <strong>qua email</strong> sau khi tạo tài khoản.
+            </p>
           </div>
 
           {/* PHÂN QUYỀN */}
@@ -205,6 +178,7 @@ export default function CreateAccountModal({ onClose, onCreated }) {
               className={inputStyle}
             >
               <option value="Owner">QUẢN LÝ NHÀ HÀNG</option>
+              <option value="Editor">NHÂN VIÊN CMS</option>
               <option value="Admin">ADMIN</option>
             </select>
           </div>
@@ -234,6 +208,7 @@ export default function CreateAccountModal({ onClose, onCreated }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

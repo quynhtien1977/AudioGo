@@ -1,6 +1,7 @@
 import { useState, useEffect, useContext } from "react";
-import { Headphones, Play, Pause, RefreshCw, Search, ChevronDown, ChevronUp, Languages, ChevronLeft, ChevronRight } from "lucide-react";
+import { Headphones, Play, Pause, RefreshCw, Search, ChevronDown, ChevronUp, Languages, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { formatDateVN } from "@/utils/formatDate";
+import PageHeader from "@/components/PageHeader";
 import { audioContentApi } from "../api/audioContentApi";
 import { SearchContext } from "@/context/SearchContext";
 
@@ -120,23 +121,24 @@ export default function AudioContentPage() {
     const gridLayout = "grid grid-cols-[1.5fr_1fr_2.5fr_1.5fr_1fr_1fr] lg:grid-cols-[1.5fr_1fr_3.5fr_1.5fr_1fr_1fr]";
 
     return (
-        <div>
+        <div className="space-y-6">
             {/* HEADER */}
-            <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h1 className="text-2xl font-bold uppercase">
-                        Quản lý Âm thanh & Bản Dịch
-                    </h1>
-                    <p className="text-gray-500 text-sm mt-1">
-                        Danh sách các kịch bản và tệp âm thanh đính kèm từng Địa điểm (POI).
-                    </p>
-                </div>
-                <button onClick={fetchContents} className="p-2 hover:bg-white rounded-full bg-gray-50 text-gray-500 border transition flex items-center gap-2">
-                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Tải lại
-                </button>
-            </div>
+            <PageHeader
+                title="QUẢN LÝ ÂM THANH & BẢN DỊCH"
+                description="Danh sách các kịch bản và tệp âm thanh đính kèm từng Địa điểm (POI)."
+                icon={<Headphones size={24} />}
+                actionButton={
+                    <button 
+                        onClick={fetchContents} 
+                        className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-xl font-bold transition-all shadow-sm active:scale-95 text-xs"
+                    >
+                        <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> 
+                        <span>Tải lại</span>
+                    </button>
+                }
+            />
 
-            <div className="w-full bg-white rounded-2xl border overflow-hidden shadow-sm">
+            <div className="w-full bg-white rounded-2xl border border-pink-100/30 overflow-hidden shadow-sm">
                 <div className="flex justify-between items-center p-6 border-b">
                     <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                         <Headphones className="w-5 h-5 text-gray-500" /> Bản ghi gốc ({filteredAudioContents.length})
@@ -146,7 +148,7 @@ export default function AudioContentPage() {
                 <div className="w-full overflow-x-auto">
                     <div className="min-w-[1000px]">
                         {/* HEADER ROW */}
-                        <div className={`${gridLayout} text-[13px] text-pink-400 px-6 py-3 border-b font-bold uppercase text-center bg-gray-50/50`}>
+                        <div className={`${gridLayout} text-[11px] text-pink-500 px-6 py-4 border-b font-bold uppercase text-center bg-pink-50/20 tracking-wider`}>
                             <span className="text-left">Tên Địa Điểm</span>
                             <span>Ngôn ngữ gốc</span>
                             <span className="text-left">Mô tả</span>
@@ -157,12 +159,18 @@ export default function AudioContentPage() {
 
                         {/* LOAD / EMPTY */}
                         {loading && filteredAudioContents.length === 0 && (
-                            <div className="p-10 text-center text-gray-400">Đang tải dữ liệu...</div>
+                            <div className="flex flex-col items-center justify-center p-20 text-pink-500 animate-fadeIn">
+                                <Loader2 className="animate-spin mb-3" size={32} />
+                                <p className="text-sm font-semibold text-gray-700">Đang tải dữ liệu âm thanh...</p>
+                            </div>
                         )}
                         {!loading && filteredAudioContents.length === 0 && (
-                            <div className="p-10 text-center text-gray-400 flex flex-col items-center">
-                                <Search className="w-10 h-10 text-gray-200 mb-2" />
-                                Chưa có nội dung âm thanh nào.
+                            <div className="flex flex-col items-center justify-center py-16 text-center animate-fadeIn">
+                                <Headphones size={48} className="text-pink-200 mb-3 animate-pulse" />
+                                <h3 className="text-base font-bold text-gray-700">Không tìm thấy bản ghi âm nào</h3>
+                                <p className="text-xs text-gray-400 mt-1 max-w-sm">
+                                    Thử thay đổi từ khóa tìm kiếm hoặc làm mới dữ liệu để cập nhật danh sách âm thanh.
+                                </p>
                             </div>
                         )}
 

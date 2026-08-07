@@ -180,6 +180,19 @@ const AddPOIPage = () => {
         </div>
       </div>
 
+      {/* TOP BANNER */}
+      <div className="bg-pink-500 p-4 rounded-2xl text-white flex items-center justify-between shadow-lg shadow-pink-100">
+        <div className="flex items-center gap-3">
+          <Info size={20} />
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-widest">Lưu ý quan trọng</h3>
+            <p className="text-xs opacity-90">
+              Các POI mới tạo sẽ ở trạng thái <strong>PENDING</strong> và cần được Admin phê duyệt trước khi hiển thị trên ứng dụng khách hàng.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-12 gap-8">
         {/* LEFT */}
         <div className="col-span-8 space-y-8">
@@ -256,16 +269,6 @@ const AddPOIPage = () => {
             </div>
             <p className="text-[9px] text-gray-400 italic text-center">
               * Nhấp trực tiếp lên bản đồ để lấy tọa độ chính xác
-            </p>
-          </div>
-
-          <div className="bg-pink-500 p-6 rounded-[32px] text-white space-y-2 shadow-lg shadow-pink-100">
-            <div className="flex items-center gap-2">
-              <Info size={16} />
-              <span className="text-[10px] font-bold uppercase tracking-widest">Lưu ý</span>
-            </div>
-            <p className="text-xs leading-relaxed opacity-90">
-              Các POI mới tạo sẽ ở trạng thái <strong>PENDING</strong> và cần được Admin phê duyệt trước khi hiển thị trên ứng dụng khách hàng.
             </p>
           </div>
         </div>

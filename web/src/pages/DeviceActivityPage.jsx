@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { MapPin, Headphones, Clock, ArrowLeft, AlertCircle, Activity, Navigation } from 'lucide-react'
+import { MapPin, Headphones, Clock, ArrowLeft, AlertCircle, Activity, Navigation, Loader2 } from 'lucide-react'
 import { getDeviceActivity } from '@/api/analyticsApi'
 import { getAllPOIs } from '@/api/poiApi'
+import PageHeader from "@/components/PageHeader"
+import StatsCard from "@/components/StatsCard"
 
 // ───────────────────────────── LEAFLET IMPORT ─────────────────────────────
 import { MapContainer, TileLayer, Polyline, CircleMarker, Popup, Marker } from 'react-leaflet'
@@ -94,23 +96,19 @@ export default function DeviceActivityPage() {
   ).size
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '1100px', margin: '0 auto', padding: '2rem 0', width: '100%' }}>
+    <div className="space-y-6 animate-fadeIn">
 
       {/* HEADER */}
-      <div>
-        <h1 style={{ fontSize: '2rem', fontWeight: '800', color: '#1f2937', margin: '0 0 0.5rem 0', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <Navigation size={30} className="text-pink-500" />
-          Timeline Hoạt Động Thiết Bị
-        </h1>
-        <p style={{ color: '#6b7280', margin: 0 }}>
-          Xem lịch sử di chuyển GPS và lịch sử nghe POI của từng thiết bị theo dòng thời gian.
-        </p>
-      </div>
+      <PageHeader
+        title="TIMELINE HOẠT ĐỘNG THIẾT BỊ"
+        description="Xem lịch sử di chuyển GPS và lịch sử nghe POI của từng thiết bị theo dòng thời gian."
+        icon={<Navigation size={24} />}
+      />
 
       {/* SEARCH CONTROLS */}
-      <div style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '1rem', boxShadow: '0 1px 4px rgba(0,0,0,0.08)', border: '1px solid #e5e7eb', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <div style={{ flex: 1, minWidth: '200px' }}>
-          <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '600', color: '#374151', marginBottom: '0.4rem' }}>
+      <div className="bg-white p-6 rounded-2xl border border-pink-100/30 flex gap-4 flex-wrap items-end shadow-sm">
+        <div className="flex-1 min-w-[200px] text-left">
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">
             Device ID
           </label>
           <input
@@ -118,17 +116,17 @@ export default function DeviceActivityPage() {
             onChange={e => setDeviceIdInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSearch()}
             placeholder="Nhập Device ID..."
-            style={{ width: '100%', padding: '0.65rem 1rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', fontSize: '1rem', boxSizing: 'border-box' }}
+            className="w-full px-4 py-2.5 bg-pink-50/50 border border-pink-100/30 rounded-xl outline-none focus:ring-2 focus:ring-pink-200 text-sm font-semibold"
           />
         </div>
-        <div>
-          <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '600', color: '#374151', marginBottom: '0.4rem' }}>
+        <div className="text-left">
+          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">
             Khoảng thời gian
           </label>
           <select
             value={days}
             onChange={e => setDays(parseInt(e.target.value))}
-            style={{ padding: '0.65rem 1rem', borderRadius: '0.5rem', border: '1px solid #d1d5db', fontSize: '1rem', backgroundColor: 'white' }}
+            className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-semibold cursor-pointer outline-none focus:ring-2 focus:ring-pink-200"
           >
             {DAYS_OPTIONS.map(d => (
               <option key={d} value={d}>{d} ngày gần nhất</option>
@@ -138,15 +136,19 @@ export default function DeviceActivityPage() {
         <button
           onClick={handleSearch}
           disabled={loading}
-          style={{ padding: '0.65rem 2rem', backgroundColor: loading ? '#9ca3af' : '#ec4899', color: 'white', fontWeight: '600', fontSize: '1rem', borderRadius: '0.5rem', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          className={`px-6 py-2.5 rounded-xl text-sm font-bold text-white transition-all transform active:scale-95 flex items-center gap-2 ${
+            loading
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 shadow-md shadow-pink-100"
+          }`}
         >
-          {loading ? <><Activity size={18} className="animate-spin" /> Đang tải...</> : 'Xem hoạt động'}
+          {loading ? <><Loader2 size={16} className="animate-spin" /> Đang tải...</> : 'Xem hoạt động'}
         </button>
       </div>
 
       {/* ERROR */}
       {error && (
-        <div style={{ backgroundColor: '#fef2f2', color: '#b91c1c', padding: '1rem 1.25rem', borderRadius: '0.5rem', border: '1px solid #fecaca', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div className="bg-red-50 text-red-700 px-4 py-3 rounded-xl border border-red-200 flex items-center gap-2 text-sm font-semibold animate-fadeIn">
           <AlertCircle size={18} /> {error}
         </div>
       )}
@@ -155,25 +157,25 @@ export default function DeviceActivityPage() {
       {activity && (
         <>
           {/* SUMMARY CARDS */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
-            <StatCard label="Thiết bị" value={activity.deviceId} small />
-            <StatCard label="Tổng lượt nghe POI" value={activity.totalListens} color="#7c3aed" />
-            <StatCard label="Số POI đã ghé" value={uniquePoisCount} color="#2563eb" />
-            <StatCard label="Hoạt động trong" value={`${days} ngày`} color="#059669" />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <StatsCard title="Thiết bị" value={activity.deviceId} sub="Đang theo dõi" />
+            <StatsCard title="Tổng lượt nghe POI" value={activity.totalListens} color="text-purple-600" />
+            <StatsCard title="Số POI đã ghé" value={uniquePoisCount} color="text-blue-600" />
+            <StatsCard title="Hoạt động trong" value={`${days} ngày`} color="text-emerald-600" />
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.9rem', color: '#6b7280' }}>
-            <span>🕐 Lần đầu thấy: <strong>{formatTime(activity.firstSeen)}</strong></span>
-            <span>🕐 Lần cuối thấy: <strong>{formatTime(activity.lastSeen)}</strong></span>
+          <div className="flex flex-col gap-1 text-sm text-gray-500 font-medium">
+            <span>🕐 Lần đầu thấy: <strong className="text-gray-700">{formatTime(activity.firstSeen)}</strong></span>
+            <span>🕐 Lần cuối thấy: <strong className="text-gray-700">{formatTime(activity.lastSeen)}</strong></span>
           </div>
 
           {/* MAP + TIMELINE side by side */}
-          <div style={{ display: 'grid', gridTemplateColumns: gpsPoints.length > 0 ? '1fr 1fr' : '1fr', gap: '1.5rem' }}>
+          <div className={`grid gap-6 ${gpsPoints.length > 0 ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
 
             {/* BẢN ĐỒ ROUTE */}
             {gpsPoints.length > 0 && (
-              <div style={{ borderRadius: '1rem', overflow: 'hidden', border: '1px solid #e5e7eb', height: '450px' }}>
-                <div style={{ backgroundColor: '#f9fafb', padding: '0.75rem 1rem', borderBottom: '1px solid #e5e7eb', fontWeight: '600', color: '#374151', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div className="bg-white rounded-2xl border border-pink-100/30 overflow-hidden shadow-sm h-[450px]">
+                <div className="bg-pink-50/20 px-4 py-3 border-b border-pink-100/20 font-bold text-xs text-pink-500 uppercase tracking-wider flex items-center gap-2">
                   <MapPin size={16} /> Bản đồ lộ trình
                 </div>
                 <MapContainer center={center} zoom={15} style={{ height: 'calc(100% - 40px)', width: '100%' }} scrollWheelZoom={true}>
@@ -199,8 +201,8 @@ export default function DeviceActivityPage() {
                       position={[poi.latitude, poi.longitude]} 
                     >
                       <Popup>
-                        <div style={{ fontWeight: '600' }}>{poi.title}</div>
-                        <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                        <div className="font-semibold">{poi.title}</div>
+                        <div className="text-xs text-gray-500">
                           {poi.latitude.toFixed(5)}, {poi.longitude.toFixed(5)}
                         </div>
                       </Popup>
@@ -211,37 +213,35 @@ export default function DeviceActivityPage() {
             )}
 
             {/* TIMELINE */}
-            <div style={{ backgroundColor: 'white', borderRadius: '1rem', border: '1px solid #e5e7eb', overflow: 'hidden' }}>
-              <div style={{ backgroundColor: '#f9fafb', padding: '0.75rem 1rem', borderBottom: '1px solid #e5e7eb', fontWeight: '600', color: '#374151', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div className="bg-white rounded-2xl border border-pink-100/30 overflow-hidden shadow-sm flex flex-col">
+              <div className="bg-pink-50/20 px-4 py-3 border-b border-pink-100/20 font-bold text-xs text-pink-500 uppercase tracking-wider flex items-center gap-2">
                 <Clock size={16} /> Timeline ({activity.timeline?.length || 0} sự kiện)
               </div>
-              <div style={{ maxHeight: '408px', overflowY: 'auto', padding: '1rem' }}>
+              <div className="max-h-[408px] overflow-y-auto p-4 space-y-4">
                 {(!activity.timeline || activity.timeline.length === 0) && (
-                  <p style={{ color: '#9ca3af', textAlign: 'center', padding: '2rem' }}>Không có sự kiện nào trong khoảng thời gian này.</p>
+                  <p className="text-gray-400 text-center py-8">Không có sự kiện nào trong khoảng thời gian này.</p>
                 )}
                 {activity.timeline?.map((event, i) => (
-                  <div key={i} style={{ display: 'flex', gap: '1rem', marginBottom: '0.75rem' }}>
+                  <div key={i} className="flex gap-4">
                     {/* Icon */}
-                    <div style={{
-                      width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      backgroundColor: event.eventType === 'location' ? '#dbeafe' : '#ede9fe',
-                      color: event.eventType === 'location' ? '#2563eb' : '#7c3aed'
-                    }}>
+                    <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center ${
+                      event.eventType === 'location' ? 'bg-blue-50 text-blue-500' : 'bg-purple-50 text-purple-500'
+                    }`}>
                       {event.eventType === 'location' ? <MapPin size={16} /> : <Headphones size={16} />}
                     </div>
                     {/* Content */}
-                    <div style={{ flex: 1, borderBottom: '1px solid #f3f4f6', paddingBottom: '0.75rem' }}>
-                      <div style={{ fontSize: '0.8rem', color: '#9ca3af' }}>{formatTime(event.timestamp)}</div>
+                    <div className="flex-1 border-b border-pink-50/50 pb-3">
+                      <div className="text-xs text-gray-400">{formatTime(event.timestamp)}</div>
                       {event.eventType === 'location' ? (
-                        <div style={{ fontSize: '0.9rem', color: '#374151', fontWeight: '500' }}>
+                        <div className="text-sm text-gray-700 font-medium mt-1">
                           📍 {event.latitude?.toFixed(5)}, {event.longitude?.toFixed(5)}
                         </div>
                       ) : (
-                        <div style={{ fontSize: '0.9rem', color: '#374151', fontWeight: '500' }}>
-                          🎧 {event.poiTitle || event.poiId}
+                        <div className="text-sm text-gray-700 font-medium mt-1 flex items-center flex-wrap gap-1.5">
+                          <span>🎧 {event.poiTitle || event.poiId}</span>
                           {event.listenDuration && (
-                            <span style={{ color: '#7c3aed', fontSize: '0.8rem', marginLeft: '0.5rem' }}>
-                              ({formatDuration(event.listenDuration)})
+                            <span className="text-purple-500 text-xs bg-purple-50 px-2 py-0.5 rounded-md font-mono">
+                              {formatDuration(event.listenDuration)}
                             </span>
                           )}
                         </div>
@@ -255,17 +255,6 @@ export default function DeviceActivityPage() {
           </div>
         </>
       )}
-
-    </div>
-  )
-}
-
-// ───────────────────────────── STAT CARD ───────────────────────────────────
-function StatCard({ label, value, color = '#1f2937', small = false }) {
-  return (
-    <div style={{ backgroundColor: 'white', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-      <div style={{ fontSize: '0.8rem', fontWeight: '600', color: '#6b7280', marginBottom: '0.25rem' }}>{label}</div>
-      <div style={{ fontSize: small ? '0.9rem' : '1.5rem', fontWeight: '700', color, wordBreak: 'break-all' }}>{value}</div>
     </div>
   )
 }

@@ -7,4 +7,7 @@ public interface IBlobStorageService
 
     /// <summary>Xoá blob theo URL hoặc path.</summary>
     Task DeleteAsync(string containerName, string blobPath);
+
+    /// <summary>Xoá blob dựa trên đường dẫn URL tuyệt đối.</summary>
+    Task DeleteBlobByUrlAsync(string url);
 }

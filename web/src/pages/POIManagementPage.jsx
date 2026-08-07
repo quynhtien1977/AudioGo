@@ -1,8 +1,19 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { CheckCircle, AlertCircle, Trash2 } from "lucide-react"
+import {
+  CheckCircle,
+  AlertCircle,
+  Trash2,
+  BadgeCheck,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Activity,
+} from "lucide-react"
 
 import { getPoiRequestStats } from "@/api/poiRequestApi"
+import PageHeader from "@/components/PageHeader"
+import StatsCard from "@/components/StatsCard"
 
 export default function POIManagementPage() {
   const navigate = useNavigate()
@@ -11,6 +22,9 @@ export default function POIManagementPage() {
     newCount: 0,
     updateCount: 0,
     deleteCount: 0,
+    totalApproved: 0,
+    totalRejected: 0,
+    totalPending: 0,
   })
 
   // ================= FETCH STATS =================
@@ -18,11 +32,13 @@ export default function POIManagementPage() {
     const fetchStats = async () => {
       try {
         const res = await getPoiRequestStats()
-
         setStats({
-          newCount: res.newCount || 0,
-          updateCount: res.updateCount || 0,
-          deleteCount: res.deleteCount || 0,
+          newCount:       res.newCount       || 0,
+          updateCount:    res.updateCount    || 0,
+          deleteCount:    res.deleteCount    || 0,
+          totalApproved:  res.totalApproved  || 0,
+          totalRejected:  res.totalRejected  || 0,
+          totalPending:   (res.newCount || 0) + (res.updateCount || 0) + (res.deleteCount || 0),
         })
       } catch (err) {
         console.error("FETCH STATS ERROR:", err)
@@ -32,19 +48,18 @@ export default function POIManagementPage() {
     fetchStats()
   }, [])
 
-  // 🔥 GIỮ NGUYÊN UI CŨ
   const managementCards = [
     {
       id: "new",
       title: "POI Mới Tạo",
       count: stats.newCount,
-      countLabel: "NEW",
-      description: "Xem và phê duyệt các địa điểm được thêm gần đây và đối với công đồng",
+      countLabel: "chờ duyệt",
+      description: "Xem và phê duyệt các địa điểm được thêm gần đây từ cộng đồng",
       linkText: "Xem chi tiết →",
       icon: CheckCircle,
       bgColor: "bg-gradient-to-br from-blue-50 to-blue-100",
-      badgeBg: "bg-blue-200",
-      badgeText: "text-blue-700",
+      badgeBg: stats.newCount > 0 ? "bg-blue-500" : "bg-blue-200",
+      badgeText: stats.newCount > 0 ? "text-white" : "text-blue-700",
       iconColor: "text-blue-600",
       linkColor: "text-blue-600 hover:text-blue-700",
       onClick: () => navigate("/poi/management/new"),
@@ -53,13 +68,13 @@ export default function POIManagementPage() {
       id: "update",
       title: "POI Cần Cập Nhật",
       count: stats.updateCount,
-      countLabel: "UPDATES",
-      description: "Xem xét yêu cầu sửa đổi và cải thiện hình ảnh và cải thiện dữ liệu của địa điểm",
+      countLabel: "chờ xử lý",
+      description: "Xem xét yêu cầu sửa đổi và cải thiện dữ liệu của địa điểm",
       linkText: "Xử lý ngay →",
       icon: AlertCircle,
       bgColor: "bg-gradient-to-br from-amber-50 to-amber-100",
-      badgeBg: "bg-amber-200",
-      badgeText: "text-amber-700",
+      badgeBg: stats.updateCount > 0 ? "bg-amber-500" : "bg-amber-200",
+      badgeText: stats.updateCount > 0 ? "text-white" : "text-amber-700",
       iconColor: "text-amber-600",
       linkColor: "text-amber-600 hover:text-amber-700",
       onClick: () => navigate("/poi/management/updates"),
@@ -68,29 +83,60 @@ export default function POIManagementPage() {
       id: "delete",
       title: "POI Cần Xóa",
       count: stats.deleteCount,
-      countLabel: "DELETIONS",
-      description: "Xử lý yêu cầu loại bỏ các điểm tham quan đóng cửa hoặc bị báo cáo vấn đề",
+      countLabel: "chờ xử lý",
+      description: "Xử lý yêu cầu loại bỏ các điểm tham quan đóng cửa hoặc bị báo cáo",
       linkText: "Xem yêu cầu →",
       icon: Trash2,
       bgColor: "bg-gradient-to-br from-red-50 to-red-100",
-      badgeBg: "bg-red-200",
-      badgeText: "text-red-700",
+      badgeBg: stats.deleteCount > 0 ? "bg-red-500" : "bg-red-200",
+      badgeText: stats.deleteCount > 0 ? "text-white" : "text-red-700",
       iconColor: "text-red-600",
       linkColor: "text-red-600 hover:text-red-700",
       onClick: () => navigate("/poi/management/deletions"),
     },
   ]
 
+  const totalPending = stats.newCount + stats.updateCount + stats.deleteCount
+
   return (
-    <div className="p-6">
+    <div className="space-y-6">
       {/* HEADER */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
-          QUẢN LÝ POI
-        </h1>
-        <p className="text-gray-600 text-base">
-          Duyệt và quản lý vòng đời điểm tham quan
-        </p>
+      <PageHeader
+        title="QUẢN LÝ XÉT DUYỆT POIs"
+        description="Duyệt và quản lý vòng đời, yêu cầu chỉnh sửa/xóa điểm tham quan từ cộng đồng."
+        icon={<BadgeCheck size={24} />}
+      />
+
+      {/* OVERVIEW STATS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatsCard
+          title="TỔNG ĐANG CHỜ"
+          value={totalPending}
+          sub="Cần xử lý ngay"
+          color={totalPending > 0 ? "text-yellow-600" : "text-gray-400"}
+          icon={<Clock size={20} />}
+        />
+        <StatsCard
+          title="ĐÃ PHÊ DUYỆT"
+          value={stats.totalApproved}
+          sub="Tổng đơn được duyệt"
+          color="text-green-600"
+          icon={<CheckCircle2 size={20} />}
+        />
+        <StatsCard
+          title="ĐÃ TỪ CHỐI"
+          value={stats.totalRejected}
+          sub="Tổng đơn bị từ chối"
+          color="text-red-600"
+          icon={<XCircle size={20} />}
+        />
+        <StatsCard
+          title="TỔNG ĐƠN"
+          value={totalPending + stats.totalApproved + stats.totalRejected}
+          sub="Tất cả yêu cầu POI"
+          color="text-pink-600"
+          icon={<Activity size={20} />}
+        />
       </div>
 
       {/* MANAGEMENT CARDS GRID */}
@@ -107,14 +153,12 @@ export default function POIManagementPage() {
                 <div className={`${card.iconColor} p-3 bg-white rounded-full`}>
                   <IconComponent size={24} />
                 </div>
-                <span className={`${card.badgeBg} ${card.badgeText} px-3 py-1 rounded-full text-xs font-bold`}>
+                <span className={`${card.badgeBg} ${card.badgeText} px-3 py-1 rounded-full text-xs font-bold transition-colors`}>
                   {card.count} {card.countLabel}
                 </span>
               </div>
 
-              <h2 className="text-xl font-bold text-gray-800 mb-2">
-                {card.title}
-              </h2>
+              <h2 className="text-xl font-bold text-gray-800 mb-2">{card.title}</h2>
 
               <p className="text-gray-700 text-sm mb-6 leading-relaxed">
                 {card.description}
@@ -132,39 +176,6 @@ export default function POIManagementPage() {
             </div>
           )
         })}
-      </div>
-
-      {/* QUICK STATS SUMMARY */}
-      <div className="mt-12 bg-white rounded-2xl p-6 shadow-md">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">
-          Tóm tắt
-        </h3>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="text-center p-4 bg-blue-50 rounded-xl">
-            <p className="text-3xl font-bold text-blue-600 mb-2">
-              {stats.newCount}
-            </p>
-            <p className="text-sm text-gray-600">
-              POI mới chờ phê duyệt
-            </p>
-          </div>
-          <div className="text-center p-4 bg-amber-50 rounded-xl">
-            <p className="text-3xl font-bold text-amber-600 mb-2">
-              {stats.updateCount}
-            </p>
-            <p className="text-sm text-gray-600">
-              POI chờ cập nhật
-            </p>
-          </div>
-          <div className="text-center p-4 bg-red-50 rounded-xl">
-            <p className="text-3xl font-bold text-red-600 mb-2">
-              {stats.deleteCount}
-            </p>
-            <p className="text-sm text-gray-600">
-              POI chờ xóa
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   )

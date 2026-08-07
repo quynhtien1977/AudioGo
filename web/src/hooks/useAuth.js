@@ -26,10 +26,11 @@ export default function useAuth() {
       }
 
       const userData = {
-        username: identifier, // Lưu identifier (username/email/phone)
+        username: identifier,
         fullName: res.fullName,
         role: res.role,
         accountId: res.accountId,
+        mustChangePassword: res.mustChangePassword ?? false,
       };
 
       if (rememberMe) {

@@ -4,12 +4,18 @@ namespace Shared.DTOs
     public class AccountCreateRequest
     {
         public string Username { get; set; } = null!;
-        public string Password { get; set; } = null!;
         public string Role { get; set; } = "User";
 
         public string? FullName { get; set; }
         public string? Email { get; set; }
         public string? PhoneNumber { get; set; }
+    }
+
+    // CREATE RESPONSE (kèm cảnh báo nếu email gửi thất bại)
+    public class AccountCreateResponse
+    {
+        public AccountDto Account { get; set; } = null!;
+        public string? EmailWarning { get; set; }
     }
 
     // UPDATE

@@ -10,6 +10,9 @@ namespace Server.Models
         public string PhoneNumber { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
         public bool IsLocked { get; set; } = false;
+        public bool MustChangePassword { get; set; } = false;
+        public string? PasswordResetToken { get; set; }
+        public DateTime? PasswordResetTokenExpireAt { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
         public DateTime? DeletedAt { get; set; }

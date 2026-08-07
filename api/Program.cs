@@ -1,5 +1,7 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Server.Data;
@@ -107,6 +109,7 @@ builder.Services.AddScoped<IContentPipelineService, ContentPipelineService>();
 builder.Services.AddScoped<ICmsPoiService, CmsPoiService>();
 builder.Services.AddScoped<IPoiRequestService, PoiRequestService>();
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+builder.Services.AddHttpClient<IEmailService, ResendEmailService>();
 builder.Services.AddHttpContextAccessor();
 
 // ── Subscription & Payment ────────────────────────────────────────────
@@ -115,6 +118,29 @@ builder.Services.AddScoped<PaymentWebhookService>();
 builder.Services.AddHostedService<PaymentCleanupService>(); // Tự động expire PENDING tx sau 30 phút
 builder.Services.AddHostedService<DataRetentionService>(); // Tự động xóa dữ liệu định vị (30 ngày) và lịch sử nghe (90 ngày)
 
+
+// ── Rate Limiting — chống brute-force và spam ───────────────────────
+// AuthPolicy: 10 requests / phút mỗi IP — áp dụng cho /api/auth/*
+builder.Services.AddRateLimiter(opts =>
+{
+    opts.AddPolicy("auth", ctx =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window           = TimeSpan.FromMinutes(1),
+                PermitLimit      = 10,
+                QueueLimit       = 0,
+                AutoReplenishment = true
+            }));
+    opts.RejectionStatusCode = 429; // Too Many Requests
+    opts.OnRejected = async (ctx, _) =>
+    {
+        ctx.HttpContext.Response.Headers["Retry-After"] = "60";
+        await ctx.HttpContext.Response.WriteAsync(
+            "{\"error\":\"Quá nhiều yêu cầu. Vui lòng thử lại sau 1 phút.\"}");
+    };
+});
 
 // ── Controllers & OpenAPI ─────────────────────────────────────────────
 builder.Services.AddControllers();
@@ -127,6 +153,7 @@ app.MapOpenApi();           // /openapi/v1.json — dùng cho React generate TS 
 app.UseStaticFiles();       // serve /uploads/... cho audio + image
 app.UseRouting();           // ✅ UseRouting PHẢI trước UseCors khi dùng [EnableCors]
 app.UseCors("WebCmsPolicy"); // ✅ CORS sau UseRouting, trước UseAuthentication
+app.UseRateLimiter();       // ✅ Rate Limiting — sau CORS, trước Auth
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

@@ -14,17 +14,14 @@ import {
   DollarSign,
   Sparkles,
   Newspaper,
+  Globe,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
-import { useState } from "react";
-
 import useAuth from "@/hooks/useAuth";
-import SubscriptionPlansBanner from "./SubscriptionPlansBanner";
 
-export default function Sidebar() {
+export default function Sidebar({ onShowPlans }) {
   const { user } = useAuth();
   const role = user?.role;
-  const [showPlansBanner, setShowPlansBanner] = useState(false);
 
   return (
     <div className="sticky top-0 h-screen w-64 border-r bg-white p-4 flex flex-col">
@@ -57,6 +54,9 @@ export default function Sidebar() {
               </MenuItem>
               <MenuItem to="/cms/articles" icon={<Newspaper size={18} />}>
                 Bài viết
+              </MenuItem>
+              <MenuItem to="/landing-settings" icon={<Globe size={18} />}>
+                Trang chủ
               </MenuItem>
             </SidebarGroup>
 
@@ -102,12 +102,37 @@ export default function Sidebar() {
             </MenuItem>
           </SidebarGroup>
         )}
+
+        {role === "Editor" && (
+          <>
+            <SidebarGroup label="NỘI DUNG">
+              <MenuItem to="/pois" icon={<MapPin size={18} />}>
+                POIs
+              </MenuItem>
+              <MenuItem to="/tours" icon={<RouteIcon size={18} />}>
+                Tour
+              </MenuItem>
+              <MenuItem to="/audio" icon={<Headphones size={18} />}>
+                Bản dịch &amp; Audio
+              </MenuItem>
+              <MenuItem to="/cms/articles" icon={<Newspaper size={18} />}>
+                Bài viết
+              </MenuItem>
+            </SidebarGroup>
+
+            <SidebarGroup label="LANDING PAGE">
+              <MenuItem to="/landing-settings" icon={<Globe size={18} />}>
+                Nội dung trang
+              </MenuItem>
+            </SidebarGroup>
+          </>
+        )}
       </div>
 
       {role === "Owner" && (
         <div className="mt-auto pt-3">
           <button
-            onClick={() => setShowPlansBanner(true)}
+            onClick={() => onShowPlans && onShowPlans()}
             className="w-full flex items-center gap-3 rounded-lg p-3 bg-pink-50 text-pink-600 hover:bg-pink-100 transition-all font-medium"
           >
             <Sparkles size={18} />
@@ -115,11 +140,6 @@ export default function Sidebar() {
           </button>
         </div>
       )}
-
-      <SubscriptionPlansBanner
-        isOpen={showPlansBanner}
-        onClose={() => setShowPlansBanner(false)}
-      />
     </div>
   );
 

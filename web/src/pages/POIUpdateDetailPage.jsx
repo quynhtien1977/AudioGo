@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { ArrowLeft, X, Check, MapPin, Zap, Layers, FileText, Volume2, Globe } from "lucide-react"
+import { ArrowLeft, X, Check, MapPin, Zap, Layers, FileText, Volume2, Globe, Loader2, AlertCircle } from "lucide-react"
+import PageLoader from "@/components/PageLoader"
 import toast from "react-hot-toast"
 import { getPoiDetail } from "@/api/poiApi"
 import { getPoiRequestDetail, reviewPoiRequest } from "@/api/poiRequestApi"
 import { getCategoriesApi } from "@/api/categoryApi"
 import ConfirmModal from "@/components/ConfirmModal"
 import { formatPriority } from "@/components/PriorityBadge"
+import { getPoiChanges } from "@/utils/poiChangeDetector"
 
 // Bug #4: chuẩn hóa null/undefined/"" về "" để so sánh audio đúng
 const normalizeAudio = (v) => (v == null ? "" : v.trim())
@@ -59,6 +61,44 @@ const InfoCard = ({ icon: Icon, label, value, isChanged = false }) => (
   </div>
 )
 
+// Category badges (hỗ trợ hiển thị nhiều category)
+const CategoryCard = ({ categories = [], isChanged = false }) => (
+  <div className={`p-4 rounded-lg border transition ${
+    isChanged
+      ? "bg-amber-50 border-amber-200"
+      : "bg-gray-50 border-gray-200 hover:border-gray-300"
+  }`}>
+    <div className="flex items-start gap-3">
+      <div className={`p-2 rounded-lg ${isChanged ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-600"}`}>
+        <Layers size={20} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">
+          Danh mục
+        </label>
+        {categories.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {categories.map((name, i) => (
+              <span
+                key={i}
+                className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                  isChanged
+                    ? "bg-amber-100 text-amber-800 border border-amber-200"
+                    : "bg-blue-50 text-blue-700 border border-blue-100"
+                }`}
+              >
+                {name}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400 italic">—</p>
+        )}
+      </div>
+    </div>
+  </div>
+)
+
 // Section Component
 const Section = ({ title, children }) => (
   <div className="space-y-3">
@@ -79,6 +119,7 @@ export default function POIUpdateDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [categoryMap, setCategoryMap] = useState({}) // id → name
+  const [changeCount, setChangeCount] = useState(0)
   
   // Modal states
   const [showApproveModal, setShowApproveModal] = useState(false)
@@ -117,55 +158,11 @@ export default function POIUpdateDetailPage() {
         }
         console.log("Proposed Data:", proposedData)
 
-        // ── OLD: lấy từ database ──────────────────────────────────────────
-        const masterContent  = poiDetail.contents?.find(c => c.isMaster)
-        const oldCategoryId  = poiDetail.categoryIds?.[0] || ""
-        // Ngôn ngữ của master content (bản mà owner đã chọn làm nội dung chính)
-        const oldLanguageCode = masterContent?.languageCode || ""
-
-        const oldPoiFormatted = {
-          id: poiDetail.poiId,
-          name: masterContent?.title || "Không có tên",
-          categoryId: oldCategoryId,
-          categoryName: catMap[oldCategoryId] || poiDetail.category || "Không xác định",
-          description: masterContent?.description || "",
-          latitude: String(poiDetail.latitude || ""),
-          longitude: String(poiDetail.longitude || ""),
-          priority: Number(poiDetail.priority ?? 2),
-          // Hiển thị ngôn ngữ của master content
-          language: oldLanguageCode,
-          audio: normalizeAudio(masterContent?.audioUrl),
-          images: (() => {
-            const gallery = poiDetail.gallery?.map(g => g.imageUrl) || []
-            const logo = poiDetail.logoUrl
-            if (logo) return [logo, ...gallery.filter(u => u !== logo)]
-            return gallery
-          })(),
-        }
-
-        // ── NEW: lấy từ proposedData ─────────────────────────────────────
-        const newCategoryId = proposedData.CategoryIds?.[0] ?? oldCategoryId
-        // LanguageCode từ proposedData — AddPOI & Update đều gửi LanguageCode
-        const newLanguageCode = proposedData.LanguageCode ?? oldLanguageCode
-
-        const newPoiFormatted = {
-          id: proposedData.poiId || oldPoiFormatted.id,
-          name: proposedData.Title ?? oldPoiFormatted.name,
-          categoryId: newCategoryId,
-          categoryName: catMap[newCategoryId] || oldPoiFormatted.categoryName,
-          description: proposedData.Description ?? oldPoiFormatted.description,
-          latitude: proposedData.Latitude != null ? String(proposedData.Latitude) : oldPoiFormatted.latitude,
-          longitude: proposedData.Longitude != null ? String(proposedData.Longitude) : oldPoiFormatted.longitude,
-          priority: proposedData.Priority != null ? Number(proposedData.Priority) : oldPoiFormatted.priority,
-          language: newLanguageCode,
-          audio: proposedData.AudioUrl !== undefined
-            ? normalizeAudio(proposedData.AudioUrl)
-            : oldPoiFormatted.audio,
-          images: proposedData.GalleryImageUrls ?? oldPoiFormatted.images,
-        }
+        const { oldPoi: oldPoiFormatted, newPoi: newPoiFormatted, changeCount: count } = getPoiChanges(poiDetail, proposedData, catMap)
 
         setOldPoi(oldPoiFormatted)
         setNewPoi(newPoiFormatted)
+        setChangeCount(count)
       } catch (err) {
         console.error("Load POI detail error:", err)
         setError("Không thể tải dữ liệu. Vui lòng thử lại.")
@@ -231,40 +228,31 @@ export default function POIUpdateDetailPage() {
   }
 
   if (loading) {
-    return (
-      <div className="p-6 text-center text-gray-500">
-        Đang tải...
-      </div>
-    )
+    return <PageLoader text="Đang tải thông tin chi tiết yêu cầu..." />
   }
 
   if (error) {
     return (
-      <div className="p-6 text-center text-red-500">
-        {error}
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center bg-white rounded-2xl border border-red-100 shadow-sm m-6 animate-fadeIn">
+        <AlertCircle size={48} className="text-red-500 mb-3" />
+        <h3 className="text-base font-bold text-gray-700">Đã xảy ra lỗi</h3>
+        <p className="text-xs text-red-500 mt-1 max-w-sm">{error}</p>
       </div>
     )
   }
 
   if (!oldPoi || !newPoi) {
     return (
-      <div className="p-6 text-center text-gray-500">
-        Không tìm thấy dữ liệu
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center bg-white rounded-2xl border border-pink-100/30 shadow-sm m-6 animate-fadeIn">
+        <MapPin size={48} className="text-pink-200 mb-3" />
+        <h3 className="text-base font-bold text-gray-700">Không tìm thấy dữ liệu</h3>
+        <p className="text-xs text-gray-400 mt-1 max-w-sm">Yêu cầu chỉnh sửa này không tồn tại hoặc đã bị xóa.</p>
       </div>
     )
   }
 
-  // Fix: đếm trường thay đổi dùng các key semantic đúng
-  const changedFields = [
-    oldPoi.name !== newPoi.name ? 1 : 0,
-    oldPoi.categoryId !== newPoi.categoryId ? 1 : 0,
-    (oldPoi.latitude !== newPoi.latitude || oldPoi.longitude !== newPoi.longitude) ? 1 : 0,
-    oldPoi.priority !== newPoi.priority ? 1 : 0,
-    oldPoi.language !== newPoi.language ? 1 : 0,
-    isAudioChanged(oldPoi.audio, newPoi.audio) ? 1 : 0,
-    oldPoi.description !== newPoi.description ? 1 : 0,
-    JSON.stringify(oldPoi.images) !== JSON.stringify(newPoi.images) ? 1 : 0,
-  ].reduce((a, b) => a + b, 0)
+  // changedFields bây giờ sử dụng state changeCount được tính toán đồng bộ từ getPoiChanges
+  const changedFields = changeCount
 
   return (
     <div className="bg-gradient-to-b from-gray-50 to-white min-h-screen pb-32">
@@ -329,11 +317,9 @@ export default function POIUpdateDetailPage() {
                   value={oldPoi.name}
                   isChanged={isDifferent(oldPoi.name, newPoi.name)}
                 />
-                <InfoCard 
-                  icon={Layers}
-                  label="Danh mục"
-                  value={oldPoi.categoryName}
-                  isChanged={isDifferent(oldPoi.categoryId, newPoi.categoryId)}
+                <CategoryCard
+                  categories={oldPoi.categoryNames}
+                  isChanged={false}
                 />
                 <InfoCard 
                   icon={MapPin}
@@ -433,11 +419,9 @@ export default function POIUpdateDetailPage() {
                   value={newPoi.name}
                   isChanged={isDifferent(oldPoi.name, newPoi.name)}
                 />
-                <InfoCard 
-                  icon={Layers}
-                  label="Danh mục"
-                  value={newPoi.categoryName}
-                  isChanged={isDifferent(oldPoi.categoryId, newPoi.categoryId)}
+                <CategoryCard
+                  categories={newPoi.categoryNames}
+                  isChanged={JSON.stringify([...(oldPoi.categoryIds || [])].sort()) !== JSON.stringify([...(newPoi.categoryIds || [])].sort())}
                 />
                 <InfoCard 
                   icon={MapPin}

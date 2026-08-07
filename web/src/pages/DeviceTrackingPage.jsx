@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react"
-import { getLocationLogs, getLocationStats } from "../api/locationLogApi"
-import DeviceTrackingTable from "../components/DeviceTrackingTable"
-import Card from "../components/Card"
-import { Activity, Calendar, BarChart3, Wifi, WifiOff } from "lucide-react"
-import { signalRService } from "../lib/signalRService"
+import { getLocationLogs, getLocationStats } from "@/api/locationLogApi"
+import DeviceTrackingTable from "@/components/DeviceTrackingTable"
+import StatsCard from "@/components/StatsCard"
+import PageHeader from "@/components/PageHeader"
+import { Activity, Calendar, BarChart3, Wifi, WifiOff, Smartphone } from "lucide-react"
+import { signalRService } from "@/lib/signalRService"
 
 export default function DeviceTrackingPage() {
   const [currentPage, setCurrentPage] = useState(1)
@@ -253,65 +254,44 @@ export default function DeviceTrackingPage() {
   }))
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+    <div className="space-y-6">
       
       {/* HEADER */}
-      <div style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "0.5rem",
-        marginBottom: "0.5rem"
-      }}>
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between"
-        }}>
-          <h1 style={{
-            fontSize: "2rem",
-            fontWeight: "700",
-            color: "#1f2937",
-            margin: 0
-          }}>
-            QUẢN LÝ THIẾT BỊ
-          </h1>
-          
-        </div>
-      </div>
+      <PageHeader
+        title="QUẢN LÝ THIẾT BỊ"
+        description="Theo dõi vị trí và trạng thái hoạt động trực tuyến của các thiết bị thời gian thực."
+        icon={<Smartphone size={24} />}
+      />
 
       {/* DASHBOARD CARDS */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(4, 1fr)",
-        gap: "1rem"
-      }}>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {/* ⚡ ONLINE NOW — real-time in-memory */}
-        <Card
-          title="Online ngay bây giờ"
+        <StatsCard
+          title="ONLINE NGAY BÂY GIỜ"
           value={onlineNow}
           sub={signalRStatus === "connected" ? "🟢 Kết nối SignalR" : "🔴 Mất kết nối"}
           color="text-emerald-600"
           icon={signalRStatus === "connected" ? <Wifi size={20} /> : <WifiOff size={20} />}
         />
 
-        <Card
-          title="Online hôm nay"
+        <StatsCard
+          title="ONLINE HÔM NAY"
           value={stats.today}
           sub="Thiết bị hoạt động hôm nay"
           color="text-green-600"
           icon={<Activity size={20} />}
         />
 
-        <Card
-          title="Trong tháng"
+        <StatsCard
+          title="TRONG THÁNG"
           value={stats.month}
           sub="Thiết bị hoạt động tháng này"
           color="text-yellow-600"
           icon={<Calendar size={20} />}
         />
 
-        <Card
-          title="Trong năm"
+        <StatsCard
+          title="TRONG NĂM"
           value={stats.year}
           sub="Thiết bị hoạt động năm nay"
           color="text-blue-600"

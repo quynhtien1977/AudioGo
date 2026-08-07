@@ -90,12 +90,13 @@ const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role, getCategor
           </div>
 
           <div className="flex-1 min-h-[45px]">
-            <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Ngôn ngữ</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Ngôn ngữ <span className="text-[9px] lowercase font-normal italic text-gray-400">(không thể thay đổi)</span></p>
             <div className="relative group">
               <select
                 value={poi.languageCode || ""}
                 onChange={(e) => handleChange("languageCode", e.target.value)}
-                className={`appearance-none cursor-pointer ${inputStyle}`}
+                disabled={true}
+                className={`appearance-none ${inputStyle} opacity-60 cursor-not-allowed`}
               >
                 <option value="" disabled>
                   Chọn ngôn ngữ
@@ -197,14 +198,15 @@ const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role, getCategor
         </div>
         {/* Priority */}
         <div className="flex-1 min-h-[45px]">
-          <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Độ ưu tiên</p>
+          <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Độ ưu tiên <span className="text-[9px] lowercase font-normal italic text-gray-400">(theo gói cước)</span></p>
 
           {isEditing ? (
             <div className="relative">
               <select
                 value={poi.priority ?? 1}
                 onChange={(e) => handleChange("priority", Number(e.target.value))}
-                className={`appearance-none cursor-pointer ${inputStyle}`}
+                disabled={true}
+                className={`appearance-none ${inputStyle} opacity-60 cursor-not-allowed`}
               >
                 <option value={1}>LOW</option>
                 <option value={2}>MEDIUM</option>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { User, LockKeyhole, LogIn, UtensilsCrossed, Eye, EyeOff } from 'lucide-react';
+import { useNavigate, Link } from "react-router-dom";
+import { User, LockKeyhole, LogIn, Eye, EyeOff,UtensilsCrossed } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import useAuth from "@/hooks/useAuth";
@@ -52,7 +52,7 @@ const LoginPage = () => {
       if (["Admin", "Owner"].includes(role)) {
         navigate("/dashboard");
       } else {
-        navigate("/");
+        navigate("/dashboard");
       }
 
     } catch (err) {
@@ -143,6 +143,12 @@ const LoginPage = () => {
                   Ghi nhớ đăng nhập
                 </span>
               </label>
+              <Link
+                to="/forgot-password"
+                className="text-sm text-[#EE4B8E] hover:text-[#D63A79] font-medium transition-colors"
+              >
+                Quên mật khẩu?
+              </Link>
             </div>
 
             <button className="w-full bg-[#EE4B8E] hover:bg-[#D63A79] text-white font-bold py-4 rounded-2xl shadow-lg shadow-pink-200 transition-all active:scale-[0.98] flex items-center justify-center gap-3 text-lg mt-4">
