@@ -12,6 +12,8 @@ namespace Server.Controllers.Cms
     [Authorize]
     public class CmsCategoryController : ControllerBase
     {
+        // GET actions: mọi role đã login (Owner cần xem danh sách category để gán POI)
+        // POST/PUT/DELETE: chỉ Admin
         private readonly ICategoryRepository _repo;
         private readonly Server.Services.Interfaces.ITranslationService _translationService;
 
@@ -37,6 +39,7 @@ namespace Server.Controllers.Cms
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<CategoryDto>> Create([FromBody] CategoryCreateRequest req)
         {
             // Dịch Name sang 7 ngôn ngữ cố định
@@ -53,6 +56,7 @@ namespace Server.Controllers.Cms
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<CategoryDto>> Update(
             string id, [FromBody] CategoryCreateRequest req)
         {
@@ -74,6 +78,7 @@ namespace Server.Controllers.Cms
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(string id)
         {
             var ok = await _repo.DeleteAsync(id);
@@ -91,6 +96,7 @@ namespace Server.Controllers.Cms
 
         /// <summary>Gán một POI vào category.</summary>
         [HttpPost("{id}/pois")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AddPoi(string id, [FromBody] string poiId)
         {
             await _repo.AddPoiAsync(id, poiId);
@@ -99,6 +105,7 @@ namespace Server.Controllers.Cms
 
         /// <summary>Bỏ POI khỏi category.</summary>
         [HttpDelete("{id}/pois/{poiId}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> RemovePoi(string id, string poiId)
         {
             await _repo.RemovePoiAsync(id, poiId);

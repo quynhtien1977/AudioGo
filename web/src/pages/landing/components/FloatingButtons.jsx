@@ -68,8 +68,7 @@ export default function FloatingButtons({ apkUrl, zaloLink, facebookLink, phone,
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden mb-1"
           >
-            {/* Header */}
-            <div className="px-4 py-3.5 bg-gradient-to-r from-pink-500 to-orange-400">
+            <div className="px-4 py-3.5 bg-pink-600">
               <p className="text-white font-bold text-sm leading-tight">Liên hệ AudioGo</p>
               <p className="text-white/80 text-xs mt-0.5">Chúng tôi sẵn sàng hỗ trợ bạn</p>
             </div>
@@ -146,7 +145,7 @@ export default function FloatingButtons({ apkUrl, zaloLink, facebookLink, phone,
           className={`relative flex items-center gap-2 px-4 py-2.5 rounded-full text-white text-sm font-semibold shadow-xl transition-all ${
             open
               ? "bg-gray-700 shadow-gray-500/20"
-              : "bg-gradient-to-r from-pink-500 to-orange-400 shadow-pink-500/30"
+              : "bg-pink-600 shadow-pink-600/30 hover:bg-pink-700"
           }`}
           title={open ? "Đóng" : "Liên hệ"}
         >

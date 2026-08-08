@@ -39,7 +39,7 @@ export default function Navbar() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
           {/* Logo */}
           <a href="#" className="flex items-center gap-2 select-none">
-            <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-orange-400 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-pink-600 rounded-lg flex items-center justify-center">
               <Map size={16} className="text-white" />
             </div>
             <span
@@ -82,7 +82,7 @@ export default function Navbar() {
             </Link>
             <button
               onClick={() => scrollTo("#consult")}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-pink-500 to-orange-400 text-white shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all"
+              className="px-4 py-2 rounded-lg text-sm font-semibold bg-pink-600 text-white shadow-sm hover:shadow-md hover:bg-pink-700 hover:scale-[1.02] active:scale-[0.98] transition-all"
             >
               Đăng ký làm đối tác
             </button>
@@ -130,7 +130,7 @@ export default function Navbar() {
               </Link>
               <button
                 onClick={() => scrollTo("#consult")}
-                className="px-4 py-3 rounded-lg font-semibold bg-gradient-to-r from-pink-500 to-orange-400 text-white text-center"
+                className="px-4 py-3 rounded-lg font-semibold bg-pink-600 text-white text-center hover:bg-pink-700 transition-colors"
               >
                 Đăng ký làm đối tác
               </button>

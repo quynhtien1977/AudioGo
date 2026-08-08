@@ -8,7 +8,7 @@ export default function NotFoundPage() {
 
   const handleAction = () => {
     if (isAuthenticated) {
-      navigate("/dashboard");
+      navigate("/admin/dashboard");
     } else {
       navigate("/");
     }

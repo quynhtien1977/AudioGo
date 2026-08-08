@@ -31,55 +31,55 @@ export default function Sidebar({ onShowPlans }) {
       </h1>
 
       <div className="space-y-5 flex-1 overflow-y-auto pr-1">
-        <SidebarGroup label="TỔNG QUAN">
-          <MenuItem to="/dashboard" icon={<LayoutDashboard size={18} />}>
+                <SidebarGroup label="TỔNG QUAN">
+          <MenuItem to="/admin/dashboard" icon={<LayoutDashboard size={18} />}>
             Tổng quan
           </MenuItem>
         </SidebarGroup>
 
         {role === "Admin" && (
           <>
-            <SidebarGroup label="NỘI DUNG">
-              <MenuItem to="/pois" icon={<MapPin size={18} />}>
+                    <SidebarGroup label="NỘI DUNG">
+              <MenuItem to="/admin/pois" icon={<MapPin size={18} />}>
                 POIs
               </MenuItem>
-              <MenuItem to="/tours" icon={<RouteIcon size={18} />}>
+              <MenuItem to="/admin/tours" icon={<RouteIcon size={18} />}>
                 Tour
               </MenuItem>
-              <MenuItem to="/categories" icon={<Layers size={18} />}>
+              <MenuItem to="/admin/categories" icon={<Layers size={18} />}>
                 Danh mục
               </MenuItem>
-              <MenuItem to="/audio" icon={<Headphones size={18} />}>
+              <MenuItem to="/admin/audio" icon={<Headphones size={18} />}>
                 Bản dịch & Audio
               </MenuItem>
-              <MenuItem to="/cms/articles" icon={<Newspaper size={18} />}>
+              <MenuItem to="/admin/articles" icon={<Newspaper size={18} />}>
                 Bài viết
               </MenuItem>
-              <MenuItem to="/landing-settings" icon={<Globe size={18} />}>
+              <MenuItem to="/admin/landing" icon={<Globe size={18} />}>
                 Trang chủ
               </MenuItem>
             </SidebarGroup>
 
-            <SidebarGroup label="VẬN HÀNH">
-              <MenuItem to="/accounts" icon={<Users size={18} />}>
+                    <SidebarGroup label="VẬN HÀNH">
+              <MenuItem to="/admin/accounts" icon={<Users size={18} />}>
                 Tài khoản
               </MenuItem>
-              <MenuItem to="/access-codes" icon={<QrCode size={18} />}>
+              <MenuItem to="/admin/access-codes" icon={<QrCode size={18} />}>
                 Mã Truy Cập
               </MenuItem>
-              <MenuItem to="/poi/management" icon={<BadgeCheck size={18} />}>
+              <MenuItem to="/admin/pois/management" icon={<BadgeCheck size={18} />}>
                 Xét duyệt
               </MenuItem>
-              <MenuItem to="/tracking" icon={<Smartphone size={18} />}>
+              <MenuItem to="/admin/tracking" icon={<Smartphone size={18} />}>
                 Quản lý thiết bị
               </MenuItem>
-              <MenuItem to="/device-activity" icon={<RouteIcon size={18} />}>
+              <MenuItem to="/admin/device-activity" icon={<RouteIcon size={18} />}>
                 Hoạt động thiết bị
               </MenuItem>
             </SidebarGroup>
 
-            <SidebarGroup label="KINH DOANH">
-              <MenuItem to="/analytics" icon={<BarChart3 size={18} />}>
+                    <SidebarGroup label="KINH DOANH">
+              <MenuItem to="/admin/analytics" icon={<BarChart3 size={18} />}>
                 Phân tích
               </MenuItem>
               <MenuItem to="/admin/subscriptions" icon={<CreditCard size={18} />}>
@@ -93,11 +93,11 @@ export default function Sidebar({ onShowPlans }) {
         )}
 
         {role === "Owner" && (
-          <SidebarGroup label="NỘI DUNG">
-            <MenuItem to="/pois" icon={<MapPin size={18} />}>
+                  <SidebarGroup label="NỘI DUNG">
+            <MenuItem to="/admin/pois" icon={<MapPin size={18} />}>
               POIs
             </MenuItem>
-            <MenuItem to="/audio" icon={<Headphones size={18} />}>
+            <MenuItem to="/admin/audio" icon={<Headphones size={18} />}>
               Audio
             </MenuItem>
           </SidebarGroup>
@@ -105,23 +105,23 @@ export default function Sidebar({ onShowPlans }) {
 
         {role === "Editor" && (
           <>
-            <SidebarGroup label="NỘI DUNG">
-              <MenuItem to="/pois" icon={<MapPin size={18} />}>
+                      <SidebarGroup label="NỘI DUNG">
+              <MenuItem to="/admin/pois" icon={<MapPin size={18} />}>
                 POIs
               </MenuItem>
-              <MenuItem to="/tours" icon={<RouteIcon size={18} />}>
+              <MenuItem to="/admin/tours" icon={<RouteIcon size={18} />}>
                 Tour
               </MenuItem>
-              <MenuItem to="/audio" icon={<Headphones size={18} />}>
+              <MenuItem to="/admin/audio" icon={<Headphones size={18} />}>
                 Bản dịch &amp; Audio
               </MenuItem>
-              <MenuItem to="/cms/articles" icon={<Newspaper size={18} />}>
+              <MenuItem to="/admin/articles" icon={<Newspaper size={18} />}>
                 Bài viết
               </MenuItem>
             </SidebarGroup>
 
             <SidebarGroup label="LANDING PAGE">
-              <MenuItem to="/landing-settings" icon={<Globe size={18} />}>
+              <MenuItem to="/admin/landing" icon={<Globe size={18} />}>
                 Nội dung trang
               </MenuItem>
             </SidebarGroup>

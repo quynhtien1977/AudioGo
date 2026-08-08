@@ -145,7 +145,7 @@ const AddPOIPage = () => {
       await createPoiRequest(payload);
       toast.success("Tạo yêu cầu POI mới thành công! Admin sẽ xem xét.");
       setShowConfirmModal(false);
-      setTimeout(() => navigate("/pois"), 1500);
+            setTimeout(() => navigate("/admin/pois"), 1500);
     } catch (err) {
       console.error(err);
       toast.error("Tạo yêu cầu thất bại!");

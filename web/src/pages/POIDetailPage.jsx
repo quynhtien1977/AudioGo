@@ -234,7 +234,7 @@ const POIDetailPage = () => {
 
       setIsEditing(false)
       setShowConfirm(false)
-      navigate("/pois")  // Bug #6: tự navigate về danh sách sau khi submit
+      navigate("/admin/pois")  // Bug #6: tự navigate về danh sách sau khi submit
 
     } catch (err) {
       console.error(err)
@@ -270,7 +270,7 @@ const POIDetailPage = () => {
           Đường dẫn không hợp lệ hoặc địa điểm này đã bị gỡ khỏi hệ thống.
         </p>
         <button
-          onClick={() => navigate("/pois")}
+          onClick={() => navigate("/admin/pois")}
           className="mt-4 px-4 py-2 bg-pink-500 text-white font-bold rounded-xl text-xs hover:bg-pink-600 transition"
         >
           Quay lại danh sách

@@ -103,7 +103,7 @@ export default function POIUpdateListPage() {
     fetchData()
   }, [])
 
-  const handleReview = (id) => navigate("/poi/management/updates/" + id)
+  const handleReview = (id) => navigate("/admin/pois/management/updates/" + id)
 
   const handleApprove = (id) => {
     setSelectedPoiId(id)

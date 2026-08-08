@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using Server.Helpers;
 using Server.Models;
 using Server.Repositories.Interfaces;
 using Shared.DTOs;
@@ -34,12 +35,18 @@ namespace Server.Controllers.Cms
             return Ok(result);
         }
 
-         /// <summary>Chi tiết POI kèm tất cả content, gallery và category.</summary>
+                 /// <summary>Chi tiết POI kèm tất cả content, gallery và category.</summary>
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin,Owner")]
         public async Task<ActionResult> GetById(string id)
         {
+            // Ownership check — dùng helper query trực tiếp POI để check quyền sở hữu
+            var (error, _) = await PoiOwnershipHelper.CheckOwnershipAsync(id, User, _pois);
+            if (error != null) return error as ActionResult ?? StatusCode(403);
+
             var poiDetail = await _cmsPoiService.GetPoiDetailForCmsAsync(id);
             if (poiDetail == null) return NotFound();
+
             return Ok(poiDetail);
         }
 
@@ -124,16 +131,18 @@ namespace Server.Controllers.Cms
             });
         }
 
-        [HttpPost]
+                [HttpPost]
+        [Authorize(Roles = "Admin,Owner")]
         public async Task<ActionResult<Poi>> Create([FromBody] PoiCreateRequest req)
         {
+            // AccountId LUÔN lấy từ JWT claim — không nhận từ request body
             var accountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(accountId)) return Unauthorized();
 
             var poi = new Poi
             {
                 PoiId            = Guid.NewGuid().ToString(),
-                AccountId        = accountId,
+                AccountId        = accountId,   // <-- luôn gán từ JWT, không từ client
                 Latitude         = req.Latitude,
                 Longitude        = req.Longitude,
                 ActivationRadius = req.ActivationRadius,
@@ -144,27 +153,33 @@ namespace Server.Controllers.Cms
             return CreatedAtAction(nameof(GetById), new { id = created.PoiId }, created);
         }
 
-        [HttpPut("{id}")]
+                [HttpPut("{id}")]
+        [Authorize(Roles = "Admin,Owner")]
         public async Task<ActionResult<Poi>> Update(string id, [FromBody] PoiUpdateRequest req)
         {
-            // Dùng GetByIdForCmsAsync để tìm POI bao gồm cả inactive (GetByIdAsync chỉ trả active)
-            var existing = await _pois.GetByIdForCmsAsync(id);
-            if (existing is null) return NotFound();
+            // Ownership check — chặn IDOR: Owner không được sửa POI của Owner khác
+            var (error, existing) = await PoiOwnershipHelper.CheckOwnershipAsync(id, User, _pois);
+            if (error != null) return error as ActionResult ?? StatusCode(403);
 
-            if (req.Latitude.HasValue)         existing.Latitude         = req.Latitude.Value;
-            if (req.Longitude.HasValue)        existing.Longitude        = req.Longitude.Value;
-            if (req.ActivationRadius.HasValue) existing.ActivationRadius = req.ActivationRadius.Value;
-            if (req.Priority.HasValue)         existing.Priority         = req.Priority.Value;
-            if (req.LogoUrl is not null)       existing.LogoUrl          = req.LogoUrl;
-            if (req.IsActive.HasValue)         existing.IsActive         = req.IsActive.Value;
+            if (req.Latitude.HasValue)         existing!.Latitude         = req.Latitude.Value;
+            if (req.Longitude.HasValue)        existing!.Longitude        = req.Longitude.Value;
+            if (req.ActivationRadius.HasValue) existing!.ActivationRadius = req.ActivationRadius.Value;
+            if (req.Priority.HasValue)         existing!.Priority         = req.Priority.Value;
+            if (req.LogoUrl is not null)       existing!.LogoUrl          = req.LogoUrl;
+            if (req.IsActive.HasValue)         existing!.IsActive         = req.IsActive.Value;
 
-            var updated = await _pois.UpdateAsync(existing);
+            var updated = await _pois.UpdateAsync(existing!);
             return Ok(updated);
         }
 
-        [HttpDelete("{id}")]
+                [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin,Owner")]
         public async Task<IActionResult> Delete(string id)
         {
+            // Ownership check — chặn IDOR
+            var (error, _) = await PoiOwnershipHelper.CheckOwnershipAsync(id, User, _pois);
+            if (error != null) return error;
+
             var ok = await _pois.DeleteAsync(id);
             return ok ? NoContent() : NotFound();
         }

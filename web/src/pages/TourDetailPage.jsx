@@ -46,7 +46,7 @@ const TourDetailPage = () => {
       } catch (err) {
         console.error("Error loading tour:", err);
         toast.error("Lỗi khi tải Tour");
-        navigate("/tours");
+            navigate("/admin/tours");
       } finally {
         setIsLoading(false);
       }
@@ -84,7 +84,7 @@ const TourDetailPage = () => {
 
   // === LOGIC QUAY LẠI ===
   const handleGoBack = () => {
-    navigate("/tours");
+        navigate("/admin/tours");
   };
 
   // === LOGIC LƯU THAY ĐỔI TỔNG THỂ ===

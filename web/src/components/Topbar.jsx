@@ -416,7 +416,7 @@ export default function Topbar() {
         {role === "Owner" ? (
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate("/profile")}
+              onClick={() => navigate("/admin/profile")}
               className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-pink-50 transition"
             >
               <User size={16} className="text-pink-500" />

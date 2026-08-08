@@ -681,7 +681,7 @@ export default function POIPage() {
                       )}
 
                       <NavLink
-                        to={`/pois/${poi.rank}`}
+                                                to={`/admin/pois/${poi.rank}`}
                         className="w-8 h-8 flex items-center justify-center rounded-full transition-colors text-pink-500 hover:text-pink-600 hover:bg-pink-50"
                         title="Xem chi tiết POI"
                         >
@@ -857,7 +857,7 @@ export default function POIPage() {
                       <div className="flex items-center gap-1">
                           {request.actionType !== "DELETE" && (
                             <NavLink
-                              to={`/pois/requests/${request.requestId}`}
+                                                            to={`/admin/pois/requests/${request.requestId}`}
                               className="w-8 h-8 flex items-center justify-center rounded-full transition-colors text-pink-500 hover:text-pink-600 hover:bg-pink-50"
                               title="Xem chi tiết POI"
                             >
@@ -926,7 +926,7 @@ export default function POIPage() {
 
         {role === "Owner" && (
           <NavLink
-            to="/pois/add"
+                        to="/admin/pois/add"
             className="group flex items-center gap-2 px-6 py-3 bg-pink-500 text-white rounded-2xl font-bold 
                       shadow-lg shadow-pink-200 hover:bg-pink-600 hover:shadow-pink-300 
                       transition-all duration-300 uppercase text-[10px] tracking-widest"

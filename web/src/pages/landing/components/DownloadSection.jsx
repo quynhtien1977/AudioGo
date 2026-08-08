@@ -59,7 +59,7 @@ export default function DownloadSection({ data }) {
                 className="w-16 h-16 rounded-2xl object-cover shadow-lg"
               />
             ) : (
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-pink-500 to-orange-400 flex items-center justify-center shadow-lg">
+              <div className="w-16 h-16 rounded-2xl bg-pink-600 flex items-center justify-center shadow-lg">
                 <Smartphone size={32} className="text-white" />
               </div>
             )}
@@ -84,7 +84,7 @@ export default function DownloadSection({ data }) {
               <a
                 href={apkUrl}
                 download
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-white bg-gradient-to-r from-pink-500 to-orange-400 hover:shadow-lg hover:shadow-pink-500/30 hover:scale-[1.02] active:scale-[0.97] transition-all"
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-white bg-pink-600 hover:bg-pink-700 hover:shadow-lg hover:shadow-pink-600/30 hover:scale-[1.02] active:scale-[0.97] transition-all"
               >
                 <Download size={18} />
                 Tải APK Android

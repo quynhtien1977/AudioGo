@@ -12,7 +12,7 @@ namespace Server.Controllers.Cms
 {
     [ApiController]
     [Route("api/cms/accounts")]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [EnableCors("WebCmsPolicy")]
     public class CmsAccountController : ControllerBase
     {
@@ -126,7 +126,9 @@ namespace Server.Controllers.Cms
         // KHÔNG có Guard R1 — được phép sửa chính mình.
         // KHÔNG cho phép đổi Role hay IsLocked qua endpoint này.
         // ======================
+        // PUT /me — mọi role đã login đều được sửa profile của chính mình
         [HttpPut("me")]
+        [Authorize] // override class-level Admin restriction
         public async Task<ActionResult<AccountDto>> UpdateMyProfile(
             [FromBody] ProfileUpdateRequest req)
         {

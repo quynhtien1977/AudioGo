@@ -185,7 +185,7 @@ export default function POIUpdateDetailPage() {
       await reviewPoiRequest(requestId, { approved: true })
       setShowApproveModal(false)
       toast.success("Cập nhật đã được phê duyệt")  // Bug #7
-      navigate("/poi/management/updates")
+      navigate("/admin/pois/management/updates")
     } catch (err) {
       console.error("Approve error:", err)
       toast.error("Lỗi khi phê duyệt: " + err.message)  // Bug #7
@@ -206,7 +206,7 @@ export default function POIUpdateDetailPage() {
       setShowRejectModal(false)
       setRejectReason("")
       toast.success("Cập nhật đã bị từ chối")  // Bug #7
-      navigate("/poi/management/updates")
+      navigate("/admin/pois/management/updates")
     } catch (err) {
       console.error("Reject error:", err)
       toast.error("Lỗi khi từ chối: " + err.message)  // Bug #7
@@ -220,7 +220,7 @@ export default function POIUpdateDetailPage() {
         rejectReason: "Yêu cầu sửa lại"
       })
       toast.success("Yêu cầu sửa lại đã được gửi")  // Bug #7
-      navigate("/poi/management/updates")
+      navigate("/admin/pois/management/updates")
     } catch (err) {
       console.error("Request changes error:", err)
       toast.error("Lỗi: " + err.message)  // Bug #7
@@ -261,7 +261,7 @@ export default function POIUpdateDetailPage() {
         <div className="p-6 max-w-7xl mx-auto">
           <div className="flex items-center gap-4 mb-4">
             <button
-              onClick={() => navigate("/poi/management/updates")}
+              onClick={() => navigate("/admin/pois/management/updates")}
               className="p-2 hover:bg-gray-100 rounded-full transition"
             >
               <ArrowLeft size={24} className="text-gray-600" />

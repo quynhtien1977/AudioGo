@@ -209,6 +209,37 @@ namespace Server.Controllers
             });
         }
 
+        // ─────────────────────────────────────────────────────────────────────
+        // GET /api/auth/me  [Authorize]
+        // Trả về thông tin user hiện tại dựa trên JWT token trong header.
+        // Frontend dùng endpoint này thay vì đọc role từ localStorage.
+        // ─────────────────────────────────────────────────────────────────────
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<IActionResult> Me()
+        {
+            var accountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (accountId is null) return Unauthorized();
+
+            var account = await _db.Accounts
+                .AsNoTracking()
+                .FirstOrDefaultAsync(a => a.AccountId == accountId && a.DeletedAt == null);
+
+            if (account is null) return Unauthorized("Tài khoản không còn tồn tại.");
+            if (account.IsLocked == true) return Unauthorized("Tài khoản đã bị khóa.");
+
+            return Ok(new
+            {
+                accountId   = account.AccountId,
+                username    = account.Username,
+                fullName    = account.FullName,
+                role        = account.Role,
+                email       = account.Email,
+                phoneNumber = account.PhoneNumber,
+                mustChangePassword = account.MustChangePassword
+            });
+        }
+
         // ── Helpers ───────────────────────────────────────────────────────────
         private static bool IsPasswordStrong(string password)
         {

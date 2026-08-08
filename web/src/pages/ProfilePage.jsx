@@ -46,7 +46,7 @@ const ProfilePage = () => {
       try {
         if (!authUser?.accountId) {
           toast.error("Không tìm thấy thông tin người dùng")
-          navigate("/dashboard")
+          navigate("/admin/dashboard")
           return
         }
 

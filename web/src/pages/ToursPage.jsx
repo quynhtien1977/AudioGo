@@ -127,7 +127,7 @@ const ToursPage = () => {
   };
 
   const handleGoToDetail = (tourId) => {
-    navigate(`/tours/${tourId}`);
+        navigate(`/admin/tours/${tourId}`);
   };
 
   const openDeleteConfirm = (id) => {

@@ -52,7 +52,7 @@ export default function SubscriptionCheckoutPage() {
 
   useEffect(() => {
     if (!selectedPlan && !location.state?.selectedPlan) {
-      navigate("/dashboard");
+      navigate("/admin/dashboard");
     }
     return () => clearAllTimers();
   }, []);
@@ -183,7 +183,7 @@ export default function SubscriptionCheckoutPage() {
             </div>
           )}
           <button
-            onClick={() => navigate("/dashboard")}
+            onClick={() => navigate("/admin/dashboard")}
             className="w-full bg-pink-600 text-white py-2.5 rounded-xl font-semibold hover:bg-pink-700 transition"
           >
             Về Dashboard
@@ -196,7 +196,7 @@ export default function SubscriptionCheckoutPage() {
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <button
-        onClick={() => navigate("/dashboard")}
+        onClick={() => navigate("/admin/dashboard")}
         className="flex items-center gap-2 text-pink-600 hover:text-pink-700 mb-6"
       >
         <ArrowLeft size={18} />
@@ -254,7 +254,7 @@ export default function SubscriptionCheckoutPage() {
 
                 <div className="flex gap-4">
                   <button
-                    onClick={() => navigate("/dashboard")}
+                    onClick={() => navigate("/admin/dashboard")}
                     className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50"
                   >
                     Quay lại
@@ -431,7 +431,7 @@ export default function SubscriptionCheckoutPage() {
             </div>
 
             <button
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate("/admin/dashboard")}
               className="w-full border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50"
             >
               Thay Đổi Gói

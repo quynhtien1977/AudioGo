@@ -78,8 +78,8 @@ export default function FooterSection({ data }) {
               {logoUrl ? (
                 <img src={logoUrl} alt="AudioGo" className="h-8 object-contain" />
               ) : (
-                <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-orange-400 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">A</span>
+                <div className="w-8 h-8 bg-pink-600 rounded-lg flex items-center justify-center">
+                  <MapIcon size={16} className="text-white" />
                 </div>
               )}
               <span className="font-bold text-lg tracking-tight">AudioGo</span>

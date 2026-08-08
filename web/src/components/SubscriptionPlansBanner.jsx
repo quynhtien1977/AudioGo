@@ -254,7 +254,7 @@ export default function SubscriptionPlansBanner({
 
     onClose();
 
-    navigate("/subscription/checkout", {
+    navigate("/admin/subscription/checkout", {
       state: {
         selectedPlan: plan,
       },

@@ -40,20 +40,11 @@ const LoginPage = () => {
         return;
       }
 
-      const res = await login(identifier, password, rememberMe);
+      // Sau khi login, useAuth tự gọi /api/auth/me → set user state với role thật từ server
+      await login(identifier, password, rememberMe);
 
-      const role = res?.user?.role;
-
-      if (!role) {
-        toast.error("Không có quyền truy cập");
-        return;
-      }
-
-      if (["Admin", "Owner"].includes(role)) {
-        navigate("/dashboard");
-      } else {
-        navigate("/dashboard");
-      }
+      // Navigate đến dashboard — ProtectedRoute sẽ kiểm tra role thật
+      navigate("/admin/dashboard");
 
     } catch (err) {
       toast.error(err || "Đăng nhập thất bại"); 

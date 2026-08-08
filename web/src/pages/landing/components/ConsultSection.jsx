@@ -80,10 +80,10 @@ export default function ConsultSection({ data }) {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: 0.1 + i * 0.08 }}
-                  className="flex items-start gap-3"
+                  className="flex items-start gap-4 mb-5"
                 >
-                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-pink-500 to-orange-400 flex items-center justify-center flex-shrink-0 shadow-sm">
-                    <DynIcon name={b.icon} size={16} className="text-white" />
+                  <div className="w-9 h-9 rounded-lg bg-pink-600 flex items-center justify-center flex-shrink-0 shadow-sm shadow-pink-600/20">
+                    <DynIcon name={b.icon} size={18} className="text-white" />
                   </div>
                   <p className="text-gray-700 font-medium pt-1.5 text-sm">{b.text}</p>
                 </motion.div>
@@ -175,7 +175,7 @@ export default function ConsultSection({ data }) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl font-semibold text-white bg-gradient-to-r from-pink-500 to-orange-400 hover:shadow-lg hover:shadow-pink-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                  className="w-full py-3.5 rounded-xl font-semibold text-white bg-pink-600 hover:bg-pink-700 hover:shadow-lg hover:shadow-pink-600/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60"
                 >
                   {loading ? <Loader2 size={18} className="animate-spin" /> : null}
                   {loading ? "Đang gửi..." : "Gửi yêu cầu tư vấn"}

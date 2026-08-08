@@ -26,7 +26,9 @@ namespace Server.Controllers.Cms
             _scopeFactory = scopeFactory;
         }
 
+        // GET — cho phép Editor đọc bài viết (class-level giới hạn Admin, override tại đây)
         [HttpGet]
+        [Authorize(Roles = "Admin,Editor")]
         public async Task<ActionResult<List<ArticleItemDto>>> GetAll([FromQuery] string? type)
         {
             var articles = await _repo.GetAllCmsAsync(type, "vi");
@@ -34,6 +36,7 @@ namespace Server.Controllers.Cms
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "Admin,Editor")]
         public async Task<ActionResult<ArticleUpsertDto>> GetById(string id)
         {
             var article = await _repo.GetByIdAsync(id);

@@ -32,11 +32,11 @@ export default function HowItWorksSection({ data }) {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1, duration: 0.5 }}
-                className="flex gap-5"
+                className="flex flex-col items-center sm:items-start text-center sm:text-left"
               >
                 {/* Number bubble */}
-                <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-500 to-orange-400 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-pink-200">
-                  {step.number}
+                <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-pink-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-pink-600/30">
+                  {i + 1}
                 </div>
                 <div className="pt-1.5">
                   <h3 className="font-semibold text-gray-900 text-base mb-1">{step.title}</h3>

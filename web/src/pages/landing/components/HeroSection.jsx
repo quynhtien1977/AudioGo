@@ -155,7 +155,7 @@ export default function HeroSection({ data }) {
         >
           <button
             onClick={() => scrollTo(cta1Link)}
-            className="group flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-base bg-gradient-to-r from-pink-500 to-orange-400 text-white shadow-lg shadow-pink-500/30 hover:shadow-pink-500/50 hover:scale-[1.03] active:scale-[0.97] transition-all"
+            className="group flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-base bg-pink-600 hover:bg-pink-700 text-white shadow-lg shadow-pink-600/30 hover:shadow-pink-600/50 hover:scale-[1.03] active:scale-[0.97] transition-all"
           >
             <LucideIcons.Download size={18} />
             {cta1Text}
