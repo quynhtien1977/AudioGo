@@ -1,11 +1,13 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Map, ChevronDown } from "lucide-react";
+import { Menu, X, Map, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/context/ThemeContext";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { theme, toggle } = useTheme();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -27,14 +29,13 @@ export default function Navbar() {
     if (el) el.scrollIntoView({ behavior: "smooth" });
   };
 
+  const isLight = theme === "light";
+
   return (
     <>
       <header
-        className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? "bg-white/90 backdrop-blur-md shadow-sm"
-            : "bg-transparent"
-        }`}
+        style={scrolled ? { background: "var(--lp-nav-bg)", backdropFilter: "blur(12px)" } : { background: "transparent" }}
+        className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? "shadow-sm" : ""}`}
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
           {/* Logo */}
@@ -43,9 +44,8 @@ export default function Navbar() {
               <Map size={16} className="text-white" />
             </div>
             <span
-              className={`font-bold text-lg tracking-tight transition-colors ${
-                scrolled ? "text-gray-900" : "text-white"
-              }`}
+              style={{ color: scrolled ? "var(--lp-text)" : "white" }}
+              className="font-bold text-lg tracking-tight transition-colors"
             >
               AudioGo
             </span>
@@ -57,26 +57,37 @@ export default function Navbar() {
               <button
                 key={l.href}
                 onClick={() => scrollTo(l.href)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  scrolled
-                    ? "text-gray-600 hover:text-pink-500 hover:bg-pink-50"
-                    : "text-white/80 hover:text-white hover:bg-white/10"
-                }`}
+                style={{ color: scrolled ? "var(--lp-text-muted)" : "rgba(255,255,255,0.8)" }}
+                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:text-pink-400"
               >
                 {l.label}
               </button>
             ))}
           </nav>
 
-          {/* CTAs */}
+          {/* CTAs + Theme toggle */}
           <div className="hidden md:flex items-center gap-2">
+            {/* Theme toggle */}
+            <button
+              onClick={toggle}
+              aria-label="Chuyển đổi giao diện"
+              style={{
+                background: scrolled ? "var(--lp-bg-card)" : "rgba(255,255,255,0.1)",
+                border: `1px solid ${scrolled ? "var(--lp-border)" : "rgba(255,255,255,0.2)"}`,
+                color: scrolled ? "var(--lp-text-muted)" : "rgba(255,255,255,0.8)",
+              }}
+              className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:scale-105 hover:text-pink-400"
+            >
+              {isLight ? <Moon size={16} /> : <Sun size={16} />}
+            </button>
+
             <Link
               to="/login"
-              className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
-                scrolled
-                  ? "border-gray-200 text-gray-600 hover:border-pink-300 hover:text-pink-500"
-                  : "border-white/30 text-white/90 hover:border-white hover:bg-white/10"
-              }`}
+              style={{
+                border: `1px solid ${scrolled ? "var(--lp-border)" : "rgba(255,255,255,0.3)"}`,
+                color: scrolled ? "var(--lp-text-muted)" : "rgba(255,255,255,0.9)",
+              }}
+              className="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:border-pink-400 hover:text-pink-400"
             >
               Đăng nhập
             </Link>
@@ -88,15 +99,25 @@ export default function Navbar() {
             </button>
           </div>
 
-          {/* Mobile hamburger */}
-          <button
-            onClick={() => setMobileOpen((v) => !v)}
-            className={`md:hidden p-2 rounded-lg transition-colors ${
-              scrolled ? "text-gray-700" : "text-white"
-            }`}
-          >
-            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
+          {/* Mobile controls */}
+          <div className="md:hidden flex items-center gap-2">
+            {/* Theme toggle mobile */}
+            <button
+              onClick={toggle}
+              style={{ color: scrolled ? "var(--lp-text)" : "white" }}
+              className="p-2 rounded-lg transition-colors"
+              aria-label="Chuyển đổi giao diện"
+            >
+              {isLight ? <Moon size={20} /> : <Sun size={20} />}
+            </button>
+            <button
+              onClick={() => setMobileOpen((v) => !v)}
+              style={{ color: scrolled ? "var(--lp-text)" : "white" }}
+              className="p-2 rounded-lg transition-colors"
+            >
+              {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -108,22 +129,25 @@ export default function Navbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.15 }}
-            className="fixed top-16 inset-x-0 z-40 bg-white shadow-xl border-b"
+            style={{ background: "var(--lp-mobile-menu)", borderColor: "var(--lp-border)" }}
+            className="fixed top-16 inset-x-0 z-40 shadow-xl border-b"
           >
             <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col gap-1">
               {links.map((l) => (
                 <button
                   key={l.href}
                   onClick={() => scrollTo(l.href)}
-                  className="text-left px-4 py-3 rounded-lg text-gray-700 font-medium hover:bg-pink-50 hover:text-pink-500 transition-colors"
+                  style={{ color: "var(--lp-text-muted)" }}
+                  className="text-left px-4 py-3 rounded-lg font-medium hover:bg-pink-50/10 hover:text-pink-400 transition-colors"
                 >
                   {l.label}
                 </button>
               ))}
-              <hr className="my-2" />
+              <hr style={{ borderColor: "var(--lp-border)" }} className="my-2" />
               <Link
                 to="/login"
-                className="px-4 py-3 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                style={{ color: "var(--lp-text-muted)" }}
+                className="px-4 py-3 rounded-lg font-medium hover:text-pink-400 transition-colors"
                 onClick={() => setMobileOpen(false)}
               >
                 Đăng nhập quản lý

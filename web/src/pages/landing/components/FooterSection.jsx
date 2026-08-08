@@ -68,7 +68,7 @@ export default function FooterSection({ data }) {
   } = data || {};
 
   return (
-    <footer className="bg-gray-950 text-white">
+    <footer style={{ background: "var(--lp-footer-bg)" }} className="text-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-14">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
 
@@ -79,14 +79,14 @@ export default function FooterSection({ data }) {
                 <img src={logoUrl} alt="AudioGo" className="h-8 object-contain" />
               ) : (
                 <div className="w-8 h-8 bg-pink-600 rounded-lg flex items-center justify-center">
-                  <MapIcon size={16} className="text-white" />
+                  <MapPin size={16} className="text-white" />
                 </div>
               )}
-              <span className="font-bold text-lg tracking-tight">AudioGo</span>
+              <span className="font-bold text-lg tracking-tight text-white">AudioGo</span>
             </div>
             <p className="text-white/50 text-sm leading-relaxed mb-5">{description}</p>
 
-            {/* Social links — icon tròn màu */}
+            {/* Social links */}
             {socialLinks.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {socialLinks.map((s, i) => (
@@ -107,7 +107,7 @@ export default function FooterSection({ data }) {
 
           {/* Contact */}
           <div>
-            <h4 className="font-semibold text-sm text-white/80 uppercase tracking-wider mb-5">Liên hệ</h4>
+            <h4 className="font-semibold text-sm text-white/70 uppercase tracking-wider mb-5">Liên hệ</h4>
             <div className="space-y-3 text-sm text-white/50">
               {address && (
                 <div className="flex gap-2.5">
@@ -142,7 +142,7 @@ export default function FooterSection({ data }) {
 
           {/* Quick links */}
           <div>
-            <h4 className="font-semibold text-sm text-white/80 uppercase tracking-wider mb-5">Nhanh</h4>
+            <h4 className="font-semibold text-sm text-white/70 uppercase tracking-wider mb-5">Nhanh</h4>
             <div className="space-y-3 text-sm text-white/50">
               {[
                 { label: "Tính năng",        href: "#features" },
@@ -176,7 +176,10 @@ export default function FooterSection({ data }) {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-12 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/30">
+        <div
+          style={{ borderColor: "rgba(255,255,255,0.08)" }}
+          className="mt-12 pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/30"
+        >
           <span>© {new Date().getFullYear()} AudioGo. All rights reserved.</span>
           <span>Made with ❤️ in Hồ Chí Minh</span>
         </div>

@@ -93,7 +93,7 @@ export default function ScreenshotsSection({ data }) {
     <section
       id="screenshots"
       className="py-28 overflow-hidden"
-      style={{ background: "linear-gradient(180deg, #f9f5ff 0%, #fff0f8 50%, #fff5f0 100%)" }}
+      style={{ background: "var(--lp-bg-alt)" }}
     >
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         {/* Header */}
@@ -103,11 +103,18 @@ export default function ScreenshotsSection({ data }) {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-pink-50 text-pink-600 border border-pink-100 mb-4">
+          <span
+            style={{
+              background: "var(--lp-badge-bg)",
+              color: "var(--lp-badge-text)",
+              border: "1px solid var(--lp-badge-border)",
+            }}
+            className="inline-block px-3 py-1 rounded-full text-xs font-semibold mb-4"
+          >
             Ứng dụng
           </span>
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">{title}</h2>
-          <p className="mt-3 text-gray-400 text-sm">Vuốt để khám phá các màn hình</p>
+          <h2 style={{ color: "var(--lp-text)" }} className="text-3xl sm:text-4xl font-bold">{title}</h2>
+          <p style={{ color: "var(--lp-text-faint)" }} className="mt-3 text-sm">Vuốt để khám phá các màn hình</p>
         </motion.div>
 
         {/* Phone carousel */}
@@ -115,7 +122,8 @@ export default function ScreenshotsSection({ data }) {
           {/* Prev */}
           <button
             onClick={prev}
-            className="w-10 h-10 flex-shrink-0 rounded-full border border-gray-200 bg-white/80 backdrop-blur flex items-center justify-center text-gray-400 hover:border-pink-300 hover:text-pink-500 hover:scale-105 transition-all shadow-sm"
+            style={{ background: "var(--lp-bg-card)", borderColor: "var(--lp-border)", color: "var(--lp-text-muted)" }}
+            className="w-10 h-10 flex-shrink-0 rounded-full border backdrop-blur flex items-center justify-center hover:border-pink-400 hover:text-pink-500 hover:scale-105 transition-all shadow-sm"
           >
             <ChevronLeft size={20} />
           </button>
@@ -150,7 +158,8 @@ export default function ScreenshotsSection({ data }) {
           {/* Next */}
           <button
             onClick={next}
-            className="w-10 h-10 flex-shrink-0 rounded-full border border-gray-200 bg-white/80 backdrop-blur flex items-center justify-center text-gray-400 hover:border-pink-300 hover:text-pink-500 hover:scale-105 transition-all shadow-sm"
+            style={{ background: "var(--lp-bg-card)", borderColor: "var(--lp-border)", color: "var(--lp-text-muted)" }}
+            className="w-10 h-10 flex-shrink-0 rounded-full border backdrop-blur flex items-center justify-center hover:border-pink-400 hover:text-pink-500 hover:scale-105 transition-all shadow-sm"
           >
             <ChevronRight size={20} />
           </button>
@@ -180,7 +189,8 @@ export default function ScreenshotsSection({ data }) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.2 }}
-              className="text-center text-gray-400 text-sm mt-5"
+              className="text-center text-sm mt-5"
+              style={{ color: "var(--lp-text-faint)" }}
             >
               {images[active].alt}
             </motion.p>

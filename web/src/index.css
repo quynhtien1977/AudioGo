@@ -25,3 +25,65 @@
     @apply border-border;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   LANDING PAGE THEME VARIABLES
+   Controlled by data-landing-theme="dark|light" on <html>
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── Default: DARK (ký hiệu brand AudioGo) ─────────────────────── */
+:root,
+[data-landing-theme="dark"] {
+  --lp-bg:            #0D0D1A;
+  --lp-bg-alt:        #140a14;
+  --lp-bg-card:       #1a1128;
+  --lp-bg-card-hover: #211436;
+  --lp-text:          #F9FAFB;
+  --lp-text-muted:    rgba(249,250,251,0.55);
+  --lp-text-faint:    rgba(249,250,251,0.28);
+  --lp-border:        rgba(255,255,255,0.08);
+  --lp-border-hover:  rgba(255,255,255,0.15);
+  --lp-nav-bg:        rgba(13,13,26,0.92);
+  --lp-mobile-menu:   #120d1e;
+  --lp-badge-bg:      rgba(238,75,142,0.12);
+  --lp-badge-text:    #f472b6;
+  --lp-badge-border:  rgba(238,75,142,0.25);
+  --lp-input-bg:      #1e1530;
+  --lp-input-border:  rgba(255,255,255,0.12);
+  --lp-input-text:    #F9FAFB;
+  --lp-input-placeholder: rgba(249,250,251,0.35);
+  --lp-footer-bg:     #080810;
+  --lp-divider:       rgba(255,255,255,0.06);
+  --lp-section-light: #110a1a;
+}
+
+/* ── Light mode ─────────────────────────────────────────────────── */
+[data-landing-theme="light"] {
+  --lp-bg:            #FFFFFF;
+  --lp-bg-alt:        #fdf7f9;
+  --lp-bg-card:       #FFFFFF;
+  --lp-bg-card-hover: #fff0f5;
+  --lp-text:          #111827;
+  --lp-text-muted:    #6B7280;
+  --lp-text-faint:    #9CA3AF;
+  --lp-border:        #F3E8EE;
+  --lp-border-hover:  #fbc6d8;
+  --lp-nav-bg:        rgba(255,255,255,0.94);
+  --lp-mobile-menu:   #FFFFFF;
+  --lp-badge-bg:      #fff0f5;
+  --lp-badge-text:    #db2777;
+  --lp-badge-border:  #fbc6d8;
+  --lp-input-bg:      #FFFFFF;
+  --lp-input-border:  #E5E7EB;
+  --lp-input-text:    #111827;
+  --lp-input-placeholder: #9CA3AF;
+  --lp-footer-bg:     #111827;
+  --lp-divider:       #F3E8EE;
+  --lp-section-light: #fdf7f9;
+}
+
+/* ── Smooth transition khi đổi theme ─────────────────────────────── */
+.landing-root,
+.landing-root * {
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}

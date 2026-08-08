@@ -23,7 +23,11 @@ export default function FeaturesSection({ data }) {
   } = data || {};
 
   return (
-    <section id="features" className="py-24 bg-white">
+    <section
+      id="features"
+      className="py-24"
+      style={{ background: "var(--lp-bg)" }}
+    >
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         {/* Header */}
         <motion.div
@@ -32,11 +36,25 @@ export default function FeaturesSection({ data }) {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-pink-50 text-pink-600 border border-pink-100 mb-4">
+          <span
+            style={{
+              background: "var(--lp-badge-bg)",
+              color: "var(--lp-badge-text)",
+              border: "1px solid var(--lp-badge-border)",
+            }}
+            className="inline-block px-3 py-1 rounded-full text-xs font-semibold mb-4"
+          >
             Tính năng
           </span>
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">{title}</h2>
-          <p className="text-gray-500 text-lg max-w-xl mx-auto">{subtitle}</p>
+          <h2
+            style={{ color: "var(--lp-text)" }}
+            className="text-3xl sm:text-4xl font-bold mb-4"
+          >
+            {title}
+          </h2>
+          <p style={{ color: "var(--lp-text-muted)" }} className="text-lg max-w-xl mx-auto">
+            {subtitle}
+          </p>
         </motion.div>
 
         {/* Grid */}
@@ -49,13 +67,24 @@ export default function FeaturesSection({ data }) {
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true }}
-              className="group p-6 rounded-2xl border border-gray-100 hover:border-pink-200 hover:shadow-lg hover:shadow-pink-50 transition-all duration-300 cursor-default"
+              style={{
+                background: "var(--lp-bg-card)",
+                borderColor: "var(--lp-border)",
+              }}
+              className="group p-6 rounded-2xl border hover:border-pink-400/50 hover:shadow-lg transition-all duration-300 cursor-default"
             >
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-50 to-orange-50 flex items-center justify-center mb-4 group-hover:from-pink-100 group-hover:to-orange-100 transition-colors">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500/20 to-orange-500/10 flex items-center justify-center mb-4 group-hover:from-pink-500/30 group-hover:to-orange-500/20 transition-colors">
                 <DynIcon name={item.icon} size={22} className="text-pink-500" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2 text-base">{item.title}</h3>
-              <p className="text-gray-500 text-sm leading-relaxed">{item.description}</p>
+              <h3
+                style={{ color: "var(--lp-text)" }}
+                className="font-semibold mb-2 text-base"
+              >
+                {item.title}
+              </h3>
+              <p style={{ color: "var(--lp-text-muted)" }} className="text-sm leading-relaxed">
+                {item.description}
+              </p>
             </motion.div>
           ))}
         </div>

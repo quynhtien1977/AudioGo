@@ -161,7 +161,7 @@ namespace Server.Controllers
                 account.Email,
                 account.PhoneNumber,
                 account.IsLocked,
-                account.MustChangePassword,
+                account.SubscriptionPlanId,
                 account.CreatedAt,
                 account.UpdatedAt
             );

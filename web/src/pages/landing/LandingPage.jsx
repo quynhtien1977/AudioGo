@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getLandingSections, getLatestRelease } from "@/api/landingApi";
+import { ThemeProvider } from "@/context/ThemeContext";
 import Navbar from "./components/Navbar";
 import HeroSection from "./components/HeroSection";
 import StatsBarSection from "./components/StatsBarSection";
@@ -39,7 +40,7 @@ export default function LandingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--lp-bg, #0D0D1A)" }}>
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 rounded-full border-4 border-pink-500/30 border-t-pink-500 animate-spin" />
           <p className="text-white/40 text-sm">Đang tải...</p>
@@ -61,34 +62,36 @@ export default function LandingPage() {
   const footerRaw = sections.find((s) => s.sectionKey === "footer")?.content || {};
 
   return (
-    <div className="landing-root font-sans antialiased" style={{ fontFamily: "'Sora', system-ui, sans-serif" }}>
-      <Navbar />
+    <ThemeProvider>
+      <div className="landing-root font-sans antialiased" style={{ fontFamily: "'Sora', system-ui, sans-serif", background: "var(--lp-bg)" }}>
+        <Navbar />
 
-      {/* Hero luôn hiển thị nếu active, fallback graceful nếu null */}
-      {hero !== null
-        ? <HeroSection data={hero} />
-        : (
-          <div className="min-h-screen bg-gradient-to-br from-gray-900 via-[#1a0a14] to-[#0d0d1a] flex items-center justify-center">
-            <p className="text-white/40 text-sm">Hero section đang ẩn</p>
-          </div>
-        )
-      }
+        {/* Hero luôn hiển thị nếu active, fallback graceful nếu null */}
+        {hero !== null
+          ? <HeroSection data={hero} />
+          : (
+            <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--lp-bg)" }}>
+              <p style={{ color: "var(--lp-text-faint)" }} className="text-sm">Hero section đang ẩn</p>
+            </div>
+          )
+        }
 
-      {statsBar    && <StatsBarSection   data={statsBar}    />}
-      {features    && <FeaturesSection   data={features}    />}
-      {howItWorks  && <HowItWorksSection data={howItWorks}  />}
-      {screenshots && <ScreenshotsSection data={screenshots} />}
-      {consultCta  && <ConsultSection    data={consultCta}  />}
-      {downloadCta && <DownloadSection   data={downloadCta} />}
-      {footer      && <FooterSection     data={footer}      />}
+        {statsBar    && <StatsBarSection   data={statsBar}    />}
+        {features    && <FeaturesSection   data={features}    />}
+        {howItWorks  && <HowItWorksSection data={howItWorks}  />}
+        {screenshots && <ScreenshotsSection data={screenshots} />}
+        {consultCta  && <ConsultSection    data={consultCta}  />}
+        {downloadCta && <DownloadSection   data={downloadCta} />}
+        {footer      && <FooterSection     data={footer}      />}
 
-      <FloatingButtons
-        apkUrl={release?.apkUrl || null}
-        zaloLink={footerRaw?.zaloLink || null}
-        facebookLink={footerRaw?.facebookLink || null}
-        phone={footerRaw?.phone || null}
-        email={footerRaw?.email || null}
-      />
-    </div>
+        <FloatingButtons
+          apkUrl={release?.apkUrl || null}
+          zaloLink={footerRaw?.zaloLink || null}
+          facebookLink={footerRaw?.facebookLink || null}
+          phone={footerRaw?.phone || null}
+          email={footerRaw?.email || null}
+        />
+      </div>
+    </ThemeProvider>
   );
 }
