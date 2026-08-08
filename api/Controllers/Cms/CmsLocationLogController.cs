@@ -8,7 +8,7 @@ namespace Server.Controllers.Cms
 {
     [ApiController]
     [Route("api/cms/location-logs")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class LocationLogController : ControllerBase
     {
         private readonly AppDbContext _context;

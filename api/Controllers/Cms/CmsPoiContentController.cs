@@ -2,34 +2,22 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
-using Server.Helpers;
 using Server.Models;
-using Server.Repositories.Interfaces;
 using Shared.DTOs;
-using System.Security.Claims;
 
 namespace Server.Controllers.Cms
 {
     [ApiController]
     [Route("api/cms/pois/{poiId}/content")]
-    [Authorize(Roles = "Admin,Owner")]
+    [Authorize]
     public class CmsPoiContentController : ControllerBase
     {
         private readonly AppDbContext _db;
-        private readonly IPoiRepository _pois;
-        public CmsPoiContentController(AppDbContext db, IPoiRepository pois)
-        {
-            _db = db;
-            _pois = pois;
-        }
+        public CmsPoiContentController(AppDbContext db) => _db = db;
 
-                [HttpGet]
+        [HttpGet]
         public async Task<ActionResult<List<PoiContentDto>>> GetAll(string poiId)
         {
-            // Ownership check
-            var (error, _) = await PoiOwnershipHelper.CheckOwnershipAsync(poiId, User, _pois);
-            if (error != null) return error as ActionResult ?? StatusCode(403);
-
             var contents = await _db.PoiContents.AsNoTracking()
                 .Where(c => c.PoiId == poiId)
                 .ToListAsync();
@@ -39,14 +27,10 @@ namespace Server.Controllers.Cms
                 c.Title, c.Description, c.AudioUrl, c.IsMaster)));
         }
 
-                [HttpPost]
+        [HttpPost]
         public async Task<ActionResult<PoiContentDto>> Create(
             string poiId, [FromBody] PoiContentCreateRequest req)
         {
-            // Ownership check
-            var (error, _) = await PoiOwnershipHelper.CheckOwnershipAsync(poiId, User, _pois);
-            if (error != null) return error as ActionResult ?? StatusCode(403);
-
             var content = new PoiContent
             {
                 ContentId    = Guid.NewGuid().ToString(),
@@ -66,14 +50,10 @@ namespace Server.Controllers.Cms
                     content.Description, content.AudioUrl, content.IsMaster));
         }
 
-                [HttpPut("{contentId}")]
+        [HttpPut("{contentId}")]
         public async Task<ActionResult<PoiContentDto>> Update(
             string poiId, string contentId, [FromBody] PoiContentUpdateRequest req)
         {
-            // Ownership check
-            var (error, _) = await PoiOwnershipHelper.CheckOwnershipAsync(poiId, User, _pois);
-            if (error != null) return error as ActionResult ?? StatusCode(403);
-
             var content = await _db.PoiContents
                 .FirstOrDefaultAsync(c => c.ContentId == contentId && c.PoiId == poiId);
             if (content is null) return NotFound();
@@ -95,7 +75,7 @@ namespace Server.Controllers.Cms
             if (req.AudioUrl is not null)    content.AudioUrl    = req.AudioUrl;
             if (req.IsMaster.HasValue)       content.IsMaster    = req.IsMaster.Value;
             
-            // LOGIC QUAN TRỌNG: Nếu update bản Master và đổi nội dung, xóa sạch các bản dịch (Slave) đã gen trước đó!
+            // LOGIC QUAN TRỌNG: Nếu update bản Master và đổi nội dung, ta phải xóa sạch các bản dịch (Slave) đã gen trước đó!
             if (content.IsMaster && isMasterDataChanged)
             {
                 var slaves = await _db.PoiContents
@@ -115,13 +95,9 @@ namespace Server.Controllers.Cms
                 content.Description, content.AudioUrl, content.IsMaster));
         }
 
-                [HttpDelete("{contentId}")]
+        [HttpDelete("{contentId}")]
         public async Task<IActionResult> Delete(string poiId, string contentId)
         {
-            // Ownership check
-            var (error, _) = await PoiOwnershipHelper.CheckOwnershipAsync(poiId, User, _pois);
-            if (error != null) return error;
-
             var content = await _db.PoiContents
                 .FirstOrDefaultAsync(c => c.ContentId == contentId && c.PoiId == poiId);
             if (content is null) return NotFound();

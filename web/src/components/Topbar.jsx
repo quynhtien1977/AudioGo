@@ -413,25 +413,29 @@ export default function Topbar() {
         </button>
 
         {/*  User Info */}
-        {role === "Owner" ? (
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate("/admin/profile")}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-pink-50 transition"
-            >
-              <User size={16} className="text-pink-500" />
-              <div className="text-right">
-                <p className="font-semibold text-sm">{user.fullName || user.username}</p>
+        {(role === "Owner" || role === "Editor") ? (
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate("/admin/profile")}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-pink-50 transition"
+          >
+            <User size={16} className="text-pink-500" />
+            <div className="text-right">
+              <p className="font-semibold text-sm">{user.fullName || user.username}</p>
+              {role === "Owner" && (
                 <p className="text-xs text-teal-600">
                   {currentSubscription?.planName || "Chưa có"}
                 </p>
-              </div>
-            </button>
-          </div>
+              )}
+            </div>
+          </button>
+        </div>
         ) : (
-          <div className="text-right">
-            <p className="font-semibold">{user.fullName || user.username}</p>
-            <p className="text-xs text-gray-400">{user.role}</p>
+          <div className="flex items-center gap-4">
+            <div className="text-right mr-4">
+              <p className="font-semibold text-sm">{user.fullName || user.username}</p>
+              <p className="text-xs text-gray-400">{role}</p>
+            </div>
           </div>
         )}
 

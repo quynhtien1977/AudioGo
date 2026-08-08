@@ -6,7 +6,7 @@ namespace Server.Controllers.Cms
 {
     [ApiController]
     [Route("api/cms/qr")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class CmsQrController : ControllerBase
     {
         [HttpGet("generate")]

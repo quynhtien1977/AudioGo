@@ -6,9 +6,7 @@ namespace Server.Controllers.Cms
 {
     [ApiController]
     [Route("api/cms/upload")]
-    // Upload mía: Admin, Owner, Editor đều được upload image (Landing/Articles)
-    // Audio chỉ Admin + Owner (chính chủ POI mới upload audio)
-    [Authorize(Roles = "Admin,Owner,Editor")]
+    [Authorize]
     public class MediaController : ControllerBase
     {
         private readonly IBlobStorageService _blob;
@@ -22,7 +20,6 @@ namespace Server.Controllers.Cms
 
         /// <summary>Upload file audio (mp3/wav/ogg). Trả về URL public.</summary>
         [HttpPost("audio")]
-        [Authorize(Roles = "Admin,Owner")] // chỉ Admin và Owner (chủ POI) mới upload audio
         [RequestSizeLimit(50 * 1024 * 1024)] // 50 MB
         public async Task<ActionResult<object>> UploadAudio(IFormFile file)
         {

@@ -1,63 +1,43 @@
-import { useState, useEffect, useCallback } from "react";
-import { loginApi, getMeApi } from "@/api/authApi";
+import { useState, useMemo } from "react";
+import { loginApi } from "@/api/authApi";
 
-/**
- * useAuth — Hook xác thực người dùng.
- *
- * Thay vì đọc role trực tiếp từ localStorage (có thể bị sửa qua DevTools),
- * hook này gọi GET /api/auth/me khi app khởi động để lấy thông tin user thật
- * được xác thực bởi JWT trên server.
- *
- * Flow:
- * 1. App mount → đọc token từ storage
- * 2. Gọi /api/auth/me với token → lấy { accountId, username, fullName, role, ... }
- * 3. Set user state từ response (role đến từ server, không phải localStorage)
- * 4. Nếu 401 → clear storage → user = null → ProtectedRoute redirect /login
- */
 export default function useAuth() {
-  const [user, setUser]       = useState(null);
-  const [authReady, setAuthReady] = useState(false); // true sau khi verify xong
   const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState(null);
+  const [error, setError] = useState(null);
 
-  // Xác thực token hiện tại với server
-  const verifyToken = useCallback(async () => {
-    try {
-      const meData = await getMeApi();
-      if (meData) {
-        setUser({
-          accountId:          meData.accountId,
-          username:           meData.username,
-          fullName:           meData.fullName,
-          role:               meData.role,          // role từ server JWT, không thể giả mạo
-          email:              meData.email,
-          phoneNumber:        meData.phoneNumber,
-          mustChangePassword: meData.mustChangePassword ?? false,
-        });
-      } else {
-        throw new Error("Invalid token");
-      }
-    } catch (err) {
-      // Token không hợp lệ hoặc hết hạn → clear storage
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      sessionStorage.removeItem("token");
-      sessionStorage.removeItem("user");
-      setUser(null);
-    } finally {
-      setAuthReady(true);
-    }
-  }, []);
+  // useMemo: chỉ parse storage 1 lần khi mount, giữ reference ổn định
+  // Tránh JSON.parse() tạo object mới mỗi render → gây infinite useEffect loop
+  const user = useMemo(() => {
+    const raw =
+      localStorage.getItem("user") ||
+      sessionStorage.getItem("user");
+    const token = 
+      localStorage.getItem("token") || 
+      sessionStorage.getItem("token");
 
-  // Chạy 1 lần khi app mount
-  useEffect(() => {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    if (!raw) return null;
+    let parsedUser = JSON.parse(raw);
+
+    // Xác thực role thật bằng cách giải mã JWT (tránh bị sửa ở client localStorage)
     if (token) {
-      verifyToken();
-    } else {
-      setAuthReady(true); // không có token → không cần verify
+      try {
+        const payloadBase64 = token.split('.')[1];
+        // Xử lý các token thiếu padding (base64url)
+        const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+        const decodedPayload = JSON.parse(atob(base64));
+        
+        // ASP.NET lưu role bằng claim dài, đôi khi là 'role'
+        const realRole = decodedPayload.role || decodedPayload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+        if (realRole) {
+          parsedUser.role = realRole;
+        }
+      } catch (err) {
+        console.error("Token decode error:", err);
+      }
     }
-  }, [verifyToken]);
+
+    return parsedUser;
+  }, []);
 
   const login = async (identifier, password, rememberMe) => {
     setLoading(true);
@@ -70,17 +50,23 @@ export default function useAuth() {
         throw "Tài khoản của bạn đã bị khóa";
       }
 
-      // Lưu token (KHÔNG lưu role — role sẽ lấy từ /api/auth/me)
+      const userData = {
+        username: identifier,
+        fullName: res.fullName,
+        role: res.role,
+        accountId: res.accountId,
+        mustChangePassword: res.mustChangePassword ?? false,
+      };
+
       if (rememberMe) {
         localStorage.setItem("token", res.token);
+        localStorage.setItem("user", JSON.stringify(userData));
       } else {
         sessionStorage.setItem("token", res.token);
+        sessionStorage.setItem("user", JSON.stringify(userData));
       }
 
-      // Xác thực ngay sau login để lấy role thật từ server
-      await verifyToken();
-
-      return { token: res.token };
+      return { token: res.token, user: userData };
     } catch (err) {
       setError(err);
       throw err;
@@ -92,13 +78,11 @@ export default function useAuth() {
   const logout = () => {
     localStorage.clear();
     sessionStorage.clear();
-    setUser(null);
   };
 
   return {
     user,
     isAuthenticated: !!user,
-    authReady,        // dùng để hiển thị loading spinner trước khi verify xong
     login,
     logout,
     loading,

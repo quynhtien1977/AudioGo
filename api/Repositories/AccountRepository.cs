@@ -17,7 +17,11 @@ namespace Server.Repositories
         // ================= GET =================
         public async Task<List<Account>> GetAllAsync()
         {
-            return await _db.Accounts.AsNoTracking().Where(a => a.DeletedAt == null).ToListAsync();
+            return await _db.Accounts
+                .Include(a => a.Subscriptions)
+                .AsNoTracking()
+                .Where(a => a.DeletedAt == null)
+                .ToListAsync();
         }
 
         public async Task<Account?> GetByIdAsync(string id)

@@ -128,7 +128,7 @@ export default function App() {
         <Route
           path="/admin/profile"
           element={
-            <ProtectedRoute roles={["Owner"]}>
+            <ProtectedRoute roles={["Owner", "Editor"]}>
               <MainLayout>
                 <ProfilePage />
               </MainLayout>

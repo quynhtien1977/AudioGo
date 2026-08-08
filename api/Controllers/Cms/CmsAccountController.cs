@@ -12,7 +12,7 @@ namespace Server.Controllers.Cms
 {
     [ApiController]
     [Route("api/cms/accounts")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     [EnableCors("WebCmsPolicy")]
     public class CmsAccountController : ControllerBase
     {
@@ -34,6 +34,7 @@ namespace Server.Controllers.Cms
         // 🟢 GET ALL
         // ======================
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<List<AccountDto>>> GetAll()
         {
             var accounts = await _accounts.GetAllAsync();
@@ -56,6 +57,7 @@ namespace Server.Controllers.Cms
         // 🟢 CREATE
         // ======================
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Create([FromBody] AccountCreateRequest req)
         {
             // 🔥 check username trùng
@@ -126,9 +128,7 @@ namespace Server.Controllers.Cms
         // KHÔNG có Guard R1 — được phép sửa chính mình.
         // KHÔNG cho phép đổi Role hay IsLocked qua endpoint này.
         // ======================
-        // PUT /me — mọi role đã login đều được sửa profile của chính mình
         [HttpPut("me")]
-        [Authorize] // override class-level Admin restriction
         public async Task<ActionResult<AccountDto>> UpdateMyProfile(
             [FromBody] ProfileUpdateRequest req)
         {
@@ -160,6 +160,7 @@ namespace Server.Controllers.Cms
         // 🟢 UPDATE (admin quản lý user khác)
         // ======================
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ActionResult<AccountDto>> Update(
             string id,
             [FromBody] AccountUpdateRequest req)
@@ -218,6 +219,7 @@ namespace Server.Controllers.Cms
         // 🟢 DELETE
         // ======================
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(string id)
         {
             var currentUserId = GetCurrentUserId();
@@ -244,6 +246,13 @@ namespace Server.Controllers.Cms
         // ======================
         private static AccountDto ToDto(Account a)
         {
+            var planId = a.SubscriptionPlanId;
+            if (a.Role == "Owner" && a.Subscriptions != null)
+            {
+                var activeSub = a.Subscriptions.FirstOrDefault(s => s.Status == "ACTIVE" && s.EndDate > DateTime.UtcNow);
+                planId = activeSub?.PlanId ?? "basic";
+            }
+
             return new AccountDto(
                 a.AccountId,
                 a.Username,
@@ -253,7 +262,7 @@ namespace Server.Controllers.Cms
                 a.Email,
                 a.PhoneNumber,
                 a.IsLocked,
-                a.SubscriptionPlanId,
+                planId,
 
                 a.CreatedAt,
                 a.UpdatedAt

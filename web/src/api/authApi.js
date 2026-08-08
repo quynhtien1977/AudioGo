@@ -76,27 +76,3 @@ export const changePasswordApi = async (oldPassword, newPassword) => {
   }
   return res.json();
 };
-
-// GET /api/auth/me — xác thực token và lấy role THẬT từ server (không tin localStorage)
-export const getMeApi = async () => {
-  const token =
-    localStorage.getItem("token") || sessionStorage.getItem("token");
-
-  if (!token) return null;
-
-  const res = await fetch(`${BASE_URL}/auth/me`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (res.status === 401) {
-    // Token hết hạn hoặc không hợp lệ
-    return null;
-  }
-
-  if (!res.ok) return null;
-
-  return res.json(); // { accountId, username, fullName, role, email, phoneNumber, mustChangePassword }
-};

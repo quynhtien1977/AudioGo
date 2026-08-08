@@ -10,7 +10,7 @@ namespace Server.Controllers.Cms
 {
     [ApiController]
     [Route("api/cms/analytics")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class AnalyticsController : ControllerBase
     {
         private readonly IListenHistoryRepository _history;
