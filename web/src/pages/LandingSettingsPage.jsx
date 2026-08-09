@@ -11,7 +11,8 @@ import {
 } from "@/api/cmsLandingApi";
 import AppReleasesManager from "./landing/admin/AppReleasesManager";
 import ConsultationsManager from "./landing/admin/ConsultationsManager";
-import LangTabBar, { LANG_META } from "./landing/admin/shared/LangTabBar";
+import LangTabBar from "./landing/admin/shared/LangTabBar";
+import { LANG_META } from "@/api/landingApi";
 
 // Editors
 import HeroEditor from "./landing/admin/editors/HeroEditor";

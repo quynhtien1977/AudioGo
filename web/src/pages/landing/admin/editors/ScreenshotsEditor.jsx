@@ -1,4 +1,4 @@
-import { FieldInput } from "../shared/Fields";
+import { FieldInput, FieldTextarea } from "../shared/Fields";
 import ImageField from "../shared/ImageField";
 import ArrayEditor from "../shared/ArrayEditor";
 
@@ -16,8 +16,14 @@ export default function ScreenshotsEditor({ data, onChange, sharedOnly, translat
   return (
     <div>
       {!sharedOnly && (
-        <FieldInput label="Tiêu đề section" value={data.title} onChange={(v) => upd("title", v)}
-          placeholder="Giao diện ứng dụng" />
+        <>
+          <FieldInput label="Badge" value={data.badge} onChange={(v) => upd("badge", v)}
+            placeholder="Ứng dụng" />
+          <FieldInput label="Tiêu đề section" value={data.title} onChange={(v) => upd("title", v)}
+            placeholder="Giao diện ứng dụng" />
+          <FieldTextarea label="Phụ đề" value={data.subtitle} onChange={(v) => upd("subtitle", v)}
+            rows={2} placeholder="Vuốt để khám phá các màn hình" />
+        </>
       )}
 
       <ArrayEditor

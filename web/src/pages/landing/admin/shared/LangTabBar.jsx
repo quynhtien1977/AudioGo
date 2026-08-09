@@ -3,14 +3,7 @@
  * Hiển thị indicator trạng thái: xanh nếu đã dịch, xám nếu null.
  */
 
-const LANG_META = [
-  { code: "vi", label: "🇻🇳 VI", full: "Tiếng Việt 🇻🇳", isMaster: true },
-  { code: "en", label: "🇺🇸 EN", full: "English 🇺🇸" },
-  { code: "es", label: "🇪🇸 ES", full: "Español 🇪🇸" },
-  { code: "fr", label: "🇫🇷 FR", full: "Français 🇫🇷" },
-  { code: "ko", label: "🇰🇷 KO", full: "한국어 🇰🇷" },
-  { code: "ja", label: "🇯🇵 JA", full: "日本語 🇯🇵" },
-];
+import { LANG_META } from "@/api/landingApi";
 
 /**
  * @param {string}   activeLang       - code đang chọn
@@ -44,7 +37,8 @@ export default function LangTabBar({ activeLang, translations = {}, onLangChange
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             } ${lang.isMaster ? "ring-1 ring-offset-1 ring-pink-300" : ""}`}
           >
-            {lang.label}
+            <img src={lang.flagUrl} alt={lang.code} className="w-4 h-3 object-cover rounded-[2px] shadow-sm" />
+            <span>{lang.label}</span>
             {/* Dot indicator */}
             <span
               className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
@@ -53,11 +47,6 @@ export default function LangTabBar({ activeLang, translations = {}, onLangChange
                   : isActive ? "bg-white/40" : "bg-gray-300"
               }`}
             />
-            {lang.isMaster && (
-              <span className={`text-[8px] ${isActive ? "text-pink-100" : "text-pink-400"}`}>
-                MASTER
-              </span>
-            )}
           </button>
         );
       })}
@@ -65,4 +54,3 @@ export default function LangTabBar({ activeLang, translations = {}, onLangChange
   );
 }
 
-export { LANG_META };

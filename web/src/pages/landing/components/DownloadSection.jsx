@@ -13,6 +13,11 @@ export default function DownloadSection({ data }) {
     googlePlayText = "Sắp ra mắt trên Google Play",
     appLogoUrl = "",
     appName = "AudioGo Android",
+    loadingText = "Đang tải...",
+    noVersionText = "Chưa có phiên bản",
+    downloadApkText = "Tải APK Android",
+    noApkText = "Chưa có APK",
+    scanQrText = "Quét để tải app",
   } = data || {};
 
   const { theme } = useTheme();
@@ -101,7 +106,7 @@ export default function DownloadSection({ data }) {
               </h3>
               {loadingRelease ? (
                 <p style={{ color: "var(--lp-text-faint)" }} className="text-sm mt-1 flex items-center justify-center gap-1">
-                  <Loader2 size={12} className="animate-spin" /> Đang tải...
+                  <Loader2 size={12} className="animate-spin" /> {loadingText}
                 </p>
               ) : release ? (
                 <p style={{ color: "var(--lp-text-muted)" }} className="text-sm mt-1">
@@ -109,7 +114,7 @@ export default function DownloadSection({ data }) {
                 </p>
               ) : (
                 <p style={{ color: "var(--lp-text-faint)" }} className="text-sm mt-1">
-                  Chưa có phiên bản
+                  {noVersionText}
                 </p>
               )}
             </div>
@@ -122,7 +127,7 @@ export default function DownloadSection({ data }) {
                 className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-white bg-pink-600 hover:bg-pink-700 hover:shadow-lg hover:shadow-pink-600/30 hover:scale-[1.02] active:scale-[0.97] transition-all"
               >
                 <Download size={18} />
-                Tải APK Android
+                {downloadApkText}
               </a>
             ) : (
               <div
@@ -132,7 +137,7 @@ export default function DownloadSection({ data }) {
                 }}
                 className="w-full py-3.5 rounded-xl font-medium text-center border"
               >
-                {loadingRelease ? "Đang tải..." : "Chưa có APK"}
+                {loadingRelease ? loadingText : noApkText}
               </div>
             )}
 
@@ -180,7 +185,7 @@ export default function DownloadSection({ data }) {
               </div>
               <div style={{ color: "var(--lp-text-muted)" }} className="flex items-center gap-2 text-sm">
                 <QrCode size={14} />
-                Quét để tải app
+                {scanQrText}
               </div>
             </motion.div>
           )}

@@ -96,7 +96,7 @@ export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
                 className="h-9 px-2.5 rounded-lg flex items-center gap-1.5 text-sm font-medium transition-all hover:text-pink-400"
                 aria-label="Chọn ngôn ngữ"
               >
-                <span className="text-lg">{currentLang.flag}</span>
+                <img src={currentLang.flag} alt={currentLang.code} className="w-5 h-3.5 object-cover rounded-[2px] shadow-sm" />
                 <span className="uppercase">{currentLang.code}</span>
                 <ChevronDown size={12} className={`transition-transform ${langOpen ? "rotate-180" : ""}`} />
               </button>
@@ -120,7 +120,7 @@ export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
                             : "text-gray-700 hover:bg-gray-50"
                         }`}
                       >
-                        <span className="text-base">{l.flag}</span>
+                        <img src={l.flag} alt={l.code} className="w-5 h-3.5 object-cover rounded-[2px] shadow-sm" />
                         <span>{l.label}</span>
                         {l.code === lang && (
                           <span className="ml-auto text-[10px] font-bold text-pink-400 bg-pink-50 px-1.5 py-0.5 rounded">✓</span>
@@ -171,7 +171,7 @@ export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
               style={{ color: scrolled ? "var(--lp-text)" : "white" }}
               className="px-3 py-1.5 rounded-lg transition-colors text-sm font-bold flex items-center gap-2"
             >
-              <span className="text-lg">{currentLang.flag}</span>
+              <img src={currentLang.flag} alt={currentLang.code} className="w-5 h-3.5 object-cover rounded-[2px] shadow-sm" />
               <span className="uppercase">{currentLang.code}</span>
             </button>
             <button
@@ -213,7 +213,7 @@ export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
                     : "text-gray-700 hover:bg-gray-50"
                 }`}
               >
-                <span className="text-base">{l.flag}</span>
+                <img src={l.flag} alt={l.code} className="w-5 h-3.5 object-cover rounded-[2px] shadow-sm" />
                 <span>{l.label}</span>
               </button>
             ))}

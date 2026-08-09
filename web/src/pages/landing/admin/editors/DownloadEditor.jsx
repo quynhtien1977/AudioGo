@@ -61,6 +61,36 @@ export default function DownloadEditor({ data, onChange, sharedOnly, translation
             onChange={(v) => upd("googlePlayText", v)}
             placeholder="Sắp ra mắt trên Google Play"
           />
+          <FieldInput
+            label="Text nút Tải APK"
+            value={data.downloadApkText}
+            onChange={(v) => upd("downloadApkText", v)}
+            placeholder="Tải APK Android"
+          />
+          <FieldInput
+            label="Text khi chưa có APK"
+            value={data.noApkText}
+            onChange={(v) => upd("noApkText", v)}
+            placeholder="Chưa có APK"
+          />
+          <FieldInput
+            label="Text khi chưa có phiên bản"
+            value={data.noVersionText}
+            onChange={(v) => upd("noVersionText", v)}
+            placeholder="Chưa có phiên bản"
+          />
+          <FieldInput
+            label="Text đang tải..."
+            value={data.loadingText}
+            onChange={(v) => upd("loadingText", v)}
+            placeholder="Đang tải..."
+          />
+          <FieldInput
+            label="Text quét QR"
+            value={data.scanQrText}
+            onChange={(v) => upd("scanQrText", v)}
+            placeholder="Quét để tải app"
+          />
         </>
       )}
     </div>

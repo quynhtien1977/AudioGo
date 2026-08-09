@@ -83,7 +83,7 @@ function IPhoneMockup({ imageUrl, alt, isCenter }) {
 }
 
 export default function ScreenshotsSection({ data }) {
-  const { title = "Giao diện ứng dụng", images = [] } = data || {};
+  const { title = "Giao diện ứng dụng", images = [], badge = "Ứng dụng", subtitle = "Vuốt để khám phá các màn hình" } = data || {};
   const [active, setActive] = useState(0);
 
   const prev = () => setActive((a) => (a - 1 + images.length) % images.length);
@@ -111,10 +111,10 @@ export default function ScreenshotsSection({ data }) {
             }}
             className="inline-block px-3 py-1 rounded-full text-xs font-semibold mb-4"
           >
-            Ứng dụng
+            {badge}
           </span>
           <h2 style={{ color: "var(--lp-text)" }} className="text-3xl sm:text-4xl font-bold">{title}</h2>
-          <p style={{ color: "var(--lp-text-faint)" }} className="mt-3 text-sm">Vuốt để khám phá các màn hình</p>
+          <p style={{ color: "var(--lp-text-faint)" }} className="mt-3 text-sm">{subtitle}</p>
         </motion.div>
 
         {/* Phone carousel */}
