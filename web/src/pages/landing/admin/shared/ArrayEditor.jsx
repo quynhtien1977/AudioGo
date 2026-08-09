@@ -76,7 +76,7 @@ function SortableItem({ id, idx, item, isOpen, toggle, onRemove, hideControls, c
   );
 }
 
-export default function ArrayEditor({ label, items = [], onAdd, onRemove, onReorder, addLabel = "Thêm mới", hideControls = false, children }) {
+export default function ArrayEditor({ label, items = [], onAdd, onRemove, onReorder, onMove, onAddGlobal, onRemoveGlobal, addLabel = "Thêm mới", hideControls = false, children }) {
   const [openItems, setOpenItems] = useState(new Set());
   const idMap = useRef(new WeakMap());
 
@@ -100,8 +100,14 @@ export default function ArrayEditor({ label, items = [], onAdd, onRemove, onReor
   };
 
   const handleAdd = () => {
-    onAdd();
+    if (onAddGlobal) onAddGlobal();
+    else onAdd();
     setOpenItems((prev) => new Set([...prev, items.length]));
+  };
+  
+  const handleRemove = (idx) => {
+    if (onRemoveGlobal) onRemoveGlobal(idx);
+    else onRemove(idx);
   };
 
   const sensors = useSensors(
@@ -118,13 +124,17 @@ export default function ArrayEditor({ label, items = [], onAdd, onRemove, onReor
   const handleDragEnd = (event) => {
     const { active, over } = event;
 
-    if (over && active.id !== over.id && onReorder) {
+    if (over && active.id !== over.id) {
       const itemIds = items.map((itm, i) => getId(itm, i));
       const oldIndex = itemIds.indexOf(active.id);
       const newIndex = itemIds.indexOf(over.id);
 
-      const newItems = arrayMove(items, oldIndex, newIndex);
-      onReorder(newItems);
+      if (onMove) {
+        onMove(oldIndex, newIndex);
+      } else if (onReorder) {
+        const newItems = arrayMove(items, oldIndex, newIndex);
+        onReorder(newItems);
+      }
       
       setOpenItems(new Set()); 
     }
@@ -160,7 +170,7 @@ export default function ArrayEditor({ label, items = [], onAdd, onRemove, onReor
                   item={item}
                   isOpen={isOpen}
                   toggle={toggle}
-                  onRemove={onRemove}
+                  onRemove={handleRemove}
                   hideControls={hideControls}
                   children={children}
                 />

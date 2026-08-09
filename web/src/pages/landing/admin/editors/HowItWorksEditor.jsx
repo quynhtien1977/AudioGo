@@ -3,7 +3,7 @@ import ArrayEditor from "../shared/ArrayEditor";
 
 const STEP_TEMPLATE = { number: "1", title: "Bước mới", description: "Mô tả bước..." };
 
-export default function HowItWorksEditor({ data, onChange, sharedOnly, translationOnly }) {
+export default function HowItWorksEditor({ data, onChange, sharedOnly, translationOnly, arrayActions }) {
   const upd = (key, val) => onChange({ ...data, [key]: val });
 
   const updStep = (idx, key, val) => {
@@ -25,6 +25,9 @@ export default function HowItWorksEditor({ data, onChange, sharedOnly, translati
       <ArrayEditor
         label="Các bước thực hiện"
         items={data.steps || []}
+        onMove={arrayActions ? (o, n) => arrayActions.onMove("steps", o, n) : undefined}
+        onAddGlobal={arrayActions ? () => arrayActions.onAdd("steps", { number: "1" }, { title: "Bước mới", description: "Mô tả bước..." }) : undefined}
+        onRemoveGlobal={arrayActions ? (idx) => arrayActions.onRemove("steps", idx) : undefined}
         onReorder={(v) => upd("steps", v)}
         addLabel="Thêm bước"
         hideControls={translationOnly}

@@ -6,7 +6,7 @@ import { IconPickerField } from "../shared/IconPickerField";
 const STAT_TEMPLATE   = { icon: "MapPin", value: "100+", label: "Địa điểm" };
 const BG_IMG_TEMPLATE = { url: "", alt: "" };
 
-export default function HeroEditor({ data, onChange, sharedOnly, translationOnly }) {
+export default function HeroEditor({ data, onChange, sharedOnly, translationOnly, arrayActions }) {
   const upd = (key, val) => onChange({ ...data, [key]: val });
 
   const updStat = (idx, key, val) => {
@@ -70,6 +70,9 @@ export default function HeroEditor({ data, onChange, sharedOnly, translationOnly
       <ArrayEditor
         label="Ảnh nền (slideshow tự động)"
         items={data.backgroundImages || []}
+        onMove={arrayActions ? (o, n) => arrayActions.onMove("backgroundImages", o, n) : undefined}
+        onAddGlobal={arrayActions ? () => arrayActions.onAdd("backgroundImages", { ...BG_IMG_TEMPLATE }, {}) : undefined}
+        onRemoveGlobal={arrayActions ? (idx) => arrayActions.onRemove("backgroundImages", idx) : undefined}
         onReorder={(v) => upd("backgroundImages", v)}
         addLabel="Thêm ảnh nền"
         onAdd={() => upd("backgroundImages", [...(data.backgroundImages || []), { ...BG_IMG_TEMPLATE }])}
@@ -92,6 +95,9 @@ export default function HeroEditor({ data, onChange, sharedOnly, translationOnly
       <ArrayEditor
         label="Số liệu thống kê (Stats)"
         items={data.stats || []}
+        onMove={arrayActions ? (o, n) => arrayActions.onMove("stats", o, n) : undefined}
+        onAddGlobal={arrayActions ? () => arrayActions.onAdd("stats", { icon: "MapPin" }, { value: "100+", label: "Địa điểm" }) : undefined}
+        onRemoveGlobal={arrayActions ? (idx) => arrayActions.onRemove("stats", idx) : undefined}
         onReorder={(v) => upd("stats", v)}
         addLabel="Thêm số liệu"
         hideControls={translationOnly}

@@ -8,7 +8,7 @@ const BENEFIT_TEMPLATE = { icon: "Zap", text: "Lợi ích nổi bật..." };
  * ConsultEditor — editor đầy đủ cho section Tư vấn / Đối tác
  * Tuỳ chỉnh: tiêu đề, phụ đề, ghi chú form, và danh sách benefits (icon + text)
  */
-export default function ConsultEditor({ data, onChange, sharedOnly, translationOnly }) {
+export default function ConsultEditor({ data, onChange, sharedOnly, translationOnly, arrayActions }) {
   const upd = (key, val) => onChange({ ...data, [key]: val });
 
   const updBenefit = (idx, key, val) => {
@@ -45,7 +45,6 @@ export default function ConsultEditor({ data, onChange, sharedOnly, translationO
             value={data.formNote}
             onChange={(v) => upd("formNote", v)}
             rows={2}
-            rows={2}
             placeholder="Chúng tôi sẽ liên hệ trong vòng 24 giờ làm việc."
           />
           <hr className="my-4 border-gray-100" />
@@ -75,6 +74,9 @@ export default function ConsultEditor({ data, onChange, sharedOnly, translationO
       <ArrayEditor
         label="Danh sách lợi ích (bullet points)"
         items={data.benefits || []}
+        onMove={arrayActions ? (o, n) => arrayActions.onMove("benefits", o, n) : undefined}
+        onAddGlobal={arrayActions ? () => arrayActions.onAdd("benefits", { icon: "Zap" }, { text: "Lợi ích nổi bật..." }) : undefined}
+        onRemoveGlobal={arrayActions ? (idx) => arrayActions.onRemove("benefits", idx) : undefined}
         onReorder={(v) => upd("benefits", v)}
         addLabel="Thêm lợi ích"
         hideControls={translationOnly}

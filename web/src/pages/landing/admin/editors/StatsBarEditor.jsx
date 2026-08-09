@@ -4,7 +4,7 @@ import { IconPickerField } from "../shared/IconPickerField";
 
 const ITEM_TEMPLATE = { icon: "Utensils", text: "100+ địa điểm" };
 
-export default function StatsBarEditor({ data, onChange, sharedOnly, translationOnly }) {
+export default function StatsBarEditor({ data, onChange, sharedOnly, translationOnly, arrayActions }) {
   const upd = (key, val) => onChange({ ...data, [key]: val });
 
   const updItem = (idx, key, val) => {
@@ -18,6 +18,9 @@ export default function StatsBarEditor({ data, onChange, sharedOnly, translation
       <ArrayEditor
         label="Các con số thống kê"
         items={data.items || []}
+        onMove={arrayActions ? (o, n) => arrayActions.onMove("items", o, n) : undefined}
+        onAddGlobal={arrayActions ? () => arrayActions.onAdd("items", { icon: "Utensils" }, { text: "100+ địa điểm" }) : undefined}
+        onRemoveGlobal={arrayActions ? (idx) => arrayActions.onRemove("items", idx) : undefined}
         onReorder={(v) => upd("items", v)}
         addLabel="Thêm mục"
         hideControls={translationOnly}

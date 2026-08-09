@@ -53,53 +53,53 @@ const SHARED_FIELD_HINTS = {
   navbar_static:{ keys: [], arrays: false },
 };
 
-function renderSharedEditor(sectionKey, shared, onSharedChange) {
+function renderSharedEditor(sectionKey, shared, onSharedChange, arrayActions) {
   switch (sectionKey) {
     case "hero":
-      return <HeroEditor data={shared} onChange={onSharedChange} sharedOnly />;
+      return <HeroEditor data={shared} onChange={onSharedChange} arrayActions={arrayActions} sharedOnly />;
     case "stats_bar":
-      return <StatsBarEditor data={shared} onChange={onSharedChange} sharedOnly />;
+      return <StatsBarEditor data={shared} onChange={onSharedChange} arrayActions={arrayActions} sharedOnly />;
     case "features":
-      return <FeaturesEditor data={shared} onChange={onSharedChange} sharedOnly />;
+      return <FeaturesEditor data={shared} onChange={onSharedChange} arrayActions={arrayActions} sharedOnly />;
     case "how_it_works":
-      return <HowItWorksEditor data={shared} onChange={onSharedChange} sharedOnly />;
+      return <HowItWorksEditor data={shared} onChange={onSharedChange} arrayActions={arrayActions} sharedOnly />;
     case "screenshots":
-      return <ScreenshotsEditor data={shared} onChange={onSharedChange} sharedOnly />;
+      return <ScreenshotsEditor data={shared} onChange={onSharedChange} arrayActions={arrayActions} sharedOnly />;
     case "footer":
-      return <FooterEditor data={shared} onChange={onSharedChange} sharedOnly />;
+      return <FooterEditor data={shared} onChange={onSharedChange} arrayActions={arrayActions} sharedOnly />;
     case "download_cta":
-      return <DownloadEditor data={shared} onChange={onSharedChange} sharedOnly />;
+      return <DownloadEditor data={shared} onChange={onSharedChange} arrayActions={arrayActions} sharedOnly />;
     case "consult_cta":
-      return <ConsultEditor data={shared} onChange={onSharedChange} sharedOnly />;
+      return <ConsultEditor data={shared} onChange={onSharedChange} arrayActions={arrayActions} sharedOnly />;
     case "navbar_static":
-      return <NavbarStaticEditor data={shared} onChange={onSharedChange} sharedOnly />;
+      return <NavbarStaticEditor data={shared} onChange={onSharedChange} arrayActions={arrayActions} sharedOnly />;
     default:
       return null;
   }
 }
 
-function renderTranslationEditor(sectionKey, trans, viTrans, onTransChange) {
+function renderTranslationEditor(sectionKey, trans, viTrans, onTransChange, arrayActions) {
   // Merge vi vào trans để có placeholder từ bản gốc
   const dataWithPlaceholder = trans ?? {};
   switch (sectionKey) {
     case "hero":
-      return <HeroEditor data={dataWithPlaceholder} onChange={onTransChange} viPlaceholder={viTrans} translationOnly />;
+      return <HeroEditor data={dataWithPlaceholder} onChange={onTransChange} arrayActions={arrayActions} viPlaceholder={viTrans} translationOnly />;
     case "stats_bar":
-      return <StatsBarEditor data={dataWithPlaceholder} onChange={onTransChange} viPlaceholder={viTrans} translationOnly />;
+      return <StatsBarEditor data={dataWithPlaceholder} onChange={onTransChange} arrayActions={arrayActions} viPlaceholder={viTrans} translationOnly />;
     case "features":
-      return <FeaturesEditor data={dataWithPlaceholder} onChange={onTransChange} viPlaceholder={viTrans} translationOnly />;
+      return <FeaturesEditor data={dataWithPlaceholder} onChange={onTransChange} arrayActions={arrayActions} viPlaceholder={viTrans} translationOnly />;
     case "how_it_works":
-      return <HowItWorksEditor data={dataWithPlaceholder} onChange={onTransChange} viPlaceholder={viTrans} translationOnly />;
+      return <HowItWorksEditor data={dataWithPlaceholder} onChange={onTransChange} arrayActions={arrayActions} viPlaceholder={viTrans} translationOnly />;
     case "screenshots":
-      return <ScreenshotsEditor data={dataWithPlaceholder} onChange={onTransChange} viPlaceholder={viTrans} translationOnly />;
+      return <ScreenshotsEditor data={dataWithPlaceholder} onChange={onTransChange} arrayActions={arrayActions} viPlaceholder={viTrans} translationOnly />;
     case "footer":
-      return <FooterEditor data={dataWithPlaceholder} onChange={onTransChange} viPlaceholder={viTrans} translationOnly />;
+      return <FooterEditor data={dataWithPlaceholder} onChange={onTransChange} arrayActions={arrayActions} viPlaceholder={viTrans} translationOnly />;
     case "download_cta":
-      return <DownloadEditor data={dataWithPlaceholder} onChange={onTransChange} viPlaceholder={viTrans} translationOnly />;
+      return <DownloadEditor data={dataWithPlaceholder} onChange={onTransChange} arrayActions={arrayActions} viPlaceholder={viTrans} translationOnly />;
     case "consult_cta":
-      return <ConsultEditor data={dataWithPlaceholder} onChange={onTransChange} viPlaceholder={viTrans} translationOnly />;
+      return <ConsultEditor data={dataWithPlaceholder} onChange={onTransChange} arrayActions={arrayActions} viPlaceholder={viTrans} translationOnly />;
     case "navbar_static":
-      return <NavbarStaticEditor data={dataWithPlaceholder} onChange={onTransChange} viPlaceholder={viTrans} translationOnly />;
+      return <NavbarStaticEditor data={dataWithPlaceholder} onChange={onTransChange} arrayActions={arrayActions} viPlaceholder={viTrans} translationOnly />;
     default:
       return <SimpleEditor sectionKey={sectionKey} data={dataWithPlaceholder} onChange={onTransChange} />;
   }
@@ -190,15 +190,116 @@ export default function LandingSettingsPage() {
     setDirtyTrans(true);
   };
 
+  const arrayMoveHelper = (arr, oldIdx, newIdx) => {
+    if (!arr) return [];
+    const newArr = [...arr];
+    const [movedItem] = newArr.splice(oldIdx, 1);
+    newArr.splice(newIdx, 0, movedItem);
+    return newArr;
+  };
+
+  const arrayActions = {
+    onMove: (fieldKey, oldIndex, newIndex) => {
+      setContentMap((prev) => {
+        const prevContent = prev[activeSectionKey] || { shared: {}, translations: {} };
+        const newShared = { ...prevContent.shared };
+        if (newShared[fieldKey]) {
+          newShared[fieldKey] = arrayMoveHelper(newShared[fieldKey], oldIndex, newIndex);
+        }
+        
+        const newTrans = { ...prevContent.translations };
+        for (const lang of Object.keys(newTrans)) {
+          if (newTrans[lang] && newTrans[lang][fieldKey]) {
+            newTrans[lang] = {
+              ...newTrans[lang],
+              [fieldKey]: arrayMoveHelper(newTrans[lang][fieldKey], oldIndex, newIndex)
+            };
+          }
+        }
+        
+        return {
+          ...prev,
+          [activeSectionKey]: { ...prevContent, shared: newShared, translations: newTrans }
+        };
+      });
+      setDirtyShared(true);
+      setDirtyTrans(true);
+    },
+    
+    onAdd: (fieldKey, newItemShared, newItemTransTemplate) => {
+      setContentMap((prev) => {
+        const prevContent = prev[activeSectionKey] || { shared: {}, translations: {} };
+        const newShared = { ...prevContent.shared };
+        newShared[fieldKey] = [...(newShared[fieldKey] || []), newItemShared];
+        
+        const newTrans = { ...prevContent.translations };
+        for (const lang of Object.keys(newTrans)) {
+          if (newTrans[lang]) {
+            newTrans[lang] = {
+              ...newTrans[lang],
+              [fieldKey]: [...(newTrans[lang][fieldKey] || []), newItemTransTemplate]
+            };
+          }
+        }
+        
+        return {
+          ...prev,
+          [activeSectionKey]: { ...prevContent, shared: newShared, translations: newTrans }
+        };
+      });
+      setDirtyShared(true);
+      setDirtyTrans(true);
+    },
+
+    onRemove: (fieldKey, index) => {
+      setContentMap((prev) => {
+        const prevContent = prev[activeSectionKey] || { shared: {}, translations: {} };
+        const newShared = { ...prevContent.shared };
+        if (newShared[fieldKey]) {
+          newShared[fieldKey] = newShared[fieldKey].filter((_, i) => i !== index);
+        }
+        
+        const newTrans = { ...prevContent.translations };
+        for (const lang of Object.keys(newTrans)) {
+          if (newTrans[lang] && newTrans[lang][fieldKey]) {
+            newTrans[lang] = {
+              ...newTrans[lang],
+              [fieldKey]: newTrans[lang][fieldKey].filter((_, i) => i !== index)
+            };
+          }
+        }
+        
+        return {
+          ...prev,
+          [activeSectionKey]: { ...prevContent, shared: newShared, translations: newTrans }
+        };
+      });
+      setDirtyShared(true);
+      setDirtyTrans(true);
+    }
+  };
+
   const handleSaveShared = async () => {
     if (!currentSection) return;
     setSavingShared(true);
     try {
       await updateShared(currentSection.sectionId, currentShared);
-      toast.success("Đã lưu Shared Fields!");
+      
+      if (dirtyTrans) {
+        const promises = [];
+        for (const lang of Object.keys(currentTrans)) {
+          if (currentTrans[lang]) {
+            promises.push(updateTranslation(currentSection.sectionId, lang, currentTrans[lang]));
+          }
+        }
+        await Promise.all(promises);
+        setDirtyTrans(false);
+      }
+
+      toast.success("Đã lưu Cấu hình & Đồng bộ!");
       setDirtyShared(false);
     } catch {
-      toast.error("Lưu Shared thất bại.");
+      toast.error("Lưu thất bại.");
     } finally {
       setSavingShared(false);
     }
@@ -213,10 +314,23 @@ export default function LandingSettingsPage() {
     setSavingTrans(true);
     try {
       await updateTranslation(currentSection.sectionId, activeLang, currentLangData || {});
+      
+      if (dirtyShared) {
+        await updateShared(currentSection.sectionId, currentShared);
+        const promises = [];
+        for (const lang of Object.keys(currentTrans)) {
+          if (lang !== activeLang && currentTrans[lang]) {
+            promises.push(updateTranslation(currentSection.sectionId, lang, currentTrans[lang]));
+          }
+        }
+        await Promise.all(promises);
+        setDirtyShared(false);
+      }
+      
       toast.success(`Đã lưu bản dịch ${activeLang.toUpperCase()}!`);
       setDirtyTrans(false);
     } catch {
-      toast.error("Lưu bản dịch thất bại.");
+      toast.error("Lưu thất bại.");
     } finally {
       setSavingTrans(false);
     }
@@ -261,9 +375,7 @@ export default function LandingSettingsPage() {
   };
 
   const handleEditorModeChange = (mode) => {
-    checkUnsavedAndExecute(() => {
-      setEditorMode(mode);
-    });
+    setEditorMode(mode);
   };
 
   const visibleTabs = TABS.filter((t) => !t.adminOnly || isAdmin);
@@ -426,7 +538,7 @@ export default function LandingSettingsPage() {
                         </button>
                       </div>
                       <div className="px-6 py-6">
-                        {renderSharedEditor(activeSectionKey, currentShared, handleSharedChange)}
+                        {renderSharedEditor(activeSectionKey, currentShared, handleSharedChange, arrayActions)}
                       </div>
                     </div>
                   )}
@@ -460,7 +572,8 @@ export default function LandingSettingsPage() {
                           activeSectionKey,
                           currentLangData,
                           viData,
-                          handleTransChange
+                          handleTransChange,
+                          arrayActions
                         )}
                       </div>
                     </div>

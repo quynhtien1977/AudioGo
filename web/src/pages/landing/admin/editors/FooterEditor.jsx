@@ -4,7 +4,7 @@ import ArrayEditor from "../shared/ArrayEditor";
 
 const SOCIAL_TEMPLATE = { platform: "facebook", url: "" };
 
-export default function FooterEditor({ data, onChange, sharedOnly, translationOnly }) {
+export default function FooterEditor({ data, onChange, sharedOnly, translationOnly, arrayActions }) {
   const upd = (key, val) => onChange({ ...data, [key]: val });
 
   const updSocial = (idx, key, val) => {
@@ -50,6 +50,9 @@ export default function FooterEditor({ data, onChange, sharedOnly, translationOn
           <ArrayEditor
             label="Mạng xã hội"
             items={data.socialLinks || []}
+            onMove={arrayActions ? (o, n) => arrayActions.onMove("socialLinks", o, n) : undefined}
+            onAddGlobal={arrayActions ? () => arrayActions.onAdd("socialLinks", { platform: "facebook", url: "" }, {}) : undefined}
+            onRemoveGlobal={arrayActions ? (idx) => arrayActions.onRemove("socialLinks", idx) : undefined}
             onReorder={(v) => upd("socialLinks", v)}
             addLabel="Thêm mạng xã hội"
             onAdd={() => upd("socialLinks", [...(data.socialLinks || []), { ...SOCIAL_TEMPLATE }])}

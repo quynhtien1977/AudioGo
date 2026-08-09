@@ -4,7 +4,7 @@ import { IconPickerField } from "../shared/IconPickerField";
 
 const ITEM_TEMPLATE = { icon: "Sparkles", title: "Tính năng", description: "Mô tả tính năng..." };
 
-export default function FeaturesEditor({ data, onChange, sharedOnly, translationOnly }) {
+export default function FeaturesEditor({ data, onChange, sharedOnly, translationOnly, arrayActions }) {
   const upd = (key, val) => onChange({ ...data, [key]: val });
 
   const updItem = (idx, key, val) => {
@@ -27,6 +27,9 @@ export default function FeaturesEditor({ data, onChange, sharedOnly, translation
       <ArrayEditor
         label="Danh sách tính năng"
         items={data.items || []}
+        onMove={arrayActions ? (o, n) => arrayActions.onMove("items", o, n) : undefined}
+        onAddGlobal={arrayActions ? () => arrayActions.onAdd("items", { icon: "Sparkles" }, { title: "Tính năng", description: "Mô tả tính năng..." }) : undefined}
+        onRemoveGlobal={arrayActions ? (idx) => arrayActions.onRemove("items", idx) : undefined}
         onReorder={(v) => upd("items", v)}
         addLabel="Thêm tính năng"
         hideControls={translationOnly}

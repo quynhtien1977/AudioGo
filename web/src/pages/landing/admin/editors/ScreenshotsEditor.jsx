@@ -4,7 +4,7 @@ import ArrayEditor from "../shared/ArrayEditor";
 
 const IMG_TEMPLATE = { url: "", alt: "Màn hình app AudioGo" };
 
-export default function ScreenshotsEditor({ data, onChange, sharedOnly, translationOnly }) {
+export default function ScreenshotsEditor({ data, onChange, sharedOnly, translationOnly, arrayActions }) {
   const upd = (key, val) => onChange({ ...data, [key]: val });
 
   const updImg = (idx, key, val) => {
@@ -29,6 +29,9 @@ export default function ScreenshotsEditor({ data, onChange, sharedOnly, translat
       <ArrayEditor
         label="Ảnh chụp màn hình"
         items={data.images || []}
+        onMove={arrayActions ? (o, n) => arrayActions.onMove("images", o, n) : undefined}
+        onAddGlobal={arrayActions ? () => arrayActions.onAdd("images", { url: "" }, { alt: "Màn hình app AudioGo" }) : undefined}
+        onRemoveGlobal={arrayActions ? (idx) => arrayActions.onRemove("images", idx) : undefined}
         onReorder={(v) => upd("images", v)}
         addLabel="Thêm ảnh"
         hideControls={translationOnly}
