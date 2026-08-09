@@ -50,6 +50,7 @@ export default function FooterEditor({ data, onChange, sharedOnly, translationOn
           <ArrayEditor
             label="Mạng xã hội"
             items={data.socialLinks || []}
+            onReorder={(v) => upd("socialLinks", v)}
             addLabel="Thêm mạng xã hội"
             onAdd={() => upd("socialLinks", [...(data.socialLinks || []), { ...SOCIAL_TEMPLATE }])}
             onRemove={(idx) => upd("socialLinks", (data.socialLinks || []).filter((_, i) => i !== idx))}

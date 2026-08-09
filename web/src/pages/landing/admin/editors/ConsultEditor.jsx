@@ -75,6 +75,7 @@ export default function ConsultEditor({ data, onChange, sharedOnly, translationO
       <ArrayEditor
         label="Danh sách lợi ích (bullet points)"
         items={data.benefits || []}
+        onReorder={(v) => upd("benefits", v)}
         addLabel="Thêm lợi ích"
         hideControls={translationOnly}
         onAdd={() => upd("benefits", [...(data.benefits || []), { ...BENEFIT_TEMPLATE }])}

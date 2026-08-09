@@ -70,6 +70,7 @@ export default function HeroEditor({ data, onChange, sharedOnly, translationOnly
       <ArrayEditor
         label="Ảnh nền (slideshow tự động)"
         items={data.backgroundImages || []}
+        onReorder={(v) => upd("backgroundImages", v)}
         addLabel="Thêm ảnh nền"
         onAdd={() => upd("backgroundImages", [...(data.backgroundImages || []), { ...BG_IMG_TEMPLATE }])}
         onRemove={(idx) => upd("backgroundImages", (data.backgroundImages || []).filter((_, i) => i !== idx))}
@@ -91,6 +92,7 @@ export default function HeroEditor({ data, onChange, sharedOnly, translationOnly
       <ArrayEditor
         label="Số liệu thống kê (Stats)"
         items={data.stats || []}
+        onReorder={(v) => upd("stats", v)}
         addLabel="Thêm số liệu"
         hideControls={translationOnly}
         onAdd={() => upd("stats", [...(data.stats || []), { ...STAT_TEMPLATE }])}

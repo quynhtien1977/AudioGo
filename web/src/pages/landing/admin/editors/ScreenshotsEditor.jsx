@@ -29,6 +29,7 @@ export default function ScreenshotsEditor({ data, onChange, sharedOnly, translat
       <ArrayEditor
         label="Ảnh chụp màn hình"
         items={data.images || []}
+        onReorder={(v) => upd("images", v)}
         addLabel="Thêm ảnh"
         hideControls={translationOnly}
         onAdd={() => upd("images", [...(data.images || []), { ...IMG_TEMPLATE }])}

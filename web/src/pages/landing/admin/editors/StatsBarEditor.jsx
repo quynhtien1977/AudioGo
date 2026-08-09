@@ -16,8 +16,9 @@ export default function StatsBarEditor({ data, onChange, sharedOnly, translation
   return (
     <div>
       <ArrayEditor
-        label="Các mục thống kê"
+        label="Các con số thống kê"
         items={data.items || []}
+        onReorder={(v) => upd("items", v)}
         addLabel="Thêm mục"
         hideControls={translationOnly}
         onAdd={() => upd("items", [...(data.items || []), { ...ITEM_TEMPLATE }])}

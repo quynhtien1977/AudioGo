@@ -27,6 +27,7 @@ export default function FeaturesEditor({ data, onChange, sharedOnly, translation
       <ArrayEditor
         label="Danh sách tính năng"
         items={data.items || []}
+        onReorder={(v) => upd("items", v)}
         addLabel="Thêm tính năng"
         hideControls={translationOnly}
         onAdd={() => upd("items", [...(data.items || []), { ...ITEM_TEMPLATE }])}

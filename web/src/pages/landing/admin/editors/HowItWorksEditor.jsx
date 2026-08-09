@@ -23,14 +23,12 @@ export default function HowItWorksEditor({ data, onChange, sharedOnly, translati
       )}
 
       <ArrayEditor
-        label="Các bước"
+        label="Các bước thực hiện"
         items={data.steps || []}
+        onReorder={(v) => upd("steps", v)}
         addLabel="Thêm bước"
         hideControls={translationOnly}
-        onAdd={() => {
-          const n = (data.steps || []).length + 1;
-          upd("steps", [...(data.steps || []), { ...STEP_TEMPLATE, number: String(n) }]);
-        }}
+        onAdd={() => upd("steps", [...(data.steps || []), { ...STEP_TEMPLATE }])}
         onRemove={(idx) => upd("steps", (data.steps || []).filter((_, i) => i !== idx))}
       >
         {(step, idx) => (
