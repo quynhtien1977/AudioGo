@@ -9,9 +9,10 @@ import { useState } from "react";
  *   onAdd       — () => void  (thêm item mới với template mặc định)
  *   onRemove    — (idx) => void
  *   addLabel    — text nút thêm, mặc định "Thêm mới"
+ *   hideControls— (boolean) ẩn nút Thêm/Xóa khi chỉ cho phép dịch
  *   children    — (item, idx) => JSX  (render form từng item)
  */
-export default function ArrayEditor({ label, items = [], onAdd, onRemove, addLabel = "Thêm mới", children }) {
+export default function ArrayEditor({ label, items = [], onAdd, onRemove, addLabel = "Thêm mới", hideControls = false, children }) {
   const [openItems, setOpenItems] = useState(new Set());
 
   const toggle = (idx) => {
@@ -49,13 +50,15 @@ export default function ArrayEditor({ label, items = [], onAdd, onRemove, addLab
                   #{idx + 1} {item?.title || item?.label || item?.text || item?.alt || ""}
                 </span>
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onRemove(idx); }}
-                    className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                    title="Xóa"
-                  >
-                    <Trash2 size={13} />
-                  </button>
+                  {!hideControls && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onRemove(idx); }}
+                      className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                      title="Xóa"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  )}
                   {isOpen
                     ? <ChevronUp size={15} className="text-gray-400" />
                     : <ChevronDown size={15} className="text-gray-400" />
@@ -74,14 +77,16 @@ export default function ArrayEditor({ label, items = [], onAdd, onRemove, addLab
         })}
       </div>
 
-      <button
-        type="button"
-        onClick={handleAdd}
-        className="mt-2 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-pink-200 text-pink-500 text-sm font-medium hover:bg-pink-50 hover:border-pink-300 transition-colors"
-      >
-        <Plus size={15} />
-        {addLabel}
-      </button>
+      {!hideControls && (
+        <button
+          type="button"
+          onClick={handleAdd}
+          className="mt-2 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-pink-200 text-pink-500 text-sm font-medium hover:bg-pink-50 hover:border-pink-300 transition-colors"
+        >
+          <Plus size={15} />
+          {addLabel}
+        </button>
+      )}
     </div>
   );
 }

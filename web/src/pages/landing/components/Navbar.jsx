@@ -1,13 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Map, Sun, Moon } from "lucide-react";
+import { Menu, X, Map, Sun, Moon, ChevronDown, Globe2 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
+import { SUPPORTED_LANGS } from "@/api/landingApi";
 
-export default function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
+export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
+  const [scrolled, setScrolled]     = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { theme, toggle } = useTheme();
+  const [langOpen, setLangOpen]     = useState(false);
+  const langRef                     = useRef(null);
+  const { theme, toggle }           = useTheme();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -15,12 +18,20 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    const handler = (e) => {
+      if (langRef.current && !langRef.current.contains(e.target)) setLangOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
   const links = [
-    { label: "Giới thiệu", href: "#features" },
-    { label: "Cách hoạt động", href: "#how-it-works" },
-    { label: "Ảnh app", href: "#screenshots" },
-    { label: "Tải App", href: "#download" },
-    { label: "Liên hệ", href: "#consult" },
+    { label: staticData.navIntro || "Giới thiệu",    href: "#features" },
+    { label: staticData.navHow || "Cách hoạt động", href: "#how-it-works" },
+    { label: staticData.navScreenshots || "Ảnh app",       href: "#screenshots" },
+    { label: staticData.navDownload || "Tải App",       href: "#download" },
+    { label: staticData.navContact || "Liên hệ",       href: "#consult" },
   ];
 
   const scrollTo = (href) => {
@@ -30,6 +41,12 @@ export default function Navbar() {
   };
 
   const isLight = theme === "light";
+  const currentLang = SUPPORTED_LANGS.find((l) => l.code === lang) || SUPPORTED_LANGS[0];
+
+  const handleLangSelect = (code) => {
+    onLangChange?.(code);
+    setLangOpen(false);
+  };
 
   return (
     <>
@@ -52,21 +69,69 @@ export default function Navbar() {
           </a>
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden xl:flex items-center gap-1">
             {links.map((l) => (
               <button
                 key={l.href}
                 onClick={() => scrollTo(l.href)}
                 style={{ color: scrolled ? "var(--lp-text-muted)" : "rgba(255,255,255,0.8)" }}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:text-pink-400"
+                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:text-pink-400 whitespace-nowrap"
               >
                 {l.label}
               </button>
             ))}
           </nav>
 
-          {/* CTAs + Theme toggle */}
-          <div className="hidden md:flex items-center gap-2">
+          {/* CTAs + Theme toggle + Lang switcher */}
+          <div className="hidden xl:flex items-center gap-2">
+            {/* Language switcher */}
+            <div className="relative" ref={langRef}>
+              <button
+                onClick={() => setLangOpen((v) => !v)}
+                style={{
+                  background: scrolled ? "var(--lp-bg-card)" : "rgba(255,255,255,0.1)",
+                  border: `1px solid ${scrolled ? "var(--lp-border)" : "rgba(255,255,255,0.2)"}`,
+                  color: scrolled ? "var(--lp-text-muted)" : "rgba(255,255,255,0.9)",
+                }}
+                className="h-9 px-2.5 rounded-lg flex items-center gap-1.5 text-sm font-medium transition-all hover:text-pink-400"
+                aria-label="Chọn ngôn ngữ"
+              >
+                <span className="text-lg">{currentLang.flag}</span>
+                <span className="uppercase">{currentLang.code}</span>
+                <ChevronDown size={12} className={`transition-transform ${langOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              <AnimatePresence>
+                {langOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                    transition={{ duration: 0.12 }}
+                    className="absolute right-0 top-11 z-50 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 w-44 overflow-hidden"
+                  >
+                    {SUPPORTED_LANGS.map((l) => (
+                      <button
+                        key={l.code}
+                        onClick={() => handleLangSelect(l.code)}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
+                          l.code === lang
+                            ? "bg-pink-50 text-pink-600 font-semibold"
+                            : "text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        <span className="text-base">{l.flag}</span>
+                        <span>{l.label}</span>
+                        {l.code === lang && (
+                          <span className="ml-auto text-[10px] font-bold text-pink-400 bg-pink-50 px-1.5 py-0.5 rounded">✓</span>
+                        )}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             {/* Theme toggle */}
             <button
               onClick={toggle}
@@ -87,21 +152,28 @@ export default function Navbar() {
                 border: `1px solid ${scrolled ? "var(--lp-border)" : "rgba(255,255,255,0.3)"}`,
                 color: scrolled ? "var(--lp-text-muted)" : "rgba(255,255,255,0.9)",
               }}
-              className="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:border-pink-400 hover:text-pink-400"
+              className="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:border-pink-400 hover:text-pink-400 whitespace-nowrap"
             >
-              Đăng nhập
+              {staticData.navLogin || "Đăng nhập"}
             </Link>
             <button
               onClick={() => scrollTo("#consult")}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-pink-600 text-white shadow-sm hover:shadow-md hover:bg-pink-700 hover:scale-[1.02] active:scale-[0.98] transition-all"
+              className="px-4 py-2 rounded-lg text-sm font-semibold bg-pink-600 text-white shadow-sm hover:shadow-md hover:bg-pink-700 hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap"
             >
-              Đăng ký làm đối tác
+              {staticData.navPartner || "Đăng ký làm đối tác"}
             </button>
           </div>
 
           {/* Mobile controls */}
-          <div className="md:hidden flex items-center gap-2">
-            {/* Theme toggle mobile */}
+          <div className="xl:hidden flex items-center gap-2">
+            <button
+              onClick={() => setLangOpen((v) => !v)}
+              style={{ color: scrolled ? "var(--lp-text)" : "white" }}
+              className="px-3 py-1.5 rounded-lg transition-colors text-sm font-bold flex items-center gap-2"
+            >
+              <span className="text-lg">{currentLang.flag}</span>
+              <span className="uppercase">{currentLang.code}</span>
+            </button>
             <button
               onClick={toggle}
               style={{ color: scrolled ? "var(--lp-text)" : "white" }}
@@ -120,6 +192,34 @@ export default function Navbar() {
           </div>
         </div>
       </header>
+
+      {/* Mobile lang dropdown */}
+      <AnimatePresence>
+        {langOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.1 }}
+            className="xl:hidden fixed top-16 right-4 z-50 bg-white rounded-xl shadow-xl border border-gray-100 py-1.5 w-44"
+          >
+            {SUPPORTED_LANGS.map((l) => (
+              <button
+                key={l.code}
+                onClick={() => handleLangSelect(l.code)}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
+                  l.code === lang
+                    ? "bg-pink-50 text-pink-600 font-semibold"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <span className="text-base">{l.flag}</span>
+                <span>{l.label}</span>
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Mobile menu */}
       <AnimatePresence>
@@ -150,13 +250,13 @@ export default function Navbar() {
                 className="px-4 py-3 rounded-lg font-medium hover:text-pink-400 transition-colors"
                 onClick={() => setMobileOpen(false)}
               >
-                Đăng nhập quản lý
+                {staticData.navLoginMobile || "Đăng nhập quản lý"}
               </Link>
               <button
                 onClick={() => scrollTo("#consult")}
                 className="px-4 py-3 rounded-lg font-semibold bg-pink-600 text-white text-center hover:bg-pink-700 transition-colors"
               >
-                Đăng ký làm đối tác
+                {staticData.navPartner || "Đăng ký làm đối tác"}
               </button>
             </div>
           </motion.div>

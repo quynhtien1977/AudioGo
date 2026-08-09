@@ -11,9 +11,39 @@ export async function getCmsSections() {
   return data;
 }
 
-export async function updateSection(id, payload) {
-  const { data } = await apiClient.put(`/cms/landing/sections/${id}`, payload);
+export async function getCmsSection(id) {
+  const { data } = await apiClient.get(`/cms/landing/sections/${id}`);
   return data;
+}
+
+/**
+ * Cập nhật bản dịch của 1 ngôn ngữ cho section — dùng JSON_MODIFY atomic ở SQL Server.
+ * @param {string} id - SectionId
+ * @param {string} langCode - "vi" | "en" | "es" | "fr" | "ko" | "ja"
+ * @param {object} content - object chứa các text field đã dịch
+ */
+export async function updateTranslation(id, langCode, content) {
+  await apiClient.put(`/cms/landing/sections/${id}/translation/${langCode}`, {
+    content: JSON.stringify(content),
+  });
+}
+
+/**
+ * Cập nhật shared fields (ảnh, link, icon...) cho section — dùng JSON_MODIFY atomic.
+ * @param {string} id - SectionId
+ * @param {object} content - object shared fields
+ */
+export async function updateShared(id, content) {
+  await apiClient.put(`/cms/landing/sections/${id}/shared`, {
+    content: JSON.stringify(content),
+  });
+}
+
+/**
+ * Cập nhật meta (isActive, sortOrder) — KHÔNG chạm ContentJson.
+ */
+export async function updateSectionMeta(id, { isActive, sortOrder }) {
+  await apiClient.patch(`/cms/landing/sections/${id}/meta`, { isActive, sortOrder });
 }
 
 export async function uploadLandingImage(file, sectionKey = "general") {

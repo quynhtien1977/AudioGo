@@ -56,7 +56,7 @@ function SocialIcon({ platform }) {
   );
 }
 
-export default function FooterSection({ data }) {
+export default function FooterSection({ data, staticData = {} }) {
   const {
     description  = "AudioGo — Ứng dụng thuyết minh ẩm thực bằng âm thanh.",
     address      = "Phố Ẩm Thực Vĩnh Khánh, Quận 4, TP. Hồ Chí Minh",
@@ -107,7 +107,7 @@ export default function FooterSection({ data }) {
 
           {/* Contact */}
           <div>
-            <h4 className="font-semibold text-sm text-white/70 uppercase tracking-wider mb-5">Liên hệ</h4>
+            <h4 className="font-semibold text-sm text-white/70 uppercase tracking-wider mb-5">{staticData.footContactTitle || "Liên hệ"}</h4>
             <div className="space-y-3 text-sm text-white/50">
               {address && (
                 <div className="flex gap-2.5">
@@ -134,7 +134,7 @@ export default function FooterSection({ data }) {
                   rel="noreferrer"
                   className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#0068FF]/20 text-[#4fa3ff] hover:bg-[#0068FF]/30 transition-colors text-xs font-medium"
                 >
-                  Chat Zalo →
+                  {staticData.footZaloBtn || "Chat Zalo →"}
                 </a>
               )}
             </div>
@@ -142,13 +142,13 @@ export default function FooterSection({ data }) {
 
           {/* Quick links */}
           <div>
-            <h4 className="font-semibold text-sm text-white/70 uppercase tracking-wider mb-5">Nhanh</h4>
+            <h4 className="font-semibold text-sm text-white/70 uppercase tracking-wider mb-5">{staticData.footQuickTitle || "Nhanh"}</h4>
             <div className="space-y-3 text-sm text-white/50">
               {[
-                { label: "Tính năng",        href: "#features" },
-                { label: "Cách hoạt động",   href: "#how-it-works" },
-                { label: "Tải App",          href: "#download" },
-                { label: "Đăng ký đối tác", href: "#consult" },
+                { label: staticData.navHow || "Tính năng",        href: "#features" },
+                { label: staticData.navHow || "Cách hoạt động",   href: "#how-it-works" },
+                { label: staticData.navDownload || "Tải App",          href: "#download" },
+                { label: staticData.navPartner || "Đăng ký đối tác", href: "#consult" },
               ].map((l) => (
                 <div key={l.href}>
                   <a
@@ -168,7 +168,7 @@ export default function FooterSection({ data }) {
                   to="/login"
                   className="inline-flex items-center gap-1.5 text-pink-400 hover:text-pink-300 transition-colors font-medium"
                 >
-                  Đăng nhập quản lý →
+                  {staticData.navLoginMobile || "Đăng nhập quản lý"} →
                 </Link>
               </div>
             </div>
@@ -180,8 +180,8 @@ export default function FooterSection({ data }) {
           style={{ borderColor: "rgba(255,255,255,0.08)" }}
           className="mt-12 pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/30"
         >
-          <span>© {new Date().getFullYear()} AudioGo. All rights reserved.</span>
-          <span>Made with ❤️ in Hồ Chí Minh</span>
+          <span>{staticData.footCopyright || `© ${new Date().getFullYear()} AudioGo. All rights reserved.`}</span>
+          <span>{staticData.footMadeWith || "Made with ❤️ in Hồ Chí Minh"}</span>
         </div>
       </div>
     </footer>

@@ -16,6 +16,24 @@ export default function ConsultSection({ data }) {
     subtitle = "Chủ quán ẩm thực tại Phố Vĩnh Khánh Q4? Hãy để AudioGo kể câu chuyện của bạn bằng âm thanh.",
     formNote = "Chúng tôi sẽ liên hệ trong vòng 24 giờ làm việc.",
     benefits = [],
+    badge = "Dành cho chủ quán",
+    formTitle = "Điền thông tin để được tư vấn miễn phí",
+    formNameLabel = "Họ tên *",
+    formNamePlaceholder = "Nguyễn Văn A",
+    formPhoneLabel = "Số điện thoại *",
+    formPhonePlaceholder = "0912 345 678",
+    formStoreLabel = "Tên quán *",
+    formStorePlaceholder = "Quán Bún Mắm Má Hai",
+    formAreaLabel = "Khu vực",
+    formAreaPlaceholder = "Vĩnh Khánh Q4",
+    formEmailLabel = "Email *",
+    formEmailPlaceholder = "example@gmail.com",
+    formMessageLabel = "Tin nhắn (không bắt buộc)",
+    formMessagePlaceholder = "Thêm thông tin bạn muốn chia sẻ...",
+    formSubmitBtn = "Gửi yêu cầu tư vấn",
+    formSubmittingBtn = "Đang gửi...",
+    formSuccessTitle = "Đã nhận yêu cầu!",
+    formSuccessDesc = "Chúng tôi sẽ liên hệ với bạn trong vòng 24 giờ làm việc để tư vấn chi tiết."
   } = data || {};
 
   const [form, setForm] = useState({
@@ -76,7 +94,7 @@ export default function ConsultSection({ data }) {
               }}
               className="inline-block px-3 py-1 rounded-full text-xs font-semibold mb-4"
             >
-              Dành cho chủ quán
+              {badge}
             </span>
             <h2 style={{ color: "var(--lp-text)" }} className="text-3xl sm:text-4xl font-bold mb-4">
               {title}
@@ -128,36 +146,36 @@ export default function ConsultSection({ data }) {
                   <Check size={32} className="text-green-500" />
                 </div>
                 <h3 style={{ color: "var(--lp-text)" }} className="font-semibold text-xl">
-                  Đã nhận yêu cầu!
+                  {formSuccessTitle}
                 </h3>
                 <p style={{ color: "var(--lp-text-muted)" }} className="text-sm max-w-xs">
-                  Chúng tôi sẽ liên hệ với bạn trong vòng 24 giờ làm việc để tư vấn chi tiết.
+                  {formSuccessDesc}
                 </p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <h3 style={{ color: "var(--lp-text)" }} className="font-semibold text-lg mb-6">
-                  Điền thông tin để được tư vấn miễn phí
+                  {formTitle}
                 </h3>
 
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <FormField icon={<User size={15} />} label="Họ tên *" value={form.fullName} onChange={set("fullName")} placeholder="Nguyễn Văn A" />
-                  <FormField icon={<Phone size={15} />} label="Số điện thoại *" value={form.phoneNumber} onChange={set("phoneNumber")} placeholder="0912 345 678" type="tel" />
+                  <FormField icon={<User size={15} />} label={formNameLabel} value={form.fullName} onChange={set("fullName")} placeholder={formNamePlaceholder} />
+                  <FormField icon={<Phone size={15} />} label={formPhoneLabel} value={form.phoneNumber} onChange={set("phoneNumber")} placeholder={formPhonePlaceholder} type="tel" />
                 </div>
 
-                <FormField icon={<Store size={15} />} label="Tên quán *" value={form.restaurantName} onChange={set("restaurantName")} placeholder="Quán Bún Mắm Má Hai" />
-                <FormField icon={<MapPin size={15} />} label="Khu vực" value={form.area} onChange={set("area")} placeholder="Vĩnh Khánh Q4" />
-                <FormField icon={<MessageSquare size={15} />} label="Email *" value={form.email} onChange={set("email")} placeholder="example@gmail.com" type="email" />
+                <FormField icon={<Store size={15} />} label={formStoreLabel} value={form.restaurantName} onChange={set("restaurantName")} placeholder={formStorePlaceholder} />
+                <FormField icon={<MapPin size={15} />} label={formAreaLabel} value={form.area} onChange={set("area")} placeholder={formAreaPlaceholder} />
+                <FormField icon={<MessageSquare size={15} />} label={formEmailLabel} value={form.email} onChange={set("email")} placeholder={formEmailPlaceholder} type="email" />
 
                 <div>
                   <label style={{ color: "var(--lp-text-muted)" }} className="block text-sm font-medium mb-1.5">
-                    Tin nhắn (không bắt buộc)
+                    {formMessageLabel}
                   </label>
                   <textarea
                     value={form.message}
                     onChange={set("message")}
                     rows={3}
-                    placeholder="Thêm thông tin bạn muốn chia sẻ..."
+                    placeholder={formMessagePlaceholder}
                     style={{
                       background: "var(--lp-input-bg)",
                       borderColor: "var(--lp-input-border)",
@@ -173,7 +191,7 @@ export default function ConsultSection({ data }) {
                   className="w-full py-3.5 rounded-xl font-semibold text-white bg-pink-600 hover:bg-pink-700 hover:shadow-lg hover:shadow-pink-600/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60"
                 >
                   {loading ? <Loader2 size={18} className="animate-spin" /> : null}
-                  {loading ? "Đang gửi..." : "Gửi yêu cầu tư vấn"}
+                  {loading ? formSubmittingBtn : formSubmitBtn}
                 </button>
               </form>
             )}

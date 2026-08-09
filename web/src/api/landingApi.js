@@ -6,8 +6,17 @@ import apiClient from "./apiClient";
  * Nên chỉ cần dùng path tương đối từ /api trở đi.
  */
 
-export async function getLandingSections() {
-  const { data } = await apiClient.get("/landing");
+export const SUPPORTED_LANGS = [
+  { code: "vi", label: "Tiếng Việt", flag: "🇻🇳" },
+  { code: "en", label: "English",    flag: "🇺🇸" },
+  { code: "es", label: "Español",    flag: "🇪🇸" },
+  { code: "fr", label: "Français",   flag: "🇫🇷" },
+  { code: "ko", label: "한국어",      flag: "🇰🇷" },
+  { code: "ja", label: "日本語",      flag: "🇯🇵" },
+];
+
+export async function getLandingSections(lang = "vi") {
+  const { data } = await apiClient.get("/landing/sections", { params: { lang } });
   return data;
 }
 

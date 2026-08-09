@@ -44,7 +44,7 @@ export default function FeaturesSection({ data }) {
             }}
             className="inline-block px-3 py-1 rounded-full text-xs font-semibold mb-4"
           >
-            Tính năng
+            {data.badge || "Tính năng"}
           </span>
           <h2
             style={{ color: "var(--lp-text)" }}

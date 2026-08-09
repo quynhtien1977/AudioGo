@@ -25,7 +25,7 @@ export default function HowItWorksSection({ data }) {
             }}
             className="inline-block px-3 py-1 rounded-full text-xs font-semibold mb-4"
           >
-            Hướng dẫn
+            {data.badge || "Hướng dẫn"}
           </span>
           <h2
             style={{ color: "var(--lp-text)" }}

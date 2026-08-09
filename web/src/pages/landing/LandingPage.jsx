@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { getLandingSections, getLatestRelease } from "@/api/landingApi";
 import { ThemeProvider } from "@/context/ThemeContext";
 import Navbar from "./components/Navbar";
@@ -14,12 +14,11 @@ import FloatingButtons from "./components/FloatingButtons";
 
 /**
  * Trả về content của section nếu isActive = true, ngược lại null.
- * Cho phép ẩn từng section từ CMS admin.
  */
 function getSectionData(sections, key) {
   const sec = sections.find((s) => s.sectionKey === key);
   if (!sec) return null;
-  if (sec.isActive === false) return null;   // respect toggle
+  if (sec.isActive === false) return null;
   return sec.content || {};
 }
 
@@ -27,16 +26,33 @@ export default function LandingPage() {
   const [sections, setSections] = useState([]);
   const [release, setRelease]   = useState(null);
   const [loading, setLoading]   = useState(true);
+  const [lang, setLang]         = useState(() => {
+    // Lưu lựa chọn ngôn ngữ vào localStorage
+    return localStorage.getItem("lp_lang") || "vi";
+  });
 
-  useEffect(() => {
-    Promise.all([getLandingSections(), getLatestRelease()])
-      .then(([secs, rel]) => {
-        setSections(secs);
-        setRelease(rel);
-      })
+  const fetchSections = useCallback((targetLang) => {
+    setLoading(true);
+    getLandingSections(targetLang)
+      .then((secs) => setSections(secs))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
+
+  // Load release chỉ 1 lần
+  useEffect(() => {
+    getLatestRelease().then(setRelease).catch(() => {});
+  }, []);
+
+  // Re-fetch sections khi đổi ngôn ngữ
+  useEffect(() => {
+    fetchSections(lang);
+  }, [lang, fetchSections]);
+
+  const handleLangChange = (newLang) => {
+    localStorage.setItem("lp_lang", newLang);
+    setLang(newLang);
+  };
 
   if (loading) {
     return (
@@ -57,6 +73,7 @@ export default function LandingPage() {
   const consultCta  = getSectionData(sections, "consult_cta");
   const downloadCta = getSectionData(sections, "download_cta");
   const footer      = getSectionData(sections, "footer");
+  const navbarStatic= getSectionData(sections, "navbar_static") || {};
 
   // footer data cần cho FloatingButtons dù footer có ẩn hay không
   const footerRaw = sections.find((s) => s.sectionKey === "footer")?.content || {};
@@ -64,9 +81,9 @@ export default function LandingPage() {
   return (
     <ThemeProvider>
       <div className="landing-root font-sans antialiased" style={{ fontFamily: "'Sora', system-ui, sans-serif", background: "var(--lp-bg)" }}>
-        <Navbar />
+        <Navbar lang={lang} onLangChange={handleLangChange} staticData={navbarStatic} />
 
-        {/* Hero luôn hiển thị nếu active, fallback graceful nếu null */}
+        {/* Hero luôn hiển thị nếu active */}
         {hero !== null
           ? <HeroSection data={hero} />
           : (
@@ -82,7 +99,7 @@ export default function LandingPage() {
         {screenshots && <ScreenshotsSection data={screenshots} />}
         {consultCta  && <ConsultSection    data={consultCta}  />}
         {downloadCta && <DownloadSection   data={downloadCta} />}
-        {footer      && <FooterSection     data={footer}      />}
+        {footer      && <FooterSection     data={footer}      staticData={navbarStatic} />}
 
         <FloatingButtons
           apkUrl={release?.apkUrl || null}
@@ -90,6 +107,7 @@ export default function LandingPage() {
           facebookLink={footerRaw?.facebookLink || null}
           phone={footerRaw?.phone || null}
           email={footerRaw?.email || null}
+          staticData={navbarStatic}
         />
       </div>
     </ThemeProvider>
