@@ -17,6 +17,7 @@ import {
 import PageLoader from "@/components/PageLoader"
 
 import POIMap from "@/components/POIMap"
+import EmptyState from "@/components/EmptyState"
 import StatsCard from "@/components/StatsCard"
 import PageHeader from "@/components/PageHeader"
 import StatusBadge from "@/components/StatusBadge"
@@ -554,13 +555,11 @@ export default function POIPage() {
       {isLoading ? (
         <PageLoader text="Đang tải dữ liệu POIs..." />
       ) : displayData.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-pink-100/30 shadow-sm animate-fadeIn">
-          <MapPin size={48} className="text-pink-200 mb-3" />
-          <h3 className="text-base font-bold text-gray-700">Không tìm thấy địa điểm POI nào</h3>
-          <p className="text-xs text-gray-400 mt-1 max-w-sm">
-            Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm để tìm các địa điểm khác trong hệ thống.
-          </p>
-        </div>
+        <EmptyState
+          icon={<MapPin size={40} />}
+          title="Không tìm thấy địa điểm POI nào"
+          description="Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm để tìm các địa điểm khác trong hệ thống."
+        />
       ) : (
         <div className="bg-white rounded-2xl border border-pink-100/30 overflow-hidden shadow-sm animate-fadeIn">
           <table className="w-full text-sm">

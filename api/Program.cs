@@ -120,19 +120,57 @@ builder.Services.AddHostedService<DataRetentionService>(); // Tự động xóa 
 
 
 // ── Rate Limiting — chống brute-force và spam ───────────────────────
-// AuthPolicy: 10 requests / phút mỗi IP — áp dụng cho /api/auth/*
+// AuthPolicy   : 10 req / phút mỗi IP  — áp dụng cho /api/auth/*
+// CmsWritePolicy: 30 req / phút mỗi userId — áp dụng cho CMS POST/PUT/DELETE
+// UploadPolicy : 10 req / phút mỗi userId — áp dụng cho upload media
 builder.Services.AddRateLimiter(opts =>
 {
+    // Auth: rate limit theo IP (user chưa đăng nhập)
     opts.AddPolicy("auth", ctx =>
         RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                Window           = TimeSpan.FromMinutes(1),
-                PermitLimit      = 10,
-                QueueLimit       = 0,
+                Window            = TimeSpan.FromMinutes(1),
+                PermitLimit       = 10,
+                QueueLimit        = 0,
                 AutoReplenishment = true
             }));
+
+    // CMS Write: rate limit theo userId (đã đăng nhập), fallback về IP
+    opts.AddPolicy("cmsWrite", ctx =>
+    {
+        var userId = ctx.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                     ?? ctx.Connection.RemoteIpAddress?.ToString()
+                     ?? "anon";
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: $"cmsWrite:{userId}",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window            = TimeSpan.FromMinutes(1),
+                PermitLimit       = 30,
+                QueueLimit        = 0,
+                AutoReplenishment = true
+            });
+    });
+
+    // Upload: giới hạn chặt hơn để tránh abuse storage
+    opts.AddPolicy("upload", ctx =>
+    {
+        var userId = ctx.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                     ?? ctx.Connection.RemoteIpAddress?.ToString()
+                     ?? "anon";
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: $"upload:{userId}",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                Window            = TimeSpan.FromMinutes(1),
+                PermitLimit       = 10,
+                QueueLimit        = 0,
+                AutoReplenishment = true
+            });
+    });
+
     opts.RejectionStatusCode = 429; // Too Many Requests
     opts.OnRejected = async (ctx, _) =>
     {
@@ -148,6 +186,19 @@ builder.Services.AddOpenApi();
 
 // ─────────────────────────────────────────────────────────────────────
 var app = builder.Build();
+
+// ── HTTP Security Headers ────────────────────────────────────────────
+// Thêm các header bảo mật cơ bản vào mọi response.
+// Không ảnh hưởng đến CORS hay SPA — chỉ là meta-headers phòng thủ.
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"]         = "DENY";
+    context.Response.Headers["X-XSS-Protection"]        = "1; mode=block";
+    context.Response.Headers["Referrer-Policy"]          = "strict-origin-when-cross-origin";
+    context.Response.Headers["Permissions-Policy"]       = "geolocation=(), microphone=(), camera=()";
+    await next();
+});
 
 app.MapOpenApi();           // /openapi/v1.json — dùng cho React generate TS types
 app.UseStaticFiles();       // serve /uploads/... cho audio + image

@@ -1,6 +1,8 @@
 import { useState, useEffect, useContext } from "react"
 import { getAllArticles, deleteArticle, updateArticle } from "../api/articleApi"
 import ArticleFormModal from "../components/ArticleFormModal"
+import ConfirmModal from "@/components/ConfirmModal"
+import EmptyState from "@/components/EmptyState"
 import StatsCard from "@/components/StatsCard"
 import PageHeader from "@/components/PageHeader"
 import { SearchContext } from "@/context/SearchContext"
@@ -234,13 +236,11 @@ export default function ArticlesPage() {
       {loading ? (
         <PageLoader text="Đang tải dữ liệu bài viết..." />
       ) : filteredArticles.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-pink-100/30 shadow-sm">
-          <Newspaper size={48} className="text-pink-200 mb-3" />
-          <h3 className="text-base font-bold text-gray-700">Không tìm thấy bài viết nào</h3>
-          <p className="text-xs text-gray-400 mt-1 max-w-sm">
-            Thử thay đổi bộ lọc hoặc tạo bài viết mới để bắt đầu hiển thị thông tin lên mobile.
-          </p>
-        </div>
+        <EmptyState
+          icon={<Newspaper size={40} />}
+          title="Không tìm thấy bài viết nào"
+          description="Thử thay đổi bộ lọc hoặc tạo bài viết mới để bắt đầu hiển thị thông tin lên mobile."
+        />
       ) : (
         <div className="bg-white rounded-2xl border border-pink-100/30 overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
@@ -367,33 +367,17 @@ export default function ArticlesPage() {
       )}
 
       {/* CONFIRM DELETE MODAL */}
-      {confirmDeleteId && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
-          <div className="bg-white w-full max-w-[400px] rounded-[2rem] shadow-2xl p-8 relative animate-scaleIn">
-            <h3 className="text-lg font-bold text-gray-700 mb-2">Xác nhận xóa bài viết</h3>
-            <p className="text-xs text-gray-400 mb-6 leading-relaxed">
-              Bạn có chắc chắn muốn xóa bài viết này không? Hành động này sẽ gỡ bài viết vĩnh viễn khỏi hệ thống di động và không thể khôi phục lại.
-            </p>
-            <div className="flex items-center justify-end gap-3">
-              <button
-                onClick={() => setConfirmDeleteId(null)}
-                className="px-4 py-2 text-[#8E707E] font-bold text-xs hover:underline"
-                disabled={deleting}
-              >
-                Hủy bỏ
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="px-6 py-3 bg-red-600 text-white font-bold rounded-xl shadow-lg hover:bg-red-700 transition-colors text-xs flex items-center gap-1.5"
-              >
-                {deleting && <Loader2 className="animate-spin" size={14} />}
-                {deleting ? "Đang xóa..." : "Xóa"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={!!confirmDeleteId}
+        variant="danger"
+        title="Xác nhận xóa bài viết"
+        message="Bài viết sẽ bị xóa vĩnh viễn khỏi hệ thống và ứng dụng di động. Hành động này không thể hoàn tác."
+        confirmText="Xóa bài viết"
+        cancelText="Hủy bỏ"
+        isLoading={deleting}
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
 
       {/* FORM MODAL */}
       {isModalOpen && (

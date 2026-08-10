@@ -52,6 +52,7 @@ namespace Server.Controllers
 
         // POST /api/auth/register
         [HttpPost("register")]
+        [EnableRateLimiting("auth")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest req)
         {
             var account = await _auth.RegisterAsync(req);

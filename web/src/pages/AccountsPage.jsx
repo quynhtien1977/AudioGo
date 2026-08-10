@@ -25,6 +25,7 @@ import { formatDateVN } from "@/utils/formatDate"
 
 import CreateAccountModal from "@/components/CreateAccountModal"
 import ConfirmModal from "@/components/ConfirmModal"
+import EmptyState from "@/components/EmptyState"
 import PageHeader from "@/components/PageHeader"
 import StatsCard from "@/components/StatsCard"
 import { SearchContext } from "@/context/SearchContext"
@@ -358,13 +359,11 @@ export default function AccountsPage() {
       {loading ? (
         <PageLoader text="Đang tải dữ liệu tài khoản..." />
       ) : paginatedUsers.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-pink-100/30 shadow-sm animate-fadeIn">
-          <Users size={48} className="text-pink-200 mb-3" />
-          <h3 className="text-base font-bold text-gray-700">Không tìm thấy tài khoản nào</h3>
-          <p className="text-xs text-gray-400 mt-1 max-w-sm">
-            Thử thay đổi từ khóa tìm kiếm hoặc tạo tài khoản mới để bắt đầu quản trị hệ thống.
-          </p>
-        </div>
+        <EmptyState
+          icon={<Users size={40} />}
+          title="Không tìm thấy tài khoản nào"
+          description="Thử thay đổi từ khóa tìm kiếm hoặc tạo tài khoản mới để bắt đầu quản trị hệ thống."
+        />
       ) : (
         <div className="bg-white rounded-2xl border border-pink-100/30 overflow-hidden shadow-sm animate-fadeIn">
           {/* HEADER */}
@@ -536,9 +535,10 @@ export default function AccountsPage() {
       {showLockModal && (
         <ConfirmModal
           open={showLockModal}
+          variant={lockData.isLocked ? "default" : "danger"}
           title={lockData.isLocked ? "Mở khóa tài khoản" : "Khóa tài khoản"}
-          message={lockData.isLocked ? "Bạn có chắc chắn muốn mở khóa tài khoản này không?" : "Bạn có chắc chắn muốn khóa tài khoản này không? Người dùng sẽ không thể đăng nhập cho đến khi được mở khóa."}
-          confirmText={lockData.isLocked ? "Mở khóa" : "Khóa"}
+          message={lockData.isLocked ? "Bạn có chắc chắn muốn mở khóa tài khoản này không?" : "Tài khoản sẽ bị vô hiệu hóa ngay lập tức. Người dùng sẽ không thể đăng nhập cho đến khi được mở khóa."}
+          confirmText={lockData.isLocked ? "Mở khóa" : "Khóa tài khoản"}
           cancelText="Hủy"
           onConfirm={handleConfirmToggleLock}
           onCancel={() => setShowLockModal(false)}
@@ -562,9 +562,10 @@ export default function AccountsPage() {
       {showDeleteModal && (
         <ConfirmModal
           open={showDeleteModal}
-          title="Xác nhận xóa tài khoản?"
-          message="Bạn có chắc chắn muốn xóa tài khoản này không? Hành động này sẽ xóa vĩnh viễn tài khoản khỏi hệ thống và không thể hoàn tác."
-          confirmText="Xóa"
+          variant="danger"
+          title="Xác nhận xóa tài khoản"
+          message="Tài khoản sẽ bị xóa vĩnh viễn khỏi hệ thống. Hành động này không thể hoàn tác và mọi dữ liệu liên quan đến tài khoản sẽ bị xóa."
+          confirmText="Xóa tài khoản"
           cancelText="Hủy"
           onConfirm={handleConfirmDelete}
           onCancel={() => setShowDeleteModal(false)}

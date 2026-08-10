@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Server.Models;
 using Server.Repositories.Interfaces;
 using Shared.DTOs;
@@ -69,6 +70,7 @@ namespace Server.Controllers.Cms
         /// Owner gửi yêu cầu tạo / cập nhật / xoá POI
         /// </summary>
         [HttpPost("requests")]
+        [EnableRateLimiting("cmsWrite")]
         public async Task<IActionResult> SubmitPoiRequest([FromBody] SubmitPoiRequestDto req)
         {
             var accountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -125,6 +127,7 @@ namespace Server.Controllers.Cms
         }
 
         [HttpPost]
+        [EnableRateLimiting("cmsWrite")]
         public async Task<ActionResult<Poi>> Create([FromBody] PoiCreateRequest req)
         {
             var accountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -145,6 +148,7 @@ namespace Server.Controllers.Cms
         }
 
         [HttpPut("{id}")]
+        [EnableRateLimiting("cmsWrite")]
         public async Task<ActionResult<Poi>> Update(string id, [FromBody] PoiUpdateRequest req)
         {
             // Dùng GetByIdForCmsAsync để tìm POI bao gồm cả inactive (GetByIdAsync chỉ trả active)
@@ -163,6 +167,7 @@ namespace Server.Controllers.Cms
         }
 
         [HttpDelete("{id}")]
+        [EnableRateLimiting("cmsWrite")]
         public async Task<IActionResult> Delete(string id)
         {
             var ok = await _pois.DeleteAsync(id);

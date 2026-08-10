@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from "react";
 import { Headphones, Play, Pause, RefreshCw, Search, ChevronDown, ChevronUp, Languages, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { formatDateVN } from "@/utils/formatDate";
 import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
 import { audioContentApi } from "../api/audioContentApi";
 import { SearchContext } from "@/context/SearchContext";
 
@@ -165,12 +166,12 @@ export default function AudioContentPage() {
                             </div>
                         )}
                         {!loading && filteredAudioContents.length === 0 && (
-                            <div className="flex flex-col items-center justify-center py-16 text-center animate-fadeIn">
-                                <Headphones size={48} className="text-pink-200 mb-3 animate-pulse" />
-                                <h3 className="text-base font-bold text-gray-700">Không tìm thấy bản ghi âm nào</h3>
-                                <p className="text-xs text-gray-400 mt-1 max-w-sm">
-                                    Thử thay đổi từ khóa tìm kiếm hoặc làm mới dữ liệu để cập nhật danh sách âm thanh.
-                                </p>
+                            <div className="py-8 border-b">
+                                <EmptyState
+                                    icon={<Headphones size={40} />}
+                                    title="Không tìm thấy bản ghi âm nào"
+                                    description="Thử thay đổi từ khóa tìm kiếm hoặc làm mới dữ liệu để cập nhật danh sách âm thanh."
+                                />
                             </div>
                         )}
 

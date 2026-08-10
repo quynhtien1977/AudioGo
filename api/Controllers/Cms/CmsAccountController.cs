@@ -43,10 +43,19 @@ namespace Server.Controllers.Cms
 
         // ======================
         // 🟢 GET BY ID
+        // Admin: xem bất kỳ account
+        // Owner/Editor: chỉ xem chính mình
         // ======================
         [HttpGet("{id}")]
         public async Task<ActionResult<AccountDto>> GetById(string id)
         {
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var isAdmin = User.IsInRole("Admin");
+
+            // 🛡️ IDOR Guard: chỉ Admin hoặc chính mình mới được xem
+            if (!isAdmin && currentUserId != id)
+                return Forbid();
+
             var acc = await _accounts.GetByIdAsync(id);
             if (acc == null) return NotFound();
 

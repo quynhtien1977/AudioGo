@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 
 import ConfirmModal from "@/components/ConfirmModal";
 import CreateTourModal from "@/components/CreateTourModal";
+import EmptyState from "@/components/EmptyState";
 import StatsCard from "@/components/StatsCard";
 import PageHeader from "@/components/PageHeader";
 import { getAllToursApi, createTourApi, deleteTourApi, addPoiToTourApi, restoreTourApi } from "@/api/tourApi";
@@ -198,13 +199,11 @@ const ToursPage = () => {
       {isLoading ? (
         <PageLoader text="Đang tải dữ liệu tours..." />
       ) : filteredTours.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-[2.5rem] border border-pink-100/30 shadow-sm animate-fadeIn">
-          <Route size={48} className="text-pink-200 mb-3" />
-          <h3 className="text-base font-bold text-gray-700">Không tìm thấy Tour nào</h3>
-          <p className="text-xs text-gray-400 mt-1 max-w-sm">
-            Thử thay đổi từ khóa tìm kiếm hoặc tạo một tour trải nghiệm mới để bắt đầu.
-          </p>
-        </div>
+        <EmptyState
+          icon={<Route size={40} />}
+          title="Không tìm thấy Tour nào"
+          description="Thử thay đổi từ khóa tìm kiếm hoặc tạo một tour trải nghiệm mới để bắt đầu."
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-fadeIn">
           {filteredTours.map((tour) => (
@@ -297,9 +296,10 @@ const ToursPage = () => {
       {showDeleteModal && (
         <ConfirmModal
           open={showDeleteModal}
-          title="Xác nhận xóa Tour?"
-          message="Bạn có chắc chắn muốn xóa Tour này không? Tour sẽ bị xóa mềm khỏi hệ thống."
-          confirmText="Xóa"
+          variant="danger"
+          title="Xác nhận xóa Tour"
+          message="Tour sẽ bị xóa mềm (ẩn khỏi danh sách). Bạn có thể khôi phục lại sau nếu cần."
+          confirmText="Xóa Tour"
           cancelText="Hủy"
           onConfirm={handleConfirmDelete}
           onCancel={() => setShowDeleteModal(false)}

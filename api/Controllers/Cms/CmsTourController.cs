@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Server.Models;
 using Server.Repositories.Interfaces;
 using Shared.DTOs;
@@ -44,6 +45,7 @@ namespace Server.Controllers.Cms
         }
 
         [HttpPost]
+        [EnableRateLimiting("cmsWrite")]
         public async Task<ActionResult<TourDto>> Create([FromBody] TourCreateRequest req)
         {
             // Dịch Name và Description sang 7 ngôn ngữ cố định
@@ -68,6 +70,7 @@ namespace Server.Controllers.Cms
         }
 
         [HttpPut("{id}")]
+        [EnableRateLimiting("cmsWrite")]
         public async Task<ActionResult<TourDto>> Update(
             string id, [FromBody] TourUpdateRequest req)
         {
@@ -106,6 +109,7 @@ namespace Server.Controllers.Cms
 
         /// <summary>Soft-delete: ẩn tour khỏi danh sách (IsActive = false).</summary>
         [HttpDelete("{id}")]
+        [EnableRateLimiting("cmsWrite")]
         public async Task<IActionResult> Delete(string id)
         {
             var ok = await _repo.DeleteAsync(id);
@@ -122,6 +126,7 @@ namespace Server.Controllers.Cms
 
         /// <summary>Thêm POI vào tour theo thứ tự bước.</summary>
         [HttpPost("{id}/pois")]
+        [EnableRateLimiting("cmsWrite")]
         public async Task<IActionResult> AddPoi(
             string id, [FromBody] TourPoiDto req)
         {
@@ -131,6 +136,7 @@ namespace Server.Controllers.Cms
 
         /// <summary>Xoá POI khỏi tour.</summary>
         [HttpDelete("{id}/pois/{poiId}")]
+        [EnableRateLimiting("cmsWrite")]
         public async Task<IActionResult> RemovePoi(string id, string poiId)
         {
             await _repo.RemovePoiAsync(id, poiId);

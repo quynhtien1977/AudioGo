@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import {
+import { 
   Plus,
   Edit2,
   Check,
@@ -16,6 +16,8 @@ import * as subscriptionApi from "@/api/subscriptionApi";
 import PageHeader from "@/components/PageHeader";
 import StatsCard from "@/components/StatsCard";
 import PageLoader from "@/components/PageLoader";
+import EmptyState from "@/components/EmptyState";
+import ConfirmModal from "@/components/ConfirmModal";
 
 const parseFeatures = (value) => {
   if (!value) return [];
@@ -391,13 +393,11 @@ export const AdminSubscriptionDashboard = () => {
       {loading ? (
         <PageLoader text="Đang tải danh sách gói đăng ký..." />
       ) : displayPlans.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-pink-100/30 shadow-sm animate-fadeIn">
-          <Package size={48} className="text-pink-200 mb-3 animate-pulse" />
-          <h3 className="text-base font-bold text-gray-700">Không tìm thấy gói đăng ký nào</h3>
-          <p className="text-xs text-gray-400 mt-1 max-w-sm">
-            Hiện chưa có gói đăng ký nào được cấu hình trong hệ thống. Hãy bấm nút "Tạo Gói Mới" ở góc phải để bắt đầu.
-          </p>
-        </div>
+        <EmptyState
+          icon={<Package size={40} />}
+          title="Không tìm thấy gói đăng ký nào"
+          description="Hiện chưa có gói đăng ký nào được cấu hình trong hệ thống. Hãy bấm nút 'Tạo Gói Mới' ở góc phải để bắt đầu."
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {displayPlans.map((plan) => (

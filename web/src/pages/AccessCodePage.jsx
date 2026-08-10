@@ -16,6 +16,7 @@ import {
 import { formatDateVN } from "@/utils/formatDate";
 import { accessCodeApi } from "@/api/accessCodeApi";
 import ConfirmModal from "@/components/ConfirmModal";
+import EmptyState from "@/components/EmptyState";
 import PageHeader from "@/components/PageHeader";
 import PageLoader from "@/components/PageLoader";
 
@@ -194,12 +195,12 @@ export default function AccessCodePage() {
                     {loading && codes.length === 0 ? (
                         <PageLoader text="Đang tải mã truy cập..." />
                     ) : !loading && codes.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-16 text-center bg-white animate-fadeIn">
-                            <QrCode size={48} className="text-pink-200 mb-3" />
-                            <h3 className="text-base font-bold text-gray-700">Không tìm thấy mã truy cập nào</h3>
-                            <p className="text-xs text-gray-400 mt-1 max-w-sm">
-                                Chưa có mã truy cập nào được tạo hoặc không phù hợp với bộ lọc.
-                            </p>
+                        <div className="py-8 bg-white border-b">
+                            <EmptyState
+                                icon={<QrCode size={40} />}
+                                title="Không tìm thấy mã truy cập nào"
+                                description="Chưa có mã truy cập nào được tạo hoặc không phù hợp với bộ lọc."
+                            />
                         </div>
                     ) : (
                         <>
