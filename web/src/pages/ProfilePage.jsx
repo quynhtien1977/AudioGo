@@ -1,15 +1,17 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { Save, CornerDownLeft, Loader2, LockKeyhole, Eye, EyeOff, AlertTriangle } from "lucide-react"
+import { Save, CornerDownLeft, Loader2, LockKeyhole, Eye, EyeOff, AlertTriangle, CreditCard, CheckCircle, XCircle, Clock, User } from "lucide-react"
 import PageLoader from "@/components/PageLoader"
 import toast from "react-hot-toast"
 
 import ConfirmModal from "@/components/ConfirmModal"
+import EmptyState from "@/components/EmptyState"
 import { getUserByIdApi, updateMyProfileApi } from "@/api/accountApi"
 import { changePasswordApi } from "@/api/authApi"
 import { isValidEmailFormat, isValidPhone, isEmailDomainValid } from "@/utils/validators"
 import useAuth from "@/hooks/useAuth"
 import { formatDateVN } from "@/utils/formatDate"
+import { getMyTransactionsApi } from "@/api/subscriptionApi"
 
 const ProfilePage = () => {
   const navigate = useNavigate()
@@ -23,6 +25,11 @@ const ProfilePage = () => {
   const [showConfirm, setShowConfirm] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isCheckingEmail, setIsCheckingEmail] = useState(false)
+
+  // Transaction history (Owner only)
+  const [transactions, setTransactions] = useState([])
+  const [txLoading, setTxLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState("profile") // "profile" | "transactions"
 
   // ── Đổi mật khẩu state ───────────────────────────────────────────
   const [pwForm, setPwForm] = useState({ oldPassword: "", newPassword: "", confirmPassword: "" })
@@ -63,6 +70,23 @@ const ProfilePage = () => {
 
     fetchUserProfile()
   }, [authUser?.accountId, navigate])  // dùng primitive string, tránh object reference trigger vòng lặp
+
+  // Fetch transactions for Owner
+  useEffect(() => {
+    if (!user || user.role !== "Owner") return
+    const fetchTx = async () => {
+      try {
+        setTxLoading(true)
+        const res = await getMyTransactionsApi(1, 50)
+        setTransactions(res?.data || [])
+      } catch (err) {
+        console.error("Transaction fetch error:", err)
+      } finally {
+        setTxLoading(false)
+      }
+    }
+    fetchTx()
+  }, [user])
 
   // Validate inline khi gõ
   const handleChange = (key, value) => {
@@ -211,6 +235,98 @@ const ProfilePage = () => {
         </button>
       </div>
 
+      {/* OWNER TABS */}
+      {user.role === "Owner" && (
+        <div className="flex bg-[#FFF0F5] p-1 rounded-2xl gap-1 self-start w-fit">
+          <button
+            onClick={() => setActiveTab("profile")}
+            className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              activeTab === "profile" ? "bg-white text-pink-600 shadow-sm" : "text-[#8E707E] hover:text-pink-600"
+            }`}
+          >
+            <User size={12} />
+            Hồ sơ cá nhân
+          </button>
+          <button
+            onClick={() => setActiveTab("transactions")}
+            className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              activeTab === "transactions" ? "bg-white text-pink-600 shadow-sm" : "text-[#8E707E] hover:text-pink-600"
+            }`}
+          >
+            <CreditCard size={12} />
+            Lịch sử giao dịch
+            {transactions.length > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 bg-pink-100 text-pink-600 rounded-full text-[9px] font-black">
+                {transactions.length}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* TRANSACTIONS TAB CONTENT */}
+      {activeTab === "transactions" && user.role === "Owner" && (
+        <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-6 border-b border-gray-50 flex items-center gap-3">
+            <CreditCard size={18} className="text-pink-500" />
+            <h2 className="font-bold text-gray-700">Lịch sử giao dịch thanh toán</h2>
+          </div>
+          {txLoading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="animate-spin text-pink-400" size={28} />
+            </div>
+          ) : transactions.length === 0 ? (
+            <EmptyState
+              icon={<CreditCard size={40} className="text-gray-300" />}
+              title="Chưa có giao dịch"
+              description="Các giao dịch thanh toán gói đăng ký sẽ hiển thị tại đây."
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left">Gói</th>
+                    <th className="px-6 py-3 text-left">Số tiền</th>
+                    <th className="px-6 py-3 text-left">Cổng TT</th>
+                    <th className="px-6 py-3 text-left">Trạng thái</th>
+                    <th className="px-6 py-3 text-left">Ngày tạo</th>
+                    <th className="px-6 py-3 text-left">Hoàn thành</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {transactions.map((tx) => (
+                    <tr key={tx.transactionId} className="hover:bg-pink-50/30 transition-colors">
+                      <td className="px-6 py-4 font-medium text-gray-700">{tx.planName || "—"}</td>
+                      <td className="px-6 py-4 font-bold text-gray-800">
+                        {tx.amount?.toLocaleString("vi-VN")} {tx.currency || "VND"}
+                      </td>
+                      <td className="px-6 py-4 text-gray-500">{tx.gateway}</td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                          tx.status === "SUCCESS" ? "bg-green-100 text-green-600" :
+                          tx.status === "PENDING"  ? "bg-amber-100 text-amber-600" :
+                          "bg-red-100 text-red-500"
+                        }`}>
+                          {tx.status === "SUCCESS" ? <CheckCircle size={10} /> :
+                           tx.status === "PENDING"  ? <Clock size={10} /> :
+                           <XCircle size={10} />}
+                          {tx.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-gray-400 text-xs">{formatDateVN(tx.createdAt)}</td>
+                      <td className="px-6 py-4 text-gray-400 text-xs">{tx.completedAt ? formatDateVN(tx.completedAt) : "—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* MAIN PROFILE CONTENT — hide when transaction tab active */}
+      {activeTab === "profile" && (
       <div className="grid grid-cols-12 gap-8">
         {/* LEFT - Main Profile */}
         <div className="col-span-8 space-y-6">
@@ -487,6 +603,7 @@ const ProfilePage = () => {
           </div>
         </div>
       </div>
+      )} {/* end activeTab === "profile" */}
 
       {/* CONFIRM MODAL */}
       <ConfirmModal

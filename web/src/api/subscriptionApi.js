@@ -278,6 +278,22 @@ export const getAllTransactionsApi =
     return res.data
   }
 
+/**
+ * Owner: xem lịch sử giao dịch của chính mình
+ */
+export const getMyTransactionsApi = async (page = 1, pageSize = 20) => {
+  const res = await client.get("/cms/payments/my", { params: { page, pageSize } })
+  return res.data
+}
+
+/**
+ * Admin: đếm subscriptions sắp hết hạn
+ */
+export const getExpiringSubscriptionsApi = async (days = 7) => {
+  const res = await client.get("/cms/subscriptions/expiring", { params: { days } })
+  return res.data
+}
+
 export const getTransactionDetailsApi =
   async (transactionId) => {
     const res = await client.get(

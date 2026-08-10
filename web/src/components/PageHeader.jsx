@@ -1,6 +1,7 @@
 import React from "react";
 
-export default function PageHeader({ title, description, icon, actionButton }) {
+export default function PageHeader({ title, description, icon, actionButton, actions }) {
+  const slot = actions ?? actionButton
   return (
     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
       <div className="flex items-start gap-3">
@@ -20,9 +21,9 @@ export default function PageHeader({ title, description, icon, actionButton }) {
           )}
         </div>
       </div>
-      {actionButton && (
+      {slot && (
         <div className="self-start md:self-auto flex-shrink-0">
-          {actionButton}
+          {slot}
         </div>
       )}
     </div>

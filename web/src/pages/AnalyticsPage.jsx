@@ -7,7 +7,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from 'recharts'
-import { Map as MapIcon, BarChart3, Headphones, Clock, Calendar, MapPin, Activity } from 'lucide-react'
+import { Map as MapIcon, BarChart3, Headphones, Clock, Calendar, MapPin, Activity, Download } from 'lucide-react'
 import { getHeatmap, getListenStats, getHeatmapByTime, getTopPOIs } from '@/api/analyticsApi'
 import { getAllPOIs } from '@/api/poiApi'
 import PageLoader from "@/components/PageLoader"
@@ -111,6 +111,29 @@ export default function AnalyticsPage() {
   const [selectedDate, setSelectedDate] = useState('2026-05-02')
   const [selectedHour, setSelectedHour] = useState(null)
 
+  // Export CSV helper
+  const exportCSV = () => {
+    const rows = [
+      ['STT', 'Tên POI', 'Lượt nghe', 'Category', 'Latitude', 'Longitude'],
+      ...topPoisData.map((poi, i) => [
+        i + 1,
+        `"${(poi.title || poi.name || '').replace(/"/g, '""')}"`,
+        poi.listenCount ?? 0,
+        `"${(poi.category || '').replace(/"/g, '""')}"`,
+        poi.latitude ?? '',
+        poi.longitude ?? '',
+      ])
+    ]
+    const csv = rows.map(r => r.join(',')).join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `analytics_top_pois_${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   useEffect(() => {
     const loadData = async () => {
       setLoading(true)
@@ -185,6 +208,16 @@ export default function AnalyticsPage() {
         title="ANALYTICS & HEATMAP"
         description="Phân tích xu hướng người dùng và mật độ di chuyển trên bản đồ."
         icon={<BarChart3 size={24} />}
+        actions={
+          <button
+            onClick={exportCSV}
+            disabled={topPoisData.length === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-pink-50 hover:bg-pink-100 text-pink-600 rounded-xl text-xs font-bold transition-all border border-pink-100 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Download size={14} />
+            Xuất CSV
+          </button>
+        }
       />
 
       {/* STATS — 3 cards */}
