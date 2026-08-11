@@ -1,4 +1,5 @@
 using AudioGo.Helpers;
+using AudioGo_Mobile;
 using CommunityToolkit.Maui.Views;
 using AudioGo_Mobile.Views;
 using System.Windows.Input;
@@ -40,12 +41,33 @@ namespace AudioGo.ViewModels
             _ => _mainVm.CurrentLanguage
         };
 
-        // Localized UI labels
-        public string LabelLanguageSection => AppStrings.Get("settings_language");
-        public string LabelDownloadSection => AppStrings.Get("settings_download");
-        public string LabelCellularToggle => AppStrings.Get("settings_cellular");
-        public string LabelAppVersion => AppStrings.Get("settings_version");
-        public string PageTitle => AppStrings.Get("tab_settings");
+        // ── Dark Mode ────────────────────────────────────────────────────
+        /// <summary>
+        /// true = Dark, false = Light. Lưu vào Preferences qua App.ApplyTheme.
+        /// </summary>
+        public bool IsDarkMode
+        {
+            get => Preferences.Default.Get("app_theme", "system") == "dark";
+            set
+            {
+                App.ApplyTheme(value ? "dark" : "light");
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ThemeLabel));
+            }
+        }
+
+        public string ThemeLabel => IsDarkMode
+            ? AppStrings.Get("theme_dark")
+            : AppStrings.Get("theme_light");
+
+        // ── Localized UI labels ──────────────────────────────────────────
+        public string LabelLanguageSection   => AppStrings.Get("settings_language");
+        public string LabelDownloadSection   => AppStrings.Get("settings_download");
+        public string LabelCellularToggle    => AppStrings.Get("settings_cellular");
+        public string LabelAppVersion        => AppStrings.Get("settings_version");
+        public string LabelAppearanceSection => AppStrings.Get("settings_appearance");
+        public string LabelDarkMode          => AppStrings.Get("settings_dark_mode");
+        public string PageTitle              => AppStrings.Get("tab_settings");
 
         public ICommand ChangeLanguageCommand { get; }
 
@@ -63,7 +85,6 @@ namespace AudioGo.ViewModels
             try
             {
                 await _mainVm.ChangeLanguageAsync(lang);
-
                 RefreshLocalization();
 
                 var langName = lang switch
@@ -78,9 +99,9 @@ namespace AudioGo.ViewModels
                     _ => lang
                 };
 
-                var successMsg = AppStrings.GetForLanguage("lang_switch_success", lang);
+                var successMsg   = AppStrings.GetForLanguage("lang_switch_success", lang);
                 var successTitle = AppStrings.GetForLanguage("lang_switch_success_title", lang);
-                var okLabel = AppStrings.GetForLanguage("ok", lang);
+                var okLabel      = AppStrings.GetForLanguage("ok", lang);
 
                 if (Application.Current?.MainPage is not null)
                 {
@@ -91,7 +112,7 @@ namespace AudioGo.ViewModels
             catch (Exception)
             {
                 var errTitle = AppStrings.Get("lang_switch_error_title");
-                var errMsg = AppStrings.Get("lang_switch_error_msg");
+                var errMsg   = AppStrings.Get("lang_switch_error_msg");
                 var closeBtn = AppStrings.Get("close");
 
                 if (Application.Current?.MainPage is not null)
@@ -114,8 +135,11 @@ namespace AudioGo.ViewModels
             OnPropertyChanged(nameof(LabelDownloadSection));
             OnPropertyChanged(nameof(LabelCellularToggle));
             OnPropertyChanged(nameof(LabelAppVersion));
+            OnPropertyChanged(nameof(LabelAppearanceSection));
+            OnPropertyChanged(nameof(LabelDarkMode));
             OnPropertyChanged(nameof(PageTitle));
             OnPropertyChanged(nameof(DownloadPolicyLabel));
+            OnPropertyChanged(nameof(ThemeLabel));
         }
     }
 }

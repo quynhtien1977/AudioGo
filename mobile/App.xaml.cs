@@ -15,11 +15,30 @@ public partial class App : Application
 		InitializeComponent();
 	}
 
+	/// <summary>
+	/// Áp dụng theme (dark/light/system) — gọi từ SettingsViewModel khi user toggle.
+	/// </summary>
+	public static void ApplyTheme(string theme)
+	{
+		if (Application.Current is null) return;
+		Application.Current.UserAppTheme = theme switch
+		{
+			"dark"  => AppTheme.Dark,
+			"light" => AppTheme.Light,
+			_       => AppTheme.Unspecified // theo hệ thống
+		};
+		Preferences.Default.Set("app_theme", theme);
+	}
+
 	protected override Window CreateWindow(IActivationState? activationState)
 	{
 		// Đọc Preferences synchronously — không block main thread vì là disk read nhỏ.
 		// Nếu flag "SessionValid" = true → đi thẳng vào AppShell, không flash QR.
 		bool hasSession = Preferences.Default.Get(SessionValidKey, false);
+
+		// Khôi phục theme đã lưu trước khi render bất kỳ page nào
+		var savedTheme = Preferences.Default.Get("app_theme", "system");
+		ApplyTheme(savedTheme);
 
 		Page startPage;
 		if (hasSession)

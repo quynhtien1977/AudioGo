@@ -6,6 +6,7 @@
     <!-- ═══════════════════════════════════════════════════════════
          AudioGo Design System — Styles
          Stitch: AudioGo Mobile UI | Theme: Red #E53935, Rounded 12px
+         Dark Mode: AppThemeBinding trong mỗi Setter
     ═══════════════════════════════════════════════════════════ -->
 
     <!-- Converters -->
@@ -35,42 +36,78 @@
     </Style>
 
     <Style TargetType="BoxView">
-        <Setter Property="Color" Value="{StaticResource Gray200}" />
+        <Setter Property="Color">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource Gray200}" Dark="{StaticResource Gray200Dark}" />
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style TargetType="Entry">
-        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="TextColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource TextPrimary}" Dark="{StaticResource TextPrimaryDark}" />
+            </Setter.Value>
+        </Setter>
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="PlaceholderColor" Value="{StaticResource Gray400}" />
     </Style>
 
     <Style TargetType="Editor">
-        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="TextColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource TextPrimary}" Dark="{StaticResource TextPrimaryDark}" />
+            </Setter.Value>
+        </Setter>
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontSize" Value="14" />
         <Setter Property="PlaceholderColor" Value="{StaticResource Gray400}" />
     </Style>
 
     <Style TargetType="Label">
-        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="TextColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource TextPrimary}" Dark="{StaticResource TextPrimaryDark}" />
+            </Setter.Value>
+        </Setter>
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontSize" Value="14" />
     </Style>
 
     <Style TargetType="Page" ApplyToDerivedTypes="True">
         <Setter Property="Padding" Value="0" />
-        <Setter Property="BackgroundColor" Value="{StaticResource Background}" />
+        <Setter Property="BackgroundColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource Background}" Dark="{StaticResource BackgroundDark}" />
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style TargetType="Shell" ApplyToDerivedTypes="True">
-        <Setter Property="Shell.BackgroundColor" Value="{StaticResource Surface}" />
-        <Setter Property="Shell.ForegroundColor" Value="{StaticResource TextPrimary}" />
-        <Setter Property="Shell.TitleColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="Shell.BackgroundColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource Surface}" Dark="{StaticResource SurfaceDark}" />
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Shell.ForegroundColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource TextPrimary}" Dark="{StaticResource TextPrimaryDark}" />
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Shell.TitleColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource TextPrimary}" Dark="{StaticResource TextPrimaryDark}" />
+            </Setter.Value>
+        </Setter>
         <Setter Property="Shell.DisabledColor" Value="{StaticResource Gray300}" />
         <Setter Property="Shell.UnselectedColor" Value="{StaticResource Gray400}" />
         <Setter Property="Shell.NavBarHasShadow" Value="False" />
-        <Setter Property="Shell.TabBarBackgroundColor" Value="{StaticResource Surface}" />
+        <Setter Property="Shell.TabBarBackgroundColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource Surface}" Dark="{StaticResource SurfaceDark}" />
+            </Setter.Value>
+        </Setter>
         <Setter Property="Shell.TabBarForegroundColor" Value="{StaticResource Primary}" />
         <Setter Property="Shell.TabBarTitleColor" Value="{StaticResource Primary}" />
         <Setter Property="Shell.TabBarUnselectedColor" Value="{StaticResource Gray400}" />
@@ -90,11 +127,23 @@
         <Setter Property="BorderWidth" Value="0" />
     </Style>
 
-    <!-- Nút outline trắng (thứ cấp) -->
+    <!-- Nút outline (thứ cấp) -->
     <Style TargetType="Button" x:Key="OutlineButton">
-        <Setter Property="BackgroundColor" Value="{StaticResource Surface}" />
-        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
-        <Setter Property="BorderColor" Value="{StaticResource Gray300}" />
+        <Setter Property="BackgroundColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource Surface}" Dark="{StaticResource SurfaceDark}" />
+            </Setter.Value>
+        </Setter>
+        <Setter Property="TextColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource TextPrimary}" Dark="{StaticResource TextPrimaryDark}" />
+            </Setter.Value>
+        </Setter>
+        <Setter Property="BorderColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource Gray300}" Dark="{StaticResource Gray300Dark}" />
+            </Setter.Value>
+        </Setter>
         <Setter Property="BorderWidth" Value="1.5" />
         <Setter Property="CornerRadius" Value="24" />
         <Setter Property="FontSize" Value="15" />
@@ -123,7 +172,11 @@
     <!-- Nút dạng Icon tròn (ghost) -->
     <Style TargetType="Button" x:Key="IconButton">
         <Setter Property="BackgroundColor" Value="{StaticResource SemiTransparentLight}" />
-        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="TextColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource TextPrimary}" Dark="{StaticResource TextPrimaryDark}" />
+            </Setter.Value>
+        </Setter>
         <Setter Property="CornerRadius" Value="20" />
         <Setter Property="WidthRequest" Value="40" />
         <Setter Property="HeightRequest" Value="40" />
@@ -134,9 +187,13 @@
 
     <!-- ── Cards / Borders ────────────────────────────────── -->
 
-    <!-- Card trắng bo tròn có shadow -->
+    <!-- Card bo tròn có shadow -->
     <Style TargetType="Border" x:Key="CardBorder">
-        <Setter Property="BackgroundColor" Value="{StaticResource Surface}" />
+        <Setter Property="BackgroundColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource Surface}" Dark="{StaticResource SurfaceDark}" />
+            </Setter.Value>
+        </Setter>
         <Setter Property="Stroke" Value="Transparent" />
         <Setter Property="StrokeShape" Value="RoundRectangle 16" />
         <Setter Property="StrokeThickness" Value="0" />
@@ -157,8 +214,16 @@
 
     <!-- Pill chip (category filter) -->
     <Style TargetType="Border" x:Key="PillBorder">
-        <Setter Property="BackgroundColor" Value="{StaticResource Surface}" />
-        <Setter Property="Stroke" Value="{StaticResource Gray200}" />
+        <Setter Property="BackgroundColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource Surface}" Dark="{StaticResource SurfaceDark}" />
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Stroke">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource Gray200}" Dark="{StaticResource Gray200Dark}" />
+            </Setter.Value>
+        </Setter>
         <Setter Property="StrokeShape" Value="RoundRectangle 20" />
         <Setter Property="StrokeThickness" Value="1" />
         <Setter Property="Padding" Value="14,8" />
@@ -175,7 +240,11 @@
 
     <!-- Card Tour ngang (scrollable) -->
     <Style TargetType="Border" x:Key="TourCard">
-        <Setter Property="BackgroundColor" Value="{StaticResource Surface}" />
+        <Setter Property="BackgroundColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource Surface}" Dark="{StaticResource SurfaceDark}" />
+            </Setter.Value>
+        </Setter>
         <Setter Property="Stroke" Value="Transparent" />
         <Setter Property="StrokeShape" Value="RoundRectangle 16" />
         <Setter Property="StrokeThickness" Value="0" />
@@ -189,7 +258,11 @@
 
     <!-- Card POI explore (dạng lưới) -->
     <Style TargetType="Border" x:Key="PoiGridCard">
-        <Setter Property="BackgroundColor" Value="{StaticResource Surface}" />
+        <Setter Property="BackgroundColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource Surface}" Dark="{StaticResource SurfaceDark}" />
+            </Setter.Value>
+        </Setter>
         <Setter Property="Stroke" Value="Transparent" />
         <Setter Property="StrokeShape" Value="RoundRectangle 16" />
         <Setter Property="StrokeThickness" Value="0" />
@@ -202,8 +275,16 @@
 
     <!-- Input field border -->
     <Style TargetType="Border" x:Key="InputBorder">
-        <Setter Property="BackgroundColor" Value="{StaticResource Surface}" />
-        <Setter Property="Stroke" Value="{StaticResource Gray200}" />
+        <Setter Property="BackgroundColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource Surface}" Dark="{StaticResource SurfaceDark}" />
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Stroke">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource Gray200}" Dark="{StaticResource Gray200Dark}" />
+            </Setter.Value>
+        </Setter>
         <Setter Property="StrokeShape" Value="RoundRectangle 12" />
         <Setter Property="StrokeThickness" Value="1" />
         <Setter Property="Padding" Value="14,4" />
@@ -211,7 +292,11 @@
 
     <!-- Mini audio player bar -->
     <Style TargetType="Border" x:Key="MiniPlayerBar">
-        <Setter Property="BackgroundColor" Value="{StaticResource Surface}" />
+        <Setter Property="BackgroundColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource Surface}" Dark="{StaticResource SurfaceDark}" />
+            </Setter.Value>
+        </Setter>
         <Setter Property="Stroke" Value="Transparent" />
         <Setter Property="StrokeShape" Value="RoundRectangle 16" />
         <Setter Property="StrokeThickness" Value="0" />
@@ -225,31 +310,51 @@
     <!-- ── Labels ─────────────────────────────────────────── -->
 
     <Style TargetType="Label" x:Key="HeadlineLabel">
-        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="TextColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource TextPrimary}" Dark="{StaticResource TextPrimaryDark}" />
+            </Setter.Value>
+        </Setter>
         <Setter Property="FontSize" Value="26" />
         <Setter Property="FontAttributes" Value="Bold" />
     </Style>
 
     <Style TargetType="Label" x:Key="TitleLabel">
-        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="TextColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource TextPrimary}" Dark="{StaticResource TextPrimaryDark}" />
+            </Setter.Value>
+        </Setter>
         <Setter Property="FontSize" Value="18" />
         <Setter Property="FontAttributes" Value="Bold" />
     </Style>
 
     <Style TargetType="Label" x:Key="SectionTitle">
-        <Setter Property="TextColor" Value="{StaticResource TextPrimary}" />
+        <Setter Property="TextColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource TextPrimary}" Dark="{StaticResource TextPrimaryDark}" />
+            </Setter.Value>
+        </Setter>
         <Setter Property="FontSize" Value="16" />
         <Setter Property="FontAttributes" Value="Bold" />
     </Style>
 
     <Style TargetType="Label" x:Key="BodyLabel">
-        <Setter Property="TextColor" Value="{StaticResource TextSecondary}" />
+        <Setter Property="TextColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource TextSecondary}" Dark="{StaticResource TextSecondaryDark}" />
+            </Setter.Value>
+        </Setter>
         <Setter Property="FontSize" Value="14" />
         <Setter Property="LineBreakMode" Value="WordWrap" />
     </Style>
 
     <Style TargetType="Label" x:Key="CaptionLabel">
-        <Setter Property="TextColor" Value="{StaticResource TextTertiary}" />
+        <Setter Property="TextColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource TextTertiary}" Dark="{StaticResource TextTertiaryDark}" />
+            </Setter.Value>
+        </Setter>
         <Setter Property="FontSize" Value="12" />
     </Style>
 
@@ -265,9 +370,17 @@
     </Style>
 
     <Style TargetType="Label" x:Key="TagLabel">
-        <Setter Property="TextColor" Value="{StaticResource TextSecondary}" />
+        <Setter Property="TextColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource TextSecondary}" Dark="{StaticResource TextSecondaryDark}" />
+            </Setter.Value>
+        </Setter>
         <Setter Property="FontSize" Value="12" />
-        <Setter Property="BackgroundColor" Value="{StaticResource Gray100}" />
+        <Setter Property="BackgroundColor">
+            <Setter.Value>
+                <AppThemeBinding Light="{StaticResource Gray100}" Dark="{StaticResource Gray100Dark}" />
+            </Setter.Value>
+        </Setter>
     </Style>
 
 </ResourceDictionary>

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:AudioGo.ViewModels"
@@ -6,14 +6,14 @@
              x:Class="AudioGo_Mobile.Views.ArticleListPage"
              x:Name="ThisPage"
              Shell.NavBarIsVisible="False"
-             BackgroundColor="{StaticResource Background}"
+             BackgroundColor="{AppThemeBinding Light={StaticResource Background}, Dark={StaticResource BackgroundDark}}"
              Title="{Binding PageTitle}">
     
     <Grid RowDefinitions="Auto,*,Auto">
         <!-- Header with Back Button -->
-        <Grid Grid.Row="0" BackgroundColor="{StaticResource Surface}" Padding="20,52,20,16" ColumnDefinitions="Auto,*">
-            <Border Grid.Column="0" BackgroundColor="{StaticResource Gray100}" StrokeShape="RoundRectangle 20" StrokeThickness="0" WidthRequest="40" HeightRequest="40" Margin="0,0,12,0" VerticalOptions="Center">
-                <Label Text="&#xe5c4;" TextColor="{StaticResource TextPrimary}" FontFamily="MaterialIcons" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center"/>
+        <Grid Grid.Row="0" BackgroundColor="{AppThemeBinding Light={StaticResource Surface}, Dark={StaticResource SurfaceDark}}" Padding="20,52,20,16" ColumnDefinitions="Auto,*">
+            <Border Grid.Column="0" BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray100Dark}}" StrokeShape="RoundRectangle 20" StrokeThickness="0" WidthRequest="40" HeightRequest="40" Margin="0,0,12,0" VerticalOptions="Center">
+                <Label Text="&#xe5c4;" TextColor="{AppThemeBinding Light={StaticResource TextPrimary}, Dark={StaticResource TextPrimaryDark}}" FontFamily="MaterialIcons" FontSize="20" HorizontalOptions="Center" VerticalOptions="Center"/>
                 <Border.GestureRecognizers>
                     <TapGestureRecognizer Command="{Binding GoBackCommand}"/>
                 </Border.GestureRecognizers>
@@ -44,7 +44,7 @@
                                     </Border>
                                     <VerticalStackLayout Grid.Row="1" Padding="14" Spacing="6">
                                         <Label Text="{Binding Title}" Style="{StaticResource TitleLabel}" FontSize="15" MaxLines="2" LineBreakMode="TailTruncation"/>
-                                        <Label Text="{Binding Summary}" Style="{StaticResource BodyLabel}" FontSize="13" MaxLines="3" LineBreakMode="TailTruncation" TextColor="{StaticResource TextSecondary}"/>
+                                        <Label Text="{Binding Summary}" Style="{StaticResource BodyLabel}" FontSize="13" MaxLines="3" LineBreakMode="TailTruncation" TextColor="{AppThemeBinding Light={StaticResource TextSecondary}, Dark={StaticResource TextSecondaryDark}}"/>
                                         <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
                                             <Label Grid.Column="0" Text="{Binding TypeDisplayName}" Style="{StaticResource CaptionLabel}" VerticalOptions="Center"/>
                                             <Label Grid.Column="1" Text="{Binding DateDisplay}" Style="{StaticResource CaptionLabel}" VerticalOptions="Center"/>

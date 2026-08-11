@@ -1,16 +1,16 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="AudioGo_Mobile.Views.TourListPage"
              Shell.NavBarIsVisible="False"
-             BackgroundColor="{StaticResource Background}"
+             BackgroundColor="{AppThemeBinding Light={StaticResource Background}, Dark={StaticResource BackgroundDark}}"
              Title="Tour">
 
     <Grid RowDefinitions="Auto,*,Auto">
 
         <!-- ── Header ── -->
         <VerticalStackLayout Grid.Row="0"
-                             BackgroundColor="{StaticResource Surface}"
+                             BackgroundColor="{AppThemeBinding Light={StaticResource Surface}, Dark={StaticResource SurfaceDark}}"
                              Padding="20,52,20,16"
                              Spacing="4">
             <Label Text="{Binding LabelTours}" Style="{StaticResource HeadlineLabel}"/>
@@ -95,14 +95,14 @@
                                                 <Label Text="{Binding LabelPoints}" Style="{StaticResource CaptionLabel}" HorizontalOptions="Center"/>
                                             </VerticalStackLayout>
                                             <BoxView Grid.Column="0" WidthRequest="1" HeightRequest="30"
-                                                     Color="{StaticResource Gray200}"
+                                                     Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray200Dark}}"
                                                      HorizontalOptions="End" VerticalOptions="Center"/>
                                             <VerticalStackLayout Grid.Column="1" Spacing="2" HorizontalOptions="Center">
                                                 <Label Text="{Binding DurationText}" Style="{StaticResource SectionTitle}" HorizontalOptions="Center"/>
                                                 <Label Text="{Binding LabelWalk}" Style="{StaticResource CaptionLabel}" HorizontalOptions="Center"/>
                                             </VerticalStackLayout>
                                             <BoxView Grid.Column="1" WidthRequest="1" HeightRequest="30"
-                                                     Color="{StaticResource Gray200}"
+                                                     Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray200Dark}}"
                                                      HorizontalOptions="End" VerticalOptions="Center"/>
                                             <VerticalStackLayout Grid.Column="2" Spacing="2" HorizontalOptions="Center">
                                                 <Label Text="{Binding Language}" Style="{StaticResource SectionTitle}" HorizontalOptions="Center"/>

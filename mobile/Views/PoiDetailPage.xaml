@@ -1,11 +1,11 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:converters="clr-namespace:AudioGo.Converters"
              x:Class="AudioGo_Mobile.Views.PoiDetailPage"
              x:Name="ThisPage"
              Shell.NavBarIsVisible="False"
-             BackgroundColor="{StaticResource Background}"
+             BackgroundColor="{AppThemeBinding Light={StaticResource Background}, Dark={StaticResource BackgroundDark}}"
              Title="{Binding TitleLabel}">
 
     <ContentPage.Resources>
@@ -124,7 +124,7 @@
                      Gallery Strip
                 ══════════════════════════════════════════════════ -->
                 <VerticalStackLayout IsVisible="{Binding HasGallery}"
-                                     BackgroundColor="{StaticResource Surface}"
+                                     BackgroundColor="{AppThemeBinding Light={StaticResource Surface}, Dark={StaticResource SurfaceDark}}"
                                      Spacing="0">
                     <Grid ColumnDefinitions="*,Auto" Padding="16,12,16,8">
                         <Label Grid.Column="0" Text="{Binding ImageLabel}" Style="{StaticResource SectionTitle}"/>
@@ -184,7 +184,7 @@
                             <Grid HeightRequest="28" x:Name="SeekContainer">
 
                                 <!-- 1. Grey track (full width) -->
-                                <BoxView Color="{StaticResource Gray200}"
+                                <BoxView Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray200Dark}}"
                                          HeightRequest="3"
                                          CornerRadius="2"
                                          VerticalOptions="Center"
@@ -358,12 +358,12 @@
 
                             <!-- Skip back (restart) -->
                             <Border Grid.Column="1"
-                                    BackgroundColor="{StaticResource Gray100}"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray100Dark}}"
                                     StrokeShape="RoundRectangle 22" StrokeThickness="0"
                                     WidthRequest="44" HeightRequest="44"
                                     HorizontalOptions="Center">
                                 <Label Text="&#xe045;" FontFamily="MaterialIcons" FontSize="22"
-                                       TextColor="{StaticResource TextPrimary}"
+                                       TextColor="{AppThemeBinding Light={StaticResource TextPrimary}, Dark={StaticResource TextPrimaryDark}}"
                                        HorizontalOptions="Center" VerticalOptions="Center"/>
                                 <Border.GestureRecognizers>
                                     <TapGestureRecognizer Tapped="OnPreviousTapped"/>
@@ -391,12 +391,12 @@
 
                             <!-- Skip forward (replay) -->
                             <Border Grid.Column="3"
-                                    BackgroundColor="{StaticResource Gray100}"
+                                    BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray100Dark}}"
                                     StrokeShape="RoundRectangle 22" StrokeThickness="0"
                                     WidthRequest="44" HeightRequest="44"
                                     HorizontalOptions="Center">
                                 <Label Text="&#xe044;" FontFamily="MaterialIcons" FontSize="22"
-                                       TextColor="{StaticResource TextPrimary}"
+                                       TextColor="{AppThemeBinding Light={StaticResource TextPrimary}, Dark={StaticResource TextPrimaryDark}}"
                                        HorizontalOptions="Center" VerticalOptions="Center"/>
                                 <Border.GestureRecognizers>
                                     <TapGestureRecognizer Tapped="OnNextTapped"/>
@@ -437,7 +437,7 @@
              Footer: Next POI button
         ══════════════════════════════════════════════════ -->
         <Border Grid.Row="1"
-                BackgroundColor="{StaticResource Surface}"
+                BackgroundColor="{AppThemeBinding Light={StaticResource Surface}, Dark={StaticResource SurfaceDark}}"
                 StrokeShape="RoundRectangle 0" StrokeThickness="0"
                 Padding="16,12,16,20"
                 IsVisible="{Binding HasNextPoi}">

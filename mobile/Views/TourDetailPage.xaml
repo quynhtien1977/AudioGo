@@ -1,10 +1,10 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:maps="clr-namespace:Microsoft.Maui.Controls.Maps;assembly=Microsoft.Maui.Controls.Maps"
              x:Class="AudioGo_Mobile.Views.TourDetailPage"
              Shell.NavBarIsVisible="False"
-             BackgroundColor="{StaticResource Background}"
+             BackgroundColor="{AppThemeBinding Light={StaticResource Background}, Dark={StaticResource BackgroundDark}}"
              Title="Tour Detail">
 
     <Grid RowDefinitions="Auto,*,Auto">
@@ -149,7 +149,7 @@
                                     <BoxView WidthRequest="2"
                                              HeightRequest="48"
                                              HorizontalOptions="Center"
-                                             Color="{StaticResource Gray200}"
+                                             Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray200Dark}}"
                                              IsVisible="{Binding IsNotLast}"/>
                                 </VerticalStackLayout>
 
@@ -260,7 +260,7 @@
                 </Border>
                 <!-- Close -->
                 <Border Grid.Column="3"
-                        BackgroundColor="{StaticResource Gray100}"
+                        BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray100Dark}}"
                         StrokeShape="RoundRectangle 18"
                         StrokeThickness="0"
                         WidthRequest="36" HeightRequest="36">
