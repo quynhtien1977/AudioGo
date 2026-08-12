@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:AudioGo.ViewModels"
@@ -11,16 +11,43 @@
     <ScrollView>
         <VerticalStackLayout Spacing="0">
 
-            <!-- ── Header (matches MainPage / MapPage pattern) ── -->
+            <!-- ── Header with Dark Mode Toggle ── -->
             <Grid Padding="20,56,20,16"
-                  BackgroundColor="{AppThemeBinding Light={StaticResource Surface}, Dark={StaticResource SurfaceDark}}">
-                <VerticalStackLayout Spacing="2">
+                  BackgroundColor="{AppThemeBinding Light={StaticResource Surface}, Dark={StaticResource SurfaceDark}}"
+                  ColumnDefinitions="*,Auto">
+                <VerticalStackLayout Grid.Column="0" Spacing="2">
                     <Label Text="{Binding PageTitle}"
                            Style="{StaticResource HeadlineLabel}" />
                     <Label Text="{Binding CurrentLanguageName}"
                            Style="{StaticResource BodyLabel}"
                            TextColor="{StaticResource Primary}" />
                 </VerticalStackLayout>
+
+                <!-- Dark Mode Toggle Button — góc phải, source of circular reveal -->
+                <Border x:Name="DarkModeToggleBtn"
+                        Grid.Column="1"
+                        StrokeShape="RoundRectangle 22"
+                        StrokeThickness="0"
+                        WidthRequest="44" HeightRequest="44"
+                        VerticalOptions="Center">
+                    <Border.BackgroundColor>
+                        <AppThemeBinding Light="{StaticResource Gray100}" Dark="{StaticResource Gray100Dark}" />
+                    </Border.BackgroundColor>
+                    <Label x:Name="DarkModeIcon"
+                           FontFamily="MaterialIcons"
+                           FontSize="22"
+                           TextColor="{StaticResource Primary}"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center">
+                        <Label.Text>
+                            <!-- Moon icon (dark mode) or Sun icon (light mode) -->
+                            <AppThemeBinding Light="&#xe518;" Dark="&#xe51c;" />
+                        </Label.Text>
+                    </Label>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnDarkModeToggleTapped" />
+                    </Border.GestureRecognizers>
+                </Border>
             </Grid>
 
             <VerticalStackLayout Padding="20,20,20,32" Spacing="24">
@@ -85,41 +112,6 @@
                     </Border>
                 </VerticalStackLayout>
 
-                <!-- ── Appearance / Dark Mode Section ── -->
-                <VerticalStackLayout Spacing="12">
-                    <Label Text="{Binding LabelAppearanceSection}"
-                           Style="{StaticResource SectionTitle}" />
-
-                    <Border Style="{StaticResource CardBorder}" Padding="0">
-                        <Grid Padding="16" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
-                            <!-- Icon mặt trăng -->
-                            <Border Grid.Column="0"
-                                    StrokeShape="RoundRectangle 10"
-                                    StrokeThickness="0"
-                                    WidthRequest="40" HeightRequest="40">
-                                <Border.BackgroundColor>
-                                    <AppThemeBinding Light="{StaticResource PrimaryLight}" Dark="{StaticResource PrimaryLightDark}" />
-                                </Border.BackgroundColor>
-                                <Label Text="&#xe51c;" FontFamily="MaterialIcons" FontSize="22"
-                                       TextColor="{StaticResource Primary}"
-                                       HorizontalOptions="Center" VerticalOptions="Center" />
-                            </Border>
-                            <!-- Label + sub -->
-                            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center" Spacing="2">
-                                <Label Text="{Binding LabelDarkMode}"
-                                       Style="{StaticResource BodyLabel}"
-                                       FontAttributes="Bold" />
-                                <Label Text="{Binding ThemeLabel}"
-                                       Style="{StaticResource CaptionLabel}" />
-                            </VerticalStackLayout>
-                            <!-- Toggle -->
-                            <Switch Grid.Column="2"
-                                    IsToggled="{Binding IsDarkMode}"
-                                    OnColor="{StaticResource Primary}"
-                                    VerticalOptions="Center" />
-                        </Grid>
-                    </Border>
-                </VerticalStackLayout>
 
                 <!-- ── Download / Data Section ── -->
                 <VerticalStackLayout Spacing="12">

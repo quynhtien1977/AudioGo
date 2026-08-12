@@ -13,6 +13,41 @@ public partial class SettingsPage : ContentPage
         BindingContext = _vm = vm;
     }
 
+    /// <summary>
+    /// Triggered by the moon/sun icon button in the header.
+    /// Calculates the button's center position in device pixels and starts circular reveal.
+    /// </summary>
+    private async void OnDarkModeToggleTapped(object sender, TappedEventArgs e)
+    {
+        try
+        {
+            var density = DeviceDisplay.MainDisplayInfo.Density;
+
+            // Accumulate absolute position by walking up the visual tree
+            double absX = DarkModeToggleBtn.X + DarkModeToggleBtn.Width  / 2.0;
+            double absY = DarkModeToggleBtn.Y + DarkModeToggleBtn.Height / 2.0;
+
+            Element? el = DarkModeToggleBtn.Parent;
+            while (el is VisualElement ve && el is not Page)
+            {
+                absX += ve.X;
+                absY += ve.Y;
+                el    = ve.Parent;
+            }
+
+            // Convert logical units → device pixels
+            var px = (float)(absX * density);
+            var py = (float)(absY * density);
+
+            await _vm.AnimateThemeAsync(!_vm.IsDarkMode, px, py);
+        }
+        catch
+        {
+            // Fallback without animation
+            await _vm.AnimateThemeAsync(!_vm.IsDarkMode, 0, 0);
+        }
+    }
+
     private async void OnChangeLanguageClicked(object sender, EventArgs e)
     {
         // Title and cancel label are localized in the current language

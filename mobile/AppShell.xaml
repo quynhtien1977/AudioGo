@@ -5,10 +5,10 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:views="clr-namespace:AudioGo_Mobile.Views"
     Title="AudioGo"
-    Shell.TabBarBackgroundColor="{DynamicResource Surface}"
+    Shell.TabBarBackgroundColor="{AppThemeBinding Light={StaticResource Surface}, Dark={StaticResource SurfaceDark}}"
     Shell.TabBarForegroundColor="{StaticResource Primary}"
     Shell.TabBarTitleColor="{StaticResource Primary}"
-    Shell.TabBarUnselectedColor="{DynamicResource TextSecondary}">
+    Shell.TabBarUnselectedColor="{AppThemeBinding Light={StaticResource TextSecondary}, Dark={StaticResource TextSecondaryDark}}">
 
     <!-- ── Bottom Tab Bar ── -->
     <TabBar>

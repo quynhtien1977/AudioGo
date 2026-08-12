@@ -40,6 +40,14 @@ public static class MauiProgram
 
 #if ANDROID
         AudioGo.Platforms.Android.CustomMapPinHandler.Register();
+        builder.Services.AddSingleton<AudioGo_Mobile.Services.IThemeTransitionService,
+                                      AudioGo_Mobile.Platforms.Android.ThemeTransitionService>();
+#elif IOS
+        builder.Services.AddSingleton<AudioGo_Mobile.Services.IThemeTransitionService,
+                                      AudioGo_Mobile.Platforms.iOS.ThemeTransitionService>();
+#else
+        builder.Services.AddSingleton<AudioGo_Mobile.Services.IThemeTransitionService,
+                                      AudioGo_Mobile.Services.DefaultThemeTransitionService>();
 #endif
         // ── Database ──────────────────────────────────────────────
         var dbPath = Path.Combine(FileSystem.AppDataDirectory, "audiogo.db3");

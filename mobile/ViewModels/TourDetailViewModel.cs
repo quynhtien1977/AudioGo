@@ -18,6 +18,19 @@ namespace AudioGo.ViewModels
 
             _session.PoiVisited += OnPoiVisited;
             _session.SessionCompleted += OnSessionCompleted;
+
+            // Khi user đổi dark/light mode → refresh CardBgColor của tất cả stops
+            if (Application.Current is not null)
+                Application.Current.RequestedThemeChanged += OnThemeChanged;
+        }
+
+        private void OnThemeChanged(object? sender, AppThemeChangedEventArgs e)
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                foreach (var stop in Stops)
+                    stop.NotifyCardBgColorChanged();
+            });
         }
 
         // ── Query parameter ───────────────────────────────────────────
@@ -259,7 +272,20 @@ namespace AudioGo.ViewModels
         }
 
         public Color StatusColor => IsVisited ? Color.FromArgb("#4CAF50") : Color.FromArgb("#E53935");
-        public Color CardBgColor => IsVisited ? Color.FromArgb("#F1F8E9") : Colors.White;
+        public Color CardBgColor
+        {
+            get
+            {
+                var isDark = Application.Current?.RequestedTheme == AppTheme.Dark
+                          || Application.Current?.UserAppTheme == AppTheme.Dark;
+                if (IsVisited)
+                    return isDark ? Color.FromArgb("#1B2E1B") : Color.FromArgb("#F1F8E9");
+                return isDark ? Color.FromArgb("#1C1C1E") : Colors.White;
+            }
+        }
+
+        /// <summary>Gọi khi theme thay đổi để UI refresh màu card.</summary>
+        public void NotifyCardBgColorChanged() => OnPropertyChanged(nameof(CardBgColor));
 
         // Constructor từ DTO (duy nhất — không có mock constructor)
         public TourStepVm(TourStepDto dto, bool isLast, int walkMinutesToNext = 0, string? baseUrl = null)

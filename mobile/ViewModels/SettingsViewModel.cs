@@ -1,5 +1,6 @@
 using AudioGo.Helpers;
 using AudioGo_Mobile;
+using AudioGo_Mobile.Services;
 using CommunityToolkit.Maui.Views;
 using AudioGo_Mobile.Views;
 using System.Windows.Input;
@@ -9,6 +10,7 @@ namespace AudioGo.ViewModels
     public class SettingsViewModel : BaseViewModel
     {
         private readonly MainViewModel _mainVm;
+        private readonly IThemeTransitionService _transition;
         private bool _isChangingLanguage;
 
         public bool AllowCellularDownloads
@@ -48,12 +50,18 @@ namespace AudioGo.ViewModels
         public bool IsDarkMode
         {
             get => Preferences.Default.Get("app_theme", "system") == "dark";
-            set
-            {
-                App.ApplyTheme(value ? "dark" : "light");
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(ThemeLabel));
-            }
+            // Setter used by Switch toggle (no animation, direct)
+            set => _ = AnimateThemeAsync(value, 0, 0);
+        }
+
+        /// <summary>
+        /// Called from code-behind with exact button coordinates for circular reveal.
+        /// </summary>
+        public async Task AnimateThemeAsync(bool enableDark, float originX, float originY)
+        {
+            await _transition.AnimateThemeChangeAsync(enableDark, originX, originY);
+            OnPropertyChanged(nameof(IsDarkMode));
+            OnPropertyChanged(nameof(ThemeLabel));
         }
 
         public string ThemeLabel => IsDarkMode
@@ -71,9 +79,10 @@ namespace AudioGo.ViewModels
 
         public ICommand ChangeLanguageCommand { get; }
 
-        public SettingsViewModel(MainViewModel mainVm)
+        public SettingsViewModel(MainViewModel mainVm, IThemeTransitionService transition)
         {
             _mainVm = mainVm;
+            _transition = transition;
             ChangeLanguageCommand = new Command<string>(async (lang) => await ChangeLanguageAsync(lang));
         }
 
