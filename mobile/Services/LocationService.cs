@@ -8,7 +8,9 @@ namespace AudioGo.Services
     /// </summary>
     public class LocationService : ILocationService
     {
-        private readonly TimeSpan _interval = TimeSpan.FromSeconds(3);
+        private readonly TimeSpan _interval = TimeSpan.FromSeconds(8);
+        private const double MinMoveMeters = 5.0; // chỉ fire event khi di chuyển >= 5m
+        private (double Lat, double Lon)? _lastFiredLocation;
         private CancellationTokenSource? _cts;
 
         public event EventHandler<(double Lat, double Lon)>? LocationUpdated;
@@ -89,8 +91,19 @@ namespace AudioGo.Services
 
                     if (loc is not null)
                     {
-                        LastKnownLocation = (loc.Latitude, loc.Longitude);
-                        LocationUpdated?.Invoke(this, (loc.Latitude, loc.Longitude));
+                        var current = (loc.Latitude, loc.Longitude);
+                        // Chỉ fire event khi vị trí thay đổi đáng kể (>= 5m)
+                        bool shouldFire = _lastFiredLocation is null ||
+                            AudioGo.Helpers.GeoHelper.HaversineMeters(
+                                _lastFiredLocation.Value.Lat, _lastFiredLocation.Value.Lon,
+                                loc.Latitude, loc.Longitude) >= MinMoveMeters;
+
+                        LastKnownLocation = current;
+                        if (shouldFire)
+                        {
+                            _lastFiredLocation = current;
+                            LocationUpdated?.Invoke(this, current);
+                        }
                     }
                 }
                 catch (FeatureNotSupportedException) { break; }
