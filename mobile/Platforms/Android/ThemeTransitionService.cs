@@ -1,5 +1,7 @@
 using Android.Animation;
 using Android.App;
+using Android.Graphics;
+using Android.OS;
 using Android.Views;
 using Android.Views.Animations;
 using AudioGo_Mobile.Services;
@@ -8,93 +10,91 @@ using Microsoft.Maui.Platform;
 namespace AudioGo_Mobile.Platforms.Android;
 
 /// <summary>
-/// Android implementation of circular-reveal dark-mode transition.
-/// Uses native ViewAnimationUtils.CreateCircularReveal().
+/// Android circular reveal — đúng chuẩn Material Design:
+/// 1. Chụp bitmap màn hình hiện tại
+/// 2. Apply theme ngay (content đổi màu bên dưới)
+/// 3. Đặt bitmap cũ làm overlay toàn màn hình
+/// 4. Circular SHRINK overlay từ vị trí nút → lộ nội dung mới bên dưới
+/// Nội dung không bao giờ bị che hoàn toàn.
 /// </summary>
 public class ThemeTransitionService : IThemeTransitionService
 {
-    private const int DurationMs = 550;
+    private const int RevealDurationMs = 500;
 
     public async Task AnimateThemeChangeAsync(bool enableDark, float originX, float originY)
     {
         var activity = (Activity?)Platform.CurrentActivity;
         if (activity?.Window?.DecorView is not ViewGroup decorView)
         {
-            // Fallback: just apply theme with no animation
             App.ApplyTheme(enableDark ? "dark" : "light");
             return;
         }
 
         var tcs = new TaskCompletionSource<bool>();
 
-        activity.RunOnUiThread(() =>
+        activity.RunOnUiThread(async () =>
         {
             try
             {
-                int width  = decorView.Width;
-                int height = decorView.Height;
+                // ── Step 1: Chụp bitmap màn hình hiện tại ──────────────
+                Bitmap? screenshot = await CaptureScreenAsync(activity, decorView);
 
-                int cx = (int)originX;
-                int cy = (int)originY;
+                // ── Step 2: Apply theme ngay (content đổi màu bên dưới) ──
+                App.ApplyTheme(enableDark ? "dark" : "light");
 
-                // endRadius = diagonal to furthest corner
-                double endRadius = Math.Sqrt(
-                    Math.Pow(Math.Max(cx, width  - cx), 2) +
-                    Math.Pow(Math.Max(cy, height - cy), 2));
+                if (screenshot == null)
+                {
+                    // Không chụp được → fallback không animation
+                    tcs.TrySetResult(false);
+                    return;
+                }
 
-                // Create overlay view with the destination theme background color
-                var overlayColor = enableDark
-                    ? global::Android.Graphics.Color.ParseColor("#0F0F0F")
-                    : global::Android.Graphics.Color.ParseColor("#F5F5F5");
-
-                var overlay = new global::Android.Views.View(activity)
+                // ── Step 3: Đặt ImageView chứa screenshot làm overlay ───
+                var overlay = new global::Android.Widget.ImageView(activity)
                 {
                     LayoutParameters = new ViewGroup.LayoutParams(
                         ViewGroup.LayoutParams.MatchParent,
-                        ViewGroup.LayoutParams.MatchParent),
-                    Visibility = ViewStates.Invisible
+                        ViewGroup.LayoutParams.MatchParent)
                 };
-                overlay.SetBackgroundColor(overlayColor);
+                overlay.SetImageBitmap(screenshot);
+                overlay.SetScaleType(global::Android.Widget.ImageView.ScaleType.FitXy);
                 decorView.AddView(overlay);
+
+                // ── Step 4: Circular SHRINK — overlay co lại từ vị trí nút ─
+                int cx = (int)originX;
+                int cy = (int)originY;
+
+                // startRadius = đường chéo màn hình (đủ phủ toàn màn)
+                double startRadius = Math.Sqrt(
+                    Math.Pow(Math.Max(cx, decorView.Width  - cx), 2) +
+                    Math.Pow(Math.Max(cy, decorView.Height - cy), 2));
 
                 if (!OperatingSystem.IsAndroidVersionAtLeast(21))
                 {
-                    // Fallback for API < 21
-                    App.ApplyTheme(enableDark ? "dark" : "light");
+                    // API < 21 fallback
                     decorView.RemoveView(overlay);
+                    screenshot.Recycle();
                     tcs.TrySetResult(true);
                     return;
                 }
 
+                // Reveal từ full screen → shrink về điểm nút (reverse reveal)
                 var anim = ViewAnimationUtils.CreateCircularReveal(
-                    overlay, cx, cy,
-                    startRadius: 0f,
-                    endRadius: (float)endRadius);
+                    overlay,
+                    cx, cy,
+                    startRadius: (float)startRadius,   // bắt đầu to (phủ hết)
+                    endRadius: 0f);                     // kết thúc = 0 (biến mất)
 
-                anim!.SetDuration(DurationMs);
+                anim!.SetDuration(RevealDurationMs);
                 anim.SetInterpolator(new AccelerateDecelerateInterpolator());
-
-                anim.AnimationStart += (_, _) =>
-                {
-                    overlay.Visibility = ViewStates.Visible;
-                    // Apply real theme while overlay is covering the screen
-                    App.ApplyTheme(enableDark ? "dark" : "light");
-                };
 
                 anim.AnimationEnd += (_, _) =>
                 {
-                    // Fade out overlay (so new theme is revealed underneath)
-                    var fadeOut = ObjectAnimator.OfFloat(overlay, "alpha", 1f, 0f)!;
-                    fadeOut.SetDuration(180);
-                    fadeOut.AnimationEnd += (_, _) =>
-                    {
-                        decorView.RemoveView(overlay);
-                        tcs.TrySetResult(true);
-                    };
-                    fadeOut.Start();
+                    decorView.RemoveView(overlay);
+                    screenshot.Recycle();
+                    tcs.TrySetResult(true);
                 };
 
-                overlay.Visibility = ViewStates.Visible;
                 anim.Start();
             }
             catch (Exception ex)
@@ -106,5 +106,71 @@ public class ThemeTransitionService : IThemeTransitionService
         });
 
         await tcs.Task;
+    }
+
+    // ────────────────────────────────────────────────────────────────────────
+    // Chụp screenshot bằng PixelCopy (API 26+) hoặc Canvas.DrawingCache (cũ)
+    // ────────────────────────────────────────────────────────────────────────
+    private static Task<Bitmap?> CaptureScreenAsync(Activity activity, global::Android.Views.View decorView)
+    {
+        var captureTcs = new TaskCompletionSource<Bitmap?>();
+
+        if (OperatingSystem.IsAndroidVersionAtLeast(26) && activity.Window != null)
+        {
+            try
+            {
+                var bitmap = Bitmap.CreateBitmap(
+                    decorView.Width, decorView.Height, Bitmap.Config.Argb8888!);
+
+                var listener = new PixelCopyListener(result =>
+                {
+                    if (result == (int)PixelCopyResult.Success)
+                        captureTcs.TrySetResult(bitmap);
+                    else
+                    {
+                        bitmap.Recycle();
+                        captureTcs.TrySetResult(null);
+                    }
+                });
+
+                PixelCopy.Request(
+                    activity.Window,
+                    bitmap,
+                    listener,
+                    new global::Android.OS.Handler(Looper.MainLooper!));
+            }
+            catch
+            {
+                captureTcs.TrySetResult(null);
+            }
+        }
+        else
+        {
+            // Fallback — DrawingCache (API 21-25)
+            try
+            {
+#pragma warning disable CS0618
+                decorView.DrawingCacheEnabled = true;
+                var cache = decorView.DrawingCache;
+                var copy  = cache != null ? Bitmap.CreateBitmap(cache) : null;
+                decorView.DrawingCacheEnabled = false;
+#pragma warning restore CS0618
+                captureTcs.TrySetResult(copy);
+            }
+            catch
+            {
+                captureTcs.TrySetResult(null);
+            }
+        }
+
+        return captureTcs.Task;
+    }
+
+    // PixelCopy callback wrapper — .NET Android binding requires explicit interface
+    private sealed class PixelCopyListener : Java.Lang.Object, PixelCopy.IOnPixelCopyFinishedListener
+    {
+        private readonly Action<int> _callback;
+        public PixelCopyListener(Action<int> callback) => _callback = callback;
+        public void OnPixelCopyFinished(int copyResult) => _callback(copyResult);
     }
 }
