@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:helpers="clr-namespace:AudioGo.Helpers"
+             x:Class="AudioGo_Mobile.Controls.OfflineBannerView"
+             x:Name="Root"
+             IsVisible="False">
+
+    <!-- Dismissible offline/cache banner — shown when Connectivity = None/Unknown -->
+    <Border x:Name="BannerBorder"
+            BackgroundColor="#CC1A1A1A"
+            StrokeThickness="0"
+            Padding="12,8">
+        <Grid ColumnDefinitions="*, Auto">
+
+            <!-- Message -->
+            <Label Grid.Column="0"
+                   x:Name="MessageLabel"
+                   FontFamily="InterMedium"
+                   FontSize="13"
+                   TextColor="White"
+                   VerticalOptions="Center"
+                   LineBreakMode="TailTruncation"/>
+
+            <!-- Dismiss × button -->
+            <Border Grid.Column="1"
+                    StrokeThickness="0"
+                    BackgroundColor="Transparent"
+                    Padding="8,4"
+                    Margin="8,0,0,0">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnDismissTapped"/>
+                </Border.GestureRecognizers>
+                <Label Text="✕"
+                       FontFamily="InterMedium"
+                       FontSize="14"
+                       TextColor="#CCCCCC"
+                       VerticalOptions="Center"/>
+            </Border>
+        </Grid>
+    </Border>
+</ContentView>

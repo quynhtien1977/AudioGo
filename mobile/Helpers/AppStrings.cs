@@ -944,6 +944,12 @@ public static class AppStrings
         {
             ["vi"] = "Tiếp tục", ["en"] = "Continue"
         },
+        ["pay_initializing"] = new()
+        {
+            ["vi"] = "Đang tạo mã QR...", ["en"] = "Generating QR code...",
+            ["ja"] = "QRコードを生成中...", ["ko"] = "QR 코드 생성 중...",
+            ["zh-Hans"] = "正在生成二维码...", ["fr"] = "Génération du QR code...", ["th"] = "กำลังสร้างรหัส QR..."
+        },
         ["pay_qr_title"] = new()
         {
             ["vi"] = "Quét mã hoặc chuyển khoản", ["en"] = "Scan or Bank Transfer"
@@ -1019,6 +1025,16 @@ public static class AppStrings
         {
             ["vi"] = "Xem thêm", ["en"] = "Read more", ["ja"] = "詳細を見る",
             ["ko"] = "더 읽어보기", ["zh-Hans"] = "阅读更多", ["fr"] = "Lire plus", ["th"] = "อ่านเพิ่มเติม"
+        },
+        ["offline_banner_msg"] = new()
+        {
+            ["vi"] = "Không có kết nối mạng — đang dùng dữ liệu đệm",
+            ["en"] = "No internet — using cached data",
+            ["ja"] = "インターネットなし — キャッシュを使用中",
+            ["ko"] = "인터넷 없음 — 캐시 데이터 사용 중",
+            ["zh-Hans"] = "无网络 — 使用缓存数据",
+            ["fr"] = "Hors ligne — données en cache",
+            ["th"] = "ไม่มีอินเทอร์เน็ต — ใช้ข้อมูลแคช"
         }
     };
 

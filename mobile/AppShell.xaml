@@ -4,6 +4,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:views="clr-namespace:AudioGo_Mobile.Views"
+    xmlns:controls="clr-namespace:AudioGo_Mobile.Controls"
     Title="AudioGo"
     Shell.TabBarBackgroundColor="{AppThemeBinding Light={StaticResource Surface}, Dark={StaticResource SurfaceDark}}"
     Shell.TabBarForegroundColor="{StaticResource Primary}"
@@ -83,7 +84,7 @@
         </ShellContent>
     </TabBar>
 
-    <!-- ── Modal / Push Routes (không phải tab) ── -->
+    <!-- ── Modal / Push Routes (để trống, routes đăng ký trong code-behind) ── -->
     <Shell.Resources>
         <ResourceDictionary/>
     </Shell.Resources>
