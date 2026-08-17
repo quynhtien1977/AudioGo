@@ -2,61 +2,55 @@
 <svg width="456" height="456" viewBox="0 0 456 456" version="1.1"
      xmlns="http://www.w3.org/2000/svg">
 
-  <!-- ── Headphone icon (centered, white) ── -->
-  <!-- Arc top of headphone -->
-  <path d="M 228 120
-             C 174 120 130 164 130 218
-             L 130 268
-             C 130 274 136 280 142 280
-             L 168 280
-             C 174 280 180 274 180 268
-             L 180 240
-             C 180 234 174 228 168 228
-             L 152 228
-             L 152 218
-             C 152 176 186 142 228 142
-             C 270 142 304 176 304 218
-             L 304 228
-             L 288 228
-             C 282 228 276 234 276 240
-             L 276 268
-             C 276 274 282 280 288 280
-             L 314 280
-             C 320 280 326 274 326 268
-             L 326 218
-             C 326 164 282 120 228 120 Z"
-        fill="white" />
+  <!-- ── Ripple rings (4 vòng, cam, fade out) ── -->
+  <circle cx="228" cy="200" r="155" fill="none" stroke="#EE4D2D" stroke-width="2" opacity="0.12"/>
+  <circle cx="228" cy="200" r="120" fill="none" stroke="#EE4D2D" stroke-width="2.5" opacity="0.22"/>
+  <circle cx="228" cy="200" r="88"  fill="none" stroke="#EE4D2D" stroke-width="3" opacity="0.38"/>
+  <circle cx="228" cy="200" r="58"  fill="none" stroke="#EE4D2D" stroke-width="3.5" opacity="0.55"/>
 
-  <!-- ── Sound wave arcs (3 layers, right side, white) ── -->
-  <!-- Inner wave -->
-  <path d="M 248 198 C 260 207 260 225 248 234"
-        stroke="white" stroke-width="9" fill="none"
-        stroke-linecap="round"/>
-  <!-- Middle wave -->
-  <path d="M 263 185 C 284 202 284 230 263 247"
-        stroke="white" stroke-width="9" fill="none"
-        stroke-linecap="round" opacity="0.75"/>
-  <!-- Outer wave -->
-  <path d="M 278 172 C 308 197 308 235 278 260"
-        stroke="white" stroke-width="9" fill="none"
-        stroke-linecap="round" opacity="0.45"/>
+  <!-- ── Headphone icon (cam, centered at 228,200) ── -->
+  <path d="M 228 128
+             C 186 128 152 162 152 204
+             L 152 246
+             C 152 251 157 256 162 256
+             L 182 256
+             C 187 256 192 251 192 246
+             L 192 222
+             C 192 217 187 212 182 212
+             L 168 212
+             L 168 204
+             C 168 170 195 144 228 144
+             C 261 144 288 170 288 204
+             L 288 212
+             L 274 212
+             C 269 212 264 217 264 222
+             L 264 246
+             C 264 251 269 256 274 256
+             L 294 256
+             C 299 256 304 251 304 246
+             L 304 204
+             C 304 162 270 128 228 128 Z"
+        fill="#EE4D2D"/>
 
-  <!-- ── "AudioGo" wordmark ── -->
-  <text x="228" y="330"
+  <!-- ── "AudioGo" wordmark (trắng) ── -->
+  <text x="228" y="318"
         font-family="'Helvetica Neue', Arial, sans-serif"
-        font-size="48"
+        font-size="52"
         font-weight="700"
-        letter-spacing="2"
+        letter-spacing="1"
         fill="white"
         text-anchor="middle">AudioGo</text>
+
+  <!-- ── Orange accent line ── -->
+  <rect x="194" y="328" width="68" height="3" rx="1.5" fill="#EE4D2D"/>
 
   <!-- ── Tagline ── -->
   <text x="228" y="358"
         font-family="'Helvetica Neue', Arial, sans-serif"
-        font-size="18"
-        font-weight="400"
-        letter-spacing="1"
+        font-size="16"
+        font-weight="300"
+        letter-spacing="2"
         fill="white"
-        opacity="0.65"
-        text-anchor="middle">Nghe &amp; Khám phá</text>
+        opacity="0.55"
+        text-anchor="middle">Nghe &amp; Kham pha</text>
 </svg>

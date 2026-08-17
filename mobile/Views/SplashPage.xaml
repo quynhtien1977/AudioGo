@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="AudioGo_Mobile.Views.SplashPage"
+             Shell.NavBarIsVisible="False"
+             NavigationPage.HasNavigationBar="False"
+             BackgroundColor="#100D0A">
+
+    <!--
+        MAUI Splash Page — hiển thị ngay sau OS splash.
+        Seamless transition: cùng nền #100D0A, có animated progress bar.
+    -->
+    <Grid RowDefinitions="*, Auto">
+
+        <!-- ── Center: Logo + Wordmark ── -->
+        <VerticalStackLayout Grid.Row="0"
+                             HorizontalOptions="Center"
+                             VerticalOptions="Center"
+                             Spacing="0">
+
+            <!-- Ripple rings + Headphone icon -->
+            <Grid HorizontalOptions="Center"
+                  WidthRequest="220" HeightRequest="220">
+
+                <!-- Ring 4 (outermost, most transparent) -->
+                <Ellipse x:Name="Ring4"
+                         WidthRequest="200" HeightRequest="200"
+                         Stroke="#1AEE4D2D" StrokeThickness="2"
+                         HorizontalOptions="Center" VerticalOptions="Center"
+                         Opacity="0"/>
+
+                <!-- Ring 3 -->
+                <Ellipse x:Name="Ring3"
+                         WidthRequest="158" HeightRequest="158"
+                         Stroke="#2DEE4D2D" StrokeThickness="2.5"
+                         HorizontalOptions="Center" VerticalOptions="Center"
+                         Opacity="0"/>
+
+                <!-- Ring 2 -->
+                <Ellipse x:Name="Ring2"
+                         WidthRequest="118" HeightRequest="118"
+                         Stroke="#55EE4D2D" StrokeThickness="3"
+                         HorizontalOptions="Center" VerticalOptions="Center"
+                         Opacity="0"/>
+
+                <!-- Ring 1 (innermost) -->
+                <Ellipse x:Name="Ring1"
+                         WidthRequest="80" HeightRequest="80"
+                         Stroke="#99EE4D2D" StrokeThickness="3.5"
+                         HorizontalOptions="Center" VerticalOptions="Center"
+                         Opacity="0"/>
+
+                <!-- Headphone icon -->
+                <Label x:Name="HeadphoneIcon"
+                       Text="&#xe310;"
+                       FontFamily="MaterialIcons"
+                       FontSize="64"
+                       TextColor="#EE4D2D"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"
+                       Opacity="0"
+                       TranslationY="10"/>
+            </Grid>
+
+            <!-- Spacer -->
+            <BoxView HeightRequest="28" Color="Transparent"/>
+
+            <!-- "AudioGo" wordmark -->
+            <Label x:Name="Wordmark"
+                   Text="AudioGo"
+                   FontFamily="InterBold"
+                   FontSize="52"
+                   FontAttributes="Bold"
+                   TextColor="White"
+                   LetterSpacing="1"
+                   HorizontalOptions="Center"
+                   Opacity="0"
+                   TranslationY="12"/>
+
+            <!-- Orange accent line -->
+            <BoxView x:Name="AccentLine"
+                     HeightRequest="3" WidthRequest="0"
+                     CornerRadius="1.5"
+                     Color="#EE4D2D"
+                     HorizontalOptions="Center"
+                     Margin="0,10,0,0"/>
+
+            <!-- Tagline -->
+            <Label x:Name="Tagline"
+                   Text="Nghe &amp; Khám phá"
+                   FontFamily="InterRegular"
+                   FontSize="15"
+                   TextColor="#66FFFFFF"
+                   LetterSpacing="2"
+                   HorizontalOptions="Center"
+                   Margin="0,12,0,0"
+                   Opacity="0"/>
+
+        </VerticalStackLayout>
+
+        <!-- ── Bottom: Loading progress bar ── -->
+        <VerticalStackLayout Grid.Row="1" Margin="0,0,0,48" Spacing="10">
+
+            <!-- Loading label -->
+            <Label x:Name="LoadingLabel"
+                   Text="Đang tải..."
+                   FontFamily="InterRegular"
+                   FontSize="12"
+                   TextColor="#44FFFFFF"
+                   HorizontalOptions="Center"
+                   Opacity="0"/>
+
+            <!-- Progress bar -->
+            <ProgressBar x:Name="LoadingBar"
+                         Progress="0"
+                         ProgressColor="#EE4D2D"
+                         Margin="40,0"
+                         HeightRequest="3"
+                         Opacity="0"/>
+        </VerticalStackLayout>
+
+    </Grid>
+</ContentPage>

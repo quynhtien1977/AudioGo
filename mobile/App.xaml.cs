@@ -32,75 +32,13 @@ public partial class App : Application
 
 	protected override Window CreateWindow(IActivationState? activationState)
 	{
-		// Đọc Preferences synchronously — không block main thread vì là disk read nhỏ.
-		// Nếu flag "SessionValid" = true → đi thẳng vào AppShell, không flash QR.
-		bool hasSession = Preferences.Default.Get(SessionValidKey, false);
-
-		// Khôi phục theme đã lưu trước khi render bất kỳ page nào
+		// Khôi phục theme trước khi render bất kỳ page nào
 		var savedTheme = Preferences.Default.Get("app_theme", "system");
 		ApplyTheme(savedTheme);
 
-		Page startPage;
-		if (hasSession)
-		{
-			// ── FIX: lấy AppShell từ DI container (Singleton) thay vì new AppShell() ──
-			// new AppShell() tạo Shell ngoài DI → DataTemplate tạo Pages bằng
-			// Activator.CreateInstance (không qua DI) → crash vì thiếu ViewModel injection.
-			var services = activationState?.Context?.Services
-				?? IPlatformApplication.Current!.Services;
-			startPage = services.GetRequiredService<AppShell>();
-		}
-		else
-		{
-			var services = activationState?.Context?.Services
-				?? IPlatformApplication.Current!.Services;
-			startPage = new NavigationPage(services.GetRequiredService<WelcomePage>());
-		}
-
-		var window = new Window(startPage);
-
-		// Nếu đã có session, verify token async ngay sau khi window tạo xong
-		if (hasSession)
-		{
-			_ = Task.Run(async () =>
-			{
-				try
-				{
-					var token = await SecureStorage.GetAsync("GuestToken");
-					if (string.IsNullOrEmpty(token) || !IsJwtValid(token))
-					{
-						// Token hết hạn → xóa flag và về trang QR
-						Preferences.Default.Remove(SessionValidKey);
-						SecureStorage.Remove("GuestToken");
-						MainThread.BeginInvokeOnMainThread(() =>
-						{
-							if (Application.Current is not null)
-							{
-								var services = IPlatformApplication.Current!.Services;
-								Application.Current.MainPage = new NavigationPage(services.GetRequiredService<WelcomePage>());
-							}
-						});
-					}
-				}
-				catch (Exception ex)
-				{
-					System.Diagnostics.Debug.WriteLine($"[App] Token verify error: {ex.Message}");
-					// SecureStorage crash trên một số device khi không có USB
-					// → xóa session, để user scan QR lại
-					Preferences.Default.Remove(SessionValidKey);
-					MainThread.BeginInvokeOnMainThread(() =>
-					{
-						if (Application.Current is not null)
-						{
-							var services = IPlatformApplication.Current!.Services;
-							Application.Current.MainPage = new NavigationPage(services.GetRequiredService<WelcomePage>());
-						}
-					});
-				}
-			});
-		}
-
-		return window;
+		// Luôn bắt đầu bằng SplashPage — nó tự check session và navigate đi đâu
+		var splash = new Views.SplashPage();
+		return new Window(splash);
 	}
 
 	/// <summary>
