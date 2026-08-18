@@ -1,8 +1,9 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:AudioGo.ViewModels"
              xmlns:models="clr-namespace:AudioGo.Mobile.Models"
+             xmlns:controls="clr-namespace:AudioGo_Mobile.Controls"
              x:Class="AudioGo_Mobile.Views.SearchPage"
              x:Name="ThisPage"
              Shell.NavBarIsVisible="False"
@@ -274,5 +275,9 @@
                 <BoxView HeightRequest="16" Color="Transparent"/>
             </VerticalStackLayout>
         </ScrollView>
+
+        <!-- ── Offline Banner Overlay ── -->
+        <controls:OfflineBannerView Grid.RowSpan="2" VerticalOptions="End"/>
+
     </Grid>
 </ContentPage>

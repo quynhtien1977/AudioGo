@@ -1,4 +1,4 @@
-using Android.Graphics;
+﻿using Android.Graphics;
 using Android.Gms.Maps.Model;
 using Microsoft.Maui.Maps.Handlers;
 using AudioGo.Controls;
@@ -55,7 +55,9 @@ public static class CustomMapPinHandler
             .Select(u => DownloadAndCacheAsync(u!));
 
         await Task.WhenAll(tasks);
+        #if DEBUG
         System.Diagnostics.Debug.WriteLine($"[PinCache] Preloaded {_markerCache.Count} icons.");
+        #endif
     }
 
     /// <summary>
@@ -100,7 +102,9 @@ public static class CustomMapPinHandler
         }
         catch (Exception ex)
         {
+            #if DEBUG
             System.Diagnostics.Debug.WriteLine($"[PinCache] Failed to cache {imageUrl}: {ex.Message}");
+            #endif
         }
         finally
         {

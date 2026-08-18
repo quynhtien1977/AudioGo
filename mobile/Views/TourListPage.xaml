@@ -1,6 +1,7 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:AudioGo_Mobile.Controls"
              x:Class="AudioGo_Mobile.Views.TourListPage"
              Shell.NavBarIsVisible="False"
              BackgroundColor="{AppThemeBinding Light={StaticResource Background}, Dark={StaticResource BackgroundDark}}"
@@ -129,6 +130,9 @@
                 <BoxView HeightRequest="80" Color="Transparent"/>
             </VerticalStackLayout>
         </ScrollView>
+
+        <!-- ── Offline Banner Overlay ── -->
+        <controls:OfflineBannerView Grid.RowSpan="3" VerticalOptions="End"/>
 
     </Grid>
 </ContentPage>

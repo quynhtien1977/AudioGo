@@ -1,4 +1,4 @@
-using AudioGo.Services;
+﻿using AudioGo.Services;
 using AudioGo.Services.Interfaces;
 using Microsoft.Maui.Controls.Maps;
 using Microsoft.Maui.Maps;
@@ -189,7 +189,9 @@ namespace AudioGo.ViewModels
                 }
                 catch
                 {
+                    #if DEBUG
                     System.Diagnostics.Debug.WriteLine($"[MapVM] Failed to create pin for POI {poi.PoiId}");
+                    #endif
                 }
             }
             OnPropertyChanged(nameof(MapStatusLabel));

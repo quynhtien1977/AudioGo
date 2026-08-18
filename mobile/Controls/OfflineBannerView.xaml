@@ -37,6 +37,7 @@
             <!-- Message -->
             <Label Grid.Column="1"
                    x:Name="MessageLabel"
+                   Text="{helpers:Translate offline_banner_msg}"
                    FontFamily="InterMedium"
                    FontSize="13"
                    TextColor="#E8E8E8"
@@ -51,7 +52,8 @@
                     WidthRequest="28"
                     HeightRequest="28"
                     HorizontalOptions="End"
-                    VerticalOptions="Center">
+                    VerticalOptions="Center"
+                    SemanticProperties.Description="{helpers:Translate offline_banner_dismiss}">
                 <Border.GestureRecognizers>
                     <TapGestureRecognizer Tapped="OnDismissTapped"/>
                 </Border.GestureRecognizers>

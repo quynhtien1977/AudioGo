@@ -5,6 +5,7 @@ using System;
 namespace AudioGo.Helpers
 {
     [ContentProperty(nameof(Key))]
+    [AcceptEmptyServiceProvider]
     public class TranslateExtension : IMarkupExtension
     {
         public string Key { get; set; }

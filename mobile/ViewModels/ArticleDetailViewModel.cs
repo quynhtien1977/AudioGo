@@ -1,4 +1,4 @@
-using AudioGo.Services.Interfaces;
+﻿using AudioGo.Services.Interfaces;
 using AudioGo.ViewModels;
 using AudioGo.Mobile.Models;
 using AudioGo.Data;
@@ -139,7 +139,9 @@ namespace AudioGo.ViewModels
             }
             catch (Exception ex)
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[ArticleDetailViewModel] Load failed: {ex.Message}");
+                #endif
             }
             finally
             {

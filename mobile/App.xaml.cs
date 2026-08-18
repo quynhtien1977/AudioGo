@@ -37,7 +37,8 @@ public partial class App : Application
 		ApplyTheme(savedTheme);
 
 		// Luôn bắt đầu bằng SplashPage — nó tự check session và navigate đi đâu
-		var splash = new Views.SplashPage();
+		var services = IPlatformApplication.Current!.Services;
+		var splash = services.GetRequiredService<Views.SplashPage>();
 		return new Window(splash);
 	}
 
@@ -78,12 +79,16 @@ public partial class App : Application
 			{
 				try
 				{
+					#if DEBUG
 					System.Diagnostics.Debug.WriteLine("[App] OnResume — retrying pending downloads");
+					#endif
 					await syncService.RetryPendingDownloadsAsync();
 				}
 				catch (Exception ex)
 				{
+					#if DEBUG
 					System.Diagnostics.Debug.WriteLine($"[App] OnResume retry error: {ex.Message}");
+					#endif
 				}
 			});
 		}

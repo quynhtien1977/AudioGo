@@ -1,4 +1,4 @@
-using AudioGo.Services.Interfaces;
+﻿using AudioGo.Services.Interfaces;
 using Shared.DTOs;
 using System.Collections.ObjectModel;
 using AudioGo.Services;
@@ -161,7 +161,9 @@ namespace AudioGo.ViewModels
             catch (Exception ex)
             {
                 ErrorMessage = $"{AudioGo.Helpers.AppStrings.Get("tour_load_err")}: {ex.Message}";
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[TourDetail] Load failed: {ex.Message}");
+                #endif
             }
             finally
             {

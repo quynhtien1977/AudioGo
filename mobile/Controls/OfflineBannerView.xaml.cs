@@ -47,7 +47,15 @@ public partial class OfflineBannerView : ContentView
         bool isOffline = access != NetworkAccess.Internet &&
                          access != NetworkAccess.ConstrainedInternet;
 
-        IsVisible = isOffline && !_dismissed;
+        if (isOffline && !_dismissed)
+        {
+            MessageLabel.Text = AppStrings.Get("offline_banner_msg");
+            IsVisible = true;
+        }
+        else
+        {
+            IsVisible = false;
+        }
     }
 
     // ── Dismiss button ──────────────────────────────────────────────────────

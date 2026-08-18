@@ -1,4 +1,4 @@
-using AudioGo.Helpers;
+﻿using AudioGo.Helpers;
 using AudioGo.Services;
 using AudioGo.Services.Interfaces;
 using AudioGo.ViewModels;
@@ -295,7 +295,9 @@ namespace AudioGo.ViewModels
             }
             catch (Exception ex)
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[MainViewModel] LoadCategories error: {ex.Message}");
+                #endif
             }
         }
 
@@ -436,7 +438,9 @@ namespace AudioGo.ViewModels
                     }
                     catch (Exception ex)
                     {
+                        #if DEBUG
                         System.Diagnostics.Debug.WriteLine($"[DeltaPoll] tick error: {ex.Message}");
+                        #endif
                     }
                 }
             }
@@ -597,12 +601,16 @@ namespace AudioGo.ViewModels
             {
                 var deviceId = await SecureStorage.GetAsync("AppDeviceId") ?? "unknown";
                 await _api.PostListenHistoryAsync(poiId, deviceId, durationSec);
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[ListenHistory] Logged: poi={poiId}, duration={durationSec}s");
+                #endif
             }
             catch (Exception ex)
             {
                 // Không làm crash app — offline/network failure là bình thường
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[ListenHistory] Failed to log: {ex.Message}");
+                #endif
             }
         }
 
@@ -644,7 +652,9 @@ namespace AudioGo.ViewModels
             }
             catch (Exception ex)
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[ContinueListening] UpsertLocal error: {ex.Message}");
+                #endif
             }
         }
 
@@ -692,7 +702,9 @@ namespace AudioGo.ViewModels
                 }
                 catch (Exception ex)
                 {
+                    #if DEBUG
                     System.Diagnostics.Debug.WriteLine($"[ContinueListening] Server sync error: {ex.Message}");
+                    #endif
                 }
             });
         }

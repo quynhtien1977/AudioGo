@@ -1,4 +1,4 @@
-using AudioGo.Services.Interfaces;
+﻿using AudioGo.Services.Interfaces;
 using AudioGo.Services;
 using AudioGo.ViewModels;
 using AudioGo.Mobile.Models;
@@ -154,7 +154,9 @@ namespace AudioGo.ViewModels
             }
             catch (Exception ex)
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[ArticleListViewModel] Sync failed: {ex.Message}");
+                #endif
             }
         }
     }

@@ -131,6 +131,7 @@ public static class MauiProgram
         // Tour Pages
         builder.Services.AddSingleton<TourListPage>();    // Singleton vì là tab page
         builder.Services.AddTransient<TourDetailPage>();   // Transient vì navigate bằng route + QueryProperty
+        builder.Services.AddTransient<SplashPage>();       // Splash — Transient, hiển thị 1 lần per session
 
 #if DEBUG
         builder.Logging.AddDebug();
@@ -141,15 +142,19 @@ public static class MauiProgram
         // ── Global exception handlers ─────────────────────────────
         AppDomain.CurrentDomain.UnhandledException += (s, e) =>
         {
+            #if DEBUG
             System.Diagnostics.Debug.WriteLine($"[APPDOMAIN UNHANDLED] {((Exception)e.ExceptionObject)?.Message}");
+            #endif
         };
 
         // Ngăn các fire-and-forget tasks (download, refresh) crash toàn app.
         // Trên Android, một Task ném exception mà không có await → crash process.
         TaskScheduler.UnobservedTaskException += (_, e) =>
         {
+            #if DEBUG
             System.Diagnostics.Debug.WriteLine(
                 $"[UNOBSERVED TASK] {e.Exception?.GetType().Name}: {e.Exception?.Message}");
+            #endif
             e.SetObserved(); // Đánh dấu đã xử lý → ngăn crash
         };
 
@@ -157,8 +162,10 @@ public static class MauiProgram
         // ✅ Chỉ log, không handle — để Android xử lý đúng cách
         Android.Runtime.AndroidEnvironment.UnhandledExceptionRaiser += (_, e) =>
         {
+            #if DEBUG
             System.Diagnostics.Debug.WriteLine(
                 $"[ANDROID UNHANDLED] {e.Exception?.GetType().Name}: {e.Exception?.Message}");
+            #endif
             // Không set Handled = true
         };
 #endif

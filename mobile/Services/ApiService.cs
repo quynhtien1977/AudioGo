@@ -1,4 +1,4 @@
-using AudioGo.Services.Interfaces;
+﻿using AudioGo.Services.Interfaces;
 using Shared;
 using Shared.DTOs;
 using System.Collections.ObjectModel;
@@ -149,7 +149,9 @@ namespace AudioGo.Services
             }
             catch (Exception ex)
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[ApiService] GetTourByIdAsync: {ex.Message}");
+                #endif
                 return null;
             }
         }
@@ -191,7 +193,9 @@ namespace AudioGo.Services
             }
             catch (Exception ex)
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[ApiService] GetDeltaAsync failed: {ex.Message}");
+                #endif
                 return null;
             }
         }
@@ -241,8 +245,10 @@ namespace AudioGo.Services
             {
                 var req = BuildInitPaymentRequest(endpoint, deviceId);
 
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine(
                     $"[ApiService] InitTouristPaymentAsync START => {_http.BaseAddress}{endpoint} | Timeout={_http.Timeout.TotalSeconds}s");
+                #endif
 
                 HttpResponseMessage? resp = null;
                 for (var attempt = 1; attempt <= 2; attempt++)
@@ -257,8 +263,10 @@ namespace AudioGo.Services
                     {
                         // Tunnel có thể đóng sớm ở lần đầu (Broken pipe/ResponseEnded).
                         // Retry một lần với request mới để tạo kết nối mới.
+                        #if DEBUG
                         System.Diagnostics.Debug.WriteLine(
                             $"[ApiService] InitTouristPaymentAsync RETRY => transient transport error ({ex.InnerException?.GetType().Name}), retrying once...");
+                        #endif
                         await Task.Delay(300, ct);
                     }
                 }
@@ -267,8 +275,10 @@ namespace AudioGo.Services
 
                 sw.Stop();
 
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine(
                     $"[ApiService] InitTouristPaymentAsync RESPONSE => {(int)resp.StatusCode} {resp.StatusCode} | Elapsed={sw.ElapsedMilliseconds}ms");
+                #endif
 
                 if (!resp.IsSuccessStatusCode) return null;
 
@@ -289,8 +299,10 @@ namespace AudioGo.Services
             catch (Exception ex)
             {
                 sw.Stop();
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine(
                     $"[ApiService] InitTouristPaymentAsync ERROR => {ex.GetType().Name}: {ex.Message} | Inner={ex.InnerException?.GetType().Name}: {ex.InnerException?.Message} | Elapsed={sw.ElapsedMilliseconds}ms");
+                #endif
                 return null;
             }
         }
@@ -341,7 +353,9 @@ namespace AudioGo.Services
             }
             catch (Exception ex)
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[ApiService] VerifyTouristPaymentAsync: {ex.Message}");
+                #endif
                 return null;
             }
         }
@@ -359,7 +373,9 @@ namespace AudioGo.Services
             }
             catch (Exception ex)
             {
+                #if DEBUG
                 Debug.WriteLine($"[ApiService] GetListenHistoryAsync: {ex.Message}");
+                #endif
                 return null;
             }
         }
@@ -388,7 +404,9 @@ namespace AudioGo.Services
             }
             catch (Exception ex)
             {
+                #if DEBUG
                 Debug.WriteLine($"[ApiService] GetArticlesAsync error: {ex.Message}");
+                #endif
                 return new List<ArticleItemDto>();
             }
         }
@@ -414,7 +432,9 @@ namespace AudioGo.Services
             }
             catch (Exception ex)
             {
+                #if DEBUG
                 Debug.WriteLine($"[ApiService] GetArticleDetailAsync error: {ex.Message}");
+                #endif
                 return null;
             }
         }

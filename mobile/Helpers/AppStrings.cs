@@ -1035,6 +1035,16 @@ public static class AppStrings
             ["zh-Hans"] = "无网络 — 使用缓存数据",
             ["fr"] = "Hors ligne — données en cache",
             ["th"] = "ไม่มีอินเทอร์เน็ต — ใช้ข้อมูลแคช"
+        },
+        ["offline_banner_dismiss"] = new()
+        {
+            ["vi"] = "Đóng thông báo",
+            ["en"] = "Dismiss",
+            ["ja"] = "閉じる",
+            ["ko"] = "닫기",
+            ["zh-Hans"] = "关闭",
+            ["fr"] = "Fermer",
+            ["th"] = "ปิด"
         }
     };
 

@@ -1,4 +1,4 @@
-using Android.Animation;
+﻿using Android.Animation;
 using Android.App;
 using Android.Graphics;
 using Android.OS;
@@ -99,7 +99,9 @@ public class ThemeTransitionService : IThemeTransitionService
             }
             catch (Exception ex)
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[CircularReveal] Error: {ex.Message}");
+                #endif
                 App.ApplyTheme(enableDark ? "dark" : "light");
                 tcs.TrySetResult(false);
             }

@@ -72,7 +72,7 @@
                    FontSize="52"
                    FontAttributes="Bold"
                    TextColor="White"
-                   LetterSpacing="1"
+                   CharacterSpacing="1"
                    HorizontalOptions="Center"
                    Opacity="0"
                    TranslationY="12"/>
@@ -91,7 +91,7 @@
                    FontFamily="InterRegular"
                    FontSize="15"
                    TextColor="#66FFFFFF"
-                   LetterSpacing="2"
+                   CharacterSpacing="2"
                    HorizontalOptions="Center"
                    Margin="0,12,0,0"
                    Opacity="0"/>

@@ -1,4 +1,4 @@
-using AudioGo.Services.Interfaces;
+﻿using AudioGo.Services.Interfaces;
 using AudioGo.ViewModels;
 using Shared.DTOs;
 using System.Collections.ObjectModel;
@@ -87,7 +87,9 @@ namespace AudioGo.ViewModels
             }
             catch (Exception ex)
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[TourList] Load failed: {ex.Message}");
+                #endif
                 // Giữ dữ liệu cũ nếu đã có, không mock
             }
             finally
