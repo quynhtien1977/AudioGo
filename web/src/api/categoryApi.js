@@ -1,6 +1,6 @@
-import axios from "axios"
+﻿import axios from "axios"
 
-const API_URL = "http://localhost:5086/api/cms/categories"
+const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5086/api") + "/cms/categories"
 
 const getToken = () =>
   localStorage.getItem("token") || sessionStorage.getItem("token")
@@ -89,3 +89,5 @@ export const removePoiFromCategoryApi = async (categoryId, poiId) => {
   const res = await client.delete(`/${categoryId}/pois/${poiId}`)
   return res.data
 }
+
+

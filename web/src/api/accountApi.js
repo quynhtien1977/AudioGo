@@ -1,6 +1,6 @@
-import axios from "axios"
+﻿import axios from "axios"
 
-const API_URL = "http://localhost:5086/api/cms/accounts"
+const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5086/api") + "/cms/accounts"
 
 const getToken = () =>
   localStorage.getItem("token") || sessionStorage.getItem("token")
@@ -115,3 +115,5 @@ export const deleteUserApi = async (id) => {
   const res = await client.delete(`/${id}`)
   return res.data
 }
+
+
