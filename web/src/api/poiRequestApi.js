@@ -1,7 +1,7 @@
-import axios from "axios"
+﻿import axios from "axios"
 import { getPoiDetail } from "./poiApi"
 
-const API_URL = "http://localhost:5086/api/cms/pois"
+const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5086/api") + "/cms/pois"
 
 const getToken = () =>
   localStorage.getItem("token") || sessionStorage.getItem("token")
@@ -156,3 +156,4 @@ export const getPoiUpdateDetailApi = async (requestId) => {
     throw err
   }
 }
+

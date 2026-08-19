@@ -1,6 +1,6 @@
-import axios from "axios"
+﻿import axios from "axios"
 
-const API_URL = "http://localhost:5086/api/cms/analytics"
+const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5086/api") + "/cms/analytics"
 
 const getToken = () =>
   localStorage.getItem("token") || sessionStorage.getItem("token")
@@ -124,3 +124,4 @@ export const getDeviceActivity = async (deviceId, days = 7) => {
     return null
   }
 }
+
