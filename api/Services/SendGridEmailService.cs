@@ -5,23 +5,23 @@ using Server.Services.Interfaces;
 namespace Server.Services
 {
     /// <summary>
-    /// Triển khai IEmailService dùng Resend REST API.
-    /// Docs: https://resend.com/docs/api-reference/emails/send-email
+    /// Triển khai IEmailService dùng SendGrid v3 REST API.
+    /// Docs: https://docs.sendgrid.com/api-reference/mail-send/mail-send
     /// </summary>
-    public class ResendEmailService : IEmailService
+    public class SendGridEmailService : IEmailService
     {
-        private readonly HttpClient  _http;
+        private readonly HttpClient _http;
         private readonly IConfiguration _config;
-        private readonly ILogger<ResendEmailService> _logger;
+        private readonly ILogger<SendGridEmailService> _logger;
 
-        public ResendEmailService(HttpClient http, IConfiguration config, ILogger<ResendEmailService> logger)
+        public SendGridEmailService(HttpClient http, IConfiguration config, ILogger<SendGridEmailService> logger)
         {
             _http   = http;
             _config = config;
             _logger = logger;
 
-            var apiKey = _config["EmailSettings:ResendApiKey"] ?? "";
-            _http.BaseAddress = new Uri("https://api.resend.com/");
+            var apiKey = _config["EmailSettings:SendGridApiKey"] ?? "";
+            _http.BaseAddress = new Uri("https://api.sendgrid.com/v3/");
             _http.DefaultRequestHeaders.Authorization =
                 new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
         }
@@ -133,40 +133,6 @@ namespace Server.Services
             return await SendAsync(fromEmail, fromName, toEmail, "Đặt lại mật khẩu AudioGo CMS", html);
         }
 
-        // ─── Core send method ──────────────────────────────────────────────────
-        private async Task<bool> SendAsync(string fromEmail, string fromName, string toEmail, string subject, string html)
-        {
-            try
-            {
-                var payload = new
-                {
-                    from    = $"{fromName} <{fromEmail}>",
-                    to      = new[] { toEmail },
-                    subject = subject,
-                    html    = html
-                };
-
-                var json    = JsonSerializer.Serialize(payload);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-                var response = await _http.PostAsync("emails", content);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    var body = await response.Content.ReadAsStringAsync();
-                    _logger.LogWarning("[ResendEmail] Gửi thất bại ({Code}): {Body}", response.StatusCode, body);
-                    return false;
-                }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "[ResendEmail] Lỗi khi gửi email tới {To}", toEmail);
-                return false;
-            }
-        }
-
         // ─── Consultation notification for Admin ──────────────────────────────
         public async Task<bool> SendConsultationNotificationAsync(
             string adminEmail,
@@ -220,30 +186,42 @@ namespace Server.Services
                 </html>
                 """;
 
-            var payload = new
-            {
-                from    = $"{fromName} <{fromEmail}>",
-                to      = new[] { adminEmail },
-                subject = $"[AudioGo] Yêu cầu tư vấn mới — {restaurantName}",
-                html
-            };
+            return await SendAsync(fromEmail, fromName, adminEmail, $"[AudioGo] Yêu cầu tư vấn mới — {restaurantName}", html);
+        }
 
+        // ─── Core send method (SendGrid v3) ───────────────────────────────────
+        private async Task<bool> SendAsync(string fromEmail, string fromName, string toEmail, string subject, string html)
+        {
             try
             {
+                var payload = new
+                {
+                    personalizations = new[]
+                    {
+                        new { to = new[] { new { email = toEmail } } }
+                    },
+                    from    = new { email = fromEmail, name = fromName },
+                    subject = subject,
+                    content = new[] { new { type = "text/html", value = html } }
+                };
+
                 var json    = JsonSerializer.Serialize(payload);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
-                var response = await _http.PostAsync("emails", content);
+
+                var response = await _http.PostAsync("mail/send", content);
+
                 if (!response.IsSuccessStatusCode)
                 {
                     var body = await response.Content.ReadAsStringAsync();
-                    _logger.LogWarning("[ResendEmail] Consultation notification thất bại ({Code}): {Body}", response.StatusCode, body);
+                    _logger.LogWarning("[SendGrid] Gửi thất bại ({Code}): {Body}", response.StatusCode, body);
                     return false;
                 }
+
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[ResendEmail] Lỗi khi gửi consultation notification tới {To}", adminEmail);
+                _logger.LogError(ex, "[SendGrid] Lỗi khi gửi email tới {To}", toEmail);
                 return false;
             }
         }

@@ -111,7 +111,7 @@ builder.Services.AddScoped<IContentPipelineService, ContentPipelineService>();
 builder.Services.AddScoped<ICmsPoiService, CmsPoiService>();
 builder.Services.AddScoped<IPoiRequestService, PoiRequestService>();
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
-builder.Services.AddHttpClient<IEmailService, ResendEmailService>();
+builder.Services.AddHttpClient<IEmailService, SendGridEmailService>();
 builder.Services.AddHttpContextAccessor();
 
 // ── Subscription & Payment ────────────────────────────────────────────
