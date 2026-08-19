@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Allow: /asset/
+Disallow: /admin/
+Disallow: /login
+Disallow: /forgot-password
+Disallow: /reset-password
+
+# Sitemap
+Sitemap: https://audiogo.tranminhmed.vn/sitemap.xml

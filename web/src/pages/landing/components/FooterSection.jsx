@@ -76,7 +76,7 @@ export default function FooterSection({ data, staticData = {} }) {
           <div>
             <div className="flex items-center gap-2.5 mb-4">
               {logoUrl ? (
-                <img src={logoUrl} alt="AudioGo" className="h-8 object-contain" />
+                <img src={logoUrl} alt="AudioGo Logo - Ứng dụng thuyết minh ẩm thực Vĩnh Khánh" className="h-8 object-contain" loading="lazy" />
               ) : (
                 <div className="w-8 h-8 bg-pink-600 rounded-lg flex items-center justify-center">
                   <MapPin size={16} className="text-white" />

@@ -44,7 +44,8 @@ function IPhoneMockup({ imageUrl, alt, isCenter }) {
             {imageUrl ? (
               <img
                 src={imageUrl}
-                alt={alt}
+                alt={alt || "Ảnh chụp màn hình ứng dụng AudioGo thuyết minh ẩm thực Vĩnh Khánh"}
+                loading="lazy"
                 className="w-full h-full object-cover"
               />
             ) : (

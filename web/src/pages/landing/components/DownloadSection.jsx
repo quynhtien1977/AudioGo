@@ -88,7 +88,8 @@ export default function DownloadSection({ data }) {
             {appLogoUrl ? (
               <img
                 src={appLogoUrl}
-                alt="AudioGo"
+                alt="Logo ứng dụng AudioGo"
+                loading="lazy"
                 className="w-16 h-16 rounded-2xl object-cover shadow-lg"
               />
             ) : (
