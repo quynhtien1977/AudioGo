@@ -23,8 +23,10 @@ if (File.Exists(envPath))
 }
 
 // ── CORS ──────────────────────────────────────────────────────────────
-var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-                     ?? ["http://localhost:5173"];
+var allowedOrigins = (builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+                      ?? ["http://localhost:5173"])
+                     .Where(o => !string.IsNullOrWhiteSpace(o))  // bỏ entry rỗng khi biến env chưa set
+                     .ToArray();
 
 builder.Services.AddHttpClient();
 

@@ -32,10 +32,11 @@ services:
       # đã được load tự động từ api/.env qua env_file bên trên (file đó gitignored)
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__DefaultConnection: "${AZURE_SQL_CONNECTION}"  # từ root .env (gitignored)
-      AppUrls__PublicWebhookBaseUrl: http://localhost:8080
-      AppUrls__LanApiBaseUrl: http://localhost:8080
-      EmailSettings__CmsBaseUrl: http://localhost:5173
-      Cors__AllowedOrigins__0: http://localhost:5173
+      AppUrls__PublicWebhookBaseUrl: "${PUBLIC_WEBHOOK_URL:-http://localhost:8080}"
+      AppUrls__LanApiBaseUrl: "${LAN_API_URL:-http://localhost:8080}"
+      EmailSettings__CmsBaseUrl: "${CMS_BASE_URL:-http://localhost:5173}"
+      Cors__AllowedOrigins__0: "${CORS_ORIGIN_0:-http://localhost:5173}"
+      Cors__AllowedOrigins__1: "${CORS_ORIGIN_1:-}"
     depends_on:
       rabbitmq:
         condition: service_healthy   # chờ RabbitMQ sẵn sàng trước khi start API
