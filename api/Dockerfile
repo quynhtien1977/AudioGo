@@ -21,8 +21,7 @@ COPY shared/ ./shared/
 WORKDIR /src/api
 RUN dotnet publish Api.csproj \
     -c Release \
-    -o /app/publish \
-    --no-restore
+    -o /app/publish
 
 # ────────────────────────────────────────────────────────────────────
 # Stage 2: Runtime
@@ -32,17 +31,19 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
 # Azure Cognitive Services Speech SDK cần các thư viện audio trên Linux
+# Ubuntu 24.04 (Noble): libasound2 đã đổi tên thành libasound2t64
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgssapi-krb5-2 \
-    libasound2 \
+    libasound2t64 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/publish .
 
-# Render inject PORT env var tự động — app phải lắng nghe đúng port
-ENV ASPNETCORE_URLS=http://+:${PORT:-8080}
+# ASPNETCORE_ENVIRONMENT mặc định Production
 ENV ASPNETCORE_ENVIRONMENT=Production
 
 EXPOSE 8080
 
-ENTRYPOINT ["dotnet", "Api.dll"]
+# Render inject PORT env var lúc runtime — dùng shell để expand đúng
+# sh -c đảm bảo ${PORT:-8080} được evaluate khi container start, không phải lúc build
+ENTRYPOINT ["sh", "-c", "exec dotnet Api.dll --urls http://+:${PORT:-8080}"]
