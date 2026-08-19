@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { getLandingSections, getLatestRelease } from "@/api/landingApi";
+import { ThemeProvider } from "@/context/ThemeContext";
 import Navbar from "./components/Navbar";
 import HeroSection from "./components/HeroSection";
 import StatsBarSection from "./components/StatsBarSection";
@@ -13,12 +14,11 @@ import FloatingButtons from "./components/FloatingButtons";
 
 /**
  * Trả về content của section nếu isActive = true, ngược lại null.
- * Cho phép ẩn từng section từ CMS admin.
  */
 function getSectionData(sections, key) {
   const sec = sections.find((s) => s.sectionKey === key);
   if (!sec) return null;
-  if (sec.isActive === false) return null;   // respect toggle
+  if (sec.isActive === false) return null;
   return sec.content || {};
 }
 
@@ -26,20 +26,37 @@ export default function LandingPage() {
   const [sections, setSections] = useState([]);
   const [release, setRelease]   = useState(null);
   const [loading, setLoading]   = useState(true);
+  const [lang, setLang]         = useState(() => {
+    // Lưu lựa chọn ngôn ngữ vào localStorage
+    return localStorage.getItem("lp_lang") || "vi";
+  });
 
-  useEffect(() => {
-    Promise.all([getLandingSections(), getLatestRelease()])
-      .then(([secs, rel]) => {
-        setSections(secs);
-        setRelease(rel);
-      })
+  const fetchSections = useCallback((targetLang) => {
+    setLoading(true);
+    getLandingSections(targetLang)
+      .then((secs) => setSections(secs))
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
+  // Load release chỉ 1 lần
+  useEffect(() => {
+    getLatestRelease().then(setRelease).catch(() => {});
+  }, []);
+
+  // Re-fetch sections khi đổi ngôn ngữ
+  useEffect(() => {
+    fetchSections(lang);
+  }, [lang, fetchSections]);
+
+  const handleLangChange = (newLang) => {
+    localStorage.setItem("lp_lang", newLang);
+    setLang(newLang);
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--lp-bg, #0D0D1A)" }}>
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 rounded-full border-4 border-pink-500/30 border-t-pink-500 animate-spin" />
           <p className="text-white/40 text-sm">Đang tải...</p>
@@ -56,39 +73,43 @@ export default function LandingPage() {
   const consultCta  = getSectionData(sections, "consult_cta");
   const downloadCta = getSectionData(sections, "download_cta");
   const footer      = getSectionData(sections, "footer");
+  const navbarStatic= getSectionData(sections, "navbar_static") || {};
 
   // footer data cần cho FloatingButtons dù footer có ẩn hay không
   const footerRaw = sections.find((s) => s.sectionKey === "footer")?.content || {};
 
   return (
-    <div className="landing-root font-sans antialiased" style={{ fontFamily: "'Sora', system-ui, sans-serif" }}>
-      <Navbar />
+    <ThemeProvider>
+      <div className="landing-root font-sans antialiased" style={{ fontFamily: "'Sora', system-ui, sans-serif", background: "var(--lp-bg)" }}>
+        <Navbar lang={lang} onLangChange={handleLangChange} staticData={navbarStatic} />
 
-      {/* Hero luôn hiển thị nếu active, fallback graceful nếu null */}
-      {hero !== null
-        ? <HeroSection data={hero} />
-        : (
-          <div className="min-h-screen bg-gradient-to-br from-gray-900 via-[#1a0a14] to-[#0d0d1a] flex items-center justify-center">
-            <p className="text-white/40 text-sm">Hero section đang ẩn</p>
-          </div>
-        )
-      }
+        {/* Hero luôn hiển thị nếu active */}
+        {hero !== null
+          ? <HeroSection data={hero} />
+          : (
+            <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--lp-bg)" }}>
+              <p style={{ color: "var(--lp-text-faint)" }} className="text-sm">Hero section đang ẩn</p>
+            </div>
+          )
+        }
 
-      {statsBar    && <StatsBarSection   data={statsBar}    />}
-      {features    && <FeaturesSection   data={features}    />}
-      {howItWorks  && <HowItWorksSection data={howItWorks}  />}
-      {screenshots && <ScreenshotsSection data={screenshots} />}
-      {consultCta  && <ConsultSection    data={consultCta}  />}
-      {downloadCta && <DownloadSection   data={downloadCta} />}
-      {footer      && <FooterSection     data={footer}      />}
+        {statsBar    && <StatsBarSection   data={statsBar}    />}
+        {features    && <FeaturesSection   data={features}    />}
+        {howItWorks  && <HowItWorksSection data={howItWorks}  />}
+        {screenshots && <ScreenshotsSection data={screenshots} />}
+        {consultCta  && <ConsultSection    data={consultCta}  />}
+        {downloadCta && <DownloadSection   data={downloadCta} />}
+        {footer      && <FooterSection     data={footer}      staticData={navbarStatic} />}
 
-      <FloatingButtons
-        apkUrl={release?.apkUrl || null}
-        zaloLink={footerRaw?.zaloLink || null}
-        facebookLink={footerRaw?.facebookLink || null}
-        phone={footerRaw?.phone || null}
-        email={footerRaw?.email || null}
-      />
-    </div>
+        <FloatingButtons
+          apkUrl={release?.apkUrl || null}
+          zaloLink={footerRaw?.zaloLink || null}
+          facebookLink={footerRaw?.facebookLink || null}
+          phone={footerRaw?.phone || null}
+          email={footerRaw?.email || null}
+          staticData={navbarStatic}
+        />
+      </div>
+    </ThemeProvider>
   );
 }

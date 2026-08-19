@@ -5,37 +5,52 @@
 
     <!-- ═══════════════════════════════════════════════════════════
          AudioGo Design System — Colors
-         Primary: #E53935 (Red)  |  Design: Stitch AudioGo Mobile UI
+         Primary: #E53935 (Red)
+         Dark Mode: AppThemeBinding được apply trong Styles.xaml
     ═══════════════════════════════════════════════════════════ -->
 
     <!-- Primary Red -->
     <Color x:Key="Primary">#E53935</Color>
     <Color x:Key="PrimaryDark">#C62828</Color>
     <Color x:Key="PrimaryLight">#FFEBEE</Color>
+    <Color x:Key="PrimaryLightDark">#3D1515</Color>
     <Color x:Key="PrimaryContainer">#FFCDD2</Color>
 
-    <!-- Backgrounds -->
+    <!-- ── Backgrounds (Light) ────────────────────────────────── -->
     <Color x:Key="Background">#F5F5F5</Color>
     <Color x:Key="Surface">#FFFFFF</Color>
     <Color x:Key="SurfaceVariant">#F8F8F8</Color>
+
+    <!-- ── Backgrounds (Dark) ─────────────────────────────────── -->
+    <Color x:Key="BackgroundDark">#0F0F0F</Color>
+    <Color x:Key="SurfaceDark">#1C1C1E</Color>
+    <Color x:Key="SurfaceVariantDark">#2C2C2E</Color>
+
+    <!-- Always dark (hero cards, overlays) -->
     <Color x:Key="DarkSurface">#1A1A2E</Color>
     <Color x:Key="HeroOverlay">#CC000000</Color>
 
-    <!-- Text -->
+    <!-- ── Text (Light) ───────────────────────────────────────── -->
     <Color x:Key="TextPrimary">#1A1A1A</Color>
     <Color x:Key="TextSecondary">#757575</Color>
     <Color x:Key="TextTertiary">#BDBDBD</Color>
+
+    <!-- ── Text (Dark) ───────────────────────────────────────── -->
+    <Color x:Key="TextPrimaryDark">#F2F2F7</Color>
+    <Color x:Key="TextSecondaryDark">#AEAEB2</Color>
+    <Color x:Key="TextTertiaryDark">#636366</Color>
+
     <Color x:Key="TextOnPrimary">#FFFFFF</Color>
     <Color x:Key="TextOnDark">#FFFFFF</Color>
 
-    <!-- Semantic -->
+    <!-- ── Semantic ───────────────────────────────────────────── -->
     <Color x:Key="Success">#4CAF50</Color>
     <Color x:Key="SuccessLight">#E8F5E9</Color>
     <Color x:Key="Warning">#FF9800</Color>
     <Color x:Key="Error">#F44336</Color>
     <Color x:Key="Info">#2196F3</Color>
 
-    <!-- Neutrals -->
+    <!-- ── Neutrals (Light) ───────────────────────────────────── -->
     <Color x:Key="Gray50">#FAFAFA</Color>
     <Color x:Key="Gray100">#F5F5F5</Color>
     <Color x:Key="Gray200">#EEEEEE</Color>
@@ -47,12 +62,17 @@
     <Color x:Key="Gray800">#424242</Color>
     <Color x:Key="Gray900">#212121</Color>
 
-    <!-- Transparent -->
+    <!-- ── Neutrals (Dark) ────────────────────────────────────── -->
+    <Color x:Key="Gray100Dark">#2C2C2E</Color>
+    <Color x:Key="Gray200Dark">#3A3A3C</Color>
+    <Color x:Key="Gray300Dark">#48484A</Color>
+
+    <!-- ── Transparent ────────────────────────────────────────── -->
     <Color x:Key="Transparent">Transparent</Color>
     <Color x:Key="SemiTransparentDark">#80000000</Color>
     <Color x:Key="SemiTransparentLight">#80FFFFFF</Color>
 
-    <!-- Gradients (used as start/end colors) -->
+    <!-- ── Gradients ──────────────────────────────────────────── -->
     <Color x:Key="GradientRedStart">#FF5252</Color>
     <Color x:Key="GradientRedEnd">#E53935</Color>
 

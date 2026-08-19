@@ -1,4 +1,4 @@
-using System.Windows.Input;
+﻿using System.Windows.Input;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Controls;
 using AudioGo.ViewModels;
@@ -97,7 +97,9 @@ public class WelcomeQrScanViewModel : BaseViewModel
             }
             catch (Exception ex)
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[QrScan] Error: {ex.Message}");
+                #endif
                 IsLoading = false;
                 IsDetecting = true;
                 _isProcessing = false;

@@ -12,6 +12,7 @@ import {
 import CreateCategoryModal from "@/components/CreateCategoryModal"
 import EditCategoryModal from "@/components/EditCategoryModal"
 import ConfirmModal from "@/components/ConfirmModal"
+import EmptyState from "@/components/EmptyState"
 import { SearchContext } from "@/context/SearchContext"
 import { formatDateVN } from "@/utils/formatDate"
 
@@ -125,13 +126,11 @@ export default function CategoryPage() {
       {loading ? (
         <PageLoader text="Đang tải dữ liệu danh mục..." />
       ) : paginatedData.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-pink-100/30 shadow-sm animate-fadeIn">
-          <Layers size={48} className="text-pink-200 mb-3" />
-          <h3 className="text-base font-bold text-gray-700">Không tìm thấy danh mục nào</h3>
-          <p className="text-xs text-gray-400 mt-1 max-w-sm">
-            Thử thay đổi từ khóa tìm kiếm hoặc tạo một danh mục mới để bắt đầu liên kết POI.
-          </p>
-        </div>
+        <EmptyState
+          icon={<Layers size={40} />}
+          title="Không tìm thấy danh mục nào"
+          description="Thử thay đổi từ khóa tìm kiếm hoặc tạo một danh mục mới để bắt đầu liên kết POI."
+        />
       ) : (
         <div className="bg-white rounded-2xl border border-pink-100/30 shadow-sm overflow-hidden animate-fadeIn">
           {/* HEADER ROW */}

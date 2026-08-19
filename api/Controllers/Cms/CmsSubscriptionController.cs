@@ -86,6 +86,20 @@ namespace Server.Controllers.Cms
             return Ok(plans);
         }
 
+        /// <summary>
+        /// GET /api/cms/subscriptions/expiring?days=7
+        /// Admin: đếm subscriptions s\u1eafp h\u1ebft h\u1ea1n trong N ng\u00e0y
+        /// </summary>
+        [HttpGet("expiring")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetExpiring([FromQuery] int days = 7)
+        {
+            var cutoff = DateTime.UtcNow.AddDays(days);
+            var count = await _db.OwnerSubscriptions
+                .CountAsync(s => s.Status == "ACTIVE" && s.EndDate <= cutoff && s.EndDate > DateTime.UtcNow);
+            return Ok(new { count, days });
+        }
+
         // ══════════════════════════════════════════════════════════════════
         //  CREATE PLAN
         // ══════════════════════════════════════════════════════════════════

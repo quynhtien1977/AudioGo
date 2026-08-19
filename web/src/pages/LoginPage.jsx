@@ -1,7 +1,7 @@
 import React from 'react';
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { User, LockKeyhole, LogIn, Eye, EyeOff,UtensilsCrossed } from 'lucide-react';
+import { User, LockKeyhole, LogIn, Eye, EyeOff, UtensilsCrossed, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import useAuth from "@/hooks/useAuth";
@@ -50,9 +50,9 @@ const LoginPage = () => {
       }
 
       if (["Admin", "Owner"].includes(role)) {
-        navigate("/dashboard");
+        navigate("/admin/dashboard");
       } else {
-        navigate("/dashboard");
+        navigate("/admin/dashboard");
       }
 
     } catch (err) {
@@ -156,6 +156,13 @@ const LoginPage = () => {
               <LogIn className="w-5 h-5" />
             </button>
           </form>
+
+          <div className="mt-8 flex justify-center">
+            <Link to="/" className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#EE4B8E] font-medium transition-colors">
+              <ArrowLeft size={16} />
+              Quay lại trang chủ
+            </Link>
+          </div>
 
           <p className="mt-10 text-center text-gray-400 text-xs font-medium uppercase tracking-widest">
             Hệ thống quản lý nội bộ

@@ -40,7 +40,7 @@ function ContactRow({ href, bg, icon, label, sub, target }) {
   );
 }
 
-export default function FloatingButtons({ apkUrl, zaloLink, facebookLink, phone, email }) {
+export default function FloatingButtons({ apkUrl, zaloLink, facebookLink, phone, email, staticData = {} }) {
   const [open, setOpen]       = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -68,10 +68,9 @@ export default function FloatingButtons({ apkUrl, zaloLink, facebookLink, phone,
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden mb-1"
           >
-            {/* Header */}
-            <div className="px-4 py-3.5 bg-gradient-to-r from-pink-500 to-orange-400">
-              <p className="text-white font-bold text-sm leading-tight">Liên hệ AudioGo</p>
-              <p className="text-white/80 text-xs mt-0.5">Chúng tôi sẵn sàng hỗ trợ bạn</p>
+            <div className="px-4 py-3.5 bg-pink-600">
+              <p className="text-white font-bold text-sm leading-tight">{staticData.floatTitle || "Liên hệ AudioGo"}</p>
+              <p className="text-white/80 text-xs mt-0.5">{staticData.floatSubtitle || "Chúng tôi sẵn sàng hỗ trợ bạn"}</p>
             </div>
 
             {/* Rows */}
@@ -91,8 +90,8 @@ export default function FloatingButtons({ apkUrl, zaloLink, facebookLink, phone,
                   target="_blank"
                   bg="bg-[#0068FF]"
                   icon={<ZaloIcon />}
-                  label="Zalo Chat"
-                  sub="Chat ngay"
+                  label={staticData.floatZalo || "Zalo Chat"}
+                  sub={staticData.floatZaloSub || "Chat ngay"}
                 />
               )}
               {facebookLink && (
@@ -101,8 +100,8 @@ export default function FloatingButtons({ apkUrl, zaloLink, facebookLink, phone,
                   target="_blank"
                   bg="bg-[#1877F2]"
                   icon={<FacebookIcon />}
-                  label="Facebook"
-                  sub="Nhắn tin Fanpage"
+                  label={staticData.floatFb || "Facebook"}
+                  sub={staticData.floatFbSub || "Nhắn tin Fanpage"}
                 />
               )}
               {email && (
@@ -146,7 +145,7 @@ export default function FloatingButtons({ apkUrl, zaloLink, facebookLink, phone,
           className={`relative flex items-center gap-2 px-4 py-2.5 rounded-full text-white text-sm font-semibold shadow-xl transition-all ${
             open
               ? "bg-gray-700 shadow-gray-500/20"
-              : "bg-gradient-to-r from-pink-500 to-orange-400 shadow-pink-500/30"
+              : "bg-pink-600 shadow-pink-600/30 hover:bg-pink-700"
           }`}
           title={open ? "Đóng" : "Liên hệ"}
         >
@@ -154,8 +153,8 @@ export default function FloatingButtons({ apkUrl, zaloLink, facebookLink, phone,
           {!open && <span className="absolute inset-0 rounded-full bg-pink-400/20 animate-ping" />}
 
           {open
-            ? <><X size={15} /><span>Đóng</span></>
-            : <><MessageCircle size={15} /><span>Liên hệ</span></>
+            ? <><X size={15} /><span>{staticData.floatClose || "Đóng"}</span></>
+            : <><MessageCircle size={15} /><span>{staticData.floatOpen || "Liên hệ"}</span></>
           }
         </motion.button>
       )}

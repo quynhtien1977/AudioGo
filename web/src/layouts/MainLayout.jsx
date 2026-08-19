@@ -4,9 +4,15 @@ import { Link } from "react-router-dom";
 import Topbar from "../components/Topbar";
 import Sidebar from "../components/Sidebar";
 import SubscriptionPlansBanner from "../components/SubscriptionPlansBanner";
+import useAuth from "@/hooks/useAuth";
+import { useOwnerNotifications } from "@/hooks/useOwnerNotifications";
 
 export default function MainLayout({ children }) {
   const [showPlansBanner, setShowPlansBanner] = useState(false);
+  const { user } = useAuth();
+
+  // #10 — Notify Owner when subscription is about to expire
+  useOwnerNotifications(user);
 
   return (
     <div className="flex min-h-screen">

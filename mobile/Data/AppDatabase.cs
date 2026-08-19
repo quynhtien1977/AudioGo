@@ -1,4 +1,4 @@
-using AudioGo.Helpers;
+﻿using AudioGo.Helpers;
 using AudioGo.Models;
 using AudioGo.Mobile.Models;
 using SQLite;
@@ -33,7 +33,9 @@ namespace AudioGo.Data
             if (needRebuild)
             {
                 await _db.ExecuteAsync("DROP TABLE IF EXISTS ListenHistory");
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine("[DB] ListenHistory schema upgraded — table recreated.");
+                #endif
             }
             await _db.CreateTableAsync<ListenHistoryEntity>();
 

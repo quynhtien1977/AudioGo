@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Server.Services.Interfaces;
 
 namespace Server.Controllers.Cms
@@ -20,6 +21,7 @@ namespace Server.Controllers.Cms
 
         /// <summary>Upload file audio (mp3/wav/ogg). Trả về URL public.</summary>
         [HttpPost("audio")]
+        [EnableRateLimiting("upload")]
         [RequestSizeLimit(50 * 1024 * 1024)] // 50 MB
         public async Task<ActionResult<object>> UploadAudio(IFormFile file)
         {
@@ -30,6 +32,7 @@ namespace Server.Controllers.Cms
 
         /// <summary>Upload ảnh (jpg/png/webp). Trả về URL public.</summary>
         [HttpPost("image")]
+        [EnableRateLimiting("upload")]
         [RequestSizeLimit(10 * 1024 * 1024)] // 10 MB
         public async Task<ActionResult<object>> UploadImage(IFormFile file, [FromQuery] string? folder = null)
         {

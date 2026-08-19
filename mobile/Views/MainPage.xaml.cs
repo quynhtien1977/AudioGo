@@ -1,4 +1,4 @@
-using AudioGo.ViewModels;
+﻿using AudioGo.ViewModels;
 using Shared;
 
 namespace AudioGo_Mobile.Views;
@@ -39,7 +39,9 @@ public partial class MainPage : ContentPage
                 }
                 catch (Exception ex)
                 {
+                    #if DEBUG
                     System.Diagnostics.Debug.WriteLine($"[MainPage] OnAppearing error: {ex}");
+                    #endif
                 }
             });
         }

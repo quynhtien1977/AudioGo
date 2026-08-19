@@ -1,4 +1,4 @@
-using AudioGo.Helpers;
+﻿using AudioGo.Helpers;
 using AudioGo.Services.Interfaces;
 using Shared;
 
@@ -86,22 +86,28 @@ namespace AudioGo.Services
                         decisionTier = "Tier3_Distance";
                     }
 
+                    #if DEBUG
                     System.Diagnostics.Debug.WriteLine(
                         $"[Geofence|Conflict] 🏆 WINNER: {bestPoi.Title} " +
                         $"(P={bestPoi.Priority}, D={bestPoiMatch.Distance:F1}m, " +
                         $"Audio={bestPoi.HasLocalAudio}, DecisionTier={decisionTier})");
+                    #endif
 
                     for (int i = 1; i < sorted.Count; i++)
                     {
                         var loser = sorted[i];
+                        #if DEBUG
                         System.Diagnostics.Debug.WriteLine(
                             $"[Geofence|Conflict] ❌ LOSER #{i}: {loser.Poi.Title} " +
                             $"(P={loser.Poi.Priority}, D={loser.Distance:F1}m, Audio={loser.Poi.HasLocalAudio})");
+                        #endif
                     }
 
+                    #if DEBUG
                     System.Diagnostics.Debug.WriteLine(
                         $"[Geofence|Conflict] ⬆️ Resolved by {decisionTier} | " +
                         $"Candidates: [{string.Join(", ", sorted.Select(x => $"{x.Poi.Title}(P={x.Poi.Priority},A={x.Poi.HasLocalAudio},D={x.Distance:F0}m)"))}]");
+                    #endif
                 }
 
                 _lastTriggered[bestPoi.PoiId] = DateTime.UtcNow;

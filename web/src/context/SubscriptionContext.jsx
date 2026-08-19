@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import * as subscriptionApi from "@/api/subscriptionApi";
+import useAuth from "@/hooks/useAuth";
 
 const SubscriptionContext = createContext();
 
@@ -100,18 +101,23 @@ export function SubscriptionProvider({ children }) {
   const [currentSubscription, setCurrentSubscription] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
 
-      const [plansResult, subscriptionResult] = await Promise.allSettled([
-        subscriptionApi.getSubscriptionPlansApi(),
-        subscriptionApi.getMySubscriptionApi(),
-      ]);
+      const promises = [subscriptionApi.getSubscriptionPlansApi()];
+      if (user?.role === "Owner") {
+        promises.push(subscriptionApi.getMySubscriptionApi());
+      } else {
+        promises.push(Promise.resolve(null));
+      }
+
+      const [plansResult, subscriptionResult] = await Promise.allSettled(promises);
 
       const nextSubscription =
-        subscriptionResult.status === "fulfilled"
+        subscriptionResult.status === "fulfilled" && subscriptionResult.value
           ? normalizeCurrentSubscription(subscriptionResult.value)
           : null;
 
@@ -123,7 +129,7 @@ export function SubscriptionProvider({ children }) {
       setPlans(nextPlans);
       setCurrentSubscription(nextSubscription);
 
-      if (plansResult.status === "rejected" && subscriptionResult.status === "rejected") {
+      if (plansResult.status === "rejected" && (user?.role === "Owner" && subscriptionResult.status === "rejected")) {
         setError(
           `${getReadableError(plansResult.reason)} | ${getReadableError(
             subscriptionResult.reason,
@@ -141,7 +147,7 @@ export function SubscriptionProvider({ children }) {
     };
 
     fetchData();
-  }, []);
+  }, [user?.role]);
 
   const fetchPlans = async () => {
     try {
@@ -158,6 +164,7 @@ export function SubscriptionProvider({ children }) {
   };
 
   const fetchMySubscription = async () => {
+    if (user?.role !== "Owner") return null;
     try {
       const data = await subscriptionApi.getMySubscriptionApi();
       const normalized = normalizeCurrentSubscription(data);

@@ -5,7 +5,7 @@
              x:Class="AudioGo_Mobile.Views.ArticleDetailPage"
              x:Name="ThisPage"
              Shell.NavBarIsVisible="False"
-             BackgroundColor="{StaticResource Background}"
+             BackgroundColor="{AppThemeBinding Light={StaticResource Background}, Dark={StaticResource BackgroundDark}}"
              Title="{Binding Title}">
     
     <Grid RowDefinitions="*">
@@ -23,7 +23,7 @@
                            FontSize="72" 
                            HorizontalOptions="Center" 
                            VerticalOptions="Center"
-                           IsVisible="{Binding HasImage, Converter={StaticResource IsNotConverter}}"/>
+                           IsVisible="{Binding HasImage, Converter={StaticResource InverseBoolConverter}}"/>
 
                     <!-- Hero image (AspectFill) -->
                     <Image Source="{Binding HeroImageUrl}"
@@ -102,12 +102,12 @@
                     <!-- Summary Card (Elegant Intro) -->
                     <Border Style="{StaticResource CardBorder}" 
                             Padding="16"
-                            BackgroundColor="{StaticResource Surface}">
+                            BackgroundColor="{AppThemeBinding Light={StaticResource Surface}, Dark={StaticResource SurfaceDark}}">
                         <VerticalStackLayout Spacing="4">
                             <Label Text="Tóm tắt" Style="{StaticResource CaptionLabel}" FontSize="12"/>
                             <Label Text="{Binding Summary}" 
                                    Style="{StaticResource BodyLabel}" 
-                                   TextColor="{StaticResource TextSecondary}"
+                                   TextColor="{AppThemeBinding Light={StaticResource TextSecondary}, Dark={StaticResource TextSecondaryDark}}"
                                    FontAttributes="Italic"
                                    FontSize="14"
                                    LineHeight="1.2"
@@ -118,11 +118,11 @@
                     <!-- Main Content Body -->
                     <Border Style="{StaticResource CardBorder}" 
                             Padding="20"
-                            BackgroundColor="{StaticResource Surface}"
-                            IsVisible="{Binding IsLoading, Converter={StaticResource IsNotConverter}}">
+                            BackgroundColor="{AppThemeBinding Light={StaticResource Surface}, Dark={StaticResource SurfaceDark}}"
+                            IsVisible="{Binding IsLoading, Converter={StaticResource InverseBoolConverter}}">
                         <Label Text="{Binding Body}" 
                                Style="{StaticResource BodyLabel}" 
-                               TextColor="{StaticResource TextPrimary}"
+                               TextColor="{AppThemeBinding Light={StaticResource TextPrimary}, Dark={StaticResource TextPrimaryDark}}"
                                FontSize="14"
                                LineHeight="1.3"
                                LineBreakMode="WordWrap"/>

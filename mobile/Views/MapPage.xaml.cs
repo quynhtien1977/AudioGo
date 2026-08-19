@@ -1,4 +1,4 @@
-using AudioGo.Services.Interfaces;
+﻿using AudioGo.Services.Interfaces;
 using AudioGo.ViewModels;
 using AudioGo_Mobile.Helpers;
 using Microsoft.Maui.Controls.Maps;
@@ -88,7 +88,9 @@ public partial class MapPage : ContentPage
         if (orderedPois.Count < 2) return;
 
         // Loading: hiện text trên StatusLabel (nếu có) hoặc log
+        #if DEBUG
         System.Diagnostics.Debug.WriteLine("[MapPage] Đang tính đường đi...");
+        #endif
 
         var waypoints = orderedPois
             .Select(p => (p.Latitude, p.Longitude))
@@ -139,7 +141,9 @@ public partial class MapPage : ContentPage
             }
         }
 
+        #if DEBUG
         System.Diagnostics.Debug.WriteLine($"[MapPage] Route vẽ xong");
+        #endif
     }
 
     /// <summary>Xóa tour route khỏi map (giữ nguyên geofence overlays).</summary>

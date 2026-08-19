@@ -62,7 +62,7 @@ export default function POIManagementPage() {
       badgeText: stats.newCount > 0 ? "text-white" : "text-blue-700",
       iconColor: "text-blue-600",
       linkColor: "text-blue-600 hover:text-blue-700",
-      onClick: () => navigate("/poi/management/new"),
+      onClick: () => navigate("/admin/pois/management/new"),
     },
     {
       id: "update",
@@ -77,7 +77,7 @@ export default function POIManagementPage() {
       badgeText: stats.updateCount > 0 ? "text-white" : "text-amber-700",
       iconColor: "text-amber-600",
       linkColor: "text-amber-600 hover:text-amber-700",
-      onClick: () => navigate("/poi/management/updates"),
+      onClick: () => navigate("/admin/pois/management/updates"),
     },
     {
       id: "delete",
@@ -92,7 +92,7 @@ export default function POIManagementPage() {
       badgeText: stats.deleteCount > 0 ? "text-white" : "text-red-700",
       iconColor: "text-red-600",
       linkColor: "text-red-600 hover:text-red-700",
-      onClick: () => navigate("/poi/management/deletions"),
+      onClick: () => navigate("/admin/pois/management/deletions"),
     },
   ]
 

@@ -31,16 +31,27 @@ namespace Server.Services
         }
 
         // ── Lấy plan hiện tại (fallback về basic) ────────────────────────────
+        /// <summary>
+        /// Ưu tiên kiểm tra OwnerSubscription ACTIVE thực tế.
+        /// KHÔNG dùng Account.SubscriptionPlanId (shortcut) vì có thể stale
+        /// khi sub hết hạn nhưng background job chưa kịp sweep.
+        /// </summary>
         public async Task<SubscriptionPlan> GetCurrentPlanAsync(string accountId)
         {
-            var account = await _db.Accounts
-                .Include(a => a.SubscriptionPlan)
+            // 1. Ưu tiên: active subscription thực
+            var activeSub = await _db.OwnerSubscriptions
+                .Include(s => s.Plan)
                 .AsNoTracking()
-                .FirstOrDefaultAsync(a => a.AccountId == accountId);
+                .FirstOrDefaultAsync(s => s.AccountId == accountId
+                                       && s.Status == "ACTIVE"
+                                       && s.EndDate > DateTime.UtcNow);
 
-            // fallback: basic nếu chưa có plan hoặc plan null
-            return account?.SubscriptionPlan
-                ?? await _db.SubscriptionPlans.FirstAsync(p => p.PlanId == "basic");
+            if (activeSub?.Plan != null)
+                return activeSub.Plan;
+
+            // 2. Fallback: basic (không dùng shortcut field để tránh stale data)
+            return await _db.SubscriptionPlans
+                .FirstAsync(p => p.PlanId == "basic");
         }
 
         // ── Kiểm tra Owner có vượt giới hạn POI không ────────────────────────

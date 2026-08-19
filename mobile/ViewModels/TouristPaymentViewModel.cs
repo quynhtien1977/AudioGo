@@ -1,4 +1,4 @@
-using System.Windows.Input;
+﻿using System.Windows.Input;
 using AudioGo.Helpers;
 using AudioGo.Services.Interfaces;
 using AudioGo.ViewModels;
@@ -252,7 +252,9 @@ public class TouristPaymentViewModel : BaseViewModel
                 }
                 catch (Exception ex)
                 {
+                    #if DEBUG
                     System.Diagnostics.Debug.WriteLine($"[TouristPaymentVM] Poll error: {ex.Message}");
+                    #endif
                 }
             }
 

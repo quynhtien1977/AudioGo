@@ -1,4 +1,4 @@
-using System.Net.Http.Json;
+﻿using System.Net.Http.Json;
 using System.Text.Json;
 using AudioGo.Helpers;
 using AudioGo.Services.Interfaces;
@@ -62,8 +62,10 @@ public class DirectionsService : IDirectionsService
         }
         catch (Exception ex)
         {
+            #if DEBUG
             System.Diagnostics.Debug.WriteLine(
                 $"[DirectionsService] Lỗi: {ex.Message} — fallback straight-line");
+            #endif
             return StraightLineFallback(waypoints);
         }
     }

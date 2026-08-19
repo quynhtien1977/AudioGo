@@ -6,22 +6,26 @@ using Server.Data;
 namespace Server.Controllers.Cms
 {
     /// <summary>
-    /// Xem lịch sử giao dịch thanh toán (Admin only).
+    /// Xem lịch sử giao dịch thanh toán.
+    /// Admin: xem tất cả. Owner: chỉ xem của mình (/my).
     /// </summary>
     [ApiController]
     [Route("api/cms/payments")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class CmsPaymentController : ControllerBase
     {
         private readonly AppDbContext _db;
 
         public CmsPaymentController(AppDbContext db) => _db = db;
 
+        private string? CurrentUserId() => User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
         /// <summary>
         /// GET /api/cms/payments
         /// Filter: paymentType, status, gateway, accountId, page, pageSize
         /// </summary>
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAll(
             [FromQuery] string? paymentType = null,
             [FromQuery] string? status      = null,
@@ -54,6 +58,45 @@ namespace Server.Controllers.Cms
                     t.Currency,
                     t.Gateway,
                     t.GatewayTransId,
+                    t.Status,
+                    t.CreatedAt,
+                    t.CompletedAt
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                data       = items,
+                pagination = new { total, page, pageSize, totalPages = (int)Math.Ceiling(total / (double)pageSize) }
+            });
+        }
+
+        /// <summary>GET /api/cms/payments/my — Owner xem giao dịch của chính mình</summary>
+        [HttpGet("my")]
+        public async Task<IActionResult> GetMy(
+            [FromQuery] int page     = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            var userId = CurrentUserId();
+            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+
+            var query = _db.PaymentTransactions
+                .AsNoTracking()
+                .Where(t => t.AccountId == userId);
+
+            var total = await query.CountAsync();
+            var items = await query
+                .OrderByDescending(t => t.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(t => new
+                {
+                    t.TransactionId,
+                    t.PaymentType,
+                    PlanName = t.Plan != null ? t.Plan.Name : null,
+                    t.Amount,
+                    t.Currency,
+                    t.Gateway,
                     t.Status,
                     t.CreatedAt,
                     t.CompletedAt

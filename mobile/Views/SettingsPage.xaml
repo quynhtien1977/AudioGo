@@ -2,25 +2,54 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:AudioGo.ViewModels"
+             xmlns:controls="clr-namespace:AudioGo_Mobile.Controls"
              x:Class="AudioGo_Mobile.Views.SettingsPage"
              x:DataType="vm:SettingsViewModel"
              x:Name="ThisPage"
              Shell.NavBarIsVisible="False"
-             BackgroundColor="{StaticResource Background}">
+             BackgroundColor="{AppThemeBinding Light={StaticResource Background}, Dark={StaticResource BackgroundDark}}">
 
+    <Grid>
     <ScrollView>
         <VerticalStackLayout Spacing="0">
 
-            <!-- ── Header (matches MainPage / MapPage pattern) ── -->
+            <!-- ── Header with Dark Mode Toggle ── -->
             <Grid Padding="20,56,20,16"
-                  BackgroundColor="{StaticResource Surface}">
-                <VerticalStackLayout Spacing="2">
+                  BackgroundColor="{AppThemeBinding Light={StaticResource Surface}, Dark={StaticResource SurfaceDark}}"
+                  ColumnDefinitions="*,Auto">
+                <VerticalStackLayout Grid.Column="0" Spacing="2">
                     <Label Text="{Binding PageTitle}"
                            Style="{StaticResource HeadlineLabel}" />
                     <Label Text="{Binding CurrentLanguageName}"
                            Style="{StaticResource BodyLabel}"
                            TextColor="{StaticResource Primary}" />
                 </VerticalStackLayout>
+
+                <!-- Dark Mode Toggle Button — góc phải, source of circular reveal -->
+                <Border x:Name="DarkModeToggleBtn"
+                        Grid.Column="1"
+                        StrokeShape="RoundRectangle 22"
+                        StrokeThickness="0"
+                        WidthRequest="44" HeightRequest="44"
+                        VerticalOptions="Center">
+                    <Border.BackgroundColor>
+                        <AppThemeBinding Light="{StaticResource Gray100}" Dark="{StaticResource Gray100Dark}" />
+                    </Border.BackgroundColor>
+                    <Label x:Name="DarkModeIcon"
+                           FontFamily="MaterialIcons"
+                           FontSize="22"
+                           TextColor="{StaticResource Primary}"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center">
+                        <Label.Text>
+                            <!-- Moon icon (dark mode) or Sun icon (light mode) -->
+                            <AppThemeBinding Light="&#xe518;" Dark="&#xe51c;" />
+                        </Label.Text>
+                    </Label>
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Tapped="OnDarkModeToggleTapped" />
+                    </Border.GestureRecognizers>
+                </Border>
             </Grid>
 
             <VerticalStackLayout Padding="20,20,20,32" Spacing="24">
@@ -55,7 +84,7 @@
                                 <!-- Chevron -->
                                 <Label Grid.Column="2" Text="&#xe5cc;"
                                        FontFamily="MaterialIcons" FontSize="20"
-                                       TextColor="{StaticResource TextSecondary}"
+                                       TextColor="{AppThemeBinding Light={StaticResource TextSecondary}, Dark={StaticResource TextSecondaryDark}}"
                                        VerticalOptions="Center" />
                                 <Grid.GestureRecognizers>
                                     <TapGestureRecognizer Tapped="OnChangeLanguageClicked" />
@@ -63,7 +92,7 @@
                             </Grid>
 
                             <!-- Divider -->
-                            <BoxView HeightRequest="1" Color="{StaticResource Gray200}" Margin="16,0" />
+                            <BoxView HeightRequest="1" Color="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray200Dark}}" Margin="16,0" />
 
                             <!-- Change button row -->
                             <Grid Padding="16,12" ColumnDefinitions="*,Auto">
@@ -84,6 +113,7 @@
                         </VerticalStackLayout>
                     </Border>
                 </VerticalStackLayout>
+
 
                 <!-- ── Download / Data Section ── -->
                 <VerticalStackLayout Spacing="12">
@@ -149,4 +179,8 @@
         </VerticalStackLayout>
     </ScrollView>
 
+    <!-- ── Offline Banner Overlay ── -->
+    <controls:OfflineBannerView VerticalOptions="End"/>
+
+    </Grid>
 </ContentPage>

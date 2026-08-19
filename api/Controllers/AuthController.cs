@@ -20,14 +20,16 @@ namespace Server.Controllers
         private readonly IEmailService _email;
         private readonly IConfiguration _config;
         private readonly IWebHostEnvironment _env;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(AuthService auth, AppDbContext db, IEmailService email, IConfiguration config, IWebHostEnvironment env)
+        public AuthController(AuthService auth, AppDbContext db, IEmailService email, IConfiguration config, IWebHostEnvironment env, ILogger<AuthController> logger)
         {
             _auth   = auth;
             _db     = db;
             _email  = email;
             _config = config;
             _env    = env;
+            _logger = logger;
         }
 
         // POST /api/auth/login
@@ -46,12 +48,14 @@ namespace Server.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                _logger.LogError(ex, "Login thất bại");
+                return BadRequest("Đăng nhập thất bại. Vui lòng thử lại.");
             }
         }
 
         // POST /api/auth/register
         [HttpPost("register")]
+        [EnableRateLimiting("auth")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest req)
         {
             var account = await _auth.RegisterAsync(req);
@@ -135,6 +139,38 @@ namespace Server.Controllers
             await _db.SaveChangesAsync();
 
             return Ok(new { message = "Đặt lại mật khẩu thành công. Bạn có thể đăng nhập với mật khẩu mới." });
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // GET /api/auth/me  [Authorize]
+        // Lấy thông tin user hiện tại (tránh giả mạo role ở localStorage)
+        // ─────────────────────────────────────────────────────────────────────
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<IActionResult> GetMe()
+        {
+            var accountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (accountId is null) return Unauthorized();
+
+            var account = await _db.Accounts.AsNoTracking()
+                .FirstOrDefaultAsync(a => a.AccountId == accountId && a.DeletedAt == null);
+
+            if (account == null) return NotFound();
+
+            var dto = new AccountDto(
+                account.AccountId,
+                account.Username,
+                account.Role,
+                account.FullName,
+                account.Email,
+                account.PhoneNumber,
+                account.IsLocked,
+                account.SubscriptionPlanId,
+                account.CreatedAt,
+                account.UpdatedAt
+            );
+
+            return Ok(dto);
         }
 
         // ─────────────────────────────────────────────────────────────────────

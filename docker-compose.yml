@@ -16,5 +16,31 @@ services:
       timeout: 10s
       retries: 5
 
+  audiogo-api:
+    build:
+      context: .               # build context là root workspace
+      dockerfile: api/Dockerfile
+    image: audiogo-api:test    # dùng lại image đã build, không build lại nếu đã có
+    container_name: audiogo-api
+    ports:
+      - "8080:8080"
+    env_file:
+      - api/.env               # load toàn bộ biến từ file .env có sẵn
+    environment:
+      # Override các giá trị dev trong .env bằng giá trị đúng cho Docker environment
+      # Secrets (Jwt__Key, RabbitMQ__Url, Azure keys...) KHÔNG ghi ở đây —
+      # đã được load tự động từ api/.env qua env_file bên trên (file đó gitignored)
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "${AZURE_SQL_CONNECTION}"  # từ root .env (gitignored)
+      AppUrls__PublicWebhookBaseUrl: "${PUBLIC_WEBHOOK_URL:-http://localhost:8080}"
+      AppUrls__LanApiBaseUrl: "${LAN_API_URL:-http://localhost:8080}"
+      EmailSettings__CmsBaseUrl: "${CMS_BASE_URL:-http://localhost:5173}"
+      Cors__AllowedOrigins__0: "${CORS_ORIGIN_0:-http://localhost:5173}"
+      Cors__AllowedOrigins__1: "${CORS_ORIGIN_1:-}"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy   # chờ RabbitMQ sẵn sàng trước khi start API
+    restart: unless-stopped
+
 volumes:
   rabbitmq_data:

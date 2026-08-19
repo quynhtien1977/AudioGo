@@ -2,10 +2,11 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:maps="clr-namespace:Microsoft.Maui.Controls.Maps;assembly=Microsoft.Maui.Controls.Maps"
+             xmlns:controls="clr-namespace:AudioGo_Mobile.Controls"
              x:Class="AudioGo_Mobile.Views.MainPage"
              x:Name="ThisPage"
              Shell.NavBarIsVisible="False"
-             BackgroundColor="{StaticResource Background}"
+             BackgroundColor="{AppThemeBinding Light={StaticResource Background}, Dark={StaticResource BackgroundDark}}"
              Title="{Binding HomePageTitle}">
 
     <Grid RowDefinitions="*,Auto">
@@ -17,7 +18,7 @@
                 <!-- ── Header ── -->
                 <Grid Padding="20,56,20,16"
                       ColumnDefinitions="*,Auto"
-                      BackgroundColor="{StaticResource Surface}">
+                      BackgroundColor="{AppThemeBinding Light={StaticResource Surface}, Dark={StaticResource SurfaceDark}}">
                     <VerticalStackLayout Grid.Column="0" Spacing="2">
                         <Label Text="{Binding AreaName}" Style="{StaticResource HeadlineLabel}"/>
                         <Label Text="{Binding AreaSubTitle}" Style="{StaticResource BodyLabel}"/>
@@ -91,7 +92,7 @@
                                             </Grid>
 
                                             <!-- Title + play button -->
-                                            <Grid Grid.Row="1" BackgroundColor="{StaticResource Surface}" Padding="10,8">
+                                            <Grid Grid.Row="1" BackgroundColor="{AppThemeBinding Light={StaticResource Surface}, Dark={StaticResource SurfaceDark}}" Padding="10,8">
                                                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
                                                     <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
                                                         <Label Text="{Binding Title}"
@@ -223,7 +224,7 @@
                                     <Border StrokeShape="RoundRectangle 20"
                                             Stroke="{StaticResource Primary}"
                                             StrokeThickness="1"
-                                            BackgroundColor="{StaticResource Surface}"
+                                            BackgroundColor="{AppThemeBinding Light={StaticResource Surface}, Dark={StaticResource SurfaceDark}}"
                                             Padding="16,8"
                                             Margin="0,0,12,0">
                                         <Label Text="{Binding Name}" 
@@ -265,7 +266,7 @@
                                             </Grid>
                                             
                                             <!-- Info bottom -->
-                                            <Grid Grid.Row="1" BackgroundColor="{StaticResource Surface}" Padding="12">
+                                            <Grid Grid.Row="1" BackgroundColor="{AppThemeBinding Light={StaticResource Surface}, Dark={StaticResource SurfaceDark}}" Padding="12">
                                                 <Label Text="{Binding Title}" Style="{StaticResource SectionTitle}" FontSize="14"
                                                        LineBreakMode="TailTruncation" MaxLines="2"/>
                                             </Grid>
@@ -340,7 +341,7 @@
                     </Border>
                     <!-- Close button -->
                     <Border Grid.Column="3"
-                            BackgroundColor="{StaticResource Gray100}"
+                            BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray100Dark}}"
                             StrokeShape="RoundRectangle 18"
                             StrokeThickness="0"
                             WidthRequest="36" HeightRequest="36">
@@ -354,6 +355,12 @@
             </Border>
 
         </Grid>
+
+        <!-- ── Offline Banner — overlay floating at bottom, above all content ── -->
+        <controls:OfflineBannerView Grid.Row="0" Grid.RowSpan="2"
+                                    VerticalOptions="End"
+                                    HorizontalOptions="Fill"
+                                    ZIndex="99"/>
 
     </Grid>
 </ContentPage>

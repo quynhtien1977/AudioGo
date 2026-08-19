@@ -502,6 +502,29 @@ namespace Server.Data
                       "socialLinks": []
                     }
                     """
+                },
+                new LandingSection
+                {
+                    SectionId   = "section-navbar-static",
+                    SectionKey  = "navbar_static",
+                    SortOrder   = 9,
+                    IsActive    = true,
+                    CreatedAt   = seedDate,
+                    ContentJson = """
+                    {
+                      "menuFeatures": "Tính năng",
+                      "menuHowItWorks": "Cách hoạt động",
+                      "menuScreenshots": "Ảnh app",
+                      "menuDownload": "Tải App",
+                      "menuConsult": "Liên hệ",
+                      "loginBtn": "Đăng nhập",
+                      "loginAdminBtn": "Đăng nhập quản lý",
+                      "registerPartnerBtn": "Đăng ký làm đối tác",
+                      "floatingContact": "Liên hệ AudioGo",
+                      "floatingClose": "Đóng",
+                      "qrDownload": "Quét để tải app"
+                    }
+                    """
                 }
             );
         }

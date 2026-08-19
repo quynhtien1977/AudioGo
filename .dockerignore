@@ -1,0 +1,36 @@
+# ──────────────────────────────────────────────────────────────────────
+# Docker build context excludes
+# File này phải ở ROOT workspace (cùng cấp với AudioGo.sln)
+# Docker đọc .dockerignore tại root của build context, KHÔNG phải trong api/
+# ──────────────────────────────────────────────────────────────────────
+
+# Build artifacts — chứa NuGet cache với đường dẫn Windows hardcode
+# Đây là nguyên nhân lỗi: "Unable to find fallback package folder C:\..."
+api/bin/
+api/obj/
+shared/bin/
+shared/obj/
+mobile/bin/
+mobile/obj/
+
+# Secrets và config local
+api/.env
+api/appsettings.Development.json
+
+# VS tooling
+**/*.user
+**/*.suo
+.vs/
+
+# Web frontend — không cần trong Docker image backend
+web/node_modules/
+web/dist/
+
+# Git
+.git/
+.github/
+
+# Docs và files không liên quan đến build
+docs/
+database/
+*.md

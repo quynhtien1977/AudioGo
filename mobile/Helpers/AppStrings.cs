@@ -896,6 +896,26 @@ public static class AppStrings
             ["vi"] = "Phiên bản ứng dụng", ["en"] = "App Version", ["ja"] = "アプリのバージョン",
             ["ko"] = "앱 버전", ["zh-Hans"] = "应用程序版本", ["fr"] = "Version de l'application", ["th"] = "เวอร์ชันแอป"
         },
+        ["settings_appearance"] = new()
+        {
+            ["vi"] = "Giao Diện", ["en"] = "Appearance", ["ja"] = "外観",
+            ["ko"] = "외관", ["zh-Hans"] = "外观", ["fr"] = "Apparence", ["th"] = "รูปลักษณ์"
+        },
+        ["settings_dark_mode"] = new()
+        {
+            ["vi"] = "Chế độ tối", ["en"] = "Dark Mode", ["ja"] = "ダークモード",
+            ["ko"] = "다크 모드", ["zh-Hans"] = "深色模式", ["fr"] = "Mode sombre", ["th"] = "โหมดมืด"
+        },
+        ["theme_dark"] = new()
+        {
+            ["vi"] = "Tối", ["en"] = "Dark", ["ja"] = "ダーク",
+            ["ko"] = "다크", ["zh-Hans"] = "深色", ["fr"] = "Sombre", ["th"] = "มืด"
+        },
+        ["theme_light"] = new()
+        {
+            ["vi"] = "Sáng", ["en"] = "Light", ["ja"] = "ライト",
+            ["ko"] = "라이트", ["zh-Hans"] = "浅色", ["fr"] = "Clair", ["th"] = "สว่าง"
+        },
 
         // ═══════════════════════════════════════════════════════════════
         // Tourist Payment Flow
@@ -923,6 +943,12 @@ public static class AppStrings
         ["pay_continue"] = new()
         {
             ["vi"] = "Tiếp tục", ["en"] = "Continue"
+        },
+        ["pay_initializing"] = new()
+        {
+            ["vi"] = "Đang tạo mã QR...", ["en"] = "Generating QR code...",
+            ["ja"] = "QRコードを生成中...", ["ko"] = "QR 코드 생성 중...",
+            ["zh-Hans"] = "正在生成二维码...", ["fr"] = "Génération du QR code...", ["th"] = "กำลังสร้างรหัส QR..."
         },
         ["pay_qr_title"] = new()
         {
@@ -999,6 +1025,26 @@ public static class AppStrings
         {
             ["vi"] = "Xem thêm", ["en"] = "Read more", ["ja"] = "詳細を見る",
             ["ko"] = "더 읽어보기", ["zh-Hans"] = "阅读更多", ["fr"] = "Lire plus", ["th"] = "อ่านเพิ่มเติม"
+        },
+        ["offline_banner_msg"] = new()
+        {
+            ["vi"] = "Không có kết nối mạng — đang dùng dữ liệu đệm",
+            ["en"] = "No internet — using cached data",
+            ["ja"] = "インターネットなし — キャッシュを使用中",
+            ["ko"] = "인터넷 없음 — 캐시 데이터 사용 중",
+            ["zh-Hans"] = "无网络 — 使用缓存数据",
+            ["fr"] = "Hors ligne — données en cache",
+            ["th"] = "ไม่มีอินเทอร์เน็ต — ใช้ข้อมูลแคช"
+        },
+        ["offline_banner_dismiss"] = new()
+        {
+            ["vi"] = "Đóng thông báo",
+            ["en"] = "Dismiss",
+            ["ja"] = "閉じる",
+            ["ko"] = "닫기",
+            ["zh-Hans"] = "关闭",
+            ["fr"] = "Fermer",
+            ["th"] = "ปิด"
         }
     };
 

@@ -1,18 +1,94 @@
-import { ChevronDown, ChevronUp, Trash2, Plus } from "lucide-react";
-import { useState } from "react";
+import { ChevronDown, ChevronUp, Trash2, Plus, GripVertical } from "lucide-react";
+import { useState, useRef } from "react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
-/**
- * ArrayEditor — quản lý mảng item (slides, steps, features, screenshots...).
- * Props:
- *   label       — tiêu đề block
- *   items       — mảng hiện tại
- *   onAdd       — () => void  (thêm item mới với template mặc định)
- *   onRemove    — (idx) => void
- *   addLabel    — text nút thêm, mặc định "Thêm mới"
- *   children    — (item, idx) => JSX  (render form từng item)
- */
-export default function ArrayEditor({ label, items = [], onAdd, onRemove, addLabel = "Thêm mới", children }) {
+function SortableItem({ id, idx, item, isOpen, toggle, onRemove, hideControls, children }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    position: "relative",
+    zIndex: isDragging ? 10 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="border border-gray-200 rounded-xl overflow-hidden mb-2 bg-white">
+      {/* Header */}
+      <div className="flex items-center justify-between px-3.5 py-3 bg-gray-50 hover:bg-gray-100 transition-colors">
+        <div className="flex items-center gap-2 flex-1">
+          {!hideControls && (
+            <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing hover:text-pink-500 text-gray-400 p-1 -ml-2 rounded">
+              <GripVertical size={16} />
+            </div>
+          )}
+          <span className="text-sm font-medium text-gray-700 cursor-pointer flex-1 select-none" onClick={() => toggle(idx)}>
+            #{idx + 1} {item?.title || item?.label || item?.text || item?.alt || ""}
+          </span>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {!hideControls && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onRemove(idx); }}
+              className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+              title="Xóa"
+            >
+              <Trash2 size={13} />
+            </button>
+          )}
+          <button onClick={() => toggle(idx)} className="p-1">
+            {isOpen ? <ChevronUp size={15} className="text-gray-400" /> : <ChevronDown size={15} className="text-gray-400" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Body */}
+      {isOpen && (
+        <div className="p-4 bg-white border-t border-gray-100">
+          {children(item, idx)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function ArrayEditor({ label, items = [], onAdd, onRemove, onReorder, onMove, onAddGlobal, onRemoveGlobal, addLabel = "Thêm mới", hideControls = false, children }) {
   const [openItems, setOpenItems] = useState(new Set());
+  const idMap = useRef(new WeakMap());
+
+  const getId = (item, idx) => {
+    if (item && typeof item === "object") {
+      if (!idMap.current.has(item)) {
+        idMap.current.set(item, crypto.randomUUID());
+      }
+      return idMap.current.get(item);
+    }
+    return idx.toString();
+  };
 
   const toggle = (idx) => {
     setOpenItems((prev) => {
@@ -24,9 +100,47 @@ export default function ArrayEditor({ label, items = [], onAdd, onRemove, addLab
   };
 
   const handleAdd = () => {
-    onAdd();
+    if (onAddGlobal) onAddGlobal();
+    else onAdd();
     setOpenItems((prev) => new Set([...prev, items.length]));
   };
+  
+  const handleRemove = (idx) => {
+    if (onRemoveGlobal) onRemoveGlobal(idx);
+    else onRemove(idx);
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const itemIds = items.map((itm, i) => getId(itm, i));
+      const oldIndex = itemIds.indexOf(active.id);
+      const newIndex = itemIds.indexOf(over.id);
+
+      if (onMove) {
+        onMove(oldIndex, newIndex);
+      } else if (onReorder) {
+        const newItems = arrayMove(items, oldIndex, newIndex);
+        onReorder(newItems);
+      }
+      
+      setOpenItems(new Set()); 
+    }
+  };
+
+  const itemIds = items.map((itm, i) => getId(itm, i));
 
   return (
     <div className="mb-4">
@@ -35,53 +149,47 @@ export default function ArrayEditor({ label, items = [], onAdd, onRemove, addLab
         <span className="text-xs text-gray-400">{items.length} mục</span>
       </div>
 
-      <div className="space-y-2">
-        {items.map((item, idx) => {
-          const isOpen = openItems.has(idx);
-          return (
-            <div key={idx} className="border border-gray-200 rounded-xl overflow-hidden">
-              {/* Header */}
-              <div
-                className="flex items-center justify-between px-3.5 py-3 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
-                onClick={() => toggle(idx)}
-              >
-                <span className="text-sm font-medium text-gray-700">
-                  #{idx + 1} {item?.title || item?.label || item?.text || item?.alt || ""}
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onRemove(idx); }}
-                    className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                    title="Xóa"
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                  {isOpen
-                    ? <ChevronUp size={15} className="text-gray-400" />
-                    : <ChevronDown size={15} className="text-gray-400" />
-                  }
-                </div>
-              </div>
-
-              {/* Body */}
-              {isOpen && (
-                <div className="p-4 bg-white border-t border-gray-100">
-                  {children(item, idx)}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      <button
-        type="button"
-        onClick={handleAdd}
-        className="mt-2 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-pink-200 text-pink-500 text-sm font-medium hover:bg-pink-50 hover:border-pink-300 transition-colors"
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
       >
-        <Plus size={15} />
-        {addLabel}
-      </button>
+        <SortableContext
+          items={itemIds}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="space-y-0">
+            {items.map((item, idx) => {
+              const id = itemIds[idx];
+              const isOpen = openItems.has(idx);
+              return (
+                <SortableItem
+                  key={id}
+                  id={id}
+                  idx={idx}
+                  item={item}
+                  isOpen={isOpen}
+                  toggle={toggle}
+                  onRemove={handleRemove}
+                  hideControls={hideControls}
+                  children={children}
+                />
+              );
+            })}
+          </div>
+        </SortableContext>
+      </DndContext>
+
+      {!hideControls && (
+        <button
+          type="button"
+          onClick={handleAdd}
+          className="mt-2 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-pink-200 text-pink-500 text-sm font-medium hover:bg-pink-50 hover:border-pink-300 transition-colors"
+        >
+          <Plus size={15} />
+          {addLabel}
+        </button>
+      )}
     </div>
   );
 }

@@ -1,11 +1,12 @@
 import { useEffect, useState, useContext } from 'react'
-import { DollarSign, CheckCircle, AlertCircle, RotateCw, Loader2 } from 'lucide-react'
+import { DollarSign, CheckCircle, AlertCircle, RotateCw, Loader2, CreditCard, Search, Calendar, ChevronDown, XCircle, Clock, Download, Filter, RefreshCw, TrendingUp } from 'lucide-react'
 import PageLoader from "@/components/PageLoader"
 import * as subscriptionApi from '../api/subscriptionApi'
 import { formatDateVN } from '../utils/formatDate'
 import toast from 'react-hot-toast'
 import PageHeader from "@/components/PageHeader"
 import StatsCard from "@/components/StatsCard"
+import EmptyState from "@/components/EmptyState"
 import { SearchContext } from '../context/SearchContext'
 
 /**
@@ -260,14 +261,12 @@ export const AdminTransactionDashboard = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="7" className="px-6 py-16 text-center text-gray-400 animate-fadeIn">
-                      <div className="flex flex-col items-center justify-center">
-                        <DollarSign size={48} className="text-pink-200 mb-3 animate-pulse" />
-                        <h3 className="text-base font-bold text-gray-700">Không tìm thấy giao dịch nào</h3>
-                        <p className="text-xs text-gray-400 mt-1 max-w-sm mx-auto">
-                          Không tìm thấy dữ liệu giao dịch nào khớp với bộ lọc hiện tại của bạn.
-                        </p>
-                      </div>
+                    <td colSpan="7" className="px-6 py-8 text-center text-gray-400 animate-fadeIn">
+                      <EmptyState
+                        icon={<DollarSign size={40} />}
+                        title="Không tìm thấy giao dịch nào"
+                        description="Không tìm thấy dữ liệu giao dịch nào khớp với bộ lọc hiện tại của bạn."
+                      />
                     </td>
                   </tr>
                 )}

@@ -53,7 +53,7 @@
                     <ActivityIndicator IsRunning="True"
                                        Color="#EE4D2D"
                                        HorizontalOptions="Center" />
-                    <Label Text="Đang tạo mã QR..."
+                    <Label Text="{helpers:Translate pay_initializing}"
                            FontFamily="InterMedium" FontSize="15"
                            TextColor="#666" HorizontalTextAlignment="Center"/>
                 </VerticalStackLayout>
@@ -62,17 +62,6 @@
                 <VerticalStackLayout IsVisible="{Binding IsWaitingState}"
                                      Spacing="16" Padding="24,16,24,24">
 
-                    <!-- Tab Bar (Future MoMo support) -->
-                    <Border BackgroundColor="#E0E0E0" StrokeThickness="0" StrokeShape="RoundRectangle 8" Padding="2" Margin="0,0,0,8">
-                        <Grid ColumnDefinitions="*, *">
-                            <Border Grid.Column="0" BackgroundColor="White" StrokeThickness="0" StrokeShape="RoundRectangle 6" Padding="8">
-                                <Label Text="Chuyển khoản" FontFamily="InterBold" FontSize="14" TextColor="#EE4D2D" HorizontalTextAlignment="Center"/>
-                            </Border>
-                            <Border Grid.Column="1" BackgroundColor="Transparent" StrokeThickness="0" Padding="8">
-                                <Label Text="MoMo (Sắp có)" FontFamily="InterMedium" FontSize="14" TextColor="#999" HorizontalTextAlignment="Center"/>
-                            </Border>
-                        </Grid>
-                    </Border>
 
                     <!-- QR title -->
                     <Label Text="{helpers:Translate pay_qr_title}"

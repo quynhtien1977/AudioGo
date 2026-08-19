@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:helpers="clr-namespace:AudioGo.Helpers"
+             x:Class="AudioGo_Mobile.Controls.OfflineBannerView"
+             x:Name="Root"
+             IsVisible="False"
+             InputTransparent="False">
+
+    <!--
+        Offline Banner — 
+        Pill-shaped dark toast at screen bottom.
+        icon wifi_off (cam) | text | × dismiss
+    -->
+    <Border x:Name="BannerPill"
+            BackgroundColor="#F0131313"
+            StrokeThickness="1"
+            Stroke="#2AEE4D2D"
+            StrokeShape="RoundRectangle 28"
+            Padding="14,10,10,10"
+            Margin="24,0,24,20"
+            HorizontalOptions="Fill">
+        <Border.Shadow>
+            <Shadow Brush="Black" Offset="0,4" Radius="12" Opacity="0.4"/>
+        </Border.Shadow>
+
+        <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="10">
+
+            <!-- wifi_off icon — orange -->
+            <Label Grid.Column="0"
+                   Text="&#xe648;"
+                   FontFamily="MaterialIcons"
+                   FontSize="18"
+                   TextColor="#EE4D2D"
+                   VerticalOptions="Center"/>
+
+            <!-- Message -->
+            <Label Grid.Column="1"
+                   x:Name="MessageLabel"
+                   Text="{helpers:Translate offline_banner_msg}"
+                   FontFamily="InterMedium"
+                   FontSize="13"
+                   TextColor="#E8E8E8"
+                   VerticalOptions="Center"
+                   LineBreakMode="TailTruncation"/>
+
+            <!-- Dismiss × -->
+            <Border Grid.Column="2"
+                    StrokeThickness="0"
+                    BackgroundColor="#28FFFFFF"
+                    StrokeShape="RoundRectangle 14"
+                    WidthRequest="28"
+                    HeightRequest="28"
+                    HorizontalOptions="End"
+                    VerticalOptions="Center"
+                    SemanticProperties.Description="{helpers:Translate offline_banner_dismiss}">
+                <Border.GestureRecognizers>
+                    <TapGestureRecognizer Tapped="OnDismissTapped"/>
+                </Border.GestureRecognizers>
+                <Label Text="✕"
+                       FontSize="12"
+                       TextColor="#888888"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"/>
+            </Border>
+
+        </Grid>
+    </Border>
+</ContentView>

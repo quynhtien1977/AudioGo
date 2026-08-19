@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection;
 using Server.Models;
 using Server.Repositories.Interfaces;
@@ -14,7 +15,7 @@ namespace Server.Controllers.Cms
 {
     [ApiController]
     [Route("api/cms/articles")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Editor")]
     public class CmsArticleController : ControllerBase
     {
         private readonly IArticleRepository _repo;
@@ -59,6 +60,7 @@ namespace Server.Controllers.Cms
         }
 
         [HttpPost]
+        [EnableRateLimiting("cmsWrite")]
         public async Task<ActionResult<ArticleItemDto>> Create([FromBody] ArticleUpsertDto req)
         {
             if (req is null || !req.Contents.TryGetValue("vi", out var viContent))
@@ -147,6 +149,7 @@ namespace Server.Controllers.Cms
         }
 
         [HttpPut("{id}")]
+        [EnableRateLimiting("cmsWrite")]
         public async Task<ActionResult<ArticleItemDto>> Update(string id, [FromBody] ArticleUpsertDto req)
         {
             if (req is null || !req.Contents.TryGetValue("vi", out var viContent))
@@ -236,6 +239,7 @@ namespace Server.Controllers.Cms
         }
 
         [HttpDelete("{id}")]
+        [EnableRateLimiting("cmsWrite")]
         public async Task<IActionResult> Delete(string id)
         {
             var ok = await _repo.DeleteAsync(id);

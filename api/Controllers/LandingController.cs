@@ -4,6 +4,7 @@ using Server.Data;
 using Server.Models;
 using Server.Services.Interfaces;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Server.Controllers;
 
@@ -19,6 +20,9 @@ public class LandingController : ControllerBase
     private readonly IEmailService  _email;
     private readonly IConfiguration _config;
 
+    private static readonly HashSet<string> AllowedLangs =
+        ["vi", "en", "es", "fr", "ko", "ja"];
+
     public LandingController(AppDbContext db, IEmailService email, IConfiguration config)
     {
         _db     = db;
@@ -26,25 +30,107 @@ public class LandingController : ControllerBase
         _config = config;
     }
 
-    // ── GET /api/landing ──────────────────────────────────────────────────
-    /// <summary>Trả về toàn bộ section đang active, sắp theo SortOrder.</summary>
-    [HttpGet("landing")]
-    public async Task<IActionResult> GetLanding()
+    // ── GET /api/landing/sections?lang=vi ────────────────────────────────
+    /// <summary>
+    /// Trả về toàn bộ section đang active, merge shared + translations[lang] thành object phẳng.
+    /// Fallback: nếu translations[lang] == null → dùng translations["vi"].
+    /// </summary>
+    [HttpGet("landing/sections")]
+    [HttpGet("landing")] // backward compat
+    public async Task<IActionResult> GetLanding([FromQuery] string? lang = "vi")
     {
-        var sections = await _db.LandingSections
+        var resolvedLang = (lang?.ToLower() is { } l && AllowedLangs.Contains(l)) ? l : "vi";
+
+        var rows = await _db.LandingSections
             .Where(s => s.IsActive)
             .OrderBy(s => s.SortOrder)
-            .Select(s => new
+            .Select(s => new { s.SectionId, s.SectionKey, s.SortOrder, s.ContentJson })
+            .ToListAsync();
+
+        var result = rows.Select(s =>
+        {
+            JsonNode? merged = MergeContent(s.ContentJson, resolvedLang);
+            return new
             {
                 s.SectionId,
                 s.SectionKey,
                 s.SortOrder,
-                // Parse ContentJson sang object để trả JSON thuần (không bị double-escaped)
-                Content = JsonSerializer.Deserialize<JsonElement>(s.ContentJson)
-            })
-            .ToListAsync();
+                Content = merged is null
+                    ? (object)JsonSerializer.Deserialize<JsonElement>("{}")
+                    : JsonSerializer.Deserialize<JsonElement>(merged.ToJsonString())
+            };
+        });
 
-        return Ok(sections);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Merge shared + translations[lang] → object phẳng.
+    /// Nếu translations[lang] == null, fallback về "vi".
+    /// Nếu ContentJson vẫn là format cũ (không có "translations") → trả nguyên.
+    /// </summary>
+    private static JsonNode? MergeContent(string contentJson, string lang)
+    {
+        JsonNode? root;
+        try { root = JsonNode.Parse(contentJson); }
+        catch { return null; }
+
+        if (root is not JsonObject obj) return root;
+
+        // Format cũ chưa migrate → trả nguyên
+        if (obj["translations"] == null) return root;
+
+        var shared = obj["shared"]?.AsObject() ?? new JsonObject();
+        var translations = obj["translations"]?.AsObject();
+
+        JsonObject? trans = null;
+        // Thử lang được yêu cầu
+        if (translations?[lang] is JsonObject requested && requested.Count > 0)
+            trans = requested;
+        // Fallback về vi
+        else if (translations?["vi"] is JsonObject vi)
+            trans = vi;
+
+        // Merge: bắt đầu từ shared, overlay translations
+        var merged = new JsonObject();
+        if (shared != null)
+            foreach (var (k, v) in shared)
+                merged[k] = v?.DeepClone();
+        if (trans != null)
+            MergeDeep(merged, trans);
+
+        return merged;
+    }
+
+    /// <summary>Deep merge src vào dest — với array fields (items, steps, images, stats):
+    /// merge từng phần tử theo index (shared items + trans items → merged items).</summary>
+    private static void MergeDeep(JsonObject dest, JsonObject src)
+    {
+        foreach (var (key, srcVal) in src)
+        {
+            if (srcVal is JsonArray srcArr && dest[key] is JsonArray destArr)
+            {
+                // Merge arrays element-by-element
+                var mergedArr = new JsonArray();
+                var len = Math.Max(srcArr.Count, destArr.Count);
+                for (int i = 0; i < len; i++)
+                {
+                    var destItem = i < destArr.Count ? destArr[i]?.AsObject() : null;
+                    var srcItem  = i < srcArr.Count  ? srcArr[i]?.AsObject()  : null;
+                    var mergedItem = new JsonObject();
+                    if (destItem != null)
+                        foreach (var (k, v) in destItem) mergedItem[k] = v?.DeepClone();
+                    if (srcItem != null)
+                        foreach (var (k, v) in srcItem) mergedItem[k] = v?.DeepClone();
+                    mergedArr.Add(mergedItem);
+                }
+                dest[key] = mergedArr;
+            }
+            else
+            {
+                dest[key] = srcVal?.DeepClone();
+            }
+        }
     }
 
     // ── GET /api/app/latest ───────────────────────────────────────────────

@@ -82,9 +82,39 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
 
+        {/* ── Legacy redirects – giữ để không 404 bookmark cũ ── */}
+        <Route path="/dashboard" element={<Navigate to="/admin/dashboard" replace />} />
+        <Route path="/pois" element={<Navigate to="/admin/pois" replace />} />
+        <Route path="/pois/add" element={<Navigate to="/admin/pois/add" replace />} />
+        <Route path="/pois/:id" element={<Navigate to="/admin/pois/:id" replace />} />
+        <Route path="/tours" element={<Navigate to="/admin/tours" replace />} />
+        <Route path="/tours/create" element={<Navigate to="/admin/tours/create" replace />} />
+        <Route path="/tours/:id" element={<Navigate to="/admin/tours/:id" replace />} />
+        <Route path="/categories" element={<Navigate to="/admin/categories" replace />} />
+        <Route path="/audio" element={<Navigate to="/admin/audio" replace />} />
+        <Route path="/cms/articles" element={<Navigate to="/admin/articles" replace />} />
+        <Route path="/accounts" element={<Navigate to="/admin/accounts" replace />} />
+        <Route path="/access-codes" element={<Navigate to="/admin/access-codes" replace />} />
+        <Route path="/tracking" element={<Navigate to="/admin/tracking" replace />} />
+        <Route path="/device-activity" element={<Navigate to="/admin/device-activity" replace />} />
+        <Route path="/analytics" element={<Navigate to="/admin/analytics" replace />} />
+        <Route path="/landing-settings" element={<Navigate to="/admin/landing" replace />} />
+        <Route path="/profile" element={<Navigate to="/admin/profile" replace />} />
+        <Route path="/poi/management" element={<Navigate to="/admin/pois/management" replace />} />
+        <Route path="/poi/management/new" element={<Navigate to="/admin/pois/management/new" replace />} />
+        <Route path="/poi/management/updates" element={<Navigate to="/admin/pois/management/updates" replace />} />
+        <Route path="/poi/management/updates/:id" element={<Navigate to="/admin/pois/management/updates/:id" replace />} />
+        <Route path="/poi/management/deletions" element={<Navigate to="/admin/pois/management/deletions" replace />} />
+        <Route path="/subscription/checkout" element={<Navigate to="/admin/subscription/checkout" replace />} />
+        <Route path="/pricing-plans" element={<Navigate to="/admin/dashboard" replace />} />
+
+        {/* ════════════════════════════════════════
+            ADMIN ROUTES – chuẩn hoá /admin/*
+            ════════════════════════════════════════ */}
+
         {/* Dashboard */}
         <Route
-          path="/dashboard"
+          path="/admin/dashboard"
           element={
             <ProtectedRoute roles={["Admin", "Owner", "Editor"]}>
               <MainLayout>
@@ -96,9 +126,9 @@ export default function App() {
 
         {/* Profile */}
         <Route
-          path="/profile"
+          path="/admin/profile"
           element={
-            <ProtectedRoute roles={["Owner"]}>
+            <ProtectedRoute roles={["Owner", "Editor"]}>
               <MainLayout>
                 <ProfilePage />
               </MainLayout>
@@ -106,9 +136,9 @@ export default function App() {
           }
         />
 
-        {/* POIs (ADMIN + OWNER + EDITOR) */}
+        {/* POIs */}
         <Route
-          path="/pois"
+          path="/admin/pois"
           element={
             <ProtectedRoute roles={["Admin", "Owner", "Editor"]}>
               <MainLayout>
@@ -118,9 +148,8 @@ export default function App() {
           }
         />
 
-        {/* POI Add */}
         <Route
-          path="/pois/add"
+          path="/admin/pois/add"
           element={
             <ProtectedRoute roles={["Owner"]}>
               <MainLayout>
@@ -130,9 +159,8 @@ export default function App() {
           }
         />
 
-        {/* POI Detail */}
         <Route
-          path="/pois/:id"
+          path="/admin/pois/:id"
           element={
             <ProtectedRoute roles={["Admin", "Owner"]}>
               <MainLayout>
@@ -142,9 +170,8 @@ export default function App() {
           }
         />
 
-        {/* POI REQUEST Detail */}
         <Route
-          path="/pois/requests/:id"
+          path="/admin/pois/requests/:id"
           element={
             <ProtectedRoute roles={["Admin", "Owner"]}>
               <MainLayout>
@@ -154,9 +181,9 @@ export default function App() {
           }
         />
 
-        {/* POI Management (ADMIN only) */}
+        {/* POI Management / Xét duyệt */}
         <Route
-          path="/poi/management"
+          path="/admin/pois/management"
           element={
             <ProtectedRoute roles={["Admin"]}>
               <MainLayout>
@@ -166,9 +193,8 @@ export default function App() {
           }
         />
 
-        {/* POI New List */}
         <Route
-          path="/poi/management/new"
+          path="/admin/pois/management/new"
           element={
             <ProtectedRoute roles={["Admin"]}>
               <MainLayout>
@@ -178,9 +204,8 @@ export default function App() {
           }
         />
 
-        {/* POI Update List */}
         <Route
-          path="/poi/management/updates"
+          path="/admin/pois/management/updates"
           element={
             <ProtectedRoute roles={["Admin"]}>
               <MainLayout>
@@ -190,9 +215,8 @@ export default function App() {
           }
         />
 
-        {/* POI Update Detail */}
         <Route
-          path="/poi/management/updates/:id"
+          path="/admin/pois/management/updates/:id"
           element={
             <ProtectedRoute roles={["Admin"]}>
               <MainLayout>
@@ -202,9 +226,8 @@ export default function App() {
           }
         />
 
-        {/* POI Deletion List */}
         <Route
-          path="/poi/management/deletions"
+          path="/admin/pois/management/deletions"
           element={
             <ProtectedRoute roles={["Admin"]}>
               <MainLayout>
@@ -213,9 +236,10 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        
+
+        {/* Audio */}
         <Route
-          path="/audio"
+          path="/admin/audio"
           element={
             <ProtectedRoute roles={["Admin", "Owner", "Editor"]}>
               <MainLayout>
@@ -225,9 +249,9 @@ export default function App() {
           }
         />
 
-        {/* Categories (ADMIN only) */}
+        {/* Categories */}
         <Route
-          path="/categories"
+          path="/admin/categories"
           element={
             <ProtectedRoute roles={["Admin"]}>
               <MainLayout>
@@ -237,9 +261,9 @@ export default function App() {
           }
         />
 
-        {/* Accounts (ADMIN only) */}
+        {/* Accounts */}
         <Route
-          path="/accounts"
+          path="/admin/accounts"
           element={
             <ProtectedRoute roles={["Admin"]}>
               <MainLayout>
@@ -249,9 +273,9 @@ export default function App() {
           }
         />
 
-        {/* Articles CMS (ADMIN + EDITOR) */}
+        {/* Articles */}
         <Route
-          path="/cms/articles"
+          path="/admin/articles"
           element={
             <ProtectedRoute roles={["Admin", "Editor"]}>
               <MainLayout>
@@ -261,9 +285,9 @@ export default function App() {
           }
         />
 
-        {/* Access Codes (ADMIN only) */}
+        {/* Access Codes */}
         <Route
-          path="/access-codes"
+          path="/admin/access-codes"
           element={
             <ProtectedRoute roles={["Admin"]}>
               <MainLayout>
@@ -273,8 +297,9 @@ export default function App() {
           }
         />
 
+        {/* Tours */}
         <Route
-          path="/tours"
+          path="/admin/tours"
           element={
             <ProtectedRoute roles={["Admin", "Editor"]}>
               <MainLayout>
@@ -285,7 +310,7 @@ export default function App() {
         />
 
         <Route
-          path="/tours/create"
+          path="/admin/tours/create"
           element={
             <ProtectedRoute roles={["Admin"]}>
               <MainLayout>
@@ -296,7 +321,7 @@ export default function App() {
         />
 
         <Route
-          path="/tours/:id"
+          path="/admin/tours/:id"
           element={
             <ProtectedRoute roles={["Admin"]}>
               <MainLayout>
@@ -306,8 +331,9 @@ export default function App() {
           }
         />
 
+        {/* Device Tracking */}
         <Route
-        path="/tracking"
+          path="/admin/tracking"
           element={
             <ProtectedRoute roles={["Admin"]}>
               <MainLayout>
@@ -317,10 +343,9 @@ export default function App() {
           }
         />
 
-
-
+        {/* Device Activity */}
         <Route
-          path="/device-activity"
+          path="/admin/device-activity"
           element={
             <ProtectedRoute roles={["Admin"]}>
               <MainLayout>
@@ -330,8 +355,9 @@ export default function App() {
           }
         />
 
+        {/* Analytics */}
         <Route
-          path="/analytics"
+          path="/admin/analytics"
           element={
             <ProtectedRoute roles={["Admin"]}>
               <MainLayout>
@@ -341,14 +367,9 @@ export default function App() {
           }
         />
 
-        {/* SUBSCRIPTION - OWNER */}
+        {/* Subscription - Owner */}
         <Route
-          path="/pricing-plans"
-          element={<Navigate to="/dashboard" />}
-        />
-
-        <Route
-          path="/subscription/checkout"
+          path="/admin/subscription/checkout"
           element={
             <ProtectedRoute roles={["Owner"]}>
               <MainLayout>
@@ -358,7 +379,7 @@ export default function App() {
           }
         />
 
-        {/* SUBSCRIPTION - ADMIN */}
+        {/* Subscription + Transactions - Admin */}
         <Route
           path="/admin/subscriptions"
           element={
@@ -381,9 +402,9 @@ export default function App() {
           }
         />
 
-        {/* Landing Settings (ADMIN + EDITOR) */}
+        {/* Landing Settings */}
         <Route
-          path="/landing-settings"
+          path="/admin/landing"
           element={
             <ProtectedRoute roles={["Admin", "Editor"]}>
               <MainLayout>
@@ -393,12 +414,10 @@ export default function App() {
           }
         />
 
-        {/* 404 Route */}
+        {/* 404 */}
         <Route path="/404" element={<NotFoundPage />} />
-
-        {/* fallback */}
         <Route path="*" element={<NotFoundPage />} />
-        </Routes>
+      </Routes>
         </SubscriptionProvider>
       </SearchProvider>
     </BrowserRouter>

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Microsoft.Maui.Networking;
 
 namespace AudioGo.Helpers
@@ -14,7 +14,9 @@ namespace AudioGo.Helpers
             }
             catch (Exception ex)
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[NetworkHelper] Error checking network access: {ex.Message}");
+                #endif
                 // Fallback to true so we let HTTP timeouts handle offline cases rather than abruptly breaking
                 // the flow for devices where MAUI occasionally throws exceptions for NetworkAccess
                 return true; 

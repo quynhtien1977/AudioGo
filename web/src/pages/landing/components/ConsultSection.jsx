@@ -16,6 +16,24 @@ export default function ConsultSection({ data }) {
     subtitle = "Chủ quán ẩm thực tại Phố Vĩnh Khánh Q4? Hãy để AudioGo kể câu chuyện của bạn bằng âm thanh.",
     formNote = "Chúng tôi sẽ liên hệ trong vòng 24 giờ làm việc.",
     benefits = [],
+    badge = "Dành cho chủ quán",
+    formTitle = "Điền thông tin để được tư vấn miễn phí",
+    formNameLabel = "Họ tên *",
+    formNamePlaceholder = "Nguyễn Văn A",
+    formPhoneLabel = "Số điện thoại *",
+    formPhonePlaceholder = "0912 345 678",
+    formStoreLabel = "Tên quán *",
+    formStorePlaceholder = "Quán Bún Mắm Má Hai",
+    formAreaLabel = "Khu vực",
+    formAreaPlaceholder = "Vĩnh Khánh Q4",
+    formEmailLabel = "Email *",
+    formEmailPlaceholder = "example@gmail.com",
+    formMessageLabel = "Tin nhắn (không bắt buộc)",
+    formMessagePlaceholder = "Thêm thông tin bạn muốn chia sẻ...",
+    formSubmitBtn = "Gửi yêu cầu tư vấn",
+    formSubmittingBtn = "Đang gửi...",
+    formSuccessTitle = "Đã nhận yêu cầu!",
+    formSuccessDesc = "Chúng tôi sẽ liên hệ với bạn trong vòng 24 giờ làm việc để tư vấn chi tiết."
   } = data || {};
 
   const [form, setForm] = useState({
@@ -37,7 +55,6 @@ export default function ConsultSection({ data }) {
       toast.error("Vui lòng điền đầy đủ thông tin bắt buộc (bao gồm email).");
       return;
     }
-    // Validate email cơ bản
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       toast.error("Email không hợp lệ.");
       return;
@@ -56,7 +73,11 @@ export default function ConsultSection({ data }) {
   };
 
   return (
-    <section id="consult" className="py-24 bg-[#fdf7f9]">
+    <section
+      id="consult"
+      className="py-24"
+      style={{ background: "var(--lp-section-light)" }}
+    >
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="grid lg:grid-cols-2 gap-12 items-start">
           {/* Left: info */}
@@ -65,11 +86,22 @@ export default function ConsultSection({ data }) {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
           >
-            <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-pink-50 text-pink-600 border border-pink-100 mb-4">
-              Dành cho chủ quán
+            <span
+              style={{
+                background: "var(--lp-badge-bg)",
+                color: "var(--lp-badge-text)",
+                border: "1px solid var(--lp-badge-border)",
+              }}
+              className="inline-block px-3 py-1 rounded-full text-xs font-semibold mb-4"
+            >
+              {badge}
             </span>
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">{title}</h2>
-            <p className="text-gray-500 text-base leading-relaxed mb-8">{subtitle}</p>
+            <h2 style={{ color: "var(--lp-text)" }} className="text-3xl sm:text-4xl font-bold mb-4">
+              {title}
+            </h2>
+            <p style={{ color: "var(--lp-text-muted)" }} className="text-base leading-relaxed mb-8">
+              {subtitle}
+            </p>
 
             {/* Benefits */}
             <div className="space-y-4">
@@ -80,17 +112,21 @@ export default function ConsultSection({ data }) {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: 0.1 + i * 0.08 }}
-                  className="flex items-start gap-3"
+                  className="flex items-start gap-4 mb-5"
                 >
-                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-pink-500 to-orange-400 flex items-center justify-center flex-shrink-0 shadow-sm">
-                    <DynIcon name={b.icon} size={16} className="text-white" />
+                  <div className="w-9 h-9 rounded-lg bg-pink-600 flex items-center justify-center flex-shrink-0 shadow-sm shadow-pink-600/20">
+                    <DynIcon name={b.icon} size={18} className="text-white" />
                   </div>
-                  <p className="text-gray-700 font-medium pt-1.5 text-sm">{b.text}</p>
+                  <p style={{ color: "var(--lp-text)" }} className="font-medium pt-1.5 text-sm">
+                    {b.text}
+                  </p>
                 </motion.div>
               ))}
             </div>
 
-            <p className="mt-8 text-xs text-gray-400">{formNote}</p>
+            <p style={{ color: "var(--lp-text-faint)" }} className="mt-8 text-xs">
+              {formNote}
+            </p>
           </motion.div>
 
           {/* Right: form */}
@@ -98,87 +134,64 @@ export default function ConsultSection({ data }) {
             initial={{ opacity: 0, x: 24 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8"
+            style={{
+              background: "var(--lp-bg-card)",
+              borderColor: "var(--lp-border)",
+            }}
+            className="rounded-2xl shadow-sm border p-6 sm:p-8"
           >
             {submitted ? (
               <div className="flex flex-col items-center justify-center py-10 text-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
                   <Check size={32} className="text-green-500" />
                 </div>
-                <h3 className="font-semibold text-gray-900 text-xl">Đã nhận yêu cầu!</h3>
-                <p className="text-gray-500 text-sm max-w-xs">
-                  Chúng tôi sẽ liên hệ với bạn trong vòng 24 giờ làm việc để tư vấn chi tiết.
+                <h3 style={{ color: "var(--lp-text)" }} className="font-semibold text-xl">
+                  {formSuccessTitle}
+                </h3>
+                <p style={{ color: "var(--lp-text-muted)" }} className="text-sm max-w-xs">
+                  {formSuccessDesc}
                 </p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
-                <h3 className="font-semibold text-gray-900 text-lg mb-6">
-                  Điền thông tin để được tư vấn miễn phí
+                <h3 style={{ color: "var(--lp-text)" }} className="font-semibold text-lg mb-6">
+                  {formTitle}
                 </h3>
 
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <FormField
-                    icon={<User size={15} />}
-                    label="Họ tên *"
-                    value={form.fullName}
-                    onChange={set("fullName")}
-                    placeholder="Nguyễn Văn A"
-                  />
-                  <FormField
-                    icon={<Phone size={15} />}
-                    label="Số điện thoại *"
-                    value={form.phoneNumber}
-                    onChange={set("phoneNumber")}
-                    placeholder="0912 345 678"
-                    type="tel"
-                  />
+                  <FormField icon={<User size={15} />} label={formNameLabel} value={form.fullName} onChange={set("fullName")} placeholder={formNamePlaceholder} />
+                  <FormField icon={<Phone size={15} />} label={formPhoneLabel} value={form.phoneNumber} onChange={set("phoneNumber")} placeholder={formPhonePlaceholder} type="tel" />
                 </div>
 
-                <FormField
-                  icon={<Store size={15} />}
-                  label="Tên quán *"
-                  value={form.restaurantName}
-                  onChange={set("restaurantName")}
-                  placeholder="Quán Bún Mắm Má Hai"
-                />
-
-                <FormField
-                  icon={<MapPin size={15} />}
-                  label="Khu vực"
-                  value={form.area}
-                  onChange={set("area")}
-                  placeholder="Vĩnh Khánh Q4"
-                />
-
-                <FormField
-                  icon={<MessageSquare size={15} />}
-                  label="Email *"
-                  value={form.email}
-                  onChange={set("email")}
-                  placeholder="example@gmail.com"
-                  type="email"
-                />
+                <FormField icon={<Store size={15} />} label={formStoreLabel} value={form.restaurantName} onChange={set("restaurantName")} placeholder={formStorePlaceholder} />
+                <FormField icon={<MapPin size={15} />} label={formAreaLabel} value={form.area} onChange={set("area")} placeholder={formAreaPlaceholder} />
+                <FormField icon={<MessageSquare size={15} />} label={formEmailLabel} value={form.email} onChange={set("email")} placeholder={formEmailPlaceholder} type="email" />
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                    Tin nhắn (không bắt buộc)
+                  <label style={{ color: "var(--lp-text-muted)" }} className="block text-sm font-medium mb-1.5">
+                    {formMessageLabel}
                   </label>
                   <textarea
                     value={form.message}
                     onChange={set("message")}
                     rows={3}
-                    placeholder="Thêm thông tin bạn muốn chia sẻ..."
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-transparent resize-none"
+                    placeholder={formMessagePlaceholder}
+                    style={{
+                      background: "var(--lp-input-bg)",
+                      borderColor: "var(--lp-input-border)",
+                      color: "var(--lp-input-text)",
+                    }}
+                    className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 resize-none"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl font-semibold text-white bg-gradient-to-r from-pink-500 to-orange-400 hover:shadow-lg hover:shadow-pink-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                  className="w-full py-3.5 rounded-xl font-semibold text-white bg-pink-600 hover:bg-pink-700 hover:shadow-lg hover:shadow-pink-600/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60"
                 >
                   {loading ? <Loader2 size={18} className="animate-spin" /> : null}
-                  {loading ? "Đang gửi..." : "Gửi yêu cầu tư vấn"}
+                  {loading ? formSubmittingBtn : formSubmitBtn}
                 </button>
               </form>
             )}
@@ -192,15 +205,22 @@ export default function ConsultSection({ data }) {
 function FormField({ icon, label, value, onChange, placeholder, type = "text" }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
+      <label style={{ color: "var(--lp-text-muted)" }} className="block text-sm font-medium mb-1.5">
+        {label}
+      </label>
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">{icon}</span>
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-pink-400/60">{icon}</span>
         <input
           type={type}
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-transparent"
+          style={{
+            background: "var(--lp-input-bg)",
+            borderColor: "var(--lp-input-border)",
+            color: "var(--lp-input-text)",
+          }}
+          className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent"
         />
       </div>
     </div>

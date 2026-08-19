@@ -83,7 +83,7 @@ export default function POINewListPage() {
     fetchData()
   }, [])
 
-  const handleReview = (id) => navigate(`/pois/requests/${id}`)
+    const handleReview = (id) => navigate(`/admin/pois/requests/${id}`)
 
   const handleApprove = (id) => {
     setSelectedPoiId(id)

@@ -9,6 +9,7 @@ namespace AudioGo.Services
     /// Raise <see cref="PlaybackStateChanged"/> mỗi khi trạng thái thay đổi.
     /// </summary>
     public class AudioService : IAudioService
+
     {
         private readonly IAudioManager _audioManager;
         private readonly IHttpClientFactory _httpFactory;
@@ -64,42 +65,53 @@ namespace AudioGo.Services
             // Tier 1: Local file (luôn kiểm tra trước, kể cả khi offline)
             if (!string.IsNullOrEmpty(localAudioPath) && File.Exists(localAudioPath))
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[AudioService] Tier1 LOCAL: {localAudioPath}");
+                #endif
                 await PlayFileAsync(localAudioPath);
                 return;
             }
-
+            #if DEBUG
             if (!string.IsNullOrEmpty(localAudioPath))
                 System.Diagnostics.Debug.WriteLine($"[AudioService] Tier1 miss — file chưa tải về: {localAudioPath}");
             else
                 System.Diagnostics.Debug.WriteLine($"[AudioService] Tier1 miss — không có localAudioPath");
+            #endif
 
-            // Tier 2: HTTP Streaming — chỉ khi có mạng (tránh đợi timeout rồi mới biết offline)
-            if (!string.IsNullOrEmpty(audioUrl))
+                // Tier 2: HTTP Streaming — chỉ khi có mạng (tránh đợi timeout rồi mới biết offline)
+                if (!string.IsNullOrEmpty(audioUrl))
             {
                 bool hasNetwork = AudioGo.Helpers.NetworkHelper.HasInternet();
 
                 if (hasNetwork)
                 {
+                    #if DEBUG
                     System.Diagnostics.Debug.WriteLine($"[AudioService] Tier2 STREAM: {audioUrl}");
+                    #endif
                     await PlayFileAsync(audioUrl);
                     return;
                 }
                 else
                 {
+                    #if DEBUG
                     System.Diagnostics.Debug.WriteLine($"[AudioService] Tier2 miss — offline, không có local → TTS");
+                    #endif
                 }
             }
 
             // Tier 3: TTS — chỉ đến đây khi không có local file VÀ không có mạng để stream
             if (!string.IsNullOrEmpty(fallbackText))
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[AudioService] Tier3 TTS, lang={languageCode}");
+                #endif
                 await SpeakAsync(fallbackText, languageCode);
             }
             else
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[AudioService] Không có audio nào để phát (no local, no network, no text)");
+                #endif
             }
         }
 
@@ -118,7 +130,9 @@ namespace AudioGo.Services
                     var locale  = locales?.FirstOrDefault(l =>
                         l.Language.StartsWith(languageCode, StringComparison.OrdinalIgnoreCase));
                     if (locale is null)
+                        #if DEBUG
                         System.Diagnostics.Debug.WriteLine($"[AudioService] TTS locale '{languageCode}' not found, using system default");
+                        #endif
                     await TextToSpeech.Default.SpeakAsync(text,
                         new SpeechOptions { Locale = locale, Volume = 1f, Pitch = _speed }, ct);
                 }
@@ -164,8 +178,16 @@ namespace AudioGo.Services
                     _player.PlaybackEnded += (s, e) => tcs.TrySetResult();
                     ct.Register(() =>
                     {
-                        try { _player?.Stop(); } catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[AudioService] Error stopping player: {ex.Message}"); }
+                        
+                        try { _player?.Stop(); } 
+                        catch (Exception ex) 
+                        { 
+                            #if DEBUG
+                            System.Diagnostics.Debug.WriteLine($"[AudioService] Error stopping player: {ex.Message}"); 
+                            #endif
+                        }
                         tcs.TrySetCanceled();
+
                     });
 
                     _player.Play();
@@ -174,11 +196,15 @@ namespace AudioGo.Services
                 catch (OperationCanceledException) { /* stopped externally */ }
                 catch (FileNotFoundException)
                 {
+                    #if DEBUG
                     System.Diagnostics.Debug.WriteLine($"[AudioService] File not found: {urlOrPath}");
+                    #endif
                 }
                 catch (Exception ex)
                 {
+                    #if DEBUG
                     System.Diagnostics.Debug.WriteLine($"[AudioService] Error playing {urlOrPath}: {ex.Message}");
+                    #endif
                 }
                 finally
                 {
@@ -193,16 +219,33 @@ namespace AudioGo.Services
         public Task PauseAsync()
         {
             if (_player is null || !IsPlaying || IsPaused) return Task.CompletedTask;
-            try { _player.Pause(); } catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[AudioService] Error pausing player: {ex.Message}"); }
+            
+            try { _player.Pause(); } 
+            catch (Exception ex) 
+            { 
+                #if DEBUG
+                System.Diagnostics.Debug.WriteLine($"[AudioService] Error pausing player: {ex.Message}"); 
+                #endif
+            }
             RaiseStateChanged(isPlaying: false, isPaused: true);
+
             return Task.CompletedTask;
         }
 
         public Task ResumeAsync()
         {
             if (_player is null || !IsPaused) return Task.CompletedTask;
-            try { _player.Play(); } catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[AudioService] Error playing player: {ex.Message}"); }
+            
+            try { _player.Play(); } 
+            catch (Exception ex) 
+            { 
+                #if DEBUG
+                System.Diagnostics.Debug.WriteLine($"[AudioService] Error playing player: {ex.Message}"); 
+                #endif
+            }
+            
             IsPaused = false;
+            
             RaiseStateChanged(isPlaying: true, isPaused: false);
             return Task.CompletedTask;
         }
@@ -225,7 +268,14 @@ namespace AudioGo.Services
             _speed = speed;
             if (_player is not null)
             {
-                try { _player.Speed = speed; } catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[AudioService] Error setting speed: {ex.Message}"); }
+                
+                try { _player.Speed = speed; } 
+                catch (Exception ex) 
+                { 
+                    #if DEBUG
+                    System.Diagnostics.Debug.WriteLine($"[AudioService] Error setting speed: {ex.Message}"); 
+                    #endif
+                }
             }
         }
 
@@ -237,22 +287,47 @@ namespace AudioGo.Services
             {
                 _player.Seek(positionSeconds);
             }
-            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[AudioService] Plugin may not support seek: {ex.Message}"); }
+            
+            catch (Exception ex) 
+            { 
+                #if DEBUG 
+                System.Diagnostics.Debug.WriteLine($"[AudioService] Plugin may not support seek: {ex.Message}"); 
+                #endif
+            }
             return Task.CompletedTask;
+
         }
 
         // ── Helpers ────────────────────────────────────────────────
         private void DisposePlayer()
         {
             if (_player is not null)
-            {
-                try { _player.Stop(); }    catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[AudioService] Error stopping in Dispose: {ex.Message}"); }
-                try { _player.Dispose(); } catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[AudioService] Error disposing player: {ex.Message}"); }
+            {      
+                try { _player.Stop(); }
+                catch (Exception ex) 
+                { 
+#if DEBUG
+                    System.Diagnostics.Debug.WriteLine($"[AudioService] Error stopping in Dispose: {ex.Message}"); 
+#endif
+                }
+                try { _player.Dispose(); }
+                catch (Exception ex) 
+                { 
+#if DEBUG
+                    System.Diagnostics.Debug.WriteLine($"[AudioService] Error disposing player: {ex.Message}"); 
+#endif
+                }
                 _player = null;
             }
             if (_currentStream is not null)
             {
-                try { _currentStream.Dispose(); } catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[AudioService] Error disposing stream: {ex.Message}"); }
+                try { _currentStream.Dispose(); }
+                catch (Exception ex) 
+                {
+#if DEBUG
+                    System.Diagnostics.Debug.WriteLine($"[AudioService] Error disposing stream: {ex.Message}"); 
+#endif
+                }
                 _currentStream = null;
             }
         }
@@ -271,7 +346,12 @@ namespace AudioGo.Services
             {
                 try { await action(_cts.Token); }
                 catch (OperationCanceledException) { break; }
-                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"[AudioService] Error processing playback queue: {ex.Message}"); }
+                catch (Exception ex) 
+                { 
+#if DEBUG
+                    System.Diagnostics.Debug.WriteLine($"[AudioService] Error processing playback queue: {ex.Message}"); 
+#endif
+                }
             }
             _isProcessing = false;
         }

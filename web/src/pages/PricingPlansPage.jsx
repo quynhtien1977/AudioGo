@@ -23,7 +23,7 @@ export default function PricingPlansPage() {
       toast.info("Bạn đang sử dụng gói này");
       return;
     }
-    navigate("/subscription/checkout", { state: { selectedPlan: plan } });
+    navigate("/admin/subscription/checkout", { state: { selectedPlan: plan } });
   };
 
   return (

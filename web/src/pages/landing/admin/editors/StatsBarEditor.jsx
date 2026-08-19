@@ -4,7 +4,7 @@ import { IconPickerField } from "../shared/IconPickerField";
 
 const ITEM_TEMPLATE = { icon: "Utensils", text: "100+ địa điểm" };
 
-export default function StatsBarEditor({ data, onChange }) {
+export default function StatsBarEditor({ data, onChange, sharedOnly, translationOnly, arrayActions }) {
   const upd = (key, val) => onChange({ ...data, [key]: val });
 
   const updItem = (idx, key, val) => {
@@ -16,25 +16,34 @@ export default function StatsBarEditor({ data, onChange }) {
   return (
     <div>
       <ArrayEditor
-        label="Mục thống kê trong thanh"
+        label="Các con số thống kê"
         items={data.items || []}
+        onMove={arrayActions ? (o, n) => arrayActions.onMove("items", o, n) : undefined}
+        onAddGlobal={arrayActions ? () => arrayActions.onAdd("items", { icon: "Utensils" }, { text: "100+ địa điểm" }) : undefined}
+        onRemoveGlobal={arrayActions ? (idx) => arrayActions.onRemove("items", idx) : undefined}
+        onReorder={(v) => upd("items", v)}
         addLabel="Thêm mục"
+        hideControls={translationOnly}
         onAdd={() => upd("items", [...(data.items || []), { ...ITEM_TEMPLATE }])}
         onRemove={(idx) => upd("items", (data.items || []).filter((_, i) => i !== idx))}
       >
         {(item, idx) => (
           <div className="grid grid-cols-2 gap-3">
-            <IconPickerField
-              label="Icon"
-              value={item.icon}
-              onChange={(v) => updItem(idx, "icon", v)}
-            />
-            <FieldInput
-              label="Nội dung"
-              value={item.text}
-              onChange={(v) => updItem(idx, "text", v)}
-              placeholder="100+ địa điểm"
-            />
+            {!translationOnly && (
+              <IconPickerField
+                label="Icon"
+                value={item.icon}
+                onChange={(v) => updItem(idx, "icon", v)}
+              />
+            )}
+            {!sharedOnly && (
+              <FieldInput
+                label="Nội dung hiển thị"
+                value={item.text}
+                onChange={(v) => updItem(idx, "text", v)}
+                placeholder="Ví dụ: Không cần internet khi tham quan"
+              />
+            )}
           </div>
         )}
       </ArrayEditor>

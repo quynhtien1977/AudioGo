@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using AudioGo.Helpers;
 using AudioGo.Services.Interfaces;
@@ -64,7 +64,9 @@ namespace AudioGo.Services
             SaveSession();
             _geofence.PoiTriggered += OnPoiTriggered;
 
+            #if DEBUG
             System.Diagnostics.Debug.WriteLine($"[TourSession] Bắt đầu: {tourId}, {orderedPoiIds.Count} điểm");
+            #endif
         }
 
         public void EndSession()
@@ -73,7 +75,9 @@ namespace AudioGo.Services
             _geofence.PoiTriggered -= OnPoiTriggered;
             ActiveSession = null;
             SaveSession();
+            #if DEBUG
             System.Diagnostics.Debug.WriteLine("[TourSession] Kết thúc session");
+            #endif
         }
 
         public void ResetSession()
@@ -83,7 +87,9 @@ namespace AudioGo.Services
             var ids    = ActiveSession.OrderedPoiIds;
             EndSession();
             StartSession(tourId, ids);  // tạo TourSession mới, VisitedPoiIds rỗng
+            #if DEBUG
             System.Diagnostics.Debug.WriteLine("[TourSession] Reset session");
+            #endif
         }
 
         private void OnPoiTriggered(object? sender, POI poi)
@@ -93,7 +99,9 @@ namespace AudioGo.Services
 
             SaveSession();
             PoiVisited?.Invoke(this, poi.PoiId);
+            #if DEBUG
             System.Diagnostics.Debug.WriteLine($"[TourSession] Đã đến: {poi.PoiId} — {ActiveSession.VisitedCount}/{ActiveSession.TotalCount}");
+            #endif
 
             if (ActiveSession.IsCompleted)
                 SessionCompleted?.Invoke(this, EventArgs.Empty);

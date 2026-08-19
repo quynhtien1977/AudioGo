@@ -11,7 +11,32 @@ export default function useAuth() {
     const raw =
       localStorage.getItem("user") ||
       sessionStorage.getItem("user");
-    return raw ? JSON.parse(raw) : null;
+    const token = 
+      localStorage.getItem("token") || 
+      sessionStorage.getItem("token");
+
+    if (!raw) return null;
+    let parsedUser = JSON.parse(raw);
+
+    // Xác thực role thật bằng cách giải mã JWT (tránh bị sửa ở client localStorage)
+    if (token) {
+      try {
+        const payloadBase64 = token.split('.')[1];
+        // Xử lý các token thiếu padding (base64url)
+        const base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+        const decodedPayload = JSON.parse(atob(base64));
+        
+        // ASP.NET lưu role bằng claim dài, đôi khi là 'role'
+        const realRole = decodedPayload.role || decodedPayload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
+        if (realRole) {
+          parsedUser.role = realRole;
+        }
+      } catch (err) {
+        console.error("Token decode error:", err);
+      }
+    }
+
+    return parsedUser;
   }, []);
 
   const login = async (identifier, password, rememberMe) => {

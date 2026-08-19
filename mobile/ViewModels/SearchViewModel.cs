@@ -1,4 +1,4 @@
-using AudioGo.Services.Interfaces;
+﻿using AudioGo.Services.Interfaces;
 using AudioGo.Helpers;
 using AudioGo_Mobile.Views;
 using AudioGo.Services;
@@ -435,7 +435,9 @@ namespace AudioGo.ViewModels
             }
             catch (Exception ex)
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[SearchViewModel] SyncArticlesRemoteAsync error for type {type}: {ex.Message}");
+                #endif
             }
         }
 

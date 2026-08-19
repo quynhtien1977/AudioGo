@@ -128,7 +128,7 @@ export default function AppReleasesManager() {
           <button
             type="submit"
             disabled={uploading}
-            className="w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-pink-500 to-orange-400 hover:shadow-md disabled:opacity-60 flex items-center justify-center gap-2 transition-all"
+            className="w-full py-3 rounded-xl font-semibold text-white bg-pink-600 hover:bg-pink-700 hover:shadow-md disabled:opacity-60 flex items-center justify-center gap-2 transition-all"
           >
             {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
             {uploading ? "Đang upload..." : "Upload APK"}

@@ -17,6 +17,7 @@ import {
 import PageLoader from "@/components/PageLoader"
 
 import POIMap from "@/components/POIMap"
+import EmptyState from "@/components/EmptyState"
 import StatsCard from "@/components/StatsCard"
 import PageHeader from "@/components/PageHeader"
 import StatusBadge from "@/components/StatusBadge"
@@ -554,13 +555,11 @@ export default function POIPage() {
       {isLoading ? (
         <PageLoader text="Đang tải dữ liệu POIs..." />
       ) : displayData.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-pink-100/30 shadow-sm animate-fadeIn">
-          <MapPin size={48} className="text-pink-200 mb-3" />
-          <h3 className="text-base font-bold text-gray-700">Không tìm thấy địa điểm POI nào</h3>
-          <p className="text-xs text-gray-400 mt-1 max-w-sm">
-            Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm để tìm các địa điểm khác trong hệ thống.
-          </p>
-        </div>
+        <EmptyState
+          icon={<MapPin size={40} />}
+          title="Không tìm thấy địa điểm POI nào"
+          description="Thử thay đổi bộ lọc hoặc từ khóa tìm kiếm để tìm các địa điểm khác trong hệ thống."
+        />
       ) : (
         <div className="bg-white rounded-2xl border border-pink-100/30 overflow-hidden shadow-sm animate-fadeIn">
           <table className="w-full text-sm">
@@ -681,7 +680,7 @@ export default function POIPage() {
                       )}
 
                       <NavLink
-                        to={`/pois/${poi.rank}`}
+                                                to={`/admin/pois/${poi.rank}`}
                         className="w-8 h-8 flex items-center justify-center rounded-full transition-colors text-pink-500 hover:text-pink-600 hover:bg-pink-50"
                         title="Xem chi tiết POI"
                         >
@@ -857,7 +856,7 @@ export default function POIPage() {
                       <div className="flex items-center gap-1">
                           {request.actionType !== "DELETE" && (
                             <NavLink
-                              to={`/pois/requests/${request.requestId}`}
+                                                            to={`/admin/pois/requests/${request.requestId}`}
                               className="w-8 h-8 flex items-center justify-center rounded-full transition-colors text-pink-500 hover:text-pink-600 hover:bg-pink-50"
                               title="Xem chi tiết POI"
                             >
@@ -926,7 +925,7 @@ export default function POIPage() {
 
         {role === "Owner" && (
           <NavLink
-            to="/pois/add"
+                        to="/admin/pois/add"
             className="group flex items-center gap-2 px-6 py-3 bg-pink-500 text-white rounded-2xl font-bold 
                       shadow-lg shadow-pink-200 hover:bg-pink-600 hover:shadow-pink-300 
                       transition-all duration-300 uppercase text-[10px] tracking-widest"

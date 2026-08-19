@@ -4,11 +4,12 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:views="clr-namespace:AudioGo_Mobile.Views"
+    xmlns:controls="clr-namespace:AudioGo_Mobile.Controls"
     Title="AudioGo"
-    Shell.TabBarBackgroundColor="{StaticResource Surface}"
+    Shell.TabBarBackgroundColor="{AppThemeBinding Light={StaticResource Surface}, Dark={StaticResource SurfaceDark}}"
     Shell.TabBarForegroundColor="{StaticResource Primary}"
     Shell.TabBarTitleColor="{StaticResource Primary}"
-    Shell.TabBarUnselectedColor="{StaticResource TextSecondary}">
+    Shell.TabBarUnselectedColor="{AppThemeBinding Light={StaticResource TextSecondary}, Dark={StaticResource TextSecondaryDark}}">
 
     <!-- ── Bottom Tab Bar ── -->
     <TabBar>
@@ -21,7 +22,7 @@
                 <FontImageSource
                     FontFamily="MaterialIcons"
                     Glyph="&#xe88a;"
-                    Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource Primary}}"
+                    Color="{StaticResource Primary}"
                     Size="26" />
             </ShellContent.Icon>
         </ShellContent>
@@ -35,7 +36,7 @@
                 <FontImageSource
                     FontFamily="MaterialIcons"
                     Glyph="&#xe55b;"
-                    Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource Primary}}"
+                    Color="{StaticResource Primary}"
                     Size="26" />
             </ShellContent.Icon>
         </ShellContent>
@@ -49,7 +50,7 @@
                 <FontImageSource
                     FontFamily="MaterialIcons"
                     Glyph="&#xe56f;"
-                    Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource Primary}}"
+                    Color="{StaticResource Primary}"
                     Size="26" />
             </ShellContent.Icon>
         </ShellContent>
@@ -63,7 +64,7 @@
                 <FontImageSource
                     FontFamily="MaterialIcons"
                     Glyph="&#xe8b6;"
-                    Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource Primary}}"
+                    Color="{StaticResource Primary}"
                     Size="26" />
             </ShellContent.Icon>
         </ShellContent>
@@ -77,13 +78,13 @@
                 <FontImageSource
                     FontFamily="MaterialIcons"
                     Glyph="&#xe8b8;"
-                    Color="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource Primary}}"
+                    Color="{StaticResource Primary}"
                     Size="26" />
             </ShellContent.Icon>
         </ShellContent>
     </TabBar>
 
-    <!-- ── Modal / Push Routes (không phải tab) ── -->
+    <!-- ── Modal / Push Routes (để trống, routes đăng ký trong code-behind) ── -->
     <Shell.Resources>
         <ResourceDictionary/>
     </Shell.Resources>

@@ -1,4 +1,4 @@
-using AudioGo.Services.Interfaces;
+﻿using AudioGo.Services.Interfaces;
 using AudioGo_Mobile.Config;
 using Microsoft.AspNetCore.SignalR.Client;
 
@@ -61,7 +61,9 @@ namespace AudioGo.Services
                 var token = await SecureStorage.GetAsync("GuestToken");
                 if (string.IsNullOrEmpty(token))
                 {
+                    #if DEBUG
                     System.Diagnostics.Debug.WriteLine("[SignalR] ⚠️  No JWT found — skip connect");
+                    #endif
                     return;
                 }
 
@@ -74,28 +76,38 @@ namespace AudioGo.Services
                 // Log reconnect lifecycle
                 _connection.Reconnecting  += ex =>
                 {
+                    #if DEBUG
                     System.Diagnostics.Debug.WriteLine($"[SignalR] 🔄 Reconnecting: {ex?.Message}");
+                    #endif
                     return Task.CompletedTask;
                 };
                 _connection.Reconnected += connId =>
                 {
+                    #if DEBUG
                     System.Diagnostics.Debug.WriteLine($"[SignalR] ✅ Reconnected: {connId}");
+                    #endif
                     return Task.CompletedTask;
                 };
                 _connection.Closed += ex =>
                 {
+                    #if DEBUG
                     System.Diagnostics.Debug.WriteLine($"[SignalR] ❌ Connection closed: {ex?.Message}");
+                    #endif
                     return Task.CompletedTask;
                 };
 
                 await _connection.StartAsync(ct);
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine("[SignalR] 🟢 Connected to DeviceHub");
+                #endif
             }
             catch (Exception ex)
             {
                 var innerMsg = ex.InnerException?.Message ?? "(no inner)";
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine(
                     $"[SignalR] ❌ StartAsync error: {ex.Message} | Inner: {innerMsg} | URL: {HubUrl}");
+                #endif
                 // Không throw — location tracking vẫn hoạt động offline
             }
             finally
@@ -108,7 +120,9 @@ namespace AudioGo.Services
         {
             if (e.NetworkAccess == NetworkAccess.Internet && !IsConnected)
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine("[SignalR] 🌐 Network restored, attempting to restart connection...");
+                #endif
                 try
                 {
                     // Chạy ngầm StartAsync
@@ -134,7 +148,9 @@ namespace AudioGo.Services
             catch (Exception ex)
             {
                 // Network hiccup — không crash app
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[SignalR] ⚠️  SendLocation error: {ex.Message}");
+                #endif
             }
         }
 
@@ -148,11 +164,15 @@ namespace AudioGo.Services
                 await _connection.StopAsync();
                 await _connection.DisposeAsync();
                 _connection = null;
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine("[SignalR] 🔴 Disconnected");
+                #endif
             }
             catch (Exception ex)
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[SignalR] StopAsync error: {ex.Message}");
+                #endif
             }
         }
 

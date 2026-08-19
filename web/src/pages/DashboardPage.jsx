@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import {
   MapPin, Headphones, LayoutDashboard, Clock,
-  Users, ArrowRight, ShieldCheck,
+  Users, ArrowRight, ShieldCheck, AlertTriangle, Bell, CheckCircle
 } from "lucide-react"
 
 import StatsCard from "@/components/StatsCard"
@@ -15,6 +15,7 @@ import { getTopPOIs, getListenStats } from "@/api/analyticsApi"
 import { getAllPOIs } from "@/api/poiApi"
 import { getPoiRequestStats } from "@/api/poiRequestApi"
 import { getUsersApi } from "@/api/accountApi"
+import { getExpiringSubscriptionsApi } from "@/api/subscriptionApi"
 
 export default function DashboardPage() {
   const navigate = useNavigate()
@@ -29,6 +30,9 @@ export default function DashboardPage() {
   // Admin-only extras
   const [pendingCount, setPendingCount] = useState(0)
   const [newAccountsCount, setNewAccountsCount] = useState(0)
+
+  // Admin alerts
+  const [alerts, setAlerts] = useState({ pendingOld: 0, expiringSoon: 0, lockedAccounts: 0 })
 
   // Get current user info
   useEffect(() => {
@@ -111,7 +115,7 @@ export default function DashboardPage() {
           getUsersApi(),
         ])
 
-        setPendingCount(requestStats?.totalPending ?? 0)
+        setPendingCount((requestStats?.newCount ?? 0) + (requestStats?.updateCount ?? 0) + (requestStats?.deleteCount ?? 0))
 
         // Đếm tài khoản tạo trong 7 ngày gần nhất
         const sevenDaysAgo = new Date()
@@ -127,6 +131,30 @@ export default function DashboardPage() {
     }
 
     fetchAdminExtras()
+  }, [userRole])
+
+  // Fetch Admin alerts data
+  useEffect(() => {
+    if (userRole !== "Admin") return
+    const fetchAlerts = async () => {
+      try {
+        const [expiringRes, allUsers] = await Promise.all([
+          getExpiringSubscriptionsApi(7),
+          getUsersApi(),
+        ])
+        const locked = (allUsers || []).filter(u => u.isLocked).length
+
+        // Đếm POI requests pending > 24h từ pendingCount đã có
+        const sevenDaysAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+        setAlerts({
+          expiringSoon: expiringRes?.count ?? 0,
+          lockedAccounts: locked,
+        })
+      } catch (err) {
+        console.error("Alerts fetch error:", err)
+      }
+    }
+    fetchAlerts()
   }, [userRole])
 
   if (!stats) {
@@ -220,6 +248,66 @@ export default function DashboardPage() {
                 <ArrowRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
               </button>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* ADMIN ALERTS WIDGET */}
+      {userRole === "Admin" && (
+        <div className="bg-white rounded-2xl border border-amber-100 shadow-sm p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Bell size={16} className="text-amber-500" />
+            <p className="text-xs font-bold text-amber-600 uppercase tracking-wider">Cảnh báo hệ thống</p>
+          </div>
+          <div className="flex flex-col gap-2">
+            {pendingCount === 0 && alerts.expiringSoon === 0 && alerts.lockedAccounts === 0 ? (
+              <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl">
+                <CheckCircle size={16} className="text-emerald-500" />
+                <p className="text-xs font-medium text-gray-500">Hệ thống đang hoạt động ổn định. Không có cảnh báo nào cần xử lý.</p>
+              </div>
+            ) : (
+              <>
+                {pendingCount > 0 && (
+                  <div
+                    onClick={() => navigate("/poi/management")}
+                    className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-100 rounded-xl cursor-pointer hover:bg-amber-100 transition-all"
+                  >
+                    <AlertTriangle size={16} className="text-amber-500 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-xs font-bold text-amber-700">{pendingCount} yêu cầu POI đang chờ xử lý</p>
+                      <p className="text-[10px] text-amber-500">Nhấp để xem danh sách yêu cầu</p>
+                    </div>
+                    <ArrowRight size={14} className="text-amber-400" />
+                  </div>
+                )}
+                {alerts.expiringSoon > 0 && (
+                  <div
+                    onClick={() => navigate("/subscriptions")}
+                    className="flex items-center gap-3 px-4 py-3 bg-orange-50 border border-orange-100 rounded-xl cursor-pointer hover:bg-orange-100 transition-all"
+                  >
+                    <Clock size={16} className="text-orange-500 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-xs font-bold text-orange-700">{alerts.expiringSoon} gói đăng ký sắp hết hạn (trong 7 ngày)</p>
+                      <p className="text-[10px] text-orange-500">Nhấp để quản lý gói đăng ký</p>
+                    </div>
+                    <ArrowRight size={14} className="text-orange-400" />
+                  </div>
+                )}
+                {alerts.lockedAccounts > 0 && (
+                  <div
+                    onClick={() => navigate("/accounts")}
+                    className="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-100 rounded-xl cursor-pointer hover:bg-red-100 transition-all"
+                  >
+                    <Users size={16} className="text-red-500 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-xs font-bold text-red-700">{alerts.lockedAccounts} tài khoản đang bị khóa</p>
+                      <p className="text-[10px] text-red-400">Nhấp để quản lý tài khoản</p>
+                    </div>
+                    <ArrowRight size={14} className="text-red-400" />
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       )}

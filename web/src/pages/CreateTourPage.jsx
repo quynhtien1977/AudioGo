@@ -59,7 +59,7 @@ const CreateTourPage = () => {
 
   // === LOGIC QUAY LẠI ===
   const handleGoBack = () => {
-    navigate("/tours");
+        navigate("/admin/tours");
   };
 
   // === LOGIC TẠO TOUR ===
@@ -99,7 +99,7 @@ const CreateTourPage = () => {
       }
 
       toast.success("Tạo Tour thành công!");
-      navigate(`/tours/${newTour.tourId}`);
+            navigate(`/admin/tours/${newTour.tourId}`);
     } catch (err) {
       console.error("Error creating tour:", err);
       toast.error("Lỗi khi tạo Tour");

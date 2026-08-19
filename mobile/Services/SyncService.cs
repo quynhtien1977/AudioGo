@@ -1,4 +1,4 @@
-using AudioGo.Data;
+﻿using AudioGo.Data;
 using AudioGo.Helpers;
 using AudioGo.Models;
 using AudioGo.Services.Interfaces;
@@ -86,7 +86,9 @@ namespace AudioGo.Services
             }
             catch (Exception ex)
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[SyncService] SwitchLanguage fetch failed: {ex.Message}");
+                #endif
                 PublishNotice("Không thể cập nhật ngôn ngữ. Dữ liệu hiện tại được giữ nguyên.");
                 return null;
             }
@@ -107,7 +109,9 @@ namespace AudioGo.Services
                 }
                 catch (Exception ex)
                 {
+                    #if DEBUG
                     System.Diagnostics.Debug.WriteLine($"[SyncService] SwitchLanguage background download error: {ex.Message}");
+                    #endif
                 }
             });
 
@@ -145,7 +149,9 @@ namespace AudioGo.Services
             }
             catch (Exception ex)
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[SyncService] Retry pending failed: {ex.Message}");
+                #endif
             }
         }
 
@@ -166,7 +172,9 @@ namespace AudioGo.Services
                         }
                         catch (Exception ex)
                         {
+                            #if DEBUG
                             System.Diagnostics.Debug.WriteLine($"[SyncService] Background refresh error: {ex.Message}");
+                            #endif
                         }
                     });
                 }
@@ -194,7 +202,9 @@ namespace AudioGo.Services
             }
             catch (Exception ex)
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[SyncService] GetPoisAsync server fetch failed: {ex.Message}");
+                #endif
                 return cached;
             }
         }
@@ -224,7 +234,9 @@ namespace AudioGo.Services
                         }
                         catch (Exception ex)
                         {
+                            #if DEBUG
                             System.Diagnostics.Debug.WriteLine($"[SyncService] GetPoisWithRefreshAsync background error: {ex.Message}");
+                            #endif
                         }
                     });
                 }
@@ -259,7 +271,9 @@ namespace AudioGo.Services
             }
             catch (Exception ex)
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[SyncService] GetPoisWithRefreshAsync first-run error: {ex.Message}");
+                #endif
                 return cached;
             }
         }
@@ -310,7 +324,9 @@ namespace AudioGo.Services
                         }
                         catch (Exception ex)
                         {
+                            #if DEBUG
                             System.Diagnostics.Debug.WriteLine($"[SyncService] Background refresh tours error: {ex.Message}");
+                            #endif
                         }
                     });
                 }
@@ -327,7 +343,9 @@ namespace AudioGo.Services
             }
             catch (Exception ex)
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[SyncService] GetToursAsync server fetch failed: {ex.Message}");
+                #endif
                 return cached;
             }
         }
@@ -720,7 +738,9 @@ namespace AudioGo.Services
                 }
                 catch (Exception ex)
                 {
+                    #if DEBUG
                     System.Diagnostics.Debug.WriteLine($"[SyncService] Download audio failed for {poi.PoiId}: {ex.Message}");
+                    #endif
                 }
             }
         }
@@ -760,7 +780,9 @@ namespace AudioGo.Services
                 }
                 catch (Exception ex)
                 {
+                    #if DEBUG
                     System.Diagnostics.Debug.WriteLine($"[SyncService] Download tour thumb failed for {tour.TourId}: {ex.Message}");
+                    #endif
                 }
             }
         }
@@ -815,7 +837,9 @@ namespace AudioGo.Services
                 }
                 catch (Exception ex)
                 {
+                    #if DEBUG
                     System.Diagnostics.Debug.WriteLine($"[SyncService] Download logo failed for {poi.PoiId}: {ex.Message}");
+                    #endif
                 }
             }
         }
@@ -893,7 +917,9 @@ namespace AudioGo.Services
             }
             catch (Exception ex)
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[SyncService] Download gallery failed for {poi.PoiId}: {ex.Message}");
+                #endif
             }
         }
 
@@ -950,7 +976,9 @@ namespace AudioGo.Services
             if ((now - _lastPolicyNoticeUtc) < TimeSpan.FromSeconds(20)) return;
             _lastPolicyNoticeUtc = now;
 
+            #if DEBUG
             System.Diagnostics.Debug.WriteLine($"[SyncService] Notice: {message}");
+            #endif
             MainThread.BeginInvokeOnMainThread(() => 
             {
                 SyncNotice?.Invoke(this, message);

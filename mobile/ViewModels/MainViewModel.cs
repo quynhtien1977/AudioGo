@@ -1,4 +1,4 @@
-using AudioGo.Helpers;
+﻿using AudioGo.Helpers;
 using AudioGo.Services;
 using AudioGo.Services.Interfaces;
 using AudioGo.ViewModels;
@@ -26,6 +26,12 @@ namespace AudioGo.ViewModels
         // ── Location state ──────────────────────────────────────────
         private (double Lat, double Lon)? _userLocation;
         private const double NearbyDisplayRadiusM = 50.0; // "điểm gần bạn" display radius (separate from geofence ActivationRadius)
+
+        // ── SignalR location throttle ─────────────────────────────────
+        private (double Lat, double Lon)? _lastSignalRLocation;
+        private DateTime _lastSignalRSentAt = DateTime.MinValue;
+        private const double SignalRMinMoveMeters = 10.0;   // gửi khi di chuyển >= 10m
+        private static readonly TimeSpan SignalRMaxInterval = TimeSpan.FromSeconds(15); // hoặc mỗi 15s
 
         // ── Pause tracking (to fix mini-player cross-POI resume bug) ───────
         private string? _pausedPoiId; // PoiId currently held in IsPaused state
@@ -59,26 +65,31 @@ namespace AudioGo.ViewModels
 
         private void UpdateNearbyPois()
         {
+            List<POI> nearby;
             if (_userLocation is null)
             {
-                _nearbyPois.Clear();
-                foreach (var p in _pois) _nearbyPois.Add(p);
+                nearby = _pois;
             }
             else
             {
                 var (uLat, uLon) = _userLocation.Value;
-                var nearby = _pois
+                nearby = _pois
                     .Select(p => (poi: p,
                                   dist: AudioGo.Helpers.GeoHelper.HaversineMeters(
                                             uLat, uLon, p.Latitude, p.Longitude)))
-                    .Where(x => x.dist <= NearbyDisplayRadiusM)          // cố định 50m
+                    .Where(x => x.dist <= NearbyDisplayRadiusM)
                     .OrderBy(x => x.dist)
                     .Select(x => x.poi)
                     .ToList();
-
-                _nearbyPois.Clear();
-                foreach (var p in nearby) _nearbyPois.Add(p);
             }
+
+            // ✔️ Skip re-render nếu danh sách không đổi (so sánh theo PoiId)
+            var currentIds = _nearbyPois.Select(p => p.PoiId).ToList();
+            var newIds     = nearby.Select(p => p.PoiId).ToList();
+            if (currentIds.SequenceEqual(newIds)) return;
+
+            _nearbyPois.Clear();
+            foreach (var p in nearby) _nearbyPois.Add(p);
 
             OnPropertyChanged(nameof(HasNearbyPois));
             OnPropertyChanged(nameof(NearbyEmpty));
@@ -284,7 +295,9 @@ namespace AudioGo.ViewModels
             }
             catch (Exception ex)
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[MainViewModel] LoadCategories error: {ex.Message}");
+                #endif
             }
         }
 
@@ -425,7 +438,9 @@ namespace AudioGo.ViewModels
                     }
                     catch (Exception ex)
                     {
+                        #if DEBUG
                         System.Diagnostics.Debug.WriteLine($"[DeltaPoll] tick error: {ex.Message}");
+                        #endif
                     }
                 }
             }
@@ -534,11 +549,23 @@ namespace AudioGo.ViewModels
         {
             _userLocation = (loc.Lat, loc.Lon);
             _geofence.OnLocationUpdated(loc.Lat, loc.Lon);
-            // Refresh nearby list whenever GPS position changes
+            // Refresh nearby list khi vị trí GPS thay đổi
             UpdateNearbyPois();
 
-            // Gửi GPS lên Hub (fire-and-forget, fail-safe)
-            _ = _signalR.SendLocationAsync(loc.Lat, loc.Lon);
+            // ── SignalR throttle: chỉ gửi khi di chuyển >= 10m HOẾ́C >= 15 giây ──
+            var now = DateTime.UtcNow;
+            bool movedEnough = _lastSignalRLocation is null ||
+                AudioGo.Helpers.GeoHelper.HaversineMeters(
+                    _lastSignalRLocation.Value.Lat, _lastSignalRLocation.Value.Lon,
+                    loc.Lat, loc.Lon) >= SignalRMinMoveMeters;
+            bool timeElapsed = (now - _lastSignalRSentAt) >= SignalRMaxInterval;
+
+            if (movedEnough || timeElapsed)
+            {
+                _lastSignalRLocation = loc;
+                _lastSignalRSentAt   = now;
+                _ = _signalR.SendLocationAsync(loc.Lat, loc.Lon);
+            }
         }
 
         private async void OnPoiTriggered(object? sender, POI poi)
@@ -574,12 +601,16 @@ namespace AudioGo.ViewModels
             {
                 var deviceId = await SecureStorage.GetAsync("AppDeviceId") ?? "unknown";
                 await _api.PostListenHistoryAsync(poiId, deviceId, durationSec);
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[ListenHistory] Logged: poi={poiId}, duration={durationSec}s");
+                #endif
             }
             catch (Exception ex)
             {
                 // Không làm crash app — offline/network failure là bình thường
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[ListenHistory] Failed to log: {ex.Message}");
+                #endif
             }
         }
 
@@ -621,7 +652,9 @@ namespace AudioGo.ViewModels
             }
             catch (Exception ex)
             {
+                #if DEBUG
                 System.Diagnostics.Debug.WriteLine($"[ContinueListening] UpsertLocal error: {ex.Message}");
+                #endif
             }
         }
 
@@ -669,7 +702,9 @@ namespace AudioGo.ViewModels
                 }
                 catch (Exception ex)
                 {
+                    #if DEBUG
                     System.Diagnostics.Debug.WriteLine($"[ContinueListening] Server sync error: {ex.Message}");
+                    #endif
                 }
             });
         }
