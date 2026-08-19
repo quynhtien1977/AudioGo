@@ -1,0 +1,7 @@
+# Không cần copy các file sau vào Docker image
+bin/
+obj/
+*.user
+*.suo
+.env
+appsettings.Development.json

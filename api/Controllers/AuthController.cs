@@ -20,14 +20,16 @@ namespace Server.Controllers
         private readonly IEmailService _email;
         private readonly IConfiguration _config;
         private readonly IWebHostEnvironment _env;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(AuthService auth, AppDbContext db, IEmailService email, IConfiguration config, IWebHostEnvironment env)
+        public AuthController(AuthService auth, AppDbContext db, IEmailService email, IConfiguration config, IWebHostEnvironment env, ILogger<AuthController> logger)
         {
             _auth   = auth;
             _db     = db;
             _email  = email;
             _config = config;
             _env    = env;
+            _logger = logger;
         }
 
         // POST /api/auth/login
@@ -46,7 +48,8 @@ namespace Server.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                _logger.LogError(ex, "Login thất bại");
+                return BadRequest("Đăng nhập thất bại. Vui lòng thử lại.");
             }
         }
 

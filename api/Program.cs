@@ -183,6 +183,7 @@ builder.Services.AddRateLimiter(opts =>
 // ── Controllers & OpenAPI ─────────────────────────────────────────────
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+builder.Services.AddHealthChecks(); // ✅ REQUIRED: Render/Azure health probe
 
 // ─────────────────────────────────────────────────────────────────────
 var app = builder.Build();
@@ -208,6 +209,7 @@ app.UseRateLimiter();       // ✅ Rate Limiting — sau CORS, trước Auth
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHealthChecks("/health"); // ✅ Render/Azure health probe endpoint
 app.MapHub<DeviceHub>("/deviceHub")     // ✅ MAP SIGNALR HUB
    .RequireCors("WebCmsPolicy");         // ✅ HUB CẦN EXPLICIT CORS — [Authorize] không đủ
 
