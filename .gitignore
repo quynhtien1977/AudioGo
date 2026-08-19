@@ -1,4 +1,4 @@
-## AudioGo - Root .gitignore
+﻿## AudioGo - Root .gitignore
 ## Covers all 3 projects: AudioGo (Client), Server, Shared
 ## Generated from `dotnet new gitignore`
 
@@ -262,3 +262,10 @@ docs/
 skills/
 skills-lock.json
 .mcp.json
+
+
+# Shared project - loại build artifacts nhưng giữ source
+shared/bin/
+shared/obj/
+shared/obj_alt*/
+shared/artifacts/

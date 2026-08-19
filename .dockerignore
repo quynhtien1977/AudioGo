@@ -1,19 +1,19 @@
-# ──────────────────────────────────────────────────────────────────────
+﻿# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 # Docker build context excludes
-# File này phải ở ROOT workspace (cùng cấp với AudioGo.sln)
-# Docker đọc .dockerignore tại root của build context, KHÔNG phải trong api/
-# ──────────────────────────────────────────────────────────────────────
+# File nÃ y pháº£i á»Ÿ ROOT workspace (cÃ¹ng cáº¥p vá»›i AudioGo.sln)
+# Docker Ä‘á»c .dockerignore táº¡i root cá»§a build context, KHÃ”NG pháº£i trong api/
+# â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-# Build artifacts — chứa NuGet cache với đường dẫn Windows hardcode
-# Đây là nguyên nhân lỗi: "Unable to find fallback package folder C:\..."
+# Build artifacts â€” chá»©a NuGet cache vá»›i Ä‘Æ°á»ng dáº«n Windows hardcode
+# ÄÃ¢y lÃ  nguyÃªn nhÃ¢n lá»—i: "Unable to find fallback package folder C:\..."
 api/bin/
 api/obj/
-shared/bin/
-shared/obj/
+Shared/bin/
+Shared/obj/
 mobile/bin/
 mobile/obj/
 
-# Secrets và config local
+# Secrets vÃ  config local
 api/.env
 api/appsettings.Development.json
 
@@ -22,7 +22,7 @@ api/appsettings.Development.json
 **/*.suo
 .vs/
 
-# Web frontend — không cần trong Docker image backend
+# Web frontend â€” khÃ´ng cáº§n trong Docker image backend
 web/node_modules/
 web/dist/
 
@@ -30,7 +30,8 @@ web/dist/
 .git/
 .github/
 
-# Docs và files không liên quan đến build
+# Docs vÃ  files khÃ´ng liÃªn quan Ä‘áº¿n build
 docs/
 database/
 *.md
+

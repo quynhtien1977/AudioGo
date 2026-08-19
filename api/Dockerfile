@@ -9,13 +9,13 @@ WORKDIR /src
 # (chỉ restore lại khi .csproj thay đổi)
 COPY AudioGo.sln ./
 COPY api/Api.csproj ./api/
-COPY shared/Shared.csproj ./shared/
+COPY Shared/Shared.csproj ./shared/
 
 RUN dotnet restore api/Api.csproj
 
 # Copy toàn bộ source code
 COPY api/ ./api/
-COPY shared/ ./shared/
+COPY Shared/ ./shared/
 
 # Publish ra /app/publish (self-contained = false, dùng runtime image)
 WORKDIR /src/api
