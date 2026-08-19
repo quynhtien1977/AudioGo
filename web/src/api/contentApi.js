@@ -1,11 +1,11 @@
-import axios from "axios"
+﻿import axios from "axios"
 
 // ================= BASE API =================
 const getToken = () =>
   localStorage.getItem("token") || sessionStorage.getItem("token")
 
 const api = axios.create({
-  baseURL: "http://localhost:5086/api", // sửa lại nếu port khác
+  baseURL: (import.meta.env.VITE_API_URL || "http://localhost:5086/api"), // sửa lại nếu port khác
   headers: {
       Authorization: `Bearer ${getToken()}`
     } // tự động thêm token nếu đã đăng nhập
