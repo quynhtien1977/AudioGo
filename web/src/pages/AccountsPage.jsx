@@ -429,6 +429,7 @@ export default function AccountsPage() {
                   >
                     <option value="Admin">Admin</option>
                     <option value="Owner">Owner</option>
+                    <option value="Editor">Editor</option>
                   </select>
                 </div>
 
