@@ -49,7 +49,7 @@ export default function Topbar() {
   const handleLogout = () => {
     localStorage.clear()
     sessionStorage.clear()
-    navigate("/")
+    navigate("/login")
   }
 
   // Determine placeholder text based on the current route

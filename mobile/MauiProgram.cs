@@ -57,19 +57,15 @@ public static class MauiProgram
         builder.Services
             .AddHttpClient<IApiService, ApiService>(client =>
             {
-                // 10.0.2.2 = IP đặc biệt dành cho Android Emulator kết nối về localhost của PC
-                // Đổi về 192.168.x.x nếu dùng thiết bị thật trên cùng mạng WiFi
+                // RELEASE: trỏ về https://audiogo.onrender.com
+                // DEBUG:   10.0.2.2 (Emulator) hoặc LAN IP (thiết bị thật)
                 client.BaseAddress = new Uri(EndpointConfig.GetApiBaseUrl(DeviceInfo.DeviceType));
-                // Qua tunnel (ngrok) có thể handshake/chuyển tuyến chậm hơn mạng LAN.
                 client.Timeout = TimeSpan.FromSeconds(25);
-                // Ưu tiên HTTP/1.1 để giảm nguy cơ stream reset trên một số Android + tunnel.
                 client.DefaultRequestVersion = HttpVersion.Version11;
                 client.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower;
             })
             .ConfigurePrimaryHttpMessageHandler(() =>
             {
-                // Một số mạng di động/WiFi đẩy request qua proxy hệ thống làm
-                // POST body bị ngắt sớm khi đi qua tunnel.
                 return new HttpClientHandler
                 {
                     UseProxy = false

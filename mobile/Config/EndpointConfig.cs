@@ -5,7 +5,7 @@ public static class EndpointConfig
 #if RELEASE
     // ── PRODUCTION ────────────────────────────────────────────────────────
     // URL API production — thay bằng domain thật sau khi deploy Render xong
-    private const string ProductionBaseUrl = "https://audiogo-api.onrender.com/";
+    private const string ProductionBaseUrl = "https://audiogo.onrender.com/";
 
     public static string GetApiBaseUrl(DeviceType deviceType) => ProductionBaseUrl;
     public static string GetHubUrl(DeviceType deviceType) => $"{ProductionBaseUrl}deviceHub";
