@@ -105,6 +105,14 @@ export function SubscriptionProvider({ children }) {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!user) {
+        setPlans([]);
+        setCurrentSubscription(null);
+        setLoading(false);
+        setError(null);
+        return;
+      }
+
       setLoading(true);
 
       const promises = [subscriptionApi.getSubscriptionPlansApi()];
