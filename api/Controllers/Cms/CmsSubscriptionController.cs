@@ -303,6 +303,73 @@ namespace Server.Controllers.Cms
             });
         }
 
+        /// <summary>
+        /// DELETE /api/cms/subscriptions/plans/{planId}
+        /// Admin xóa gói:
+        /// - Chặn xóa nếu có OwnerSubscription đang ACTIVE hoặc PaymentTransaction PENDING/SUCCESS
+        /// - Nếu giao dịch chỉ là FAILED/EXPIRED/CANCELLED hoặc không có: dọn dẹp FK và xóa vĩnh viễn (ẩn hoàn toàn khỏi UI Admin và User)
+        /// </summary>
+        [HttpDelete("plans/{planId}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeletePlan(string planId)
+        {
+            var plan = await _db.SubscriptionPlans.FindAsync(planId);
+            if (plan == null)
+                return NotFound("Không tìm thấy gói.");
+
+            // 1. Kiểm tra có subscription đang ACTIVE hay không
+            var hasActiveSubscriptions = await _db.OwnerSubscriptions
+                .AnyAsync(s => s.PlanId == planId && s.Status == "ACTIVE");
+
+            if (hasActiveSubscriptions)
+                return BadRequest("Không thể xóa gói đang có người dùng hoạt động (ACTIVE). Hãy ẩn gói thay vì xóa.");
+
+            // 2. Kiểm tra có giao dịch thành công (SUCCESS) hoặc đang chờ xử lý (PENDING)
+            var hasBlockingTx = await _db.PaymentTransactions
+                .AnyAsync(t => t.PlanId == planId && (t.Status == "PENDING" || t.Status == "SUCCESS"));
+
+            if (hasBlockingTx)
+                return BadRequest("Không thể xóa gói đã có giao dịch thành công hoặc đang chờ xử lý. Hãy ẩn gói thay vì xóa để bảo toàn dữ liệu lịch sử.");
+
+            // 3. Dọn dẹp các giao dịch không hoàn tất (FAILED, EXPIRED, CANCELLED, etc.) để gỡ ràng buộc khóa ngoại (FK)
+            var nonBlockingTx = await _db.PaymentTransactions
+                .Where(t => t.PlanId == planId && t.Status != "SUCCESS" && t.Status != "PENDING")
+                .ToListAsync();
+
+            if (nonBlockingTx.Count > 0)
+            {
+                _db.PaymentTransactions.RemoveRange(nonBlockingTx);
+            }
+
+            // Dọn dẹp các subscription không active (hết hạn / đã hủy) nếu có
+            var nonActiveSubs = await _db.OwnerSubscriptions
+                .Where(s => s.PlanId == planId && s.Status != "ACTIVE")
+                .ToListAsync();
+
+            if (nonActiveSubs.Count > 0)
+            {
+                _db.OwnerSubscriptions.RemoveRange(nonActiveSubs);
+            }
+
+            // Dọn dẹp shortcut SubscriptionPlanId ở bảng Account nếu đang trỏ tới gói này
+            var accountsWithPlan = await _db.Accounts
+                .Where(a => a.SubscriptionPlanId == planId)
+                .ToListAsync();
+
+            foreach (var acc in accountsWithPlan)
+            {
+                acc.SubscriptionPlanId = "basic";
+            }
+
+            // 4. Xóa gói khỏi database (gói sẽ biến mất hoàn toàn trên UI Admin và User)
+            _db.SubscriptionPlans.Remove(plan);
+            await _db.SaveChangesAsync();
+
+            _logger.LogInformation("Admin deleted subscription plan {PlanId}", planId);
+
+            return Ok(new { message = $"Đã xóa gói '{plan.Name}' thành công." });
+        }
+
         // ══════════════════════════════════════════════════════════════════
         //  OWNER CURRENT SUBSCRIPTION
         // ══════════════════════════════════════════════════════════════════

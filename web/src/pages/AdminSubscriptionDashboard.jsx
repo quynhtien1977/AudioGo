@@ -10,6 +10,7 @@ import {
   Activity,
   Archive,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as subscriptionApi from "@/api/subscriptionApi";
@@ -57,6 +58,7 @@ export const AdminSubscriptionDashboard = () => {
   const [editingPlanId, setEditingPlanId] = useState(null);
   const [editFormData, setEditFormData] = useState({});
   const [isCreating, setIsCreating] = useState(false);
+  const [deletingPlanId, setDeletingPlanId] = useState(null); // planId đang confirm delete
 
   const fetchPlans = async () => {
     try {
@@ -327,6 +329,38 @@ export const AdminSubscriptionDashboard = () => {
 
       toast.error(
         "Không thể cập nhật trạng thái gói!",
+      );
+    }
+  };
+
+  const handleDeletePlan = async (plan) => {
+    if (plan.isActive) {
+      toast.error("Hãy ẩn gói trước khi xóa để đảm bảo an toàn.");
+      return;
+    }
+    if (deletingPlanId !== plan.planId) {
+      // Lần đầu bấm → yêu cầu xác nhận
+      setDeletingPlanId(plan.planId);
+      toast(
+        `Bấm lại "Xóa" để xác nhận xóa vĩnh viễn gói "${plan.name}"`,
+        { icon: "⚠️", duration: 4000 }
+      );
+      setTimeout(() => setDeletingPlanId(null), 5000);
+      return;
+    }
+    // Lần 2 → xóa thật
+    try {
+      setDeletingPlanId(null);
+      const toastId = toast.loading("Đang xóa gói...");
+      await subscriptionApi.deleteSubscriptionPlanApi(plan.planId);
+      setPlans((prev) => prev.filter((p) => p.planId !== plan.planId));
+      toast.success(`Đã xóa gói "${plan.name}"!`, { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error(
+        err?.response?.data?.message ||
+        err?.response?.data ||
+        "Không thể xóa gói!"
       );
     }
   };
@@ -633,10 +667,7 @@ export const AdminSubscriptionDashboard = () => {
                         ) : (
                           <Eye size={16} />
                         )}
-
-                        {plan.isActive
-                          ? "Ẩn Gói"
-                          : "Hiện Gói"}
+                        {plan.isActive ? "Ẩn Gói" : "Hiện Gói"}
                       </button>
 
                       <button
@@ -649,6 +680,21 @@ export const AdminSubscriptionDashboard = () => {
                         Sửa Gói
                       </button>
                     </div>
+
+                    {/* Nút xóa — chỉ hiện khi plan đang ẩn */}
+                    {!plan.isActive && (
+                      <button
+                        onClick={() => handleDeletePlan(plan)}
+                        className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                          deletingPlanId === plan.planId
+                            ? "bg-red-600 border-red-700 text-white animate-pulse"
+                            : "bg-red-50 border-red-100 text-red-500 hover:bg-red-100"
+                        }`}
+                      >
+                        <Trash2 size={14} />
+                        {deletingPlanId === plan.planId ? "Xác nhận xóa vĩnh viễn" : "Xóa Gói"}
+                      </button>
+                    )}
                   </>
                 )}
               </div>

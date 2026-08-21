@@ -131,8 +131,8 @@ export function SubscriptionProvider({ children }) {
 
       const nextPlans =
         plansResult.status === "fulfilled"
-          ? mergeCurrentPlanIntoPlans(plansResult.value, nextSubscription)
-          : mergeCurrentPlanIntoPlans([], nextSubscription);
+          ? normalizePlans(plansResult.value)
+          : [];
 
       setPlans(nextPlans);
       setCurrentSubscription(nextSubscription);
@@ -155,12 +155,12 @@ export function SubscriptionProvider({ children }) {
     };
 
     fetchData();
-  }, [user?.role]);
+  }, [user?.accountId, user?.role]);
 
   const fetchPlans = async () => {
     try {
       const data = await subscriptionApi.getSubscriptionPlansApi();
-      const normalized = mergeCurrentPlanIntoPlans(data, currentSubscription);
+      const normalized = normalizePlans(data);
       setPlans(normalized);
       setError(null);
       return normalized;
@@ -177,7 +177,6 @@ export function SubscriptionProvider({ children }) {
       const data = await subscriptionApi.getMySubscriptionApi();
       const normalized = normalizeCurrentSubscription(data);
       setCurrentSubscription(normalized);
-      setPlans((prevPlans) => mergeCurrentPlanIntoPlans(prevPlans, normalized));
       setError(null);
       return normalized;
     } catch (err) {
@@ -215,8 +214,17 @@ export function SubscriptionProvider({ children }) {
     }
   };
 
-  // Alias: dùng để refresh sau khi thanh toán thành công
-  const refreshSubscription = fetchMySubscription;
+  // Làm mới cả danh sách gói và thông tin gói hiện tại
+  const refreshSubscription = async () => {
+    try {
+      await Promise.allSettled([
+        fetchPlans(),
+        user?.role === "Owner" ? fetchMySubscription() : Promise.resolve(),
+      ]);
+    } catch (e) {
+      console.error("Error refreshing subscription state:", e);
+    }
+  };
 
   const value = {
     plans,
