@@ -12,7 +12,9 @@ import {
   Trash,
   Plus,
   SquareMenu,
-  MapPin
+  MapPin,
+  Clock,
+  AlertTriangle
 } from "lucide-react"
 import PageLoader from "@/components/PageLoader"
 
@@ -27,10 +29,12 @@ import { getPriorityColor, getPriorityInfo } from "@/components/PriorityBadge"
 import { getAllPOIs, updatePOI, deletePOI } from "@/api/poiApi"
 import { getContentsByPOI } from "@/api/contentApi"
 import { getMyPoiRequests, getPoiRequestDetail, createPoiRequest } from "@/api/poiRequestApi"
+import { getPoiGraceStatusApi } from "@/api/subscriptionApi"
 
 import useAuth from "@/hooks/useAuth"
 import { SearchContext } from "@/context/SearchContext"
 import { formatDateVN } from "@/utils/formatDate"
+import { useSubscription } from "@/context/SubscriptionContext"
 
 
 export default function POIPage() {
@@ -39,6 +43,14 @@ export default function POIPage() {
   const { searchFilter } = useContext(SearchContext)
   const role = user?.role;
   const accountId = user?.accountId;
+
+  // POI limit guard — chỉ tính cho Owner
+  const { currentSubscription } = useSubscription();
+  const maxPoiCount = currentSubscription?.maxPoiCount ?? currentSubscription?.currentPlan?.maxPoiCount ?? -1;
+
+  // Grace period state (downgrade)
+  const [graceStatus, setGraceStatus] = useState(null);
+  const [graceBannerDismissed, setGraceBannerDismissed] = useState(false);
 
   const [pois, setPois] = useState([])
   const [filteredPois, setFilteredPois] = useState([])
@@ -150,6 +162,14 @@ export default function POIPage() {
       controller.abort()
     }
   }, [role, accountId])
+
+  // Fetch grace period status cho Owner
+  useEffect(() => {
+    if (role !== "Owner") return;
+    getPoiGraceStatusApi()
+      .then(data => { if (data?.inGracePeriod) setGraceStatus(data); })
+      .catch(() => {});
+  }, [role]);
 
   // Fetch PoiRequests for Owner
   useEffect(() => {
@@ -440,6 +460,36 @@ export default function POIPage() {
         description="Đăng tải, phê duyệt và quản lý các điểm quan tâm (POI) của AudioGo."
         icon={<MapPin size={24} />}
       />
+
+      {/* Banner cảnh báo grace period sau downgrade */}
+      {graceStatus?.inGracePeriod && !graceBannerDismissed && (
+        <div className="flex items-start gap-4 bg-amber-50 border border-amber-300 rounded-2xl p-4 shadow-sm">
+          <div className="p-2 bg-amber-100 rounded-full shrink-0">
+            <Clock size={18} className="text-amber-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-amber-900 text-sm">
+              ⚠️ Giới hạn POI sau khi hạ cấp gói
+            </p>
+            <p className="text-amber-800 text-sm mt-0.5">
+              Gói <strong>{graceStatus.planName}</strong> cho phép tối đa{" "}
+              <strong>{graceStatus.maxAllowed} POI</strong>. Bạn đang có{" "}
+              <strong>{graceStatus.activePois} POI</strong> ({graceStatus.excessPois} vượt giới hạn).{" "}
+              {graceStatus.hoursLeft > 0
+                ? <span>Hệ thống sẽ tự ẩn POI thừa sau <strong>{graceStatus.hoursLeft} giờ</strong> nữa. Ẩn thủ công POI thừa để tránh bị ẩn ngẫu nhiên.</span>
+                : <span>Thời gian ân hạn đã hết. Hệ thống sẽ xử lý trong lần quét tiếp theo.</span>
+              }
+            </p>
+          </div>
+          <button
+            onClick={() => setGraceBannerDismissed(true)}
+            className="text-amber-500 hover:text-amber-700 transition shrink-0 p-1 rounded"
+            title="Ẩn thông báo"
+          >
+            <CircleX size={18} />
+          </button>
+        </div>
+      )}
 
       {/* STATCARD */}
       <div className="grid grid-cols-3 gap-6">
@@ -923,18 +973,61 @@ export default function POIPage() {
 
       <div className="flex justify-end items-center mb-6">
 
-        {role === "Owner" && (
-          <NavLink
-                        to="/admin/pois/add"
-            className="group flex items-center gap-2 px-6 py-3 bg-pink-500 text-white rounded-2xl font-bold 
-                      shadow-lg shadow-pink-200 hover:bg-pink-600 hover:shadow-pink-300 
-                      transition-all duration-300 uppercase text-[10px] tracking-widest"
-            >
-            <Plus size={16} className="group-hover:rotate-90 transition-transform duration-300" />
-            Thêm POI mới
-          </NavLink>
-        )}
-        
+        {role === "Owner" && (() => {
+          // Tính số POI active hiện tại của owner
+          const activePois = pois.filter(p => p.isActive).length;
+          const isUnlimited = maxPoiCount === -1;
+          const atLimit = !isUnlimited && activePois >= maxPoiCount;
+
+          return (
+            <div className="flex flex-col items-end gap-1">
+              {/* POI counter badge */}
+              {!isUnlimited && (
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                  atLimit
+                    ? "bg-red-100 text-red-600"
+                    : activePois >= maxPoiCount * 0.8
+                      ? "bg-amber-100 text-amber-600"
+                      : "bg-gray-100 text-gray-500"
+                }`}>
+                  {activePois}/{maxPoiCount} POI đang hoạt động
+                </span>
+              )}
+
+              {atLimit ? (
+                <div className="relative group/poi-btn">
+                  <button
+                    disabled
+                    className="flex items-center gap-2 px-6 py-3 bg-gray-300 text-gray-500 rounded-2xl font-bold
+                              cursor-not-allowed uppercase text-[10px] tracking-widest opacity-70"
+                  >
+                    <Plus size={16} />
+                    Thêm POI mới
+                  </button>
+                  {/* Tooltip giải thích */}
+                  <div className="absolute bottom-full right-0 mb-2 w-64 bg-gray-800 text-white text-xs rounded-xl p-3
+                                  opacity-0 group-hover/poi-btn:opacity-100 transition-opacity pointer-events-none z-50">
+                    Bạn đã đạt giới hạn <strong>{maxPoiCount} POI</strong> của gói hiện tại.
+                    Hãy nâng cấp gói để tạo thêm điểm tham quan.
+                    <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4
+                                    border-l-transparent border-r-transparent border-t-gray-800" />
+                  </div>
+                </div>
+              ) : (
+                <NavLink
+                  to="/admin/pois/add"
+                  className="group flex items-center gap-2 px-6 py-3 bg-pink-500 text-white rounded-2xl font-bold
+                            shadow-lg shadow-pink-200 hover:bg-pink-600 hover:shadow-pink-300
+                            transition-all duration-300 uppercase text-[10px] tracking-widest"
+                >
+                  <Plus size={16} className="group-hover:rotate-90 transition-transform duration-300" />
+                  Thêm POI mới
+                </NavLink>
+              )}
+            </div>
+          );
+        })()}
+
       </div>
 
       {/* MAP */}

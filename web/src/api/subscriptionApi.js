@@ -71,6 +71,16 @@ export const getSubscriptionPlanByIdApi =
   }
 
 /**
+ * GET /cms/subscriptions/poi-grace-status
+ * Owner kiểm tra grace period sau downgrade gói (có POI vượt giới hạn).
+ * Trả về { inGracePeriod, hoursLeft, activePois, maxAllowed, excessPois, planName, message }
+ */
+export const getPoiGraceStatusApi = async () => {
+  const res = await client.get("/cms/subscriptions/poi-grace-status")
+  return res.data
+}
+
+/**
  * CREATE NEW PLAN
  * ADMIN ONLY
  */
