@@ -63,7 +63,11 @@ namespace Shared.DTOs
     public record TourPoiDto(
         string PoiId,
         string Title,
-        int StepOrder
+        int StepOrder,
+        string? LogoUrl = null,
+        double? Latitude = null,
+        double? Longitude = null,
+        IReadOnlyList<string>? Categories = null
     );
 
     /// <summary>Mobile dùng để chạy Tour chi tiết từng bước.</summary>

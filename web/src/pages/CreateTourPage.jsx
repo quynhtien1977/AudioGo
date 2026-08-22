@@ -2,12 +2,13 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { 
   ArrowLeft, Plus, GripVertical, Trash2, 
-  MapPin, Upload, X, Loader2, Search
+  MapPin, Upload, X, Loader2, Search, HelpCircle
 } from "lucide-react";
 import toast from "react-hot-toast";
 
 import TourRouteMap from "@/components/TourRouteMap";
 import ConfirmModal from "@/components/ConfirmModal";
+import HelpGuide from "@/components/HelpGuide";
 import { createTourApi, addPoiToTourApi, removePoiFromTourApi, reorderPoiInTourApi } from "@/api/tourApi";
 import { getAllPOIs } from "@/api/poiApi";
 import { uploadImage } from "@/api/mediaApi";
@@ -29,6 +30,7 @@ const CreateTourPage = () => {
   });
 
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showHelpGuide, setShowHelpGuide] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteConfirmPoiId, setDeleteConfirmPoiId] = useState(null);
   const [draggedIndex, setDraggedIndex] = useState(null);
@@ -166,13 +168,21 @@ const CreateTourPage = () => {
     try {
       const stepOrder = (tour.pois?.length || 0) + 1;
       const poiId = poi.poiId || poi.id;
-      const poiTitle = poi.title || poi.name || "Untitled POI";
+      const poiTitle = poi.title || poi.name || poi.Name || "Untitled POI";
+      const logoUrl = poi.logoUrl || poi.thumbnailUrl || poi.LogoUrl || "";
+      const categories = poi.categories || (poi.category ? [poi.category] : []);
+      const latitude = poi.latitude || poi.lat || 0;
+      const longitude = poi.longitude || poi.lng || 0;
       
       setTour(prev => ({
         ...prev,
         pois: [...(prev.pois || []), {
           poiId: poiId,
           title: poiTitle,
+          logoUrl: logoUrl,
+          categories: categories,
+          latitude: latitude,
+          longitude: longitude,
           stepOrder: stepOrder
         }]
       }));
@@ -328,14 +338,32 @@ const CreateTourPage = () => {
           {/* DANH SÁCH ĐỊA ĐIỂM */}
           <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-10 space-y-6">
             <div className="flex justify-between items-center">
-              <h3 className="font-bold text-xl text-gray-800">Thứ tự địa điểm thăm quan</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-xl text-gray-800">Thứ tự địa điểm thăm quan</h3>
+                <HelpGuide
+                  title="Hướng dẫn Tạo Tour Trải Nghiệm"
+                  steps={[
+                    "Điền <strong>Tên Tour</strong> và <strong>Mô tả</strong> ngắn gọn, hấp dẫn cho chuyến tham quan.",
+                    "Tải lên <strong>Ảnh Thumbnail</strong> chất lượng cao đại diện cho Tour.",
+                    "Bấm <strong>Thêm địa điểm</strong> để chọn các POI yêu thích vào hành trình (tìm kiếm theo tên hoặc danh mục).",
+                    "Kéo thả biểu tượng <strong>⠿</strong> để điều chỉnh thứ tự di chuyển mong muốn giữa các điểm dừng.",
+                    "Kiểm tra đường nối lộ trình trên <strong>Bản đồ</strong> bên phải và nhấp <strong>Tạo Tour</strong> để hoàn tất."
+                  ]}
+                  tips={[
+                    "Nên chọn tối thiểu 2-3 điểm đến gần nhau để lộ trình di chuyển của khách du lịch được thuận tiện nhất.",
+                    "Các điểm dừng chân sẽ được đánh số theo đúng thứ tự 1, 2, 3... khi du khách trải nghiệm trên ứng dụng di động."
+                  ]}
+                />
+              </div>
+
               <button 
                 onClick={() => setShowAddModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-pink-50 text-pink-600 rounded-xl text-sm font-bold hover:bg-pink-600 hover:text-white transition-all"
+                className="flex items-center gap-2 px-4 py-2 bg-pink-50 text-pink-600 rounded-xl text-sm font-bold hover:bg-pink-600 hover:text-white transition-all shadow-sm"
               >
                 <Plus size={16} /> Thêm địa điểm
               </button>
             </div>
+
             <div className="space-y-4">
               {tour.pois && tour.pois.length > 0 ? (
                 tour.pois.map((poi, index) => (
@@ -346,18 +374,47 @@ const CreateTourPage = () => {
                     onDragOver={handleDragOver}
                     onDrop={() => handleDrop(index)}
                     onDragEnd={handleDragEnd}
-                    className={`group flex items-center gap-4 p-5 bg-gray-50 rounded-[1.5rem] border border-transparent hover:border-pink-200 hover:bg-pink-50/30 transition-all cursor-move ${
+                    className={`group flex items-center gap-4 p-4 bg-gray-50 rounded-[1.5rem] border border-transparent hover:border-pink-200 hover:bg-pink-50/30 transition-all cursor-move ${
                       draggedIndex === index ? 'opacity-50 border-pink-400' : ''
                     }`}
                   >
-                    <div className="cursor-grab active:cursor-grabbing text-gray-300 group-hover:text-pink-400"><GripVertical size={20} /></div>
-                    <div className="w-10 h-10 bg-white border border-gray-100 rounded-full flex items-center justify-center font-black text-pink-500 shadow-sm">{poi.stepOrder}</div>
-                    <div className="flex-1">
-                      <h4 className="font-bold text-gray-800">{poi.title}</h4>
+                    <div className="cursor-grab active:cursor-grabbing text-gray-300 group-hover:text-pink-400">
+                      <GripVertical size={20} />
                     </div>
+                    <div className="w-8 h-8 bg-white border border-gray-100 rounded-full flex items-center justify-center font-black text-pink-500 shadow-sm text-xs shrink-0">
+                      {poi.stepOrder}
+                    </div>
+
+                    {/* Logo / Thumbnail Preview */}
+                    {poi.logoUrl ? (
+                      <img
+                        src={poi.logoUrl}
+                        alt={poi.title}
+                        className="w-12 h-12 rounded-xl object-cover border border-pink-100 shrink-0 shadow-sm"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-xl bg-pink-100 flex items-center justify-center text-pink-400 font-bold text-sm shrink-0 border border-pink-200">
+                        {poi.title?.charAt(0)?.toUpperCase() || <MapPin size={18} />}
+                      </div>
+                    )}
+
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-gray-800 truncate text-sm">{poi.title}</h4>
+                      {(poi.categories?.length > 0 || poi.category) && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {(poi.categories && poi.categories.length > 0 ? poi.categories : [poi.category]).map((c, i) => (
+                            <span key={i} className="text-[10px] bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full font-semibold">
+                              {c}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
                     <button 
                       onClick={() => setDeleteConfirmPoiId(poi.poiId)} 
-                      className="p-2 text-gray-300 hover:text-red-500 transition-colors"
+                      className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                      title="Xóa khỏi tour"
                     >
                       <Trash2 size={18} />
                     </button>
@@ -408,14 +465,14 @@ const CreateTourPage = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                 <input 
                   type="text" 
-                  placeholder="Tìm tên địa điểm..." 
-                  className="w-full pl-10 pr-4 py-3 bg-gray-50 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-pink-100 focus:border-transparent outline-none" 
+                  placeholder="Tìm theo tên hoặc danh mục..." 
+                  className="w-full pl-10 pr-4 py-3 bg-gray-50 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-pink-100 focus:border-transparent outline-none font-medium" 
                   value={searchTerm} 
                   onChange={(e) => setSearchTerm(e.target.value)} 
                   autoFocus
                 />
              </div>
-             <div className="max-h-[300px] overflow-y-auto space-y-2">
+             <div className="max-h-[350px] overflow-y-auto space-y-2 pr-1">
                 {isLoadingPOIs ? (
                   <div className="p-4 text-center text-gray-400 text-sm">
                     <Loader2 className="animate-spin mx-auto mb-2" size={20} />
@@ -428,18 +485,46 @@ const CreateTourPage = () => {
                 ) : (
                   availablePOIs.filter(p => {
                     const poiName = p.name || p.title || p.Name || "N/A";
-                    return poiName.toLowerCase().includes(searchTerm.toLowerCase());
+                    const categories = p.categories || (p.category ? [p.category] : []);
+                    const search = searchTerm.toLowerCase();
+                    return poiName.toLowerCase().includes(search) || categories.some(c => c?.toLowerCase().includes(search));
                   }).map((poi) => {
                     const poiId = poi.poiId || poi.id;
                     const poiName = poi.name || poi.title || poi.Name || "N/A";
+                    const logoUrl = poi.logoUrl || poi.thumbnailUrl || poi.LogoUrl;
+                    const categories = poi.categories || (poi.category ? [poi.category] : []);
+
                     return (
-                      <div key={poiId} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-pink-50/50 transition-all">
-                         <div>
-                            <p className="font-bold text-sm text-gray-700">{poiName}</p>
+                      <div key={poiId} className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl hover:bg-pink-50/60 transition-all border border-gray-100/80 gap-3">
+                         {/* Logo preview */}
+                         {logoUrl ? (
+                           <img
+                             src={logoUrl}
+                             alt={poiName}
+                             className="w-11 h-11 rounded-xl object-cover border border-pink-100 shrink-0 shadow-sm"
+                           />
+                         ) : (
+                           <div className="w-11 h-11 rounded-xl bg-pink-100 flex items-center justify-center text-pink-400 font-bold text-xs shrink-0 border border-pink-200">
+                             {poiName?.charAt(0)?.toUpperCase() || <MapPin size={16} />}
+                           </div>
+                         )}
+
+                         <div className="flex-1 min-w-0">
+                            <p className="font-bold text-sm text-gray-800 truncate">{poiName}</p>
+                            {categories.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {categories.map((c, idx) => (
+                                  <span key={idx} className="text-[10px] bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full font-semibold">
+                                    {c}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                          </div>
+
                          <button 
                            onClick={() => handleAddPOI(poi)} 
-                           className="px-4 py-2 bg-white text-pink-500 border border-pink-200 rounded-lg text-xs font-bold hover:bg-pink-500 hover:text-white transition-all"
+                           className="px-3.5 py-1.5 bg-white text-pink-600 border border-pink-200 rounded-xl text-xs font-bold hover:bg-pink-500 hover:text-white transition-all shadow-sm shrink-0"
                          > 
                            Thêm 
                          </button>

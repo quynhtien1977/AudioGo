@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Edit2, CheckCircle, XCircle, Eye } from "lucide-react"
+import { Edit2, CheckCircle, XCircle, Eye, FileEdit } from "lucide-react"
 import toast from "react-hot-toast"
 
 import POIManagementListComponent from "@/components/POIManagementListComponent"
@@ -72,18 +72,18 @@ export default function POIUpdateListPage() {
             const title =
               poiDetail?.contents?.find(c => c.isMaster)?.title || "Không có tên"
 
-            let categoryName = "Không xác định"
-            const categoryIds = data.CategoryIds || data.categoryIds
-            if (categoryIds && categoryIds.length > 0) {
-              categoryName = categoryMap[categoryIds[0]] || "Không xác định"
-            }
+            const categoryIds = data.CategoryIds || data.categoryIds || []
+            const categoryNames = Array.isArray(categoryIds)
+              ? categoryIds.map(id => categoryMap[id] || id).filter(Boolean)
+              : []
 
             const { changeCount } = getPoiChanges(poiDetail, data)
 
             return {
               id: r.requestId,
               name: title,
-              category: categoryName,
+              category: categoryNames[0] || "Không xác định",
+              categories: categoryNames.length > 0 ? categoryNames : ["Không xác định"],
               changeCount,
               requestedAt: r.createdAt,
               requester: userMap[r.accountId] || "Không xác định",
@@ -164,8 +164,9 @@ export default function POIUpdateListPage() {
         statsLabel="chờ xử lý"
         emptyMessage="Không có POI nào cần cập nhật"
         renderExtraInfo={(poi) => (
-          <div className="bg-amber-50 px-3 py-1 inline-block rounded-full text-sm font-semibold text-amber-700">
-            📝 {poi.changeCount} thay đổi
+          <div className="bg-amber-50 px-3 py-1 inline-flex items-center gap-1.5 rounded-full text-xs font-semibold text-amber-700 border border-amber-200/60">
+            <FileEdit size={13} className="text-amber-600 shrink-0" />
+            <span>{poi.changeCount} thay đổi</span>
           </div>
         )}
         renderActions={(poi) => (

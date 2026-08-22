@@ -24,7 +24,8 @@ import StatsCard from "@/components/StatsCard"
 import PageHeader from "@/components/PageHeader"
 import StatusBadge from "@/components/StatusBadge"
 import ConfirmModal from "@/components/ConfirmModal"
-import { getPriorityColor, getPriorityInfo } from "@/components/PriorityBadge"
+import PriorityBadge, { getPriorityColor, getPriorityInfo } from "@/components/PriorityBadge"
+import HelpGuide from "@/components/HelpGuide"
 
 import { getAllPOIs, updatePOI, deletePOI } from "@/api/poiApi"
 import { getContentsByPOI } from "@/api/contentApi"
@@ -108,18 +109,19 @@ export default function POIPage() {
           // Name from DTO
           const title = p.name || p.title || "No name"
 
-          // Extract category
-          let categoryName = "Unknown"
-          if (p.categoryPois && p.categoryPois.length > 0) {
-            const categoryPoi = p.categoryPois[0]
-            categoryName =
-              categoryPoi?.category?.name ||
-              categoryPoi?.categoryName ||
-              categoryPoi?.name ||
-              "Unknown"
-          } else if (p.category) {
-            categoryName = p.category?.name || p.category || "Unknown"
+          // Extract categories
+          let categoriesList = []
+          if (Array.isArray(p.categories) && p.categories.length > 0) {
+            categoriesList = p.categories
+          } else if (p.categoryPois && p.categoryPois.length > 0) {
+            categoriesList = p.categoryPois
+              .map(cp => cp?.category?.name || cp?.categoryName || cp?.name)
+              .filter(Boolean)
+          } else if (p.category && p.category !== "Unknown") {
+            categoriesList = [p.category]
           }
+
+          let categoryName = categoriesList[0] || "Unknown"
 
           // Thumbnail
           const thumbnailUrl = p.logoUrl || null
@@ -130,6 +132,7 @@ export default function POIPage() {
             lat: p.latitude,
             lng: p.longitude,
             category: categoryName,
+            categories: categoriesList.length > 0 ? categoriesList : ["Chưa phân loại"],
             priority: Number(p.priority),
             isActive: p.isActive,
             thumbnailUrl,
@@ -232,7 +235,7 @@ export default function POIPage() {
       result = result.filter(
         (poi) =>
           poi.name?.toLowerCase().includes(searchTerm) ||
-          poi.category?.toLowerCase().includes(searchTerm)
+          (poi.categories || [poi.category]).some(c => c?.toLowerCase().includes(searchTerm))
       )
     }
 
@@ -245,7 +248,10 @@ export default function POIPage() {
 
     // Apply category filter
     if (filters.category) {
-      result = result.filter(poi => poi.category === filters.category)
+      result = result.filter(poi =>
+        (poi.categories && poi.categories.includes(filters.category)) ||
+        poi.category === filters.category
+      )
     }
 
     // Apply priority filter
@@ -314,7 +320,9 @@ export default function POIPage() {
   }
 
   // Get unique categories from pois
-  const uniqueCategories = [...new Set(pois.map(p => p.category))].filter(Boolean)
+  const uniqueCategories = [
+    ...new Set(pois.flatMap(p => p.categories && p.categories.length > 0 ? p.categories : [p.category]))
+  ].filter(c => c && c !== "Unknown" && c !== "Chưa phân loại")
 
   // HANDLERS SET PRIORITY
   const handleSetPriority = async (id, newPriority) => {
@@ -459,6 +467,21 @@ export default function POIPage() {
         title="QUẢN LÝ DỮ LIỆU POIs"
         description="Đăng tải, phê duyệt và quản lý các điểm quan tâm (POI) của AudioGo."
         icon={<MapPin size={24} />}
+        actionButton={
+          <HelpGuide
+            title="Hướng dẫn Quản lý Địa điểm (POI)"
+            steps={[
+              "<strong>Tạo POI mới</strong>: Chủ nhà hàng (Owner) có thể tạo yêu cầu thêm POI mới theo định mức gói cước đăng ký.",
+              "<strong>Chỉnh sửa thông tin</strong>: Bấm vào POI để chỉnh sửa tên, mô tả, vị trí tọa độ, hình ảnh, file thuyết minh âm thanh đa ngôn ngữ.",
+              "<strong>Phê duyệt & Xuất bản</strong>: Quản trị viên (Admin) sẽ kiểm duyệt nội dung và kích hoạt POI lên hệ thống bản đồ du lịch.",
+              "<strong>Độ ưu tiên (Priority)</strong>: Được tự động gán theo gói cước (Gói càng cao, độ ưu tiên xuất hiện và bán kính kích hoạt càng lớn)."
+            ]}
+            tips={[
+              "Mỗi POI có thể chọn tối đa 2 danh mục để du khách dễ dàng tìm kiếm.",
+              "Khi hạ cấp gói cước, bạn có 3 ngày ân hạn (Grace Period) để chọn giữ lại các POI mong muốn trước khi hệ thống tự động ẩn bớt POI thừa."
+            ]}
+          />
+        }
       />
 
       {/* Banner cảnh báo grace period sau downgrade */}
@@ -654,10 +677,17 @@ export default function POIPage() {
                     <p className="font-semibold">{poi.name}</p>
                   </td>
 
-                  <td>
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${getCategoryColor(poi.category)}`}>
-                      {poi.category}
-                    </span>
+                  <td className="p-4">
+                    <div className="flex flex-wrap gap-1.5 max-w-[220px]">
+                      {(poi.categories && poi.categories.length > 0 ? poi.categories : [poi.category || "Chưa phân loại"]).map((cat, idx) => (
+                        <span
+                          key={idx}
+                          className={`px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${getCategoryColor(cat)}`}
+                        >
+                          {cat}
+                        </span>
+                      ))}
+                    </div>
                   </td>
 
                   <td className="p-4">
@@ -679,9 +709,7 @@ export default function POIPage() {
                         <option value={4}>CRITICAL</option>
                       </select>
                     ) : (
-                      <span className={`px-2 py-1 rounded text-xs font-semibold ${getPriorityColor(poi.priority)}`}>
-                        {getPriorityInfo(poi.priority).label}
-                      </span>
+                      <PriorityBadge value={poi.priority} />
                     )}
                   </td>
 

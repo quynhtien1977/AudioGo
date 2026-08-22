@@ -194,7 +194,11 @@ namespace Server.Controllers.Cms
                     tp.Poi?.Contents.FirstOrDefault(c => c.LanguageCode == "vi")?.Title
                         ?? tp.Poi?.Contents.FirstOrDefault()?.Title
                         ?? tp.PoiId,
-                    tp.StepOrder))
+                    tp.StepOrder,
+                    tp.Poi?.LogoUrl,
+                    tp.Poi?.Latitude,
+                    tp.Poi?.Longitude,
+                    tp.Poi?.CategoryPois?.Select(cp => cp.Category?.Name ?? "").Where(n => !string.IsNullOrEmpty(n)).ToList()))
                 .ToList(),
             t.IsActive);
     }

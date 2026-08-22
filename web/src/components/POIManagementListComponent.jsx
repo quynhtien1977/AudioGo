@@ -17,6 +17,7 @@ import {
 import { useState, useContext, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { SearchContext } from "@/context/SearchContext"
+import HelpGuide from "@/components/HelpGuide"
 
 // Helper: sort POI list theo status (pending trước)
 const sortPoiByStatus = (poiList) => {
@@ -90,7 +91,7 @@ export default function POIManagementListComponent({
         poi =>
           poi.name?.toLowerCase().includes(q) ||
           poi.requester?.toLowerCase().includes(q) ||
-          poi.category?.toLowerCase().includes(q)
+          (poi.categories || [poi.category]).some(c => c?.toLowerCase().includes(q))
       )
     }
 
@@ -169,8 +170,30 @@ export default function POIManagementListComponent({
         >
           <ArrowLeft size={24} className="text-gray-600" />
         </button>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
+            <HelpGuide
+              title={`Hướng dẫn: ${title}`}
+              steps={
+                type === "new"
+                  ? [
+                      "Xem xét thông tin POI mới do Owner đăng ký (Tên, địa chỉ, hình ảnh, file âm thanh thuyết minh).",
+                      "Nhấp <strong>Xem chi tiết</strong> để kiểm tra kỹ lưỡng nội dung và nghe thử audio.",
+                      "Bấm <strong>Chấp nhận</strong> để xuất bản POI lên bản đồ hoặc <strong>Từ chối</strong> nếu dữ liệu chưa đạt yêu cầu."
+                    ]
+                  : [
+                      "So sánh các trường dữ liệu thay đổi giữa bản cũ và bản mới (tên, mô tả, vị trí, file âm thanh).",
+                      "Nhấp <strong>Xem xét</strong> để đối chiếu trực quan từng mục thay đổi (Diff).",
+                      "Bấm <strong>Chấp nhận</strong> để áp dụng thay đổi hoặc <strong>Từ chối</strong> kèm lý do phản hồi cho Owner."
+                    ]
+              }
+              tips={[
+                "Nội dung âm thanh và hình ảnh cần đảm bảo bản quyền và chất lượng rõ ràng.",
+                "Khi từ chối yêu cầu, hãy nhập lý do chi tiết để Owner nắm được và chỉnh sửa lại."
+              ]}
+            />
+          </div>
           <p className="text-gray-500 text-sm">{description}</p>
         </div>
       </div>
@@ -301,10 +324,18 @@ export default function POIManagementListComponent({
                     </div>
 
                     {/* BASIC INFO */}
-                    <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-3">
-                      <span className="flex items-center gap-1">
-                        <ChartBarStacked size={16} /> {poi.category}
-                      </span>
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-3">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <ChartBarStacked size={16} className="text-gray-400 shrink-0" />
+                        {(poi.categories && poi.categories.length > 0 ? poi.categories : [poi.category || "Không xác định"]).map((cat, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2 py-0.5 bg-pink-50 text-pink-700 rounded-md text-xs font-semibold border border-pink-100"
+                          >
+                            {cat}
+                          </span>
+                        ))}
+                      </div>
                       <span className="flex items-center gap-1">
                         <Calendar1 size={16} />
                         {new Date(poi.requestedAt || poi.createdAt).toLocaleDateString("vi-VN")}
