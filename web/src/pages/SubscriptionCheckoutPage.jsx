@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft, CheckCircle, Clock3, Layers3, Sparkles, Copy,
-  Loader2, XCircle, AlertTriangle, RefreshCw
+  Loader2, XCircle, AlertTriangle, RefreshCw, ShieldAlert
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useSubscription } from "@/context/SubscriptionContext";
@@ -24,17 +24,20 @@ async function verifyUpgrade(transactionId) {
 export default function SubscriptionCheckoutPage() {
   const navigate             = useNavigate();
   const location             = useLocation();
-  const { upgradeSubscription, refreshSubscription } = useSubscription();
+  const { upgradeSubscription, refreshSubscription, currentSubscription } = useSubscription();
 
   const [selectedPlan, setSelectedPlan]   = useState(location.state?.selectedPlan || null);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [processing, setProcessing]       = useState(false);
-  const [paymentInit, setPaymentInit]     = useState(null);   // hasil dari init endpoint
+  const [paymentInit, setPaymentInit]     = useState(null);
   const [qrLoadFailed, setQrLoadFailed]   = useState(false);
+
+  // Modal cảnh báo downgrade
+  const [showDowngradeModal, setShowDowngradeModal] = useState(false);
 
   // Payment polling state: "idle" | "pending" | "success" | "failed" | "expired"
   const [paymentStatus, setPaymentStatus] = useState("idle");
-  const [verifyResult, setVerifyResult]   = useState(null);   // data khi SUCCESS
+  const [verifyResult, setVerifyResult]   = useState(null);
 
   // Countdown QR expire (detik)
   const [countdown, setCountdown]         = useState(QR_EXPIRE_SECS);
@@ -96,7 +99,7 @@ export default function SubscriptionCheckoutPage() {
           setPaymentStatus("success");
           setVerifyResult(res);
           if (refreshSubscription) await refreshSubscription();
-          toast.success("🎉 Thanh toán thành công! Gói đã được kích hoạt.");
+          toast.success("Thanh toán thành công! Gói đã được kích hoạt.");
         } else if (res.status === "FAILED") {
           clearAllTimers();
           setPaymentStatus("failed");
@@ -113,11 +116,43 @@ export default function SubscriptionCheckoutPage() {
   }, [clearAllTimers, refreshSubscription]);
 
   // ── Xử lý confirm thanh toán ────────────────────────────────────────────────
+  // Kiểm tra downgrade: so sánh plan đang chọn với plan hiện tại
+  const detectDowngrade = () => {
+    if (!currentSubscription?.currentPlan || !selectedPlan) return null;
+    const cur = currentSubscription.currentPlan;
+    const curMaxPoi   = Number(cur.maxPoiCount  ?? cur.MaxPoiCount  ?? -1);
+    const curPriority = Number(cur.AutoPriority ?? cur.priorityLevel ?? 1);
+    const newMaxPoi   = Number(selectedPlan.maxPoiCount ?? selectedPlan.MaxPoiCount ?? -1);
+    const newPriority = Number(selectedPlan.autoPriority ?? selectedPlan.AutoPriority ?? 1);
+
+    const warnings = [];
+    if (newPriority < curPriority)
+      warnings.push(`Mức ưu tiên hiển thị POI sẽ giảm từ ${curPriority} xuống ${newPriority}.`);
+    if (curMaxPoi === -1 && newMaxPoi >= 0)
+      warnings.push(`Giới hạn POI sẽ từ không giới hạn xuống tối đa ${newMaxPoi} POI.`);
+    else if (newMaxPoi >= 0 && curMaxPoi >= 0 && newMaxPoi < curMaxPoi)
+      warnings.push(`Giới hạn POI sẽ giảm từ ${curMaxPoi} xuống ${newMaxPoi} POI.`);
+
+    if (warnings.length === 0) return null;
+
+    return { warnings, newMaxPoi, curMaxPoi, curPriority, newPriority };
+  };
+
   const handleConfirm = async () => {
     if (!termsAccepted) {
       toast.error("Vui lòng chấp nhận điều khoản");
       return;
     }
+    // Nếu là downgrade → hiển modal cảnh báo trước
+    const downgradeInfo = detectDowngrade();
+    if (downgradeInfo) {
+      setShowDowngradeModal(downgradeInfo);
+      return;
+    }
+    await proceedToPayment();
+  };
+
+  const proceedToPayment = async () => {
     try {
       setProcessing(true);
       const planId = selectedPlan.id || selectedPlan.planId || selectedPlan.PlanId;
@@ -158,6 +193,9 @@ export default function SubscriptionCheckoutPage() {
   const maxPoi      = Number(selectedPlan.maxPoiCount ?? selectedPlan.MaxPoiCount ?? 0);
   const autoPriority = Number(selectedPlan.autoPriority ?? selectedPlan.AutoPriority ?? 1);
 
+  // Kiểm tra downgrade (chỉ để hiển thị badge trên UI)
+  const downgradeDetected = detectDowngrade();
+
   // Format countdown
   const countdownMins = String(Math.floor(countdown / 60)).padStart(2, "0");
   const countdownSecs = String(countdown % 60).padStart(2, "0");
@@ -194,6 +232,7 @@ export default function SubscriptionCheckoutPage() {
   }
 
   return (
+    <>
     <div className="p-6 max-w-4xl mx-auto">
       <button
         onClick={() => navigate("/admin/dashboard")}
@@ -214,6 +253,22 @@ export default function SubscriptionCheckoutPage() {
               <p className="text-sm text-gray-500">
                 Thanh toán qua SePay (VietQR). Hệ thống đang bật chế độ test amount.
               </p>
+
+              {/* Badge cảnh báo downgrade */}
+              {downgradeDetected && (
+                <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 mt-3">
+                  <ShieldAlert size={18} className="text-amber-600 mt-0.5 shrink-0" />
+                  <div className="text-sm">
+                    <p className="font-semibold text-amber-800 mb-1"> Đây là hạ gói</p>
+                    <ul className="list-disc list-inside text-amber-700 space-y-0.5">
+                      {downgradeDetected.warnings.map((w, i) => (
+                        <li key={i}>{w}</li>
+                      ))}
+                      <li>Bạn có <strong>3 ngày</strong> để tự xử lý POI vượt giới hạn trước khi hệ thống tự ẩn.</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="border rounded-xl p-5 bg-pink-50 border-pink-100">
@@ -440,5 +495,58 @@ export default function SubscriptionCheckoutPage() {
         </div>
       </div>
     </div>
+
+    {/* ── Modal cảnh báo Downgrade ─────────────────────────────────────── */}
+    {showDowngradeModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+        <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-amber-100 rounded-full">
+              <ShieldAlert size={24} className="text-amber-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">Xác nhận hạ cấp gói</h3>
+              <p className="text-sm text-gray-500">Gói {planName} có một số giới hạn thấp hơn</p>
+            </div>
+          </div>
+
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5">
+            <p className="text-sm font-semibold text-amber-800 mb-2">Những thay đổi sẽ xảy ra:</p>
+            <ul className="space-y-1.5">
+              {showDowngradeModal.warnings?.map((w, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-amber-700">
+                  <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                  {w}
+                </li>
+              ))}
+              <li className="flex items-start gap-2 text-sm text-amber-700">
+                <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                Nếu bạn đang có POI vượt giới hạn mới, hệ thống sẽ giữ nguyên trong 3 ngày.
+                Sau đó, POI vượt giới hạn sẽ bị ẩn tự động (các POI mới nhất được giữ lại).
+              </li>
+            </ul>
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowDowngradeModal(false)}
+              className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-xl font-semibold hover:bg-gray-50 transition"
+            >
+              Huỷ, đổi gói khác
+            </button>
+            <button
+              onClick={async () => {
+                setShowDowngradeModal(false);
+                await proceedToPayment();
+              }}
+              className="flex-1 bg-amber-500 text-white py-2.5 rounded-xl font-bold hover:bg-amber-600 transition"
+            >
+              Hiểu rồi, tiếp tục
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

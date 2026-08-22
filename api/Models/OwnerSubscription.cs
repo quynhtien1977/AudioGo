@@ -26,6 +26,14 @@ namespace Server.Models
         /// <summary>Tự động gia hạn khi hết hạn (chưa triển khai trong v1).</summary>
         public bool AutoRenew { get; set; } = false;
 
+        /// <summary>
+        /// Thời điểm kết thúc grace period khi downgrade gói (giảm MaxPoiCount).
+        /// NULL = không có grace period.
+        /// Nếu đến thời điểm này mà vẫn vượt giới hạn POI → background job tự ẩn POI thừa.
+        /// Owner có 3 ngày để tự dọn hoặc upgrade lại.
+        /// </summary>
+        public DateTime? PoiGracePeriodUntil { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
 

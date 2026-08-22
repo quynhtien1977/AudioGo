@@ -1,4 +1,4 @@
-﻿import axios from "axios"
+import axios from "axios"
 
 const API_URL = (import.meta.env.VITE_API_URL || "http://localhost:5086/api")
 
@@ -71,6 +71,16 @@ export const getSubscriptionPlanByIdApi =
   }
 
 /**
+ * GET /cms/subscriptions/poi-grace-status
+ * Owner kiểm tra grace period sau downgrade gói (có POI vượt giới hạn).
+ * Trả về { inGracePeriod, hoursLeft, activePois, maxAllowed, excessPois, planName, message }
+ */
+export const getPoiGraceStatusApi = async () => {
+  const res = await client.get("/cms/subscriptions/poi-grace-status")
+  return res.data
+}
+
+/**
  * CREATE NEW PLAN
  * ADMIN ONLY
  */
@@ -110,6 +120,19 @@ export const toggleSubscriptionPlanStatusApi =
   async (planId) => {
     const res = await client.put(
       `/cms/subscriptions/plans/${planId}/toggle`,
+    )
+
+    return res.data
+  }
+
+/**
+ * Delete subscription plan permanently
+ * ADMIN ONLY — only allowed if no active subscriptions
+ */
+export const deleteSubscriptionPlanApi =
+  async (planId) => {
+    const res = await client.delete(
+      `/cms/subscriptions/plans/${planId}`,
     )
 
     return res.data
@@ -327,6 +350,7 @@ export default {
   createSubscriptionPlanApi,
   updateSubscriptionPlanApi,
   toggleSubscriptionPlanStatusApi,
+  deleteSubscriptionPlanApi,
 
   // Owner subscriptions
   getMySubscriptionApi,
