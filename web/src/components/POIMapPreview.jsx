@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
+import { MapPin } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
@@ -83,9 +84,10 @@ export default function POIMap({ lat, lng, isEditing, onLocationSelect }) {
       </MapContainer>
       
       {isEditing && (
-        <div className="bg-pink-50 p-2 text-center">
-          <p className="text-[10px] font-bold text-pink-500 uppercase tracking-tight">
-            📍 Nhấp vào bản đồ để thay đổi vị trí quán
+        <div className="bg-pink-50/80 p-2 text-center flex items-center justify-center gap-1.5 border-t border-pink-100/50">
+          <MapPin size={12} className="text-pink-500 shrink-0" />
+          <p className="text-[10px] font-bold text-pink-600 uppercase tracking-tight">
+            Nhấp vào bản đồ để thay đổi vị trí quán
           </p>
         </div>
       )}

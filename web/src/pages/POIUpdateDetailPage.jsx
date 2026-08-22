@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { ArrowLeft, X, Check, MapPin, Zap, Layers, FileText, Volume2, Globe, Loader2, AlertCircle } from "lucide-react"
+import { ArrowLeft, X, Check, MapPin, Zap, Layers, FileText, Volume2, Globe, Loader2, AlertCircle, Clock, ClipboardList, Sparkles } from "lucide-react"
 import PageLoader from "@/components/PageLoader"
 import toast from "react-hot-toast"
 import { getPoiDetail } from "@/api/poiApi"
@@ -19,21 +19,21 @@ const isAudioChanged = (oldAudio, newAudio) => normalizeAudio(oldAudio) !== norm
 const getAudioDiffLabel = (oldAudio, newAudio) => {
   const o = normalizeAudio(oldAudio)
   const n = normalizeAudio(newAudio)
-  if (!o && n)   return "⬆ Thêm mới"
-  if (o  && !n)  return "⬇ Xóa bỏ"
-  if (o  &&  n)  return "↕ Thay đổi"
+  if (!o && n)   return "Thêm mới"
+  if (o  && !n)  return "Xóa bỏ"
+  if (o  &&  n)  return "Thay đổi"
   return null
 }
 
 // Hiển thị tên ngôn ngữ đầy đủ từ languageCode
 const LANGUAGE_LABELS = {
-  vi: "🇻🇳 Tiếng Việt",
-  en: "🇬🇧 English",
-  zh: "🇨🇳 中文",
-  ja: "🇯🇵 日本語",
-  ko: "🇰🇷 한국어",
-  fr: "🇫🇷 Français",
-  de: "🇩🇪 Deutsch",
+  vi: "Tiếng Việt",
+  en: "English",
+  zh: "中文",
+  ja: "日本語",
+  ko: "한국어",
+  fr: "Français",
+  de: "Deutsch",
 }
 const formatLanguage = (code) =>
   LANGUAGE_LABELS[code?.toLowerCase()] ?? (code || "—")
@@ -289,8 +289,9 @@ export default function POIUpdateDetailPage() {
             </div>
             <div>
               <p className="text-xs uppercase font-bold text-gray-500 mb-1">Trạng thái</p>
-              <span className="inline-block bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm font-semibold">
-                ⏱ Chờ xử lý
+              <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200/60 px-3 py-1 rounded-full text-xs font-semibold">
+                <Clock size={13} className="text-amber-600 shrink-0" />
+                <span>Chờ xử lý</span>
               </span>
             </div>
             <div>
@@ -305,8 +306,9 @@ export default function POIUpdateDetailPage() {
           {/* LEFT COLUMN - POI HIỆN TẠI */}
           <div className="space-y-12">
             <div className="bg-white rounded-2xl shadow-md p-8">
-              <h3 className="text-lg font-bold text-gray-900 mb-6 pb-4 border-b-2 border-blue-200">
-                📋 POI Hiện Tại
+              <h3 className="text-lg font-bold text-gray-900 mb-6 pb-4 border-b-2 border-blue-200 flex items-center gap-2">
+                <ClipboardList size={20} className="text-blue-600 shrink-0" />
+                <span>POI Hiện Tại</span>
               </h3>
 
               <div className="space-y-9">
@@ -407,8 +409,9 @@ export default function POIUpdateDetailPage() {
           {/* RIGHT COLUMN - DỮ LIỆU ĐỀ XUẤT */}
           <div className="space-y-12">
             <div className="bg-white rounded-2xl shadow-md p-8 ring-2 ring-amber-100">
-              <h3 className="text-lg font-bold text-gray-900 mb-6 pb-4 border-b-2 border-amber-200">
-                ✨ Dữ liệu đề xuất
+              <h3 className="text-lg font-bold text-gray-900 mb-6 pb-4 border-b-2 border-amber-200 flex items-center gap-2">
+                <Sparkles size={20} className="text-amber-500 shrink-0" />
+                <span>Dữ liệu đề xuất</span>
               </h3>
 
               <div className="space-y-9">

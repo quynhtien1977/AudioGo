@@ -225,7 +225,7 @@ export default function AnalyticsPage() {
         <StatsCard
           title="TỔNG LƯỢT NGHE"
           value={totalListens.toLocaleString()}
-          sub="Toàn hệ thống 🟢"
+          sub="Toàn hệ thống (Real-time)"
           icon={<Headphones size={20} />}
         />
         <StatsCard
@@ -334,23 +334,25 @@ export default function AnalyticsPage() {
           <div className="flex bg-[#FFF0F5] p-1 rounded-2xl gap-1 self-start mb-4 w-fit">
             <button
               onClick={() => setViewMode('overview')}
-              className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              className={`inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
                 viewMode === 'overview'
                   ? 'bg-white text-pink-600 shadow-sm'
                   : 'text-[#8E707E] hover:text-pink-600'
               }`}
             >
-              📊 Tổng Quan ({heatmapData.length} điểm)
+              <BarChart3 size={14} className="shrink-0" />
+              <span>Tổng Quan ({heatmapData.length} điểm)</span>
             </button>
             <button
               onClick={() => setViewMode('by-time')}
-              className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              className={`inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
                 viewMode === 'by-time'
                   ? 'bg-white text-pink-600 shadow-sm'
                   : 'text-[#8E707E] hover:text-pink-600'
               }`}
             >
-              ⏰ Theo Thời Gian ({heatmapByTimeData.length} điểm)
+              <Clock size={14} className="shrink-0" />
+              <span>Theo Thời Gian ({heatmapByTimeData.length} điểm)</span>
             </button>
           </div>
 

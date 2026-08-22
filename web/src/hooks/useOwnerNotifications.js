@@ -34,21 +34,20 @@ export function useOwnerNotifications(user) {
         if (lastShown === today) return
 
         if (diffDays <= 0) {
-          toast.error("⚠️ Gói đăng ký của bạn đã hết hạn! Vui lòng gia hạn để tiếp tục sử dụng.", {
+          toast.error("Gói đăng ký của bạn đã hết hạn! Vui lòng gia hạn để tiếp tục sử dụng.", {
             duration: 8000,
             id: "sub_expired",
           })
           sessionStorage.setItem(SESSION_KEY, today.toString())
         } else if (diffDays <= 3) {
-          toast.error(`🔴 Gói đăng ký hết hạn sau ${diffDays} ngày! Gia hạn ngay để tránh gián đoạn.`, {
+          toast.error(`Gói đăng ký hết hạn sau ${diffDays} ngày! Gia hạn ngay để tránh gián đoạn.`, {
             duration: 6000,
             id: "sub_expiring_critical",
           })
           sessionStorage.setItem(SESSION_KEY, today.toString())
         } else if (diffDays <= 7) {
-          toast(`🟡 Gói đăng ký của bạn còn ${diffDays} ngày. Hãy gia hạn sớm.`, {
+          toast(`Gói đăng ký của bạn còn ${diffDays} ngày. Hãy gia hạn sớm.`, {
             duration: 5000,
-            icon: "⏳",
             id: "sub_expiring_warning",
           })
           sessionStorage.setItem(SESSION_KEY, today.toString())

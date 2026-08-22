@@ -31,25 +31,40 @@ const sortPoiByStatus = (poiList) => {
 const getStatusBadgeStyle = (status) => {
   switch (status) {
     case "approved":
-      return "bg-green-100 text-green-700"
+      return "bg-emerald-50 text-emerald-700 border border-emerald-200/60"
     case "rejected":
-      return "bg-red-100 text-red-700"
+      return "bg-rose-50 text-rose-700 border border-rose-200/60"
     case "pending":
     default:
-      return "bg-yellow-100 text-yellow-700"
+      return "bg-amber-50 text-amber-700 border border-amber-200/60"
   }
 }
 
-// Helper: label status
-const getStatusLabel = (status) => {
+// Helper: render status badge with Lucide icon
+const renderStatusBadge = (status) => {
   switch (status) {
     case "approved":
-      return "✓ Đã phê duyệt"
+      return (
+        <span className="inline-flex items-center gap-1">
+          <CheckCircle2 size={12} className="text-emerald-600 shrink-0" />
+          <span>Đã phê duyệt</span>
+        </span>
+      )
     case "rejected":
-      return "✕ Từ chối"
+      return (
+        <span className="inline-flex items-center gap-1">
+          <XCircle size={12} className="text-rose-600 shrink-0" />
+          <span>Từ chối</span>
+        </span>
+      )
     case "pending":
     default:
-      return "⏱ Chờ xử lý"
+      return (
+        <span className="inline-flex items-center gap-1">
+          <Clock size={12} className="text-amber-600 shrink-0" />
+          <span>Chờ xử lý</span>
+        </span>
+      )
   }
 }
 
@@ -318,8 +333,8 @@ export default function POIManagementListComponent({
                       <h3 className="text-lg font-bold text-gray-800 truncate">
                         {poi.name}
                       </h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold flex-shrink-0 ${getStatusBadgeStyle(poi.status)}`}>
-                        {getStatusLabel(poi.status)}
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ${getStatusBadgeStyle(poi.status)}`}>
+                        {renderStatusBadge(poi.status)}
                       </span>
                     </div>
 

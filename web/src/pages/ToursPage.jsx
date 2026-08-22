@@ -11,6 +11,7 @@ import CreateTourModal from "@/components/CreateTourModal";
 import EmptyState from "@/components/EmptyState";
 import StatsCard from "@/components/StatsCard";
 import PageHeader from "@/components/PageHeader";
+import HelpGuide from "@/components/HelpGuide";
 import { getAllToursApi, createTourApi, deleteTourApi, addPoiToTourApi, restoreTourApi } from "@/api/tourApi";
 import { SearchContext } from "@/context/SearchContext";
 import { formatDateVN } from "@/utils/formatDate";
@@ -159,12 +160,26 @@ const ToursPage = () => {
         description="Thiết kế và quản lý tour trải nghiệm ẩm thực."
         icon={<Route size={24} />}
         actionButton={
-          <button 
-            onClick={() => navigate('/tours/create')}
-            className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 active:scale-95 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-pink-100 hover:shadow-lg transition-all text-sm"
-          >
-            <Plus size={18} /> Tạo Tour Mới
-          </button>
+          <div className="flex items-center gap-2">
+            <HelpGuide
+              title="Hướng dẫn Quản lý Tour Ẩm thực"
+              steps={[
+                "Bấm <strong>Tạo Tour Mới</strong> để bắt đầu thiết kế hành trình ẩm thực mới.",
+                "Nhấp <strong>Vào Tour</strong> để xem chi tiết, thêm/xóa POI hoặc sắp xếp lại thứ tự ghé thăm.",
+                "Dùng nút <strong>Ẩn / Hiện</strong> để bật/tắt hiển thị tour trên ứng dụng di động cho du khách."
+              ]}
+              tips={[
+                "Một tour nên có từ 3 - 5 địa điểm ẩm thực đặc sắc gần nhau.",
+                "Có thể ẩn tour tạm thời khi các địa điểm trong tour đang bảo trì hoặc sửa đổi."
+              ]}
+            />
+            <button 
+              onClick={() => navigate('/tours/create')}
+              className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 active:scale-95 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-pink-100 hover:shadow-lg transition-all text-sm"
+            >
+              <Plus size={18} /> Tạo Tour Mới
+            </button>
+          </div>
         }
       />
 

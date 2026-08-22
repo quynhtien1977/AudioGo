@@ -492,7 +492,7 @@ export default function POIPage() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-amber-900 text-sm">
-              ⚠️ Giới hạn POI sau khi hạ cấp gói
+              Giới hạn POI sau khi hạ cấp gói
             </p>
             <p className="text-amber-800 text-sm mt-0.5">
               Gói <strong>{graceStatus.planName}</strong> cho phép tối đa{" "}

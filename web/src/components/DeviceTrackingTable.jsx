@@ -90,9 +90,13 @@ export default function DeviceTrackingTable({
                     {/* ✅ STATUS — ưu tiên isActive (SignalR) > isOnline (REST) > timestamp */}
                     <td style={tdStatusStyle}>
                       {getOnlineStatus(item) ? (
-                        <span style={{ color: "#16a34a" }}>🟢 Online</span>
+                        <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-600">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Online
+                        </span>
                       ) : (
-                        <span style={{ color: "#dc2626" }}>🔴 Offline</span>
+                        <span className="inline-flex items-center gap-1.5 font-semibold text-rose-600">
+                          <span className="w-2 h-2 rounded-full bg-rose-400" /> Offline
+                        </span>
                       )}
                     </td>
 

@@ -3,7 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet"
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { getPoiDetail } from "@/api/poiApi";
-import { Loader2 } from "lucide-react";
+import { Loader2, MapPin } from "lucide-react";
 
 // Fix default marker icons
 delete L.Icon.Default.prototype._getIconUrl;
@@ -164,8 +164,9 @@ const TourRouteMap = ({ pois = [] }) => {
               <div className="space-y-2">
                 <h4 className="font-bold text-gray-800">{poi.title}</h4>
                 <p className="text-sm text-gray-600">{poi.address}</p>
-                <div className="flex items-center gap-2 text-xs text-pink-600 font-bold">
-                  <span>📍 Bước {poi.stepOrder || index + 1}</span>
+                <div className="flex items-center gap-1.5 text-xs text-pink-600 font-bold">
+                  <MapPin size={13} className="shrink-0" />
+                  <span>Bước {poi.stepOrder || index + 1}</span>
                 </div>
               </div>
             </Popup>

@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react"
 import { getArticleById, createArticle, updateArticle } from "../api/articleApi"
 import { uploadImage } from "../api/mediaApi"
-import { Upload, X, Loader2, Languages, FileText } from "lucide-react"
+import { Upload, X, Loader2, Languages, FileText, Globe } from "lucide-react"
 
 const LANG_LABELS = {
-  vi: { label: "Tiếng Việt", flag: "🇻🇳" },
-  en: { label: "English", flag: "🇬🇧" },
-  ko: { label: "한국어", flag: "🇰🇷" },
-  ja: { label: "日本語", flag: "🇯🇵" },
-  zh: { label: "中文", flag: "🇨🇳" },
-  fr: { label: "Français", flag: "🇫🇷" },
-  de: { label: "Deutsch", flag: "🇩🇪" },
-  th: { label: "ภาษาไทย", flag: "🇹🇭" },
+  vi: { label: "Tiếng Việt" },
+  en: { label: "English" },
+  ko: { label: "한국어" },
+  ja: { label: "日本語" },
+  zh: { label: "中文" },
+  fr: { label: "Français" },
+  de: { label: "Deutsch" },
+  th: { label: "ภาษาไทย" },
 }
 
 export default function ArticleFormModal({ articleId, onClose, onSaved }) {
@@ -189,14 +189,14 @@ export default function ArticleFormModal({ articleId, onClose, onSaved }) {
               </div>
             ) : (
               translatedLangs.map((lang) => {
-                const info = LANG_LABELS[lang] || { label: lang.toUpperCase(), flag: "🌐" }
+                const info = LANG_LABELS[lang] || { label: lang.toUpperCase() }
                 const content = translations[lang] || {}
                 return (
                   <div key={lang} className="border border-pink-100 rounded-2xl overflow-hidden">
                     <div className="flex items-center gap-2 px-4 py-2.5 bg-pink-50/60">
-                      <span className="text-lg">{info.flag}</span>
+                      <span className="px-1.5 py-0.5 rounded bg-pink-200/60 text-pink-700 font-mono text-[10px] font-bold uppercase">{lang}</span>
                       <span className="text-sm font-bold text-[#8E707E]">{info.label}</span>
-                      <span className="text-[10px] text-gray-400 ml-auto font-mono">{lang}</span>
+                      <Globe size={14} className="text-pink-400 ml-auto" />
                     </div>
                     <div className="p-4 space-y-3">
                       <div>
