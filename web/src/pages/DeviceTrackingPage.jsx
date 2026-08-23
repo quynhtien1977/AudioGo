@@ -269,7 +269,7 @@ export default function DeviceTrackingPage() {
         <StatsCard
           title="ONLINE NGAY BÂY GIỜ"
           value={onlineNow}
-          sub={signalRStatus === "connected" ? "🟢 Kết nối SignalR" : "🔴 Mất kết nối"}
+          sub={signalRStatus === "connected" ? "Đang kết nối SignalR" : "Mất kết nối SignalR"}
           color="text-emerald-600"
           icon={signalRStatus === "connected" ? <Wifi size={20} /> : <WifiOff size={20} />}
         />

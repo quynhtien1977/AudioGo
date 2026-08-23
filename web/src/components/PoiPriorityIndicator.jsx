@@ -1,4 +1,4 @@
-import { Star, TrendingUp } from 'lucide-react'
+import { Star, TrendingUp, Sparkles } from 'lucide-react'
 
 /**
  * PoiPriorityIndicator - Shows POI priority level based on subscription tier
@@ -69,7 +69,7 @@ export const PoiPriorityIndicator = ({
         <span>{getLevelLabel()}</span>
       )}
       {level >= 4 && (
-        <span className="ml-0.5">⭐</span>
+        <Sparkles className="w-3 h-3 text-amber-500 shrink-0 ml-0.5" />
       )}
     </div>
   )

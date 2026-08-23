@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Save, Loader2, ToggleLeft, ToggleRight, Globe, Eye, Settings2, Languages } from "lucide-react";
+import { Save, Loader2, ToggleLeft, ToggleRight, Globe, Eye, Settings2, Languages, AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
 import useAuth from "@/hooks/useAuth";
 
@@ -565,7 +565,8 @@ export default function LandingSettingsPage() {
                       <div className="flex-1 overflow-y-auto px-6 py-6">
                         {activeLang !== "vi" && currentTrans[activeLang] == null && (
                           <div className="mb-5 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800 flex items-center gap-2 font-medium">
-                            <span>⚠️</span> Ngôn ngữ này chưa có bản dịch. Hãy điền nội dung bên dưới (tham khảo từ bản VI).
+                            <AlertTriangle size={16} className="text-amber-600 shrink-0" />
+                            <span>Ngôn ngữ này chưa có bản dịch. Hãy điền nội dung bên dưới (tham khảo từ bản VI).</span>
                           </div>
                         )}
                         {renderTranslationEditor(

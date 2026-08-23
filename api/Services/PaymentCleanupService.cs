@@ -27,7 +27,9 @@ namespace Server.Services
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            var intervalMinutes = _config.GetValue<int>("PaymentCleanup:IntervalMinutes", 30);
+            // Mặc định 120 phút (thay vì 30 phút cũ) để giảm tần suất đánh thức Azure SQL.
+            // Override qua Railway env var: PaymentCleanup__IntervalMinutes=120
+            var intervalMinutes = _config.GetValue<int>("PaymentCleanup:IntervalMinutes", 120);
             var expireAfterMinutes = _config.GetValue<int>("PaymentCleanup:ExpireAfterMinutes", 30);
 
             _logger.LogInformation(
@@ -60,7 +62,19 @@ namespace Server.Services
             using var scope = _scopeFactory.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-            var cutoff  = DateTime.UtcNow.AddMinutes(-expireAfterMinutes);
+            var cutoff = DateTime.UtcNow.AddMinutes(-expireAfterMinutes);
+
+            // ✅ Guard: kiểm tra nhanh trước khi load toàn bộ rows vào memory.
+            // Nếu không có giao dịch nào cần expire → thoát sớm, không tốn I/O thêm.
+            var hasExpired = await db.PaymentTransactions
+                .AnyAsync(t => t.Status == "PENDING" && t.CreatedAt < cutoff, ct);
+
+            if (!hasExpired)
+            {
+                _logger.LogDebug("PaymentCleanup: no expired PENDING transactions found — skipping.");
+                return;
+            }
+
             var expired = await db.PaymentTransactions
                 .Where(t => t.Status == "PENDING" && t.CreatedAt < cutoff)
                 .ToListAsync(ct);

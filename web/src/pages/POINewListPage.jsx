@@ -56,15 +56,16 @@ export default function POINewListPage() {
             }
 
             const title = data.Title || data.title
-            const categoryIds = data.CategoryIds || data.categoryIds
+            const categoryIds = data.CategoryIds || data.categoryIds || []
+            const categoryNames = Array.isArray(categoryIds)
+              ? categoryIds.map(id => categoryMap[id] || id).filter(Boolean)
+              : []
 
             return {
               id: r.requestId,
               name: title || "Không có tên",
-              category:
-                categoryIds && categoryIds.length > 0
-                  ? categoryMap[categoryIds[0]] || "Không xác định"
-                  : "Không xác định",
+              category: categoryNames[0] || "Không xác định",
+              categories: categoryNames.length > 0 ? categoryNames : ["Không xác định"],
               createdAt: r.createdAt,
               requestedAt: r.createdAt,
               requester: userMap[r.accountId] || "Không xác định",

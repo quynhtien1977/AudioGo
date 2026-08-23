@@ -153,10 +153,14 @@ export default function POIDeletionListPage() {
               ? "bg-red-50 text-red-500"
               : "bg-gray-100 text-gray-500"
           }`}>
-            {poi.status === "approved" ? "✓ Đã cho phép xóa" : "✕ Đã từ chối xóa"}
+            {poi.status === "approved" ? (
+              <span className="inline-flex items-center gap-1"><CheckCircle size={12} className="shrink-0" /> Đã cho phép xóa</span>
+            ) : (
+              <span className="inline-flex items-center gap-1"><XCircle size={12} className="shrink-0" /> Đã từ chối xóa</span>
+            )}
           </span>
         )}
-        warningNote="⚠️ Hành động xóa không thể hoàn tác. Kiểm tra kỹ trước khi duyệt."
+        warningNote="Hành động xóa không thể hoàn tác. Kiểm tra kỹ trước khi duyệt."
       />
 
       {showApproveModal && (

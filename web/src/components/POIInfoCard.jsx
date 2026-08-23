@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { getCategoriesApi } from "@/api/categoryApi"
-import { getPriorityColor, getPriorityInfo } from "@/components/PriorityBadge"
+import PriorityBadge, { getPriorityColor, getPriorityInfo } from "@/components/PriorityBadge"
 
 const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role, getCategoryColor }) => {
   if (!poi) return null;
@@ -30,21 +30,22 @@ const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role, getCategor
 
       {/* Row 1: Category & Language */}
       {isEditing ? (
-        <div className="flex gap-6 flex-col">
-          <div className="flex-1 min-h-[45px]">
-            <p className="text-[10px] font-bold text-gray-400 uppercase mb-3">Danh mục (tối đa 2)</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+          <div className="min-h-[45px]">
+            <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Danh mục (tối đa 2)</p>
             <div className="space-y-2">
               {/* Selected Categories as Badges */}
               {poi.categories?.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-3">
+                <div className="flex flex-wrap gap-1.5 mb-2">
                   {poi.categories.map((catId) => {
                     const cat = categories.find(c => c.categoryId === catId);
                     return cat ? (
-                      <span key={catId} className="inline-flex items-center gap-2 bg-pink-100 text-pink-700 px-3 py-1 rounded-full text-sm font-medium">
+                      <span key={catId} className="inline-flex items-center gap-1.5 bg-pink-100 text-pink-700 px-2.5 py-1 rounded-full text-xs font-semibold">
                         {cat.name}
                         <button
+                          type="button"
                           onClick={() => handleChange("categories", poi.categories.filter(id => id !== catId))}
-                          className="ml-1 hover:text-pink-900 font-bold"
+                          className="hover:text-pink-900 font-bold"
                         >
                           ✕
                         </button>
@@ -63,7 +64,7 @@ const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role, getCategor
                       handleChange("categories", [...(poi.categories || []), e.target.value]);
                     }
                   }}
-                  className="w-full bg-white border-2 border-pink-100 rounded-lg py-2 px-3 outline-none focus:border-pink-500 transition-all font-medium text-gray-600 cursor-pointer"
+                  className="w-full bg-white border border-pink-100 rounded-lg py-1.5 px-2.5 outline-none focus:border-pink-500 transition-all font-medium text-xs text-gray-600 cursor-pointer"
                 >
                   <option value="" disabled>
                     Chọn danh mục
@@ -84,14 +85,14 @@ const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role, getCategor
               )}
               
               {poi.categories?.length >= 2 && (
-                <p className="text-xs text-gray-400 italic">Đã chọn tối đa 2 danh mục</p>
+                <p className="text-[10px] text-gray-400 italic">Đã chọn tối đa 2 danh mục</p>
               )}
             </div>
           </div>
 
-          <div className="flex-1 min-h-[45px]">
-            <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Ngôn ngữ <span className="text-[9px] lowercase font-normal italic text-gray-400">(không thể thay đổi)</span></p>
-            <div className="relative group">
+          <div className="min-h-[45px]">
+            <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Ngôn ngữ <span className="text-[9px] lowercase font-normal italic text-gray-400">(cố định)</span></p>
+            <div className="relative group pt-1">
               <select
                 value={poi.languageCode || ""}
                 onChange={(e) => handleChange("languageCode", e.target.value)}
@@ -126,30 +127,37 @@ const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role, getCategor
           </div>
         </div>
       ) : (
-        <div className="flex gap-6 items-start">
-          <div className="flex-0">
-            <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Danh mục</p>
-            <div className="flex flex-col gap-2">
+        <div className="grid grid-cols-2 gap-4 items-start">
+          <div className="space-y-1">
+            <p className="text-[10px] font-bold text-gray-400 uppercase">Danh mục</p>
+            <div className="flex flex-wrap gap-1.5 pt-1">
               {poi.categories && poi.categories.length > 0 ? (
-                poi.categories.map((catId) => {
-                  const cat = categories.find(c => c.categoryId === catId);
-                  return cat ? (
-                    <span key={catId} className={`px-2 py-1 rounded text-xs font-medium ${getCategoryColor ? getCategoryColor(cat.name) : "bg-pink-50 text-pink-600"}`}>
-                      {cat.name}
+                poi.categories.map((catId, idx) => {
+                  const cat = categories.find(c => c.categoryId === catId || c.name === catId);
+                  const catName = cat ? cat.name : catId;
+                  return (
+                    <span key={idx} className={`px-2.5 py-1 rounded-full text-xs font-semibold ${getCategoryColor ? getCategoryColor(catName) : "bg-pink-50 text-pink-600"}`}>
+                      {catName}
                     </span>
-                  ) : null;
+                  );
                 })
+              ) : poi.category ? (
+                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${getCategoryColor ? getCategoryColor(poi.category) : "bg-pink-50 text-pink-600"}`}>
+                  {poi.category}
+                </span>
               ) : (
                 <span className="text-xs text-gray-400 italic">Chưa chọn danh mục</span>
               )}
             </div>
           </div>
 
-          <div className="flex-0">
-            <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Ngôn ngữ</p>
-            <span className="bg-pink-50 text-pink-600 px-2 py-0.5 rounded text-xs font-medium">
-              {languageLabels[poi.languageCode] || "N/A"}
-            </span>
+          <div className="space-y-1">
+            <p className="text-[10px] font-bold text-gray-400 uppercase">Ngôn ngữ</p>
+            <div className="pt-1">
+              <span className="bg-pink-50 text-pink-600 px-2.5 py-1 rounded-full text-xs font-semibold inline-block">
+                {languageLabels[poi.languageCode] || "N/A"}
+              </span>
+            </div>
           </div>
         </div>
       )}
@@ -221,11 +229,9 @@ const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role, getCategor
               </div>
             </div>
           ) : (
-            <span
-              className={`px-2 py-1 rounded-full text-xs font-semibold ${getPriorityColor(poi.priority)}`}
-            >
-              {getPriorityInfo(poi.priority).label}
-            </span>
+            <div className="pt-1">
+              <PriorityBadge value={poi.priority} />
+            </div>
           )}
         </div>
       </div>

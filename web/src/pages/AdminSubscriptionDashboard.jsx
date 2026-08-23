@@ -343,7 +343,7 @@ export const AdminSubscriptionDashboard = () => {
       setDeletingPlanId(plan.planId);
       toast(
         `Bấm lại "Xóa" để xác nhận xóa vĩnh viễn gói "${plan.name}"`,
-        { icon: "⚠️", duration: 4000 }
+        { duration: 4000 }
       );
       setTimeout(() => setDeletingPlanId(null), 5000);
       return;

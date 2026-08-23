@@ -3,12 +3,13 @@ import { useNavigate, useParams } from "react-router-dom";
 import { 
   ArrowLeft, Edit3, Trash2, MapPin, Calendar,
   Plus, GripVertical, Save, Star, Users, 
-  TrendingUp, BarChart3, Share2, Search, Upload, X, Loader2
+  TrendingUp, BarChart3, Share2, Search, Upload, X, Loader2, HelpCircle
 } from "lucide-react";
 import toast from "react-hot-toast";
 
 import TourRouteMap from "@/components/TourRouteMap";
 import ConfirmModal from "@/components/ConfirmModal";
+import HelpGuide from "@/components/HelpGuide";
 import { getTourByIdApi, updateTourApi, addPoiToTourApi, removePoiFromTourApi, reorderPoiInTourApi } from "@/api/tourApi";
 import { getAllPOIs, updatePOI } from "@/api/poiApi";
 import { uploadImage } from "@/api/mediaApi";
@@ -28,6 +29,7 @@ const TourDetailPage = () => {
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showHelpGuide, setShowHelpGuide] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [editFormData, setEditFormData] = useState(null);
   const [deleteConfirmPoiId, setDeleteConfirmPoiId] = useState(null);
@@ -202,7 +204,11 @@ const TourDetailPage = () => {
     try {
       const stepOrder = (tour.pois?.length || 0) + 1;
       const poiId = poi.poiId || poi.id;
-      const poiTitle = poi.title || poi.name || "Untitled POI";
+      const poiTitle = poi.title || poi.name || poi.Name || "Untitled POI";
+      const logoUrl = poi.logoUrl || poi.thumbnailUrl || poi.LogoUrl || "";
+      const categories = poi.categories || (poi.category ? [poi.category] : []);
+      const latitude = poi.latitude || poi.lat || 0;
+      const longitude = poi.longitude || poi.lng || 0;
       
       // Send data with PascalCase keys to match C# backend expectations
       await addPoiToTourApi(tourId, {
@@ -216,10 +222,15 @@ const TourDetailPage = () => {
         pois: [...(prev.pois || []), {
           poiId: poiId,
           title: poiTitle,
+          logoUrl: logoUrl,
+          categories: categories,
+          latitude: latitude,
+          longitude: longitude,
           stepOrder: stepOrder
         }]
       }));
       setShowAddModal(false);
+      setSearchTerm("");
       toast.success("Thêm POI vào Tour thành công!");
     } catch (err) {
       console.error("Error adding POI:", err);
@@ -349,37 +360,91 @@ const TourDetailPage = () => {
 
           <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm p-10 space-y-6">
             <div className="flex justify-between items-center">
-              <h3 className="font-bold text-xl text-gray-800">Thứ tự địa điểm thăm quan</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-xl text-gray-800">Thứ tự địa điểm thăm quan</h3>
+                <HelpGuide
+                  title="Hướng dẫn Quản lý Lộ trình Tour"
+                  steps={[
+                    "Bấm <strong>Thêm địa điểm</strong> để đưa thêm POI mới vào Tour.",
+                    "Dùng chuột giữ vào biểu tượng <strong>⠿</strong> để kéo thả thay đổi thứ tự các điểm dừng chân.",
+                    "Nhấp biểu tượng <strong>Thùng rác</strong> trên mỗi dòng để gỡ POI khỏi hành trình nếu cần.",
+                    "Bản đồ bên phải sẽ tự động vẽ lại các chặng đường nối theo đúng thứ tự 1, 2, 3..."
+                  ]}
+                  tips={[
+                    "Thứ tự các điểm trên bản đồ tương ứng với hành trình thực tế của du khách.",
+                    "Thay đổi thứ tự sẽ được lưu tự động lên hệ thống ngay lập tức."
+                  ]}
+                />
+              </div>
+
               <button 
                 onClick={() => setShowAddModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-pink-50 text-pink-600 rounded-xl text-sm font-bold hover:bg-pink-600 hover:text-white transition-all"
+                className="flex items-center gap-2 px-4 py-2 bg-pink-50 text-pink-600 rounded-xl text-sm font-bold hover:bg-pink-600 hover:text-white transition-all shadow-sm"
               >
                 <Plus size={16} /> Thêm địa điểm
               </button>
             </div>
+
             <div className="space-y-4">
-              {tour.pois && tour.pois.map((poi, index) => (
-                <div 
-                  key={poi.poiId}
-                  draggable
-                  onDragStart={() => handleDragStart(index)}
-                  onDragOver={handleDragOver}
-                  onDrop={() => handleDrop(index)}
-                  onDragEnd={handleDragEnd}
-                  className={`group flex items-center gap-4 p-5 bg-gray-50 rounded-[1.5rem] border border-transparent hover:border-pink-200 hover:bg-pink-50/30 transition-all cursor-move ${
-                    draggedIndex === index ? 'opacity-50 border-pink-400' : ''
-                  }`}
-                >
-                  <div className="cursor-grab active:cursor-grabbing text-gray-300 group-hover:text-pink-400"><GripVertical size={20} /></div>
-                  <div className="w-10 h-10 bg-white border border-gray-100 rounded-full flex items-center justify-center font-black text-pink-500 shadow-sm">{poi.stepOrder}</div>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-gray-800">{poi.title}</h4>
+              {tour.pois && tour.pois.map((poi, index) => {
+                const logoUrl = poi.logoUrl || poi.thumbnailUrl || poi.LogoUrl;
+                const categories = poi.categories || (poi.category ? [poi.category] : []);
+
+                return (
+                  <div 
+                    key={poi.poiId}
+                    draggable
+                    onDragStart={() => handleDragStart(index)}
+                    onDragOver={handleDragOver}
+                    onDrop={() => handleDrop(index)}
+                    onDragEnd={handleDragEnd}
+                    className={`group flex items-center gap-4 p-4 bg-gray-50 rounded-[1.5rem] border border-transparent hover:border-pink-200 hover:bg-pink-50/30 transition-all cursor-move ${
+                      draggedIndex === index ? 'opacity-50 border-pink-400' : ''
+                    }`}
+                  >
+                    <div className="cursor-grab active:cursor-grabbing text-gray-300 group-hover:text-pink-400">
+                      <GripVertical size={20} />
+                    </div>
+                    <div className="w-8 h-8 bg-white border border-gray-100 rounded-full flex items-center justify-center font-black text-pink-500 shadow-sm text-xs shrink-0">
+                      {poi.stepOrder}
+                    </div>
+
+                    {/* Logo / Thumbnail Preview */}
+                    {logoUrl ? (
+                      <img
+                        src={logoUrl}
+                        alt={poi.title}
+                        className="w-12 h-12 rounded-xl object-cover border border-pink-100 shrink-0 shadow-sm"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-xl bg-pink-100 flex items-center justify-center text-pink-400 font-bold text-sm shrink-0 border border-pink-200">
+                        {poi.title?.charAt(0)?.toUpperCase() || <MapPin size={18} />}
+                      </div>
+                    )}
+
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-gray-800 truncate text-sm">{poi.title}</h4>
+                      {categories.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {categories.map((c, i) => (
+                            <span key={i} className="text-[10px] bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full font-semibold">
+                              {c}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <button 
+                      onClick={() => setDeleteConfirmPoiId(poi.poiId)} 
+                      className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                      title="Xóa khỏi tour"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
-                  <button onClick={() => setDeleteConfirmPoiId(poi.poiId)} className="p-2 text-gray-300 hover:text-red-500 transition-colors">
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -491,9 +556,16 @@ const TourDetailPage = () => {
              <h2 className="text-xl font-black text-gray-800 border-b pb-4 mb-6">Thêm địa điểm vào Tour</h2>
              <div className="relative mb-4">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                <input type="text" placeholder="Tìm tên địa điểm..." className="w-full pl-10 pr-4 py-3 bg-gray-50 rounded-xl border-none text-sm focus:ring-2 focus:ring-pink-100" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                <input 
+                  type="text" 
+                  placeholder="Tìm theo tên hoặc danh mục..." 
+                  className="w-full pl-10 pr-4 py-3 bg-gray-50 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-pink-100 font-medium" 
+                  value={searchTerm} 
+                  onChange={(e) => setSearchTerm(e.target.value)} 
+                  autoFocus
+                />
              </div>
-             <div className="max-h-[300px] overflow-y-auto space-y-2">
+             <div className="max-h-[350px] overflow-y-auto space-y-2 pr-1">
                 {availablePOIs.length === 0 ? (
                   <div className="p-4 text-center text-gray-400 text-sm">
                     <p>Tất cả POI đã được thêm vào Tour</p>
@@ -501,16 +573,49 @@ const TourDetailPage = () => {
                 ) : (
                   availablePOIs.filter(p => {
                     const poiName = p.name || p.title || p.Name || "N/A";
-                    return poiName.toLowerCase().includes(searchTerm.toLowerCase());
+                    const categories = p.categories || (p.category ? [p.category] : []);
+                    const search = searchTerm.toLowerCase();
+                    return poiName.toLowerCase().includes(search) || categories.some(c => c?.toLowerCase().includes(search));
                   }).map((poi) => {
                     const poiId = poi.poiId || poi.id;
                     const poiName = poi.name || poi.title || poi.Name || "N/A";
+                    const logoUrl = poi.logoUrl || poi.thumbnailUrl || poi.LogoUrl;
+                    const categories = poi.categories || (poi.category ? [poi.category] : []);
+
                     return (
-                      <div key={poiId} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-pink-50/50 transition-all">
-                         <div>
-                            <p className="font-bold text-sm text-gray-700">{poiName}</p>
+                      <div key={poiId} className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl hover:bg-pink-50/60 transition-all border border-gray-100/80 gap-3">
+                         {/* Logo preview */}
+                         {logoUrl ? (
+                           <img
+                             src={logoUrl}
+                             alt={poiName}
+                             className="w-11 h-11 rounded-xl object-cover border border-pink-100 shrink-0 shadow-sm"
+                           />
+                         ) : (
+                           <div className="w-11 h-11 rounded-xl bg-pink-100 flex items-center justify-center text-pink-400 font-bold text-xs shrink-0 border border-pink-200">
+                             {poiName?.charAt(0)?.toUpperCase() || <MapPin size={16} />}
+                           </div>
+                         )}
+
+                         <div className="flex-1 min-w-0">
+                            <p className="font-bold text-sm text-gray-800 truncate">{poiName}</p>
+                            {categories.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {categories.map((c, idx) => (
+                                  <span key={idx} className="text-[10px] bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full font-semibold">
+                                    {c}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                          </div>
-                         <button onClick={() => handleAddPOI(poi)} className="px-4 py-2 bg-white text-pink-500 border border-pink-200 rounded-lg text-xs font-bold hover:bg-pink-500 hover:text-white transition-all"> Thêm </button>
+
+                         <button 
+                           onClick={() => handleAddPOI(poi)} 
+                           className="px-3.5 py-1.5 bg-white text-pink-600 border border-pink-200 rounded-xl text-xs font-bold hover:bg-pink-500 hover:text-white transition-all shadow-sm shrink-0"
+                         > 
+                           Thêm 
+                         </button>
                       </div>
                     );
                   })

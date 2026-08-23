@@ -138,7 +138,9 @@ const CreateTourModal = ({ open, onClose, onSubmit, isLoading }) => {
 
   const filteredPOIs = allPOIs.filter((poi) => {
     const poiName = poi.name || poi.Name || "N/A";
-    return poiName.toLowerCase().includes(poiSearchTerm.toLowerCase());
+    const categories = poi.categories || (poi.category ? [poi.category] : []);
+    const search = poiSearchTerm.toLowerCase();
+    return poiName.toLowerCase().includes(search) || categories.some(c => c?.toLowerCase().includes(search));
   });
 
   const selectedPOICount = formData.selectedPOIs.length;
@@ -269,8 +271,10 @@ const CreateTourModal = ({ open, onClose, onSubmit, isLoading }) => {
                 <div className="space-y-3 border-l border-gray-200 pl-8">
                   <div>
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 block flex items-center justify-between">
-                      <span>Địa điểm (POI)</span>
-                      <span className="bg-pink-100 text-pink-600 px-2 py-1 rounded-full text-[9px] font-bold">
+                      <div className="flex items-center gap-1.5">
+                        <span>Địa điểm (POI)</span>
+                      </div>
+                      <span className="bg-pink-100 text-pink-600 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
                         {selectedPOICount} đã chọn
                       </span>
                     </label>
@@ -284,8 +288,8 @@ const CreateTourModal = ({ open, onClose, onSubmit, isLoading }) => {
                         />
                         <input
                           type="text"
-                          placeholder="Tìm kiếm địa điểm..."
-                          className="w-full pl-10 pr-4 py-2 bg-gray-50 rounded-lg border-none text-sm focus:ring-2 focus:ring-pink-100"
+                          placeholder="Tìm kiếm theo tên hoặc danh mục..."
+                          className="w-full pl-10 pr-4 py-2.5 bg-gray-50 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-pink-100 font-medium"
                           value={poiSearchTerm}
                           onChange={(e) => setPoiSearchTerm(e.target.value)}
                         />
@@ -294,7 +298,7 @@ const CreateTourModal = ({ open, onClose, onSubmit, isLoading }) => {
 
                     {/* POI List */}
                     <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
-                      <div className="max-h-64 overflow-y-auto">
+                      <div className="max-h-72 overflow-y-auto divide-y divide-gray-50">
                         {isLoadingPOIs ? (
                           <div className="p-4 text-center text-gray-500 text-sm flex items-center justify-center gap-2">
                             <Loader2 className="animate-spin" size={16} />
@@ -305,36 +309,61 @@ const CreateTourModal = ({ open, onClose, onSubmit, isLoading }) => {
                             Không tìm thấy địa điểm
                           </div>
                         ) : (
-                          filteredPOIs.map((poi) => (
-                            <button
-                              key={poi.poiId || poi.id}
-                              onClick={() =>
-                                handleTogglePOI(poi.poiId || poi.id)
-                              }
-                              className="w-full text-left px-4 py-3 hover:bg-pink-50 transition-all flex items-center justify-between border-b border-gray-50 last:border-b-0"
-                            >
-                              <div className="flex-1 min-w-0">
-                                <p className="font-bold text-sm text-gray-800 truncate">
-                                  {poi.name || poi.Name || "N/A"}
-                                </p>
-                              </div>
-                              <div
-                                className={`flex-shrink-0 ml-3 w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                                  formData.selectedPOIs.includes(
-                                    poi.poiId || poi.id
-                                  )
-                                    ? "bg-pink-500 border-pink-500"
-                                    : "border-gray-300"
+                          filteredPOIs.map((poi) => {
+                            const isSelected = formData.selectedPOIs.includes(poi.poiId || poi.id);
+                            const logoUrl = poi.logoUrl || poi.thumbnailUrl || poi.LogoUrl;
+                            const poiName = poi.name || poi.Name || "N/A";
+                            const categories = poi.categories || (poi.category ? [poi.category] : []);
+
+                            return (
+                              <button
+                                key={poi.poiId || poi.id}
+                                type="button"
+                                onClick={() => handleTogglePOI(poi.poiId || poi.id)}
+                                className={`w-full text-left p-3 hover:bg-pink-50/60 transition-all flex items-center gap-3 ${
+                                  isSelected ? "bg-pink-50/40" : ""
                                 }`}
                               >
-                                {formData.selectedPOIs.includes(
-                                  poi.poiId || poi.id
-                                ) && (
-                                  <Check size={14} className="text-white" />
+                                {/* Thumbnail / Logo */}
+                                {logoUrl ? (
+                                  <img
+                                    src={logoUrl}
+                                    alt={poiName}
+                                    className="w-10 h-10 rounded-lg object-cover border border-pink-100 shrink-0 shadow-sm"
+                                  />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-lg bg-pink-100 flex items-center justify-center text-pink-400 font-bold text-xs shrink-0 border border-pink-200">
+                                    {poiName?.charAt(0)?.toUpperCase() || "P"}
+                                  </div>
                                 )}
-                              </div>
-                            </button>
-                          ))
+
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-bold text-xs text-gray-800 truncate">
+                                    {poiName}
+                                  </p>
+                                  {categories.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 mt-0.5">
+                                      {categories.map((c, i) => (
+                                        <span key={i} className="text-[9px] bg-pink-100 text-pink-700 px-1.5 py-0.2 rounded-full font-semibold">
+                                          {c}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div
+                                  className={`flex-shrink-0 w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                                    isSelected
+                                      ? "bg-pink-500 border-pink-500 text-white"
+                                      : "border-gray-300 bg-white"
+                                  }`}
+                                >
+                                  {isSelected && <Check size={13} className="stroke-[3]" />}
+                                </div>
+                              </button>
+                            );
+                          })
                         )}
                       </div>
                     </div>

@@ -164,9 +164,9 @@ export default function DeviceActivityPage() {
             <StatsCard title="Hoạt động trong" value={`${days} ngày`} color="text-emerald-600" />
           </div>
 
-          <div className="flex flex-col gap-1 text-sm text-gray-500 font-medium">
-            <span>🕐 Lần đầu thấy: <strong className="text-gray-700">{formatTime(activity.firstSeen)}</strong></span>
-            <span>🕐 Lần cuối thấy: <strong className="text-gray-700">{formatTime(activity.lastSeen)}</strong></span>
+          <div className="flex flex-col gap-1.5 text-sm text-gray-500 font-medium">
+            <span className="inline-flex items-center gap-1.5"><Clock size={14} className="text-gray-400 shrink-0" /> Lần đầu thấy: <strong className="text-gray-700">{formatTime(activity.firstSeen)}</strong></span>
+            <span className="inline-flex items-center gap-1.5"><Clock size={14} className="text-gray-400 shrink-0" /> Lần cuối thấy: <strong className="text-gray-700">{formatTime(activity.lastSeen)}</strong></span>
           </div>
 
           {/* MAP + TIMELINE side by side */}
@@ -233,12 +233,16 @@ export default function DeviceActivityPage() {
                     <div className="flex-1 border-b border-pink-50/50 pb-3">
                       <div className="text-xs text-gray-400">{formatTime(event.timestamp)}</div>
                       {event.eventType === 'location' ? (
-                        <div className="text-sm text-gray-700 font-medium mt-1">
-                          📍 {event.latitude?.toFixed(5)}, {event.longitude?.toFixed(5)}
+                        <div className="text-sm text-gray-700 font-medium mt-1 flex items-center gap-1">
+                          <MapPin size={13} className="text-pink-500 shrink-0" />
+                          <span>{event.latitude?.toFixed(5)}, {event.longitude?.toFixed(5)}</span>
                         </div>
                       ) : (
                         <div className="text-sm text-gray-700 font-medium mt-1 flex items-center flex-wrap gap-1.5">
-                          <span>🎧 {event.poiTitle || event.poiId}</span>
+                          <span className="inline-flex items-center gap-1">
+                            <Headphones size={13} className="text-purple-500 shrink-0" />
+                            <span>{event.poiTitle || event.poiId}</span>
+                          </span>
                           {event.listenDuration && (
                             <span className="text-purple-500 text-xs bg-purple-50 px-2 py-0.5 rounded-md font-mono">
                               {formatDuration(event.listenDuration)}

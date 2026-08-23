@@ -22,7 +22,7 @@ namespace Server.Services
             var pois = await _pois.GetAllForCmsAsync(isActive);
             var poiIds = pois.Select(p => p.PoiId).ToList();
 
-            var categoryMap = await (
+            var categoryGroupMap = await (
                 from cp in _db.CategoryPois
                 join c in _db.Categories on cp.CategoryId equals c.CategoryId
                 where poiIds.Contains(cp.PoiId)
@@ -30,24 +30,29 @@ namespace Server.Services
                 select new
                 {
                     PoiId = g.Key,
-                    Category = g.Select(x => x.Name).FirstOrDefault()
+                    Categories = g.Select(x => x.Name).ToList()
                 }
-            ).ToDictionaryAsync(x => x.PoiId, x => x.Category);
+            ).ToDictionaryAsync(x => x.PoiId, x => x.Categories);
 
-            var result = pois.Select(p => new PoiListDto
+            var result = pois.Select(p =>
             {
-                PoiId = p.PoiId,
-                Name = p.Contents.FirstOrDefault(c => c.IsMaster)?.Title ?? "Chưa có tên",
-                AccountId = p.AccountId,
-                Latitude = p.Latitude,
-                Longitude = p.Longitude,
-                ActivationRadius = p.ActivationRadius,
-                Priority = p.Priority,
-                LogoUrl = p.LogoUrl,
-                IsActive = p.IsActive,
-                CreatedAt = p.CreatedAt,
-                UpdatedAt = p.UpdatedAt,
-                Category = categoryMap.GetValueOrDefault(p.PoiId, "Unknown")
+                var catList = categoryGroupMap.GetValueOrDefault(p.PoiId, new List<string>());
+                return new PoiListDto
+                {
+                    PoiId = p.PoiId,
+                    Name = p.Contents.FirstOrDefault(c => c.IsMaster)?.Title ?? "Chưa có tên",
+                    AccountId = p.AccountId,
+                    Latitude = p.Latitude,
+                    Longitude = p.Longitude,
+                    ActivationRadius = p.ActivationRadius,
+                    Priority = p.Priority,
+                    LogoUrl = p.LogoUrl,
+                    IsActive = p.IsActive,
+                    CreatedAt = p.CreatedAt,
+                    UpdatedAt = p.UpdatedAt,
+                    Category = catList.FirstOrDefault() ?? "Unknown",
+                    Categories = catList
+                };
             }).ToList();
 
             return result;
