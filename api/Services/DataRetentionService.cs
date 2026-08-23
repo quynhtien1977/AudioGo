@@ -7,11 +7,13 @@ using System.Text.Json;
 namespace Server.Services
 {
     /// <summary>
-    /// Background service chạy hàng ngày để xóa dữ liệu cũ (auto-purge data retention):
+    /// Background service chạy mỗi 30 ngày để xóa dữ liệu cũ (auto-purge data retention):
     /// - LocationLog: chỉ giữ lại 30 ngày.
     /// - ListenHistory: chỉ giữ lại 90 ngày.
     ///
-    /// Chạy định kỳ vào 3:00 AM ICT (20:00 UTC).
+    /// Chạy lần đầu sau khi khởi động 5 phút, sau đó lặp lại mỗi 30 ngày.
+    /// Lý do: LocationLog giữ 30 ngày và ListenHistory giữ 90 ngày — dữ liệu cũ
+    /// tích lũy rất chậm, không cần purge hàng ngày. Chạy hàng tháng là đủ.
     /// </summary>
     public class DataRetentionService : BackgroundService
     {
@@ -30,24 +32,24 @@ namespace Server.Services
         {
             _logger.LogInformation("DataRetentionService started.");
 
+            // Delay ngắn khi khởi động để tránh chồng chéo với các service khác.
+            await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    // Chờ đến 3AM ICT (UTC+7) = 20:00 UTC
-                    var now = DateTime.UtcNow;
-                    var nextRun = now.Date.AddHours(20);
-                    if (now >= nextRun)
-                    {
-                        nextRun = nextRun.AddDays(1);
-                    }
-                    var delay = nextRun - now;
-
-                    _logger.LogInformation("DataRetentionService: next purge scheduled at {NextRun} UTC (in {DelayHours:F1} hours)", nextRun, delay.TotalHours);
-                    await Task.Delay(delay, stoppingToken);
-
                     await PurgeOldLogsAndHistoryAsync(stoppingToken);
                     await CleanOrphanMediaAsync(stoppingToken);
+
+                    // Nghỉ đúng 30 ngày trước lần chạy tiếp theo.
+                    // Dữ liệu LocationLog giữ 30 ngày và ListenHistory giữ 90 ngày
+                    // — tích lũy rất chậm, purge hàng tháng là đủ.
+                    var intervalDays = 30;
+                    _logger.LogInformation(
+                        "DataRetentionService: next purge in {Days} days (at {NextRun:u}).",
+                        intervalDays, DateTime.UtcNow.AddDays(intervalDays));
+                    await Task.Delay(TimeSpan.FromDays(intervalDays), stoppingToken);
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
                 {
