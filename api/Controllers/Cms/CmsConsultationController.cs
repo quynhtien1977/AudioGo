@@ -41,7 +41,8 @@ public class CmsConsultationController : ControllerBase
                 r.Message,
                 r.Status,
                 r.CreatedAt,
-                r.ContactedAt
+                r.ContactedAt,
+                r.RejectedAt
             })
             .ToListAsync();
 
@@ -54,7 +55,7 @@ public class CmsConsultationController : ControllerBase
     [Authorize(Roles = "Admin")]  // Editor chỉ xem, không đổi status
     public async Task<IActionResult> UpdateStatus(string id, [FromBody] UpdateConsultStatusRequest req)
     {
-        var validStatuses = new[] { "New", "Contacted", "Done" };
+        var validStatuses = new[] { "New", "Contacted", "Done", "Rejected" };
         if (!validStatuses.Contains(req.Status))
             return BadRequest(new { message = $"Status phải là một trong: {string.Join(", ", validStatuses)}" });
 
@@ -64,6 +65,8 @@ public class CmsConsultationController : ControllerBase
         request.Status = req.Status;
         if (req.Status == "Contacted" && request.ContactedAt is null)
             request.ContactedAt = DateTime.UtcNow;
+        if (req.Status == "Rejected" && request.RejectedAt is null)
+            request.RejectedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
         return NoContent();

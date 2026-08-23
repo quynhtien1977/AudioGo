@@ -50,11 +50,11 @@ namespace Server.Controllers.Cms
         [HttpGet("top-pois")]
         public async Task<ActionResult<List<TopPoiDto>>> GetTopPois([FromQuery] int top = 10)
         {
-            var isAdmin = User.IsInRole("Admin");
+            var isOwner = User.IsInRole("Owner");
             var accountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             List<(string PoiId, int Count)> topPois;
-            if (!isAdmin && !string.IsNullOrWhiteSpace(accountId))
+            if (isOwner && !string.IsNullOrWhiteSpace(accountId))
             {
                 var ownerTopPoisRaw = await (
                     from h in _db.ListenHistories.AsNoTracking()
@@ -142,14 +142,14 @@ namespace Server.Controllers.Cms
         public async Task<ActionResult<DashboardStatsDto>> GetListenStats(
             [FromQuery] int? days)
         {
-            var isAdmin = User.IsInRole("Admin");
+            var isOwner = User.IsInRole("Owner");
             var accountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var since = days.HasValue ? DateTime.UtcNow.Date.AddDays(-(days.Value - 1)) : (DateTime?)null;
 
             int totalListens;
             List<DailyListenDto> dailyListens;
 
-            if (!isAdmin && !string.IsNullOrWhiteSpace(accountId))
+            if (isOwner && !string.IsNullOrWhiteSpace(accountId))
             {
                 var ownerBaseQuery =
                     from h in _db.ListenHistories.AsNoTracking()

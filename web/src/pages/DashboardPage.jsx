@@ -2,7 +2,8 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import {
   MapPin, Headphones, LayoutDashboard, Clock,
-  Users, ArrowRight, ShieldCheck, AlertTriangle, Bell, CheckCircle
+  Users, ArrowRight, ShieldCheck, AlertTriangle, Bell, CheckCircle,
+  Newspaper, Route as RouteIcon, Globe, FileText, Plus, Sparkles
 } from "lucide-react"
 
 import StatsCard from "@/components/StatsCard"
@@ -16,6 +17,9 @@ import { getAllPOIs } from "@/api/poiApi"
 import { getPoiRequestStats } from "@/api/poiRequestApi"
 import { getUsersApi } from "@/api/accountApi"
 import { getExpiringSubscriptionsApi } from "@/api/subscriptionApi"
+import { getAllArticles } from "@/api/articleApi"
+import { getAllToursApi } from "@/api/tourApi"
+import { formatDateVN } from "@/utils/formatDate"
 
 export default function DashboardPage() {
   const navigate = useNavigate()
@@ -30,9 +34,13 @@ export default function DashboardPage() {
   // Admin-only extras
   const [pendingCount, setPendingCount] = useState(0)
   const [newAccountsCount, setNewAccountsCount] = useState(0)
-
-  // Admin alerts
   const [alerts, setAlerts] = useState({ pendingOld: 0, expiringSoon: 0, lockedAccounts: 0 })
+
+  // Editor extras
+  const [articlesCount, setArticlesCount] = useState(0)
+  const [publishedArticlesCount, setPublishedArticlesCount] = useState(0)
+  const [toursCount, setToursCount] = useState(0)
+  const [recentArticles, setRecentArticles] = useState([])
 
   // Get current user info
   useEffect(() => {
@@ -117,7 +125,6 @@ export default function DashboardPage() {
 
         setPendingCount((requestStats?.newCount ?? 0) + (requestStats?.updateCount ?? 0) + (requestStats?.deleteCount ?? 0))
 
-        // Đếm tài khoản tạo trong 7 ngày gần nhất
         const sevenDaysAgo = new Date()
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
         const newAccounts = (allUsers || []).filter(u => {
@@ -144,8 +151,6 @@ export default function DashboardPage() {
         ])
         const locked = (allUsers || []).filter(u => u.isLocked).length
 
-        // Đếm POI requests pending > 24h từ pendingCount đã có
-        const sevenDaysAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
         setAlerts({
           expiringSoon: expiringRes?.count ?? 0,
           lockedAccounts: locked,
@@ -157,12 +162,38 @@ export default function DashboardPage() {
     fetchAlerts()
   }, [userRole])
 
+  // Fetch Editor extras (Articles & Tours stats)
+  useEffect(() => {
+    if (userRole !== "Editor") return
+
+    const fetchEditorData = async () => {
+      try {
+        const [articlesRes, toursRes] = await Promise.all([
+          getAllArticles(),
+          getAllToursApi(true),
+        ])
+
+        const articles = Array.isArray(articlesRes) ? articlesRes : []
+        const tours = Array.isArray(toursRes) ? toursRes : []
+
+        setArticlesCount(articles.length)
+        setPublishedArticlesCount(articles.filter(a => a.isActive).length)
+        setToursCount(tours.length)
+        setRecentArticles(articles.slice(0, 4))
+      } catch (err) {
+        console.error("Editor data fetch error:", err)
+      }
+    }
+
+    fetchEditorData()
+  }, [userRole])
+
   if (!stats) {
     return (
       <div className="space-y-6">
         <PageHeader
           title="TỔNG QUAN"
-          description="Chào mững đến với hệ thống quản lý AudioGo!"
+          description="Chào mừng đến với hệ thống quản lý AudioGo!"
           icon={<LayoutDashboard size={24} />}
         />
         <PageLoader text="Đang tải tổng quan..." />
@@ -193,7 +224,7 @@ export default function DashboardPage() {
       />
 
       {/* STATS CARDS */}
-      <div className={`grid gap-6 ${userRole === "Admin" ? "grid-cols-2 lg:grid-cols-4" : "grid-cols-2"}`}>
+      <div className={`grid gap-6 ${userRole === "Admin" || userRole === "Editor" ? "grid-cols-2 lg:grid-cols-4" : "grid-cols-2"}`}>
         <StatsCard
           title="TỔNG SỐ POIs"
           value={stats.pois.total}
@@ -207,7 +238,7 @@ export default function DashboardPage() {
           icon={<Headphones size={20} />}
         />
 
-        {/* Chỉ Admin mới thấy */}
+        {/* Thống kê dành cho Admin */}
         {userRole === "Admin" && (
           <>
             <StatsCard
@@ -226,6 +257,26 @@ export default function DashboardPage() {
             />
           </>
         )}
+
+        {/* Thống kê dành cho Editor */}
+        {userRole === "Editor" && (
+          <>
+            <StatsCard
+              title="BÀI VIẾT & TIN TỨC"
+              value={articlesCount}
+              sub={`${publishedArticlesCount} bài đã xuất bản`}
+              color="text-pink-600"
+              icon={<Newspaper size={20} />}
+            />
+            <StatsCard
+              title="TOUR THAM QUAN"
+              value={toursCount}
+              sub="Lộ trình có sẵn"
+              color="text-indigo-600"
+              icon={<RouteIcon size={20} />}
+            />
+          </>
+        )}
       </div>
 
       {/* ADMIN QUICK ACTIONS */}
@@ -234,9 +285,35 @@ export default function DashboardPage() {
           <p className="text-xs font-bold text-pink-500 uppercase tracking-wider mb-4">Truy cập nhanh</p>
           <div className="flex flex-wrap gap-3">
             {[
-              { label: "Quản lý POI",   path: "/pois",            icon: <MapPin size={16} /> },
-              { label: "Xét duyệt đơn", path: "/poi/management",  icon: <ShieldCheck size={16} /> },
-              { label: "Tài khoản",     path: "/accounts",        icon: <Users size={16} /> },
+              { label: "Quản lý POI",   path: "/admin/pois",            icon: <MapPin size={16} /> },
+              { label: "Xét duyệt đơn", path: "/admin/pois/management",  icon: <ShieldCheck size={16} /> },
+              { label: "Tài khoản",     path: "/admin/accounts",        icon: <Users size={16} /> },
+            ].map(({ label, path, icon }) => (
+              <button
+                key={path}
+                onClick={() => navigate(path)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-[#FFF0F5] text-[#8E707E] hover:bg-pink-100 hover:text-pink-600 rounded-xl text-xs font-bold transition-all group"
+              >
+                {icon}
+                {label}
+                <ArrowRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* EDITOR QUICK ACTIONS */}
+      {userRole === "Editor" && (
+        <div className="bg-white rounded-2xl border border-pink-100/30 shadow-sm p-5">
+          <p className="text-xs font-bold text-pink-500 uppercase tracking-wider mb-4">Truy cập nhanh biên tập</p>
+          <div className="flex flex-wrap gap-3">
+            {[
+              { label: "Quản lý POI",         path: "/admin/pois",     icon: <MapPin size={16} /> },
+              { label: "Quản lý Bài viết",    path: "/admin/articles", icon: <Newspaper size={16} /> },
+              { label: "Lộ trình Tour",        path: "/admin/tours",    icon: <RouteIcon size={16} /> },
+              { label: "Bản dịch & Audio",    path: "/admin/audio",    icon: <Headphones size={16} /> },
+              { label: "Trang Landing",       path: "/admin/landing",  icon: <Globe size={16} /> },
             ].map(({ label, path, icon }) => (
               <button
                 key={path}
@@ -269,7 +346,7 @@ export default function DashboardPage() {
               <>
                 {pendingCount > 0 && (
                   <div
-                    onClick={() => navigate("/poi/management")}
+                    onClick={() => navigate("/admin/pois/management")}
                     className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-100 rounded-xl cursor-pointer hover:bg-amber-100 transition-all"
                   >
                     <AlertTriangle size={16} className="text-amber-500 flex-shrink-0" />
@@ -282,7 +359,7 @@ export default function DashboardPage() {
                 )}
                 {alerts.expiringSoon > 0 && (
                   <div
-                    onClick={() => navigate("/subscriptions")}
+                    onClick={() => navigate("/admin/subscriptions")}
                     className="flex items-center gap-3 px-4 py-3 bg-orange-50 border border-orange-100 rounded-xl cursor-pointer hover:bg-orange-100 transition-all"
                   >
                     <Clock size={16} className="text-orange-500 flex-shrink-0" />
@@ -295,7 +372,7 @@ export default function DashboardPage() {
                 )}
                 {alerts.lockedAccounts > 0 && (
                   <div
-                    onClick={() => navigate("/accounts")}
+                    onClick={() => navigate("/admin/accounts")}
                     className="flex items-center gap-3 px-4 py-3 bg-red-50 border border-red-100 rounded-xl cursor-pointer hover:bg-red-100 transition-all"
                   >
                     <Users size={16} className="text-red-500 flex-shrink-0" />
@@ -308,6 +385,55 @@ export default function DashboardPage() {
                 )}
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* EDITOR RECENT ARTICLES WIDGET */}
+      {userRole === "Editor" && recentArticles.length > 0 && (
+        <div className="bg-white rounded-2xl border border-pink-100/30 shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Newspaper size={18} className="text-pink-500" />
+              <h2 className="font-bold text-base text-gray-800 uppercase tracking-wider">Bài viết biên tập gần đây</h2>
+            </div>
+            <button
+              onClick={() => navigate("/admin/articles")}
+              className="text-xs font-bold text-pink-500 hover:text-pink-600 transition-colors uppercase tracking-widest flex items-center gap-1"
+            >
+              Xem tất cả bài viết <ArrowRight size={13} />
+            </button>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {recentArticles.map((article) => (
+              <div
+                key={article.articleId}
+                onClick={() => navigate("/admin/articles")}
+                className="p-4 rounded-xl border border-pink-50 hover:border-pink-200 bg-[#FFFBFD] hover:bg-pink-50/30 transition-all cursor-pointer flex flex-col justify-between group"
+              >
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md uppercase ${
+                      article.type === "news" ? "bg-purple-100 text-purple-600" : "bg-cyan-100 text-cyan-600"
+                    }`}>
+                      {article.type === "news" ? "Tin tức" : "Cẩm nang"}
+                    </span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
+                      article.isActive ? "bg-emerald-100 text-emerald-600" : "bg-amber-100 text-amber-600"
+                    }`}>
+                      {article.isActive ? "Đã đăng" : "Bản nháp"}
+                    </span>
+                  </div>
+                  <h4 className="text-xs font-bold text-gray-800 line-clamp-2 mb-2 group-hover:text-pink-600 transition-colors">
+                    {article.title}
+                  </h4>
+                </div>
+                <p className="text-[11px] text-gray-400 mt-2">
+                  {formatDateVN(article.publishedAt || article.createdAt, false)}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       )}

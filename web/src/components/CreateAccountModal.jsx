@@ -5,12 +5,12 @@ import toast from "react-hot-toast";
 import { createUserApi } from "@/api/accountApi";
 import { isValidEmailFormat, isValidPhone, isEmailDomainValid } from "@/utils/validators";
 
-export default function CreateAccountModal({ onClose, onCreated }) {
+export default function CreateAccountModal({ onClose, onCreated, prefill = null }) {
   const [form, setForm] = useState({
-    name: "",
-    email: "",
-    username: "",
-    phone: "",
+    name: prefill?.fullName || "",
+    email: prefill?.email || "",
+    username: prefill?.username || "",
+    phone: prefill?.phoneNumber || "",
     role: "Owner",
   });
 
