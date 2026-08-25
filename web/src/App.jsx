@@ -164,7 +164,7 @@ export default function App() {
         <Route
           path="/admin/pois/:id"
           element={
-            <ProtectedRoute roles={["Admin", "Owner"]}>
+            <ProtectedRoute roles={["Admin", "Owner", "Editor"]}>
               <MainLayout>
                 <POIDetailPage />
               </MainLayout>
@@ -175,7 +175,7 @@ export default function App() {
         <Route
           path="/admin/pois/requests/:id"
           element={
-            <ProtectedRoute roles={["Admin", "Owner"]}>
+            <ProtectedRoute roles={["Admin", "Owner", "Editor"]}>
               <MainLayout>
                 <POIDetailPage />
               </MainLayout>
