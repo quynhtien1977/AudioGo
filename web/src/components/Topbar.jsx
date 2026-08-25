@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom"
-import { Search, X, User } from "lucide-react"
+import { Search, X, User, Menu } from "lucide-react"
 import { useState, useEffect, useRef, useContext } from "react"
 import { getAllPOIs } from "../api/poiApi"
 import { getAllPoiRequestsAll } from "../api/poiRequestApi"
@@ -13,7 +13,7 @@ import { getAllArticles } from "../api/articleApi"
 import * as subscriptionApi from "../api/subscriptionApi"
 import useAuth from "../hooks/useAuth"
 
-export default function Topbar() {
+export default function Topbar({ onToggleMobileSidebar }) {
   const navigate = useNavigate()
   const location = useLocation()
   const { updateSearch, clearSearch } = useContext(SearchContext)
@@ -317,109 +317,214 @@ export default function Topbar() {
   }
 
   return (
-    <div className="flex justify-between items-center px-6 py-4 border-b bg-white">
-
-      {/* Search */}
-      {shouldDisplaySearch && (
-        <div className="relative w-1/3" ref={searchRef}>
-          <Search className="text-gray-400 w-5 h-5 absolute ml-3 mt-2 pointer-events-none" />
-          <input
-            placeholder={getPlaceholder()}
-            value={searchQuery}
-            onChange={(e) => handleSearch(e.target.value)}
-            onKeyDown={handleKeyDown}
-            onFocus={() => {
-              setSearchFocused(true)
-              if (searchQuery) setShowResults(true)
-            }}
-            onBlur={() => setSearchFocused(false)}
-            className="w-full px-12 py-2 rounded-full bg-gray-100 outline-none focus:ring-2 focus:ring-pink-500 focus:bg-white transition"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => {
-                setSearchQuery("")
-                setSearchResults([])
-                setShowResults(false)
+    <>
+      {/* ── DESKTOP TOPBAR (Original classic design) ── */}
+      <div className="hidden md:flex justify-between items-center px-6 py-4 border-b bg-white">
+        {/* Search */}
+        {shouldDisplaySearch && (
+          <div className="relative w-1/3" ref={searchRef}>
+            <Search className="text-gray-400 w-5 h-5 absolute ml-3 mt-2 pointer-events-none" />
+            <input
+              placeholder={getPlaceholder()}
+              value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onFocus={() => {
+                setSearchFocused(true);
+                if (searchQuery) setShowResults(true);
               }}
-              className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
+              onBlur={() => setSearchFocused(false)}
+              className="w-full px-12 py-2 rounded-full bg-gray-100 outline-none focus:ring-2 focus:ring-pink-500 focus:bg-white transition text-sm"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setSearchResults([]);
+                  setShowResults(false);
+                }}
+                className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
 
-          {/* Search Results Dropdown */}
-          {showResults && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
-              {isLoading ? (
-                <div className="px-4 py-3 text-gray-500 text-sm">Đang tải...</div>
-              ) : searchResults.length > 0 ? (
-                <div>
-                  {searchResults.map((item, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleResultClick(item)}
-                      className="w-full text-left px-4 py-3 hover:bg-gray-100 border-b last:border-b-0 transition"
-                    >
-                      <p className="font-medium text-gray-900">
-                        {getItemDisplayName(item)}
-                      </p>
-                      {item.description && (
-                        <p className="text-xs text-gray-500 truncate">
-                          {item.description}
+            {/* Search Results Dropdown */}
+            {showResults && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+                {isLoading ? (
+                  <div className="px-4 py-3 text-gray-500 text-sm">Đang tải...</div>
+                ) : searchResults.length > 0 ? (
+                  <div>
+                    {searchResults.map((item, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleResultClick(item)}
+                        className="w-full text-left px-4 py-3 hover:bg-gray-100 border-b last:border-b-0 transition"
+                      >
+                        <p className="font-medium text-gray-900">
+                          {getItemDisplayName(item)}
                         </p>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="px-4 py-3 text-gray-500 text-sm">Không tìm thấy kết quả</div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Right */}
-      <div className="flex items-center gap-4 ml-auto">
-
-        {/*  Logout */}
-        <button
-          onClick={() => { logout(); navigate("/login") }}
-          className="px-3 py-1 rounded-full text-sm bg-gray-200 hover:bg-pink-500 hover:text-white transition duration-200"
-        >
-          Đăng xuất
-        </button>
-
-        {/*  User Info */}
-        {(role === "Owner" || role === "Editor") ? (
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate("/admin/profile")}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-pink-50 transition"
-          >
-            <User size={16} className="text-pink-500" />
-            <div className="text-right">
-              <p className="font-semibold text-sm">{user.fullName || user.username}</p>
-              {role === "Owner" && (
-                <p className="text-xs text-teal-600">
-                  {currentSubscription?.planName || "Chưa có"}
-                </p>
-              )}
-            </div>
-          </button>
-        </div>
-        ) : (
-          <div className="flex items-center gap-4">
-            <div className="text-right mr-4">
-              <p className="font-semibold text-sm">{user.fullName || user.username}</p>
-              <p className="text-xs text-gray-400">{role}</p>
-            </div>
+                        {item.description && (
+                          <p className="text-xs text-gray-500 truncate">
+                            {item.description}
+                          </p>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="px-4 py-3 text-gray-500 text-sm">Không tìm thấy kết quả</div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
+        {/* Right */}
+        <div className="flex items-center gap-4 ml-auto">
+          {/* Logout */}
+          <button
+            onClick={() => { logout(); navigate("/login"); }}
+            className="px-3 py-1 rounded-full text-sm bg-gray-200 hover:bg-pink-500 hover:text-white transition duration-200"
+          >
+            Đăng xuất
+          </button>
+
+          {/* User Info */}
+          {(role === "Owner" || role === "Editor") ? (
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate("/admin/profile")}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-pink-50 transition"
+              >
+                <User size={16} className="text-pink-500" />
+                <div className="text-right">
+                  <p className="font-semibold text-sm">{user.fullName || user.username}</p>
+                  {role === "Owner" && (
+                    <p className="text-xs text-teal-600">
+                      {currentSubscription?.planName || "Chưa có"}
+                    </p>
+                  )}
+                  {role === "Editor" && (
+                    <p className="text-xs text-purple-600">
+                      Biên tập viên
+                    </p>
+                  )}
+                </div>
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-4">
+              <div className="text-right mr-4">
+                <p className="font-semibold text-sm">{user.fullName || user.username}</p>
+                <p className="text-xs text-gray-400">{role}</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-    </div>
-  )
+      {/* ── MOBILE TOPBAR (Optimized drawer trigger & compact layout) ── */}
+      <div className="flex md:hidden justify-between items-center px-3 py-2.5 border-b bg-white gap-2 sticky top-0 z-30">
+        {/* Left: Mobile hamburger button & Search */}
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <button
+            onClick={onToggleMobileSidebar}
+            className="p-2 rounded-xl text-gray-600 hover:text-pink-500 hover:bg-pink-50 transition-colors flex-shrink-0"
+            aria-label="Mở menu"
+          >
+            <Menu size={20} />
+          </button>
+
+          {/* Search */}
+          {shouldDisplaySearch && (
+            <div className="relative flex-1 max-w-[200px] sm:max-w-xs min-w-0">
+              <Search className="text-gray-400 w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                placeholder={getPlaceholder()}
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onFocus={() => {
+                  setSearchFocused(true);
+                  if (searchQuery) setShowResults(true);
+                }}
+                onBlur={() => setSearchFocused(false)}
+                className="w-full pl-9 pr-7 py-1.5 text-xs rounded-full bg-gray-100 outline-none focus:ring-2 focus:ring-pink-500 focus:bg-white transition"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setSearchResults([]);
+                    setShowResults(false);
+                  }}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+
+              {/* Search Results Dropdown */}
+              {showResults && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-80 overflow-y-auto min-w-[240px]">
+                  {isLoading ? (
+                    <div className="px-4 py-3 text-gray-500 text-xs">Đang tải...</div>
+                  ) : searchResults.length > 0 ? (
+                    <div>
+                      {searchResults.map((item, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleResultClick(item)}
+                          className="w-full text-left px-4 py-2.5 hover:bg-gray-50 border-b last:border-b-0 transition"
+                        >
+                          <p className="font-semibold text-xs text-gray-900 truncate">
+                            {getItemDisplayName(item)}
+                          </p>
+                          {item.description && (
+                            <p className="text-[11px] text-gray-500 truncate">
+                              {item.description}
+                            </p>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="px-4 py-3 text-gray-500 text-xs">Không tìm thấy kết quả</div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Right: User Profile & Logout */}
+        <div className="flex items-center gap-2 ml-auto flex-shrink-0">
+          {(role === "Owner" || role === "Editor") ? (
+            <button
+              onClick={() => navigate("/admin/profile")}
+              className="p-1 rounded-full hover:bg-pink-50 transition"
+              title={user.fullName || user.username}
+            >
+              <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center text-pink-600">
+                <User size={15} />
+              </div>
+            </button>
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center text-pink-600" title={user.fullName || user.username}>
+              <User size={15} />
+            </div>
+          )}
+
+          <button
+            onClick={() => { logout(); navigate("/login"); }}
+            className="px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 hover:bg-pink-500 hover:text-white text-gray-600 transition duration-150 whitespace-nowrap"
+          >
+            Đăng xuất
+          </button>
+        </div>
+      </div>
+    </>
+  );
 }

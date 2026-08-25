@@ -159,7 +159,7 @@ export default function ArticlesPage() {
       )}
 
       {/* STATS CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <StatsCard
           title="TỔNG BÀI VIẾT"
           value={totalCount}
@@ -190,11 +190,11 @@ export default function ArticlesPage() {
       </div>
 
       {/* FILTER & SEARCH */}
-      <div className="bg-white rounded-2xl p-6 border border-pink-100/30 shadow-sm">
+      <div className="bg-white rounded-2xl p-4 sm:p-6 border border-pink-100/30 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           
           {/* TABS */}
-          <div className="flex bg-[#FFF0F5] p-1 rounded-2xl gap-1 self-start">
+          <div className="flex bg-[#FFF0F5] p-1 rounded-2xl gap-1 w-full sm:w-auto flex-wrap sm:flex-nowrap">
             <button
               onClick={() => setFilterType("")}
               className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
@@ -227,8 +227,6 @@ export default function ArticlesPage() {
             </button>
           </div>
 
-
-
         </div>
       </div>
 
@@ -244,7 +242,7 @@ export default function ArticlesPage() {
       ) : (
         <div className="bg-white rounded-2xl border border-pink-100/30 overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[650px]">
               <thead className="bg-pink-50/20 text-[11px] font-bold text-pink-500 tracking-wider uppercase border-b border-pink-100/20 text-left">
                 <tr>
                   <th className="px-6 py-4">Ảnh / Phân loại</th>

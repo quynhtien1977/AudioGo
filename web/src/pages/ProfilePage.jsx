@@ -278,7 +278,7 @@ const ProfilePage = () => {
             />
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm min-w-[600px]">
                 <thead>
                   <tr className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-wider">
                     <th className="px-6 py-3 text-left">Gói</th>
@@ -322,11 +322,11 @@ const ProfilePage = () => {
 
       {/* MAIN PROFILE CONTENT — hide when transaction tab active */}
       {activeTab === "profile" && (
-      <div className="grid grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
         {/* LEFT - Main Profile */}
-        <div className="col-span-8 space-y-6">
+        <div className="col-span-1 lg:col-span-8 space-y-6">
           {/* Profile Info Section */}
-          <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm space-y-6">
+          <div className="bg-white p-4 sm:p-8 rounded-2xl sm:rounded-[32px] border border-gray-100 shadow-sm space-y-6">
             <div className="flex justify-between items-center border-b border-gray-50 pb-4">
               <h2 className="text-lg font-bold text-gray-700">Thông tin cơ bản</h2>
               {!isEditing && (
@@ -459,7 +459,7 @@ const ProfilePage = () => {
           </div>
 
           {/* ── ĐỔI MẬT KHẨU SECTION ── */}
-          <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm space-y-6">
+          <div className="bg-white p-4 sm:p-8 rounded-2xl sm:rounded-[32px] border border-gray-100 shadow-sm space-y-6">
             <div className="flex justify-between items-center border-b border-gray-50 pb-4">
               <div className="flex items-center gap-2">
                 <LockKeyhole size={18} className="text-pink-500" />
@@ -579,9 +579,9 @@ const ProfilePage = () => {
         </div>
 
         {/* RIGHT - Security Section */}
-        <div className="col-span-4 space-y-6">
+        <div className="col-span-1 lg:col-span-4 space-y-6">
           {/* Account Info Card */}
-          <div className="bg-gradient-to-br from-pink-50 to-orange-50 p-6 rounded-[32px] border border-pink-100 space-y-3">
+          <div className="bg-gradient-to-br from-pink-50 to-orange-50 p-5 sm:p-6 rounded-2xl sm:rounded-[32px] border border-pink-100 space-y-3">
             <div className="flex items-center gap-2">
               <h4 className="text-xs font-bold text-pink-600 uppercase tracking-widest">Thông tin tài khoản</h4>
             </div>

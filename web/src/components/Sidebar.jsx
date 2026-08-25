@@ -15,23 +15,19 @@ import {
   Sparkles,
   Newspaper,
   Globe,
+  X,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import useAuth from "@/hooks/useAuth";
 
-export default function Sidebar({ onShowPlans }) {
+export default function Sidebar({ onShowPlans, mobileOpen = false, onCloseMobile }) {
   const { user } = useAuth();
   const role = user?.role;
 
-  return (
-    <div className="sticky top-0 h-screen w-64 border-r bg-white p-4 flex flex-col">
-      <h1 className="mb-6 flex items-center text-lg font-bold text-pink-500 select-none">
-        <Map size={20} className="mr-2" />
-        AudioGo
-      </h1>
-
+  const sidebarContent = (
+    <>
       <div className="space-y-5 flex-1 overflow-y-auto pr-1">
-                <SidebarGroup label="TỔNG QUAN">
+        <SidebarGroup label="TỔNG QUAN">
           <MenuItem to="/admin/dashboard" icon={<LayoutDashboard size={18} />}>
             Tổng quan
           </MenuItem>
@@ -39,7 +35,7 @@ export default function Sidebar({ onShowPlans }) {
 
         {role === "Admin" && (
           <>
-                    <SidebarGroup label="NỘI DUNG">
+            <SidebarGroup label="NỘI DUNG">
               <MenuItem to="/admin/pois" icon={<MapPin size={18} />}>
                 POIs
               </MenuItem>
@@ -60,7 +56,7 @@ export default function Sidebar({ onShowPlans }) {
               </MenuItem>
             </SidebarGroup>
 
-                    <SidebarGroup label="VẬN HÀNH">
+            <SidebarGroup label="VẬN HÀNH">
               <MenuItem to="/admin/accounts" icon={<Users size={18} />}>
                 Tài khoản
               </MenuItem>
@@ -78,7 +74,7 @@ export default function Sidebar({ onShowPlans }) {
               </MenuItem>
             </SidebarGroup>
 
-                    <SidebarGroup label="KINH DOANH">
+            <SidebarGroup label="KINH DOANH">
               <MenuItem to="/admin/analytics" icon={<BarChart3 size={18} />}>
                 Phân tích
               </MenuItem>
@@ -93,7 +89,7 @@ export default function Sidebar({ onShowPlans }) {
         )}
 
         {role === "Owner" && (
-                  <SidebarGroup label="NỘI DUNG">
+          <SidebarGroup label="NỘI DUNG">
             <MenuItem to="/admin/pois" icon={<MapPin size={18} />}>
               POIs
             </MenuItem>
@@ -105,7 +101,7 @@ export default function Sidebar({ onShowPlans }) {
 
         {role === "Editor" && (
           <>
-                      <SidebarGroup label="NỘI DUNG">
+            <SidebarGroup label="NỘI DUNG">
               <MenuItem to="/admin/pois" icon={<MapPin size={18} />}>
                 POIs
               </MenuItem>
@@ -132,7 +128,10 @@ export default function Sidebar({ onShowPlans }) {
       {role === "Owner" && (
         <div className="mt-auto pt-3">
           <button
-            onClick={() => onShowPlans && onShowPlans()}
+            onClick={() => {
+              if (onCloseMobile) onCloseMobile();
+              if (onShowPlans) onShowPlans();
+            }}
             className="w-full flex items-center gap-3 rounded-lg p-3 bg-pink-50 text-pink-600 hover:bg-pink-100 transition-all font-medium"
           >
             <Sparkles size={18} />
@@ -140,7 +139,7 @@ export default function Sidebar({ onShowPlans }) {
           </button>
         </div>
       )}
-    </div>
+    </>
   );
 
   function SidebarGroup({ label, children }) {
@@ -164,14 +163,16 @@ export default function Sidebar({ onShowPlans }) {
         onClick={(e) => {
           if (isDisabled) {
             e.preventDefault();
+          } else if (onCloseMobile) {
+            onCloseMobile();
           }
         }}
         className={({ isActive }) =>
-          `flex items-center gap-3 rounded-lg p-2 transition-colors duration-150 ${
+          `flex items-center gap-3 rounded-lg p-2.5 md:p-2 transition-colors duration-150 ${
             isDisabled
               ? "cursor-not-allowed text-gray-400 opacity-50"
               : isActive
-                ? "bg-pink-100 text-pink-500"
+                ? "bg-pink-100 text-pink-500 font-semibold"
                 : "text-gray-600 hover:bg-pink-50 hover:text-pink-500"
           }`
         }
@@ -181,4 +182,55 @@ export default function Sidebar({ onShowPlans }) {
       </NavLink>
     );
   }
+
+  return (
+    <>
+      {/* DESKTOP SIDEBAR */}
+      <aside className="hidden md:flex sticky top-0 h-screen w-64 border-r bg-white p-4 flex-col shrink-0">
+        <h1 className="mb-6 flex items-center text-lg font-bold text-pink-500 select-none">
+          <Map size={20} className="mr-2" />
+          AudioGo
+        </h1>
+        {sidebarContent}
+      </aside>
+
+      {/* MOBILE DRAWER SIDEBAR */}
+      <div
+        className={`fixed inset-0 z-50 md:hidden transition-all duration-300 ${
+          mobileOpen ? "visible" : "invisible pointer-events-none"
+        }`}
+      >
+        {/* Backdrop overlay */}
+        <div
+          className={`fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity duration-300 ${
+            mobileOpen ? "opacity-100" : "opacity-0"
+          }`}
+          onClick={onCloseMobile}
+        />
+
+        {/* Drawer container */}
+        <div
+          className={`fixed inset-y-0 left-0 w-72 max-w-[85vw] bg-white p-4 flex flex-col shadow-2xl transition-transform duration-300 ease-out z-10 ${
+            mobileOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          <div className="flex items-center justify-between mb-6 pb-2 border-b border-gray-100">
+            <h1 className="flex items-center text-lg font-bold text-pink-500 select-none">
+              <Map size={20} className="mr-2" />
+              AudioGo
+            </h1>
+            <button
+              onClick={onCloseMobile}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+              aria-label="Đóng menu"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          {sidebarContent}
+        </div>
+      </div>
+    </>
+  );
 }

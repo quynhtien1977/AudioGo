@@ -23,6 +23,10 @@ jobs:
       - name: Install MAUI workload
         run: dotnet workload install maui-android
 
+      # Restore dependencies cho mobile & shared project
+      - name: Restore dependencies
+        run: dotnet restore mobile/Mobile.csproj
+
       # Lấy version number từ tag (v1.2.3 → 1.2.3)
       - name: Extract version from tag
         id: version
@@ -45,10 +49,9 @@ jobs:
           dotnet publish mobile/Mobile.csproj `
             -c Release `
             -f net10.0-android `
-            --no-restore `
             -p:ApplicationDisplayVersion="${{ steps.version.outputs.version }}" `
             -p:ApplicationVersion="${{ steps.version.outputs.build_number }}" `
-            -p:AndroidSigningKeyStore="$(pwd)/audiogo.keystore" `
+            -p:AndroidSigningKeyStore="${{ github.workspace }}/audiogo.keystore" `
             -p:AndroidSigningKeyAlias="${{ secrets.ANDROID_KEY_ALIAS }}" `
             -p:AndroidSigningKeyPass="${{ secrets.ANDROID_KEY_PASSWORD }}" `
             -p:AndroidSigningStorePass="${{ secrets.ANDROID_STORE_PASSWORD }}"

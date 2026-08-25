@@ -265,12 +265,12 @@ export default function AudioContentPage() {
 
                 {/* PAGINATION */}
                 {totalPages > 0 && (
-                    <div className="flex justify-between px-6 py-4 text-sm text-gray-500 items-center bg-gray-50/50 border-t">
+                    <div className="flex flex-col sm:flex-row justify-between px-4 sm:px-6 py-4 text-xs sm:text-sm text-gray-500 items-center gap-3 bg-gray-50/50 border-t">
                         <p>
                             Hiển thị trang <span className="font-bold text-gray-800">{page}</span> / <span className="font-bold">{totalPages}</span>
                         </p>
 
-                        <div className="flex gap-1 items-center">
+                        <div className="flex gap-1 items-center flex-wrap justify-center">
                             <button
                                 disabled={page === 1}
                                 onClick={() => setPage((p) => p - 1)}

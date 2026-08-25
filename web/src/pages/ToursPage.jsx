@@ -184,7 +184,7 @@ const ToursPage = () => {
       />
 
       {/* STATS BARS */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <StatsCard
           title="TỔNG SỐ TOUR"
           value={tours.length}
@@ -220,9 +220,9 @@ const ToursPage = () => {
           description="Thử thay đổi từ khóa tìm kiếm hoặc tạo một tour trải nghiệm mới để bắt đầu."
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-fadeIn">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 animate-fadeIn">
           {filteredTours.map((tour) => (
-            <div key={tour.tourId} className={`bg-white rounded-[2.5rem] border shadow-sm overflow-hidden group hover:shadow-xl transition-all ${
+            <div key={tour.tourId} className={`bg-white rounded-3xl sm:rounded-[2.5rem] border shadow-sm overflow-hidden group hover:shadow-xl transition-all ${
               tour.isActive ? 'border-gray-100' : 'border-gray-200 opacity-60'
             }`}>
               <div className="relative h-48 w-full overflow-hidden">
@@ -239,7 +239,7 @@ const ToursPage = () => {
                 </button>
               </div>
 
-              <div className="p-8 pt-6 space-y-4">
+              <div className="p-5 sm:p-8 pt-5 sm:pt-6 space-y-4">
                 <div className="flex justify-between items-center text-left">
                   <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
                     tour.isActive 
