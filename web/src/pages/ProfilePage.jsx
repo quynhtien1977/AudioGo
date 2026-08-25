@@ -15,7 +15,7 @@ import { getMyTransactionsApi } from "@/api/subscriptionApi"
 
 const ProfilePage = () => {
   const navigate = useNavigate()
-  const { user: authUser } = useAuth()
+  const { user: authUser, refreshUser } = useAuth()
 
   const [user, setUser] = useState(null)
   const [form, setForm] = useState({})
@@ -39,13 +39,8 @@ const ProfilePage = () => {
   const [showConfirmPw, setShowConfirmPw] = useState(false)
   const [isChangingPw, setIsChangingPw] = useState(false)
 
-  // Đọc flag mustChangePassword từ storage
-  const mustChangePassword = (() => {
-    try {
-      const raw = localStorage.getItem("user") || sessionStorage.getItem("user")
-      return raw ? JSON.parse(raw)?.mustChangePassword === true : false
-    } catch { return false }
-  })()
+  // Đọc flag mustChangePassword từ Context (không cần parse storage thủ công)
+  const mustChangePassword = authUser?.mustChangePassword === true
 
   // Fetch user profile
   useEffect(() => {
@@ -150,7 +145,7 @@ const ProfilePage = () => {
 
       setUser(form)
 
-      // ── P1-B: Sync localStorage/sessionStorage → Topbar re-render ──────
+      // Sync storage và update AuthContext state — Topbar sẽ tự re-render
       const currentRaw = localStorage.getItem("user")
       const currentUser = JSON.parse(currentRaw || sessionStorage.getItem("user") || "{}")
       const updatedUser = { ...currentUser, fullName: form.fullName }
@@ -160,8 +155,7 @@ const ProfilePage = () => {
       } else {
         sessionStorage.setItem("user", JSON.stringify(updatedUser))
       }
-      // Trigger Topbar re-render (storage event không tự fire trong cùng tab)
-      window.dispatchEvent(new Event("storage"))
+      refreshUser() // cập nhật Context — Topbar nhận user mới qua hook
 
       toast.success("Cập nhật thông tin cá nhân thành công!")
       setIsEditing(false)
@@ -199,10 +193,11 @@ const ProfilePage = () => {
       setIsChangingPw(true)
       await changePasswordApi(pwForm.oldPassword, pwForm.newPassword)
 
-      // Xóa flag mustChangePassword khỏi storage
+      // Xóa flag mustChangePassword khỏi storage và sync Context
       const storage = localStorage.getItem("user") ? localStorage : sessionStorage
       const userData = JSON.parse(storage.getItem("user") || "{}")
       storage.setItem("user", JSON.stringify({ ...userData, mustChangePassword: false }))
+      refreshUser()
 
       toast.success("Đổi mật khẩu thành công!")
       setPwForm({ oldPassword: "", newPassword: "", confirmPassword: "" })

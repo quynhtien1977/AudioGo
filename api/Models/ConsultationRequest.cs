@@ -14,8 +14,9 @@ public class ConsultationRequest
     public string? Email          { get; set; }
     public string? Message        { get; set; }
 
-    /// <summary>"New" | "Contacted" | "Done"</summary>
-    public string   Status      { get; set; } = "New";
-    public DateTime CreatedAt   { get; set; } = DateTime.UtcNow;
-    public DateTime? ContactedAt { get; set; }
+    /// <summary>"New" | "Contacted" | "Done" | "Rejected"</summary>
+    public string    Status       { get; set; } = "New";
+    public DateTime  CreatedAt    { get; set; } = DateTime.UtcNow;
+    public DateTime? ContactedAt  { get; set; }
+    public DateTime? RejectedAt   { get; set; }
 }

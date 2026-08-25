@@ -1,7 +1,8 @@
 import { useEffect } from "react";
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
+import { MapContainer, Marker, useMapEvents, useMap } from "react-leaflet";
 import { MapPin } from "lucide-react";
 import "leaflet/dist/leaflet.css";
+import AppTileLayer from "@/components/AppTileLayer";
 import L from "leaflet";
 
 // Fix lỗi icon marker
@@ -66,10 +67,7 @@ export default function POIMap({ lat, lng, isEditing, onLocationSelect }) {
         style={{ width: "100%", height: "300px" }}
         scrollWheelZoom={true}
       >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
-          attribution="&copy; OpenStreetMap contributors"
-        />
+<AppTileLayer />
 
         {/* Điều khiển hiệu ứng trượt bản đồ */}
         <MapController lat={lat} lng={lng} />

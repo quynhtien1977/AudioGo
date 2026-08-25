@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Map, Sun, Moon, ChevronDown, Globe2 } from "lucide-react";
 import { useTheme } from "@/context/ThemeContext";
+import { useAuthContext } from "@/context/AuthContext";
 import { SUPPORTED_LANGS } from "@/api/landingApi";
 
 export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
@@ -11,6 +12,7 @@ export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
   const [langOpen, setLangOpen]     = useState(false);
   const langRef                     = useRef(null);
   const { theme, toggle }           = useTheme();
+  const { isAuthenticated }         = useAuthContext();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -146,16 +148,25 @@ export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
               {isLight ? <Moon size={16} /> : <Sun size={16} />}
             </button>
 
-            <Link
-              to="/login"
-              style={{
-                border: `1px solid ${scrolled ? "var(--lp-border)" : "rgba(255,255,255,0.3)"}`,
-                color: scrolled ? "var(--lp-text-muted)" : "rgba(255,255,255,0.9)",
-              }}
-              className="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:border-pink-400 hover:text-pink-400 whitespace-nowrap"
-            >
-              {staticData.navLogin || "Đăng nhập"}
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                to="/admin/dashboard"
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-pink-600 text-white shadow-sm hover:bg-pink-700 hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap"
+              >
+                {staticData.navDashboard || "Vào Dashboard"}
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                style={{
+                  border: `1px solid ${scrolled ? "var(--lp-border)" : "rgba(255,255,255,0.3)"}`,
+                  color: scrolled ? "var(--lp-text-muted)" : "rgba(255,255,255,0.9)",
+                }}
+                className="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:border-pink-400 hover:text-pink-400 whitespace-nowrap"
+              >
+                {staticData.navLogin || "Đăng nhập"}
+              </Link>
+            )}
             <button
               onClick={() => scrollTo("#consult")}
               className="px-4 py-2 rounded-lg text-sm font-semibold bg-pink-600 text-white shadow-sm hover:shadow-md hover:bg-pink-700 hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap"
@@ -244,14 +255,24 @@ export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
                 </button>
               ))}
               <hr style={{ borderColor: "var(--lp-border)" }} className="my-2" />
-              <Link
-                to="/login"
-                style={{ color: "var(--lp-text-muted)" }}
-                className="px-4 py-3 rounded-lg font-medium hover:text-pink-400 transition-colors"
-                onClick={() => setMobileOpen(false)}
-              >
-                {staticData.navLoginMobile || "Đăng nhập quản lý"}
-              </Link>
+              {isAuthenticated ? (
+                <Link
+                  to="/admin/dashboard"
+                  className="px-4 py-3 rounded-lg font-semibold text-pink-600 hover:bg-pink-50/20 transition-colors"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {staticData.navDashboard || "Vào Dashboard"}
+                </Link>
+              ) : (
+                <Link
+                  to="/login"
+                  style={{ color: "var(--lp-text-muted)" }}
+                  className="px-4 py-3 rounded-lg font-medium hover:text-pink-400 transition-colors"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {staticData.navLoginMobile || "Đăng nhập quản lý"}
+                </Link>
+              )}
               <button
                 onClick={() => scrollTo("#consult")}
                 className="px-4 py-3 rounded-lg font-semibold bg-pink-600 text-white text-center hover:bg-pink-700 transition-colors"

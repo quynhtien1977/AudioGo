@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
+import { AuthProvider } from "@/context/AuthContext";
 import MainLayout from "@/layouts/MainLayout";
 import { SearchProvider } from "@/context/SearchContext";
 import { SubscriptionProvider } from "@/context/SubscriptionContext";
@@ -45,8 +46,9 @@ import LandingSettingsPage from "@/pages/LandingSettingsPage";
 export default function App() {
   return (
     <BrowserRouter>
-      <SearchProvider>
-        <SubscriptionProvider>
+      <AuthProvider>
+        <SearchProvider>
+          <SubscriptionProvider>
           <Toaster
           position="top-right"
           reverseOrder={false}
@@ -419,7 +421,8 @@ export default function App() {
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
         </SubscriptionProvider>
-      </SearchProvider>
+        </SearchProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

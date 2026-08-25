@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
+import { MapContainer, Marker, Popup, Polyline } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import AppTileLayer from "@/components/AppTileLayer";
 import { getPoiDetail } from "@/api/poiApi";
 import { Loader2, MapPin } from "lucide-react";
 
@@ -136,10 +137,7 @@ const TourRouteMap = ({ pois = [] }) => {
         className="rounded-2xl"
       >
         {/* Map Tiles */}
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        />
+        <AppTileLayer />
 
         {/* Tour Route Line */}
         {routeCoordinates.length > 1 && (

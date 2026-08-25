@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { MapContainer, TileLayer, useMap, Marker, Popup } from 'react-leaflet'
+import { MapContainer, useMap, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
+import AppTileLayer from '@/components/AppTileLayer'
 import L from 'leaflet'
 import 'leaflet.heat'
 import {
@@ -404,10 +405,7 @@ export default function AnalyticsPage() {
             style={{ height: '100%', width: '100%' }}
             scrollWheelZoom={true}
           >
-            <TileLayer
-              attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-            />
+            <AppTileLayer />
 
             {viewMode === 'overview' && heatmapData.length > 0 && <HeatmapLayer points={heatmapData} />}
             {viewMode === 'by-time' && heatmapByTimeData.length > 0 && <HeatmapLayer points={heatmapByTimeData} />}
@@ -415,7 +413,7 @@ export default function AnalyticsPage() {
             {poisData.map(poi => (
               <Marker key={poi.poiId} position={[poi.latitude, poi.longitude]}>
                 <Popup>
-                  <div className="font-semibold text-gray-800 text-xs">{poi.title}</div>
+                  <div className="font-semibold text-gray-800 text-xs">{poi.name || poi.title}</div>
                   <div className="text-[10px] text-gray-500 font-mono mt-0.5">
                     {poi.latitude?.toFixed(5)}, {poi.longitude?.toFixed(5)}
                   </div>

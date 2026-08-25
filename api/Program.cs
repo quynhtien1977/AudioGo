@@ -29,6 +29,14 @@ var allowedOrigins = (builder.Configuration.GetSection("Cors:AllowedOrigins").Ge
                      .ToArray();
 
 builder.Services.AddHttpClient();
+builder.Services.AddHttpClient("nominatim", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(5);
+    client.DefaultRequestHeaders.Add("User-Agent", "AudioGo-CMS/1.0");
+}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+});
 
 builder.Services.AddCors(opt =>
 {
