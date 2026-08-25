@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Server.Controllers;
 using Server.Data;
 using Server.Models;
@@ -49,8 +50,9 @@ public class AuthControllerTests
         jwtConfig.Setup(c => c["Jwt:Audience"]).Returns("test");
 
         var authService = new AuthService(db, jwtConfig.Object);
+        var logger = new Mock<ILogger<AuthController>>();
 
-        return new AuthController(authService, db, emailMock.Object, configMock.Object, envMock);
+        return new AuthController(authService, db, emailMock.Object, configMock.Object, envMock, logger.Object);
     }
 
     private static Account MakeAccount(string email, string? resetToken = null, DateTime? tokenExpiry = null)
