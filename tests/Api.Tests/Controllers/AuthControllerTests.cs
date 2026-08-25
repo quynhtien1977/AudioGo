@@ -50,9 +50,11 @@ public class AuthControllerTests
         jwtConfig.Setup(c => c["Jwt:Audience"]).Returns("test");
 
         var authService = new AuthService(db, jwtConfig.Object);
+        var authMgmtLogger = new Mock<ILogger<AuthManagementService>>();
+        var authMgmtService = new AuthManagementService(db, emailMock.Object, configMock.Object, authMgmtLogger.Object);
         var logger = new Mock<ILogger<AuthController>>();
 
-        return new AuthController(authService, db, emailMock.Object, configMock.Object, envMock, logger.Object);
+        return new AuthController(authService, authMgmtService, db, envMock, logger.Object);
     }
 
     private static Account MakeAccount(string email, string? resetToken = null, DateTime? tokenExpiry = null)
