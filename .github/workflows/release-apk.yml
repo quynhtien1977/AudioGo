@@ -1,0 +1,73 @@
+name: CD — Release Android APK
+
+on:
+  push:
+    tags:
+      - "v*.*.*" # Ví dụ: v1.0.0, v1.2.3
+
+jobs:
+  build-apk:
+    name: Build & Sign Android APK
+    runs-on: windows-latest # MAUI Android build cần Windows runner
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Cài .NET 10 SDK với MAUI workload
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Install MAUI workload
+        run: dotnet workload install maui-android
+
+      # Lấy version number từ tag (v1.2.3 → 1.2.3)
+      - name: Extract version from tag
+        id: version
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"   # bỏ tiền tố "v"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          # ApplicationVersion tăng dần theo build number (tính từ số lần push tag)
+          echo "build_number=$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
+
+      # Decode keystore từ GitHub Secret (base64)
+      - name: Decode keystore
+        shell: bash
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > audiogo.keystore
+
+      # Build + Sign APK với Release config
+      - name: Build signed APK
+        run: |
+          dotnet publish mobile/Mobile.csproj `
+            -c Release `
+            -f net10.0-android `
+            --no-restore `
+            -p:ApplicationDisplayVersion="${{ steps.version.outputs.version }}" `
+            -p:ApplicationVersion="${{ steps.version.outputs.build_number }}" `
+            -p:AndroidSigningKeyStore="$(pwd)/audiogo.keystore" `
+            -p:AndroidSigningKeyAlias="${{ secrets.ANDROID_KEY_ALIAS }}" `
+            -p:AndroidSigningKeyPass="${{ secrets.ANDROID_KEY_PASSWORD }}" `
+            -p:AndroidSigningStorePass="${{ secrets.ANDROID_STORE_PASSWORD }}"
+
+      # Tìm và upload file APK sinh ra
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: "AudioGo-${{ steps.version.outputs.version }}.apk"
+          path: "mobile/bin/Release/net10.0-android/**/*.apk"
+          retention-days: 30
+
+      # Tạo GitHub Release tự động và đính kèm APK
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "AudioGo ${{ steps.version.outputs.version }}"
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: "mobile/bin/Release/net10.0-android/**/*.apk"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
