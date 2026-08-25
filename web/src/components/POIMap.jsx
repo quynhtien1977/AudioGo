@@ -1,6 +1,7 @@
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, Marker, Popup, useMap } from 'react-leaflet';
 import { useEffect } from 'react';
 import 'leaflet/dist/leaflet.css';
+import AppTileLayer from '@/components/AppTileLayer';
 import L from 'leaflet';
 
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -56,10 +57,7 @@ export default function POIMap({ pois = [] }) {
       style={containerStyle}
     >
       
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; OpenStreetMap contributors'
-      />
+      <AppTileLayer />
 
       {/* 🔥 QUAN TRỌNG: thêm dòng này */}
       <MapController pois={pois} />

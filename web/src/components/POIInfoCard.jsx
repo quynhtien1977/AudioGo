@@ -1,11 +1,62 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
+import { Search, Loader2, CheckCircle2 } from "lucide-react"
 import { getCategoriesApi } from "@/api/categoryApi"
 import PriorityBadge, { getPriorityColor, getPriorityInfo } from "@/components/PriorityBadge"
 
-const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role, getCategoryColor }) => {
-  if (!poi) return null;
+// Proxy qua backend — tránh ERR_CERT_INVALID khi gọi external HTTPS từ browser
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5086/api";
 
+const geocode = async (query) => {
+  const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+  const url   = `${API_BASE}/cms/geocoding/search?q=${encodeURIComponent(query)}&limit=5`;
+  const res   = await fetch(url, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error("Geocoding proxy error");
+  return res.json();
+};
+
+const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role, getCategoryColor }) => {
   const [categories, setCategories] = useState([])
+
+  // Address geocoding state
+  const [addressQuery, setAddressQuery] = useState("")
+  const [geocoding, setGeocoding]       = useState(false)
+  const [suggestions, setSuggestions]   = useState([])
+  const [geocodeOk, setGeocodeOk]       = useState(false)
+  const debounceTimer                   = useRef(null)
+
+  const handleAddressInput = useCallback((value) => {
+    setAddressQuery(value)
+    setGeocodeOk(false)
+    clearTimeout(debounceTimer.current)
+    if (!value.trim() || value.length < 4) { setSuggestions([]); return }
+    debounceTimer.current = setTimeout(async () => {
+      setGeocoding(true)
+      try { setSuggestions(await geocode(value)) }
+      catch { setSuggestions([]) }
+      finally { setGeocoding(false) }
+    }, 600)
+  }, [])
+
+  const handleSelectSuggestion = (item) => {
+    handleChange("lat", parseFloat(item.lat))
+    handleChange("lng", parseFloat(item.lon))
+    setAddressQuery(item.display_name)
+    setSuggestions([])
+    setGeocodeOk(true)
+  }
+
+  const handleManualSearch = async () => {
+    if (!addressQuery.trim()) return
+    setGeocoding(true); setSuggestions([]); setGeocodeOk(false)
+    try {
+      const results = await geocode(addressQuery)
+      if (results?.length > 0) handleSelectSuggestion(results[0])
+      else setSuggestions([{ display_name: "__empty__" }])
+    } catch { setSuggestions([]) }
+    finally { setGeocoding(false) }
+  }
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -18,6 +69,9 @@ const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role, getCategor
     }
     fetchCategories()
   }, [])
+
+  // Early return AFTER hooks
+  if (!poi) return null;
 
   // Helper để tạo style cho input đồng nhất
   const inputStyle = "w-full bg-transparent border-b border-pink-200 text-sm font-medium focus:border-pink-500 outline-none transition-colors pb-0.5";
@@ -162,9 +216,56 @@ const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role, getCategor
         </div>
       )}
 
-      {/* Row 2: Location (Lat/Lng) */}
-      <div className="space-y-1">
+      {/* Row 2: Location (Lat/Lng) + Address Search */}
+      <div className="space-y-2">
         <p className="text-[10px] font-bold text-gray-400 uppercase">Vị trí</p>
+
+        {/* Address geocoding — chỉ hiện khi đang sửa */}
+        {isEditing && (
+          <div className="relative space-y-1">
+            <div className="flex gap-1.5">
+              <input
+                type="text"
+                value={addressQuery}
+                onChange={(e) => handleAddressInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleManualSearch()}
+                placeholder="Tìm địa chỉ để điền tọa độ..."
+                className="flex-1 text-xs px-2.5 py-1.5 border border-pink-100 rounded-lg outline-none focus:border-pink-400 transition-all text-gray-700 placeholder:text-gray-300"
+              />
+              <button
+                onClick={handleManualSearch}
+                disabled={geocoding || !addressQuery.trim()}
+                className="px-2.5 py-1.5 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {geocoding ? <Loader2 size={13} className="animate-spin" /> : <Search size={13} />}
+              </button>
+            </div>
+            {geocodeOk && (
+              <div className="flex items-center gap-1 text-emerald-600">
+                <CheckCircle2 size={11} />
+                <span className="text-[10px] font-semibold">Đã cập nhật tọa độ</span>
+              </div>
+            )}
+            {suggestions.length > 0 && (
+              <div className="absolute z-50 mt-0.5 w-full bg-white rounded-lg shadow-xl border border-pink-100 overflow-hidden">
+                {suggestions[0]?.display_name === "__empty__" ? (
+                  <p className="px-3 py-2 text-[11px] text-gray-400 text-center">Không tìm thấy địa chỉ</p>
+                ) : (
+                  suggestions.map((item, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleSelectSuggestion(item)}
+                      className="w-full text-left px-3 py-2 text-[11px] text-gray-700 hover:bg-pink-50 hover:text-pink-600 transition-colors border-b border-pink-50 last:border-0 line-clamp-2"
+                    >
+                      {item.display_name}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="flex gap-4 min-h-[35px] items-end">
           <div className="flex-1 flex items-center gap-2 border-b border-gray-100 pb-1">
             <span className="text-[9px] font-bold text-gray-300">LAT</span>

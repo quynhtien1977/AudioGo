@@ -20,6 +20,7 @@ import { getExpiringSubscriptionsApi } from "@/api/subscriptionApi"
 import { getAllArticles } from "@/api/articleApi"
 import { getAllToursApi } from "@/api/tourApi"
 import { formatDateVN } from "@/utils/formatDate"
+import useAuth from "@/hooks/useAuth"
 
 export default function DashboardPage() {
   const navigate = useNavigate()
@@ -28,8 +29,9 @@ export default function DashboardPage() {
   const [pois, setPois] = useState([])
   const [showModal, setShowModal] = useState(false)
   const [chartData, setChartData] = useState([])
-  const [userRole, setUserRole] = useState(null)
-  const [userId, setUserId] = useState(null)
+  const { user } = useAuth()
+  const userRole = user?.role ?? null
+  const userId   = user?.accountId ?? null
 
   // Admin-only extras
   const [pendingCount, setPendingCount] = useState(0)
@@ -41,20 +43,6 @@ export default function DashboardPage() {
   const [publishedArticlesCount, setPublishedArticlesCount] = useState(0)
   const [toursCount, setToursCount] = useState(0)
   const [recentArticles, setRecentArticles] = useState([])
-
-  // Get current user info
-  useEffect(() => {
-    try {
-      const userStr = localStorage.getItem("user") || sessionStorage.getItem("user")
-      if (userStr) {
-        const user = JSON.parse(userStr)
-        setUserRole(user.role)
-        setUserId(user.accountId)
-      }
-    } catch (err) {
-      console.error("Error reading user info:", err)
-    }
-  }, [])
 
   useEffect(() => {
     if (!userRole || !userId) return

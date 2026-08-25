@@ -7,9 +7,10 @@ import PageHeader from "@/components/PageHeader"
 import StatsCard from "@/components/StatsCard"
 
 // ───────────────────────────── LEAFLET IMPORT ─────────────────────────────
-import { MapContainer, TileLayer, Polyline, CircleMarker, Popup, Marker } from 'react-leaflet'
+import { MapContainer, Polyline, CircleMarker, Popup, Marker } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import AppTileLayer from '@/components/AppTileLayer'
 
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
@@ -179,10 +180,7 @@ export default function DeviceActivityPage() {
                   <MapPin size={16} /> Bản đồ lộ trình
                 </div>
                 <MapContainer center={center} zoom={15} style={{ height: 'calc(100% - 40px)', width: '100%' }} scrollWheelZoom={true}>
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  />
+                  <AppTileLayer />
                   {/* Đường đi */}
                   <Polyline positions={gpsPoints} color="#ec4899" weight={3} opacity={0.8} />
                   {/* Điểm đầu */}
@@ -201,7 +199,7 @@ export default function DeviceActivityPage() {
                       position={[poi.latitude, poi.longitude]} 
                     >
                       <Popup>
-                        <div className="font-semibold">{poi.title}</div>
+                        <div className="font-semibold">{poi.name || poi.title}</div>
                         <div className="text-xs text-gray-500">
                           {poi.latitude.toFixed(5)}, {poi.longitude.toFixed(5)}
                         </div>

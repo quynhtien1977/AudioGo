@@ -11,16 +11,14 @@ import { SearchContext } from "../context/SearchContext"
 import { useSubscription } from "../context/SubscriptionContext"
 import { getAllArticles } from "../api/articleApi"
 import * as subscriptionApi from "../api/subscriptionApi"
+import useAuth from "../hooks/useAuth"
 
 export default function Topbar() {
   const navigate = useNavigate()
   const location = useLocation()
   const { updateSearch, clearSearch } = useContext(SearchContext)
   const { currentSubscription } = useSubscription()
-  const [user, setUser] = useState(
-    JSON.parse(localStorage.getItem("user")) ||
-    JSON.parse(sessionStorage.getItem("user"))
-  )
+  const { user, logout } = useAuth()
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState([])
   const [isLoading, setIsLoading] = useState(false)
@@ -32,25 +30,6 @@ export default function Topbar() {
   const hasFetchedRef = useRef(null)
 
   const role = user?.role
-
-  // 🔄 P1-A: Lắng nghe storage event để sync tên sau khi ProfilePage cập nhật
-  useEffect(() => {
-    const syncUser = () => {
-      const updated =
-        JSON.parse(localStorage.getItem("user")) ||
-        JSON.parse(sessionStorage.getItem("user"))
-      setUser(updated)
-    }
-    window.addEventListener("storage", syncUser)
-    return () => window.removeEventListener("storage", syncUser)
-  }, [])
-
-  // logout
-  const handleLogout = () => {
-    localStorage.clear()
-    sessionStorage.clear()
-    navigate("/login")
-  }
 
   // Determine placeholder text based on the current route
   const getPlaceholder = () => {
@@ -406,7 +385,7 @@ export default function Topbar() {
 
         {/*  Logout */}
         <button
-          onClick={handleLogout}
+          onClick={() => { logout(); navigate("/login") }}
           className="px-3 py-1 rounded-full text-sm bg-gray-200 hover:bg-pink-500 hover:text-white transition duration-200"
         >
           Đăng xuất
