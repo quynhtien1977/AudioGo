@@ -187,7 +187,7 @@ export default function ScreenshotsSection({ data }) {
                       prev();
                     }
                   }}
-                  className="cursor-pointer touch-pan-y"
+                  className={`cursor-pointer touch-pan-y ${isSide ? "hidden sm:block" : "block"}`}
                 >
                   <IPhoneMockup imageUrl={img.url} alt={img.alt} isCenter={isCenter} />
                 </motion.div>
@@ -206,18 +206,24 @@ export default function ScreenshotsSection({ data }) {
           </button>
         </div>
 
-        {/* Dots */}
+        {/* Dots & Counter */}
         {images.length > 1 && (
-          <div className="flex justify-center gap-2 mt-8">
-            {images.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setActive(i)}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  i === active ? "w-6 bg-pink-500" : "w-1.5 bg-pink-200 hover:bg-pink-300"
-                }`}
-              />
-            ))}
+          <div className="flex flex-col items-center gap-2 mt-6 sm:mt-8">
+            <div className="flex justify-center gap-2">
+              {images.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setActive(i)}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    i === active ? "w-6 bg-pink-500" : "w-1.5 bg-pink-200 hover:bg-pink-300"
+                  }`}
+                  aria-label={`Màn hình ${i + 1}`}
+                />
+              ))}
+            </div>
+            <span className="sm:hidden text-[11px] font-medium text-pink-500/80">
+              {active + 1} / {images.length}
+            </span>
           </div>
         )}
 
