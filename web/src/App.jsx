@@ -314,7 +314,7 @@ export default function App() {
         <Route
           path="/admin/tours/create"
           element={
-            <ProtectedRoute roles={["Admin"]}>
+            <ProtectedRoute roles={["Admin", "Editor"]}>
               <MainLayout>
                 <CreateTourPage />
               </MainLayout>
@@ -325,7 +325,7 @@ export default function App() {
         <Route
           path="/admin/tours/:id"
           element={
-            <ProtectedRoute roles={["Admin"]}>
+            <ProtectedRoute roles={["Admin", "Editor"]}>
               <MainLayout>
                 <TourDetailPage />
               </MainLayout>

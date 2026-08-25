@@ -247,9 +247,9 @@ export default function SubscriptionCheckoutPage() {
         <div className="lg:col-span-2 space-y-4">
 
           {/* Gói thông tin */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-6">
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 space-y-6">
             <div>
-              <h2 className="text-2xl font-bold mb-2">Xác nhận gói nâng cấp</h2>
+              <h2 className="text-xl sm:text-2xl font-bold mb-2">Xác nhận gói nâng cấp</h2>
               <p className="text-sm text-gray-500">
                 Thanh toán qua SePay (VietQR). Hệ thống đang bật chế độ test amount.
               </p>
@@ -271,12 +271,12 @@ export default function SubscriptionCheckoutPage() {
               )}
             </div>
 
-            <div className="border rounded-xl p-5 bg-pink-50 border-pink-100">
+            <div className="border rounded-xl p-4 sm:p-5 bg-pink-50 border-pink-100">
               <h3 className="text-xl font-bold text-gray-900">{planName}</h3>
               <p className="text-2xl font-black text-pink-600 mt-2">
                 {amount.toLocaleString("vi-VN")} ₫
               </p>
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
                 <div className="rounded-lg bg-white p-3 border border-pink-100">
                   <div className="flex items-center gap-2 text-gray-600"><Clock3 size={14} />Thời hạn</div>
                   <p className="font-semibold text-gray-900 mt-1">{durationDay} ngày</p>
@@ -307,17 +307,17 @@ export default function SubscriptionCheckoutPage() {
                   </span>
                 </label>
 
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <button
                     onClick={() => navigate("/admin/dashboard")}
-                    className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-50"
+                    className="flex-1 border border-gray-300 text-gray-700 py-2.5 rounded-lg font-semibold hover:bg-gray-50 text-sm"
                   >
                     Quay lại
                   </button>
                   <button
                     onClick={handleConfirm}
                     disabled={processing || !termsAccepted}
-                    className="flex-1 bg-pink-600 text-white py-2 rounded-lg font-semibold hover:bg-pink-700 disabled:opacity-60 flex items-center justify-center gap-2"
+                    className="flex-1 bg-pink-600 text-white py-2.5 rounded-lg font-semibold hover:bg-pink-700 disabled:opacity-60 flex items-center justify-center gap-2 text-sm"
                   >
                     {processing && <Loader2 size={16} className="animate-spin" />}
                     {processing ? "Đang tạo giao dịch..." : "Tạo mã QR thanh toán"}
@@ -329,7 +329,7 @@ export default function SubscriptionCheckoutPage() {
 
           {/* ── QR Panel ────────────────────────────────────────────────────── */}
           {paymentInit && (
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-6">
 
               {/* Header + trạng thái */}
               <div className="flex items-center justify-between mb-4">

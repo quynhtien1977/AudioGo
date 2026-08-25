@@ -212,7 +212,7 @@ export default function DashboardPage() {
       />
 
       {/* STATS CARDS */}
-      <div className={`grid gap-6 ${userRole === "Admin" || userRole === "Editor" ? "grid-cols-2 lg:grid-cols-4" : "grid-cols-2"}`}>
+      <div className={`grid gap-4 sm:gap-6 ${userRole === "Admin" || userRole === "Editor" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" : "grid-cols-1 sm:grid-cols-2"}`}>
         <StatsCard
           title="TỔNG SỐ POIs"
           value={stats.pois.total}
@@ -393,7 +393,7 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {recentArticles.map((article) => (
               <div
                 key={article.articleId}
@@ -446,7 +446,7 @@ export default function DashboardPage() {
         )}
 
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-[550px]">
             <thead className="bg-pink-50/20 text-[11px] font-bold text-pink-500 tracking-wider uppercase border-b border-pink-100/20 text-left">
               <tr>
                 <th className="px-6 py-4">XẾP HẠNG</th>

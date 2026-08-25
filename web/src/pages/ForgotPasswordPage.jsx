@@ -60,7 +60,7 @@ export default function ForgotPasswordPage() {
                 </span>
               </p>
               <Link
-                to="/"
+                to="/login"
                 className="inline-flex items-center gap-2 text-[#EE4B8E] hover:text-[#D63A79] font-semibold transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -117,7 +117,7 @@ export default function ForgotPasswordPage() {
 
               <div className="mt-8 text-center">
                 <Link
-                  to="/"
+                  to="/login"
                   className="inline-flex items-center gap-2 text-gray-400 hover:text-[#EE4B8E] text-sm font-medium transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />

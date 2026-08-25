@@ -30,7 +30,7 @@ const ConfirmModal = ({
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-150">
       
-      <div className="bg-white rounded-2xl p-6 w-[420px] shadow-2xl animate-in zoom-in-95 duration-200">
+      <div className="bg-white rounded-2xl p-5 sm:p-6 w-full max-w-[420px] mx-4 shadow-2xl animate-in zoom-in-95 duration-200">
         
         {/* Icon + Header */}
         <div className="flex items-start gap-3 mb-4">
@@ -57,12 +57,12 @@ const ConfirmModal = ({
         </div>
 
         {/* Content */}
-        <p className="text-sm text-gray-500 leading-relaxed mb-6 pl-[52px]">
+        <p className="text-sm text-gray-500 leading-relaxed mb-6 pl-0 sm:pl-[52px]">
           {message}
         </p>
 
         {/* Actions */}
-        <div className="flex justify-end gap-2 pl-[52px]">
+        <div className="flex justify-end gap-2 pl-0 sm:pl-[52px]">
           {onCancel && !isLoading && (
             <button
               onClick={onCancel}

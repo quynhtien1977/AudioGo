@@ -280,19 +280,19 @@ const POIDetailPage = () => {
   }
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="p-2 sm:p-6 space-y-6 sm:space-y-8">
 
       {/* HEADER */}
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
           {isEditing ? (
             <input
               value={form.name}
               onChange={(e) => handleChange("name", e.target.value)}
-              className="text-4xl font-bold border-b-2 border-pink-300 outline-none"
+              className="text-2xl sm:text-4xl font-bold border-b-2 border-pink-300 outline-none w-full"
             />
           ) : (
-            <h1 className="text-4xl font-bold">{poi.name}</h1>
+            <h1 className="text-2xl sm:text-4xl font-bold text-gray-800">{poi.name}</h1>
           )}
 
           {isRequest && requestStatus === "REJECTED" && (
@@ -302,11 +302,11 @@ const POIDetailPage = () => {
           )}
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex gap-2 sm:gap-3 flex-wrap">
           {role === "Owner" && !isEditing && !isRequest && (
             <button
               onClick={() => setIsEditing(true)}
-              className="flex items-center gap-2 border px-4 py-2 rounded-lg text-pink-600 border-pink-600"
+              className="flex items-center gap-2 border px-3 sm:px-4 py-2 rounded-lg text-pink-600 border-pink-600 text-sm font-semibold hover:bg-pink-50 transition"
             >
               <PencilLine size={16}/> Cập nhật
             </button>
@@ -317,7 +317,7 @@ const POIDetailPage = () => {
               <button
                 onClick={() => setShowConfirm(true)}
                 disabled={isSubmitting}
-                className="px-4 py-2 bg-pink-500 text-white rounded-lg disabled:opacity-60 flex items-center gap-2"
+                className="px-4 py-2 bg-pink-500 text-white rounded-lg disabled:opacity-60 flex items-center gap-2 text-sm font-semibold hover:bg-pink-600 transition"
               >
                 {isSubmitting ? <span className="animate-spin">&#9696;</span> : null}
                 {isSubmitting ? "Đang gửi..." : "Lưu"}
@@ -325,7 +325,7 @@ const POIDetailPage = () => {
 
               <button
                 onClick={() => setIsEditing(false)}
-                className="px-4 py-2 border rounded-lg"
+                className="px-4 py-2 border rounded-lg text-sm font-semibold hover:bg-gray-50 transition"
               >
                 Hủy
               </button>
@@ -334,7 +334,7 @@ const POIDetailPage = () => {
 
           <button
             onClick={() => window.history.back()}
-            className="flex items-center gap-2 px-4 py-2 text-pink-600"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 text-pink-600 text-sm font-semibold hover:bg-pink-50 rounded-lg transition"
           >
             <CornerDownLeft size={16}/> Quay lại
           </button>
@@ -342,9 +342,9 @@ const POIDetailPage = () => {
       </div>
 
       {/* GRID */}
-      <div className="grid grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        <div className="col-span-8 space-y-6">
+        <div className="col-span-1 lg:col-span-8 space-y-6">
           {/* Bug #2: uploadOnSelect=false khi đang edit */}
           <POIGallery
             images={form.images}
@@ -367,7 +367,7 @@ const POIDetailPage = () => {
           />
         </div>
 
-        <div className="col-span-4 space-y-6">
+        <div className="col-span-1 lg:col-span-4 space-y-6">
           <POIInfoCard
             poi={form}
             isEditing={isEditing}

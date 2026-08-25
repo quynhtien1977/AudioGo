@@ -25,7 +25,7 @@ namespace Server.Controllers.Cms
             var accountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(accountId)) return Unauthorized();
 
-            bool isAdmin = User.IsInRole("Admin");
+            bool isAdminOrEditor = User.IsInRole("Admin") || User.IsInRole("Editor");
 
             var query = _db.PoiContents
                 .Where(pc => pc.IsMaster)
@@ -33,7 +33,7 @@ namespace Server.Controllers.Cms
                 .ThenInclude(p => p.Contents)
                 .AsNoTracking();
 
-            if (!isAdmin)
+            if (!isAdminOrEditor)
             {
                 query = query.Where(pc => pc.Poi != null && pc.Poi.AccountId == accountId);
             }

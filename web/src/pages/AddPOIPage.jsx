@@ -193,9 +193,9 @@ const AddPOIPage = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
         {/* LEFT */}
-        <div className="col-span-8 space-y-8">
+        <div className="col-span-1 lg:col-span-8 space-y-6 sm:space-y-8">
           <section className="space-y-4">
             <div className="flex items-center gap-3">
               <LayoutGrid size={20} className="text-pink-500" />
@@ -226,7 +226,7 @@ const AddPOIPage = () => {
             />
           </section>
 
-          <section className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm space-y-4">
+          <section className="bg-white p-4 sm:p-8 rounded-2xl sm:rounded-[32px] border border-gray-100 shadow-sm space-y-4">
             <div className="flex items-center justify-between border-b border-gray-50 pb-4">
               <h2 className="text-lg font-bold text-gray-700">Nội dung Script</h2>
               <button className="text-[10px] font-black text-pink-400 uppercase tracking-widest">Auto-Generate</button>
@@ -235,16 +235,16 @@ const AddPOIPage = () => {
               value={form.script}
               onChange={(e) => handleChange("script", e.target.value)}
               placeholder="Nhập kịch bản thuyết minh cho audio guide..."
-              className="w-full min-h-[150px] bg-pink-50/30 rounded-2xl p-6 outline-none text-gray-600 italic leading-relaxed border-2 border-dashed border-transparent focus:border-pink-200 transition-all"
+              className="w-full min-h-[150px] bg-pink-50/30 rounded-2xl p-4 sm:p-6 outline-none text-gray-600 italic leading-relaxed border-2 border-dashed border-transparent focus:border-pink-200 transition-all"
             />
           </section>
         </div>
 
         {/* RIGHT */}
-        <div className="col-span-4 space-y-8">
+        <div className="col-span-1 lg:col-span-4 space-y-6 sm:space-y-8">
           <InfoCardOfAddPOI form={form} handleChange={handleChange} categories={categories} />
 
-          <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm space-y-4 overflow-hidden">
+          <div className="bg-white p-4 sm:p-8 rounded-2xl sm:rounded-[32px] border border-gray-100 shadow-sm space-y-4 overflow-hidden">
             <div className="flex items-center justify-between">
               <h3 className="text-[10px] font-black text-pink-500 uppercase tracking-widest">Vị trí thực tế</h3>
               <div className="flex gap-2 text-[10px] font-mono text-gray-400">

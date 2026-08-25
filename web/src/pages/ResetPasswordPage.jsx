@@ -44,7 +44,7 @@ export default function ResetPasswordPage() {
       await resetPasswordApi(token, newPassword);
       setDone(true);
       toast.success("Đặt lại mật khẩu thành công!");
-      setTimeout(() => navigate("/"), 2500);
+      setTimeout(() => navigate("/login"), 2500);
     } catch (err) {
       toast.error(err || "Đặt lại mật khẩu thất bại. Token có thể đã hết hạn.");
     } finally {
@@ -101,7 +101,7 @@ export default function ResetPasswordPage() {
               <p className="text-gray-500 mb-4">
                 Mật khẩu của bạn đã được cập nhật. Đang chuyển về trang đăng nhập...
               </p>
-              <Link to="/" className="text-[#EE4B8E] hover:underline font-medium text-sm">
+              <Link to="/login" className="text-[#EE4B8E] hover:underline font-medium text-sm">
                 Đăng nhập ngay
               </Link>
             </div>
@@ -184,7 +184,7 @@ export default function ResetPasswordPage() {
               </form>
 
               <div className="mt-8 text-center">
-                <Link to="/"
+                <Link to="/login"
                   className="inline-flex items-center gap-2 text-gray-400 hover:text-[#EE4B8E] text-sm font-medium transition-colors">
                   <ArrowLeft className="w-4 h-4" />
                   Quay lại đăng nhập
