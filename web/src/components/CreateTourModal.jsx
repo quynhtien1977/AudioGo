@@ -163,19 +163,19 @@ const CreateTourModal = ({ open, onClose, onSubmit, isLoading }) => {
             onClick={(e) => e.stopPropagation()}
           >
             {/* HEADER */}
-            <div className="flex items-center justify-between px-8 py-6 border-b border-gray-100">
-              <h2 className="text-2xl font-black text-gray-800">Tạo Tour Mới</h2>
+            <div className="flex items-center justify-between px-5 sm:px-8 py-4 sm:py-6 border-b border-gray-100">
+              <h2 className="text-xl sm:text-2xl font-black text-gray-800">Tạo Tour Mới</h2>
               <button
                 onClick={handleClose}
                 className="p-2 hover:bg-gray-100 rounded-full transition-all"
               >
-                <X size={24} className="text-gray-600" />
+                <X size={20} className="text-gray-600" />
               </button>
             </div>
 
             {/* CONTENT */}
-            <div className="flex-1 overflow-y-auto px-8 py-6">
-              <div className="grid grid-cols-2 gap-8">
+            <div className="flex-1 overflow-y-auto px-5 sm:px-8 py-4 sm:py-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                 {/* COLUMN 1: Tour Info */}
                 <div className="space-y-4">
                   {/* Tên Tour */}
@@ -373,17 +373,17 @@ const CreateTourModal = ({ open, onClose, onSubmit, isLoading }) => {
             </div>
 
             {/* FOOTER */}
-            <div className="flex items-center justify-end gap-3 px-8 py-6 border-t border-gray-100 bg-gray-50">
+            <div className="flex items-center justify-end gap-3 px-5 sm:px-8 py-4 sm:py-6 border-t border-gray-100 bg-gray-50">
               <button
                 onClick={handleClose}
-                className="px-6 py-3 bg-white text-gray-600 border border-gray-200 rounded-xl font-bold hover:bg-gray-50 transition-all"
+                className="px-4 sm:px-6 py-2.5 sm:py-3 bg-white text-gray-600 border border-gray-200 rounded-xl font-bold hover:bg-gray-50 transition-all text-xs sm:text-sm"
               >
                 Hủy bỏ
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={isLoading}
-                className="px-6 py-3 bg-gradient-to-r from-[#D81B60] to-[#EC4899] text-white rounded-xl font-bold shadow-lg shadow-pink-100 hover:scale-105 active:scale-95 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-[#D81B60] to-[#EC4899] text-white rounded-xl font-bold shadow-lg shadow-pink-100 hover:scale-105 active:scale-95 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2 text-xs sm:text-sm"
               >
                 {isLoading ? (
                   <>

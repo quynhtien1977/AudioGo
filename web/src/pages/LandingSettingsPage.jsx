@@ -415,14 +415,14 @@ export default function LandingSettingsPage() {
 
       {/* Tab: Nội dung */}
       {activeTab === "content" && (
-        <div className="flex gap-4 h-[calc(100vh-220px)]">
+        <div className="flex flex-col lg:flex-row gap-4 min-h-[calc(100vh-220px)] lg:h-[calc(100vh-220px)]">
           {/* Sidebar sections */}
-          <aside className="w-52 flex-shrink-0 bg-white rounded-2xl border border-gray-100 p-3 overflow-y-auto">
+          <aside className="w-full lg:w-52 flex-shrink-0 bg-white rounded-2xl border border-gray-100 p-3 max-h-48 lg:max-h-full overflow-y-auto">
             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2 mb-2">Sections</div>
-            <nav className="space-y-1">
+            <nav className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0">
               {loading
                 ? Array.from({ length: 8 }).map((_, i) => (
-                    <div key={i} className="h-9 rounded-xl bg-gray-100 animate-pulse" />
+                    <div key={i} className="h-9 w-28 lg:w-full rounded-xl bg-gray-100 animate-pulse flex-shrink-0" />
                   ))
                 : SECTIONS.map((sec) => {
                     const dbSec = sections.find((s) => s.sectionKey === sec.key);
@@ -433,14 +433,14 @@ export default function LandingSettingsPage() {
                     return (
                       <div
                         key={sec.key}
-                        className={`flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-colors ${
+                        className={`flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-colors flex-shrink-0 lg:flex-shrink ${
                           activeSectionKey === sec.key
                             ? "bg-pink-50 text-pink-600 border border-pink-200"
                             : "text-gray-700 hover:bg-gray-50"
                         }`}
                         onClick={() => handleSectionChange(sec.key)}
                       >
-                        <div className="flex flex-col min-w-0">
+                        <div className="flex flex-col min-w-0 pr-2">
                           <span className="text-sm font-medium truncate">{sec.label}</span>
                           <span className="text-[10px] text-gray-400">{langCount}/6 lang</span>
                         </div>
@@ -467,7 +467,7 @@ export default function LandingSettingsPage() {
           <div className="flex-1 bg-white rounded-2xl border border-gray-100 flex flex-col overflow-hidden">
             {/* Toolbar & Sub-tabs */}
             <div className="flex flex-col border-b border-gray-100 bg-gray-50">
-              <div className="flex items-center justify-between px-6 py-3">
+              <div className="flex items-center justify-between px-4 sm:px-6 py-3">
                 <div>
                   <h3 className="font-semibold text-gray-900">
                     {SECTIONS.find((s) => s.key === activeSectionKey)?.label}
@@ -484,7 +484,7 @@ export default function LandingSettingsPage() {
                   Xem trang
                 </a>
               </div>
-              <div className="flex px-6 gap-6 mt-1">
+              <div className="flex px-4 sm:px-6 gap-4 sm:gap-6 mt-1 flex-wrap">
                 <button
                   onClick={() => handleEditorModeChange("translations")}
                   className={`py-2 text-sm font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${

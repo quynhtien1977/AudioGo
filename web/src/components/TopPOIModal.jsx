@@ -21,21 +21,21 @@ export default function TopPOIModal({ onClose, pois = [] }) {
   const maxListens = Math.max(...pois.map(p => p.listens || 0), 1)
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white w-[900px] rounded-2xl shadow-xl p-6">
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+      <div className="bg-white w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-xl p-4 sm:p-6 flex flex-col">
         
         {/* Header */}
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">CÁC POIs PHỔ BIẾN</h2>
+        <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-800">CÁC POIs PHỔ BIẾN</h2>
 
-          <button onClick={onClose} className="text-gray-400 hover:text-black">
+          <button onClick={onClose} className="p-1 rounded-lg text-gray-400 hover:text-black hover:bg-gray-100 transition-colors">
             ✕
           </button>
         </div>
 
         {/* Table */}
-        <div className="mt-4">
-          <table className="w-full text-sm">
+        <div className="mt-2 overflow-x-auto overflow-y-auto flex-1">
+          <table className="w-full text-sm min-w-[500px]">
             <thead className="text-gray-400 text-left">
               <tr>
                 <th>XẾP HẠNG</th>

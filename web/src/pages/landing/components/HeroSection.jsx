@@ -87,7 +87,7 @@ export default function HeroSection({ data }) {
 
       {/* Slideshow dots */}
       {bgList.length > 1 && (
-        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+        <div className="absolute bottom-16 sm:bottom-24 left-1/2 -translate-x-1/2 z-20 flex gap-2">
           {bgList.map((_, i) => (
             <button
               key={i}
@@ -111,13 +111,13 @@ export default function HeroSection({ data }) {
       <div className="absolute inset-0 bg-black/50" />
 
       {/* Content */}
-      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 pt-24 pb-16 text-center">
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 pt-24 sm:pt-32 pb-12 sm:pb-16 text-center">
         {/* Badge */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 text-sm font-medium mb-6"
+          className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 text-xs sm:text-sm font-medium mb-4 sm:mb-6"
         >
           {badge}
         </motion.div>
@@ -127,7 +127,7 @@ export default function HeroSection({ data }) {
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight tracking-tight"
+          className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight sm:leading-tight tracking-tight break-words"
         >
           <span className="text-white">{heading1}</span>
           <br />
@@ -141,7 +141,7 @@ export default function HeroSection({ data }) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="mt-6 text-base sm:text-lg text-white/70 max-w-2xl mx-auto leading-relaxed"
+          className="mt-4 sm:mt-6 text-sm sm:text-base md:text-lg text-white/80 max-w-2xl mx-auto leading-relaxed px-2"
         >
           {description}
         </motion.p>
@@ -151,18 +151,18 @@ export default function HeroSection({ data }) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
+          className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 max-w-xs sm:max-w-none mx-auto w-full"
         >
           <button
             onClick={() => scrollTo(cta1Link)}
-            className="group flex items-center gap-2 px-8 py-4 rounded-xl font-semibold text-base bg-pink-600 hover:bg-pink-700 text-white shadow-lg shadow-pink-600/30 hover:shadow-pink-600/50 hover:scale-[1.03] active:scale-[0.97] transition-all"
+            className="group flex items-center justify-center gap-2 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-semibold text-sm sm:text-base bg-pink-600 hover:bg-pink-700 text-white shadow-lg shadow-pink-600/30 hover:shadow-pink-600/50 hover:scale-[1.03] active:scale-[0.97] transition-all w-full sm:w-auto"
           >
             <LucideIcons.Download size={18} />
             {cta1Text}
           </button>
           <button
             onClick={() => scrollTo(cta2Link)}
-            className="flex items-center gap-2 px-8 py-4 rounded-xl font-medium text-base border border-white/30 text-white/90 hover:bg-white/10 hover:border-white/50 transition-all"
+            className="flex items-center justify-center gap-2 px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl font-medium text-sm sm:text-base border border-white/30 text-white/90 hover:bg-white/10 hover:border-white/50 transition-all w-full sm:w-auto"
           >
             {cta2Text}
           </button>
@@ -174,16 +174,16 @@ export default function HeroSection({ data }) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.45 }}
-            className="mt-12 flex flex-wrap items-center justify-center gap-3"
+            className="mt-8 sm:mt-12 flex flex-wrap items-center justify-center gap-2 sm:gap-3"
           >
             {stats.map((stat, i) => (
               <div
                 key={i}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/15"
+                className="flex items-center gap-2 px-3.5 sm:px-5 py-1.5 sm:py-2.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/15"
               >
-                <DynIcon name={stat.icon} size={15} className="text-orange-400" />
-                <span className="text-white font-bold text-sm">{stat.value}</span>
-                <span className="text-white/60 text-sm">{stat.label}</span>
+                <DynIcon name={stat.icon} size={14} className="text-orange-400" />
+                <span className="text-white font-bold text-xs sm:text-sm">{stat.value}</span>
+                <span className="text-white/60 text-xs sm:text-sm">{stat.label}</span>
               </div>
             ))}
           </motion.div>
@@ -194,7 +194,7 @@ export default function HeroSection({ data }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.2 }}
-          className="mt-16 flex justify-center"
+          className="mt-10 sm:mt-16 flex justify-center"
         >
           <motion.div
             animate={{ y: [0, 8, 0] }}

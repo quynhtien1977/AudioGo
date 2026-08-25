@@ -66,7 +66,7 @@ export default function FloatingButtons({ apkUrl, zaloLink, facebookLink, phone,
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.95 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden mb-1"
+            className="w-64 max-w-[calc(100vw-32px)] bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden mb-1"
           >
             <div className="px-4 py-3.5 bg-pink-600">
               <p className="text-white font-bold text-sm leading-tight">{staticData.floatTitle || "Liên hệ AudioGo"}</p>

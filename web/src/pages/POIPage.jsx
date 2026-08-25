@@ -515,7 +515,7 @@ export default function POIPage() {
       )}
 
       {/* STATCARD */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         <StatsCard 
           title="TỔNG SỐ POIs" 
           value={totalItems} 
@@ -539,11 +539,11 @@ export default function POIPage() {
       </div>
 
       {/* FILTER & SEARCH */}
-      <div className="bg-white rounded-2xl p-6 border border-pink-100/30 shadow-sm">
+      <div className="bg-white rounded-2xl p-4 sm:p-6 border border-pink-100/30 shadow-sm">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           
           {/* TABS FOR STATUS */}
-          <div className="flex bg-[#FFF0F5] p-1 rounded-2xl gap-1 self-start flex-wrap md:flex-nowrap">
+          <div className="flex bg-[#FFF0F5] p-1 rounded-2xl gap-1 w-full sm:w-auto flex-wrap sm:flex-nowrap">
             <button
               onClick={() => updateFilter("status", null)}
               className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
@@ -635,153 +635,154 @@ export default function POIPage() {
         />
       ) : (
         <div className="bg-white rounded-2xl border border-pink-100/30 overflow-hidden shadow-sm animate-fadeIn">
-          <table className="w-full text-sm">
-            
-            <thead className="bg-pink-50/20 text-[11px] font-bold text-pink-500 tracking-wider uppercase">
-              <tr>
-                <th className="p-4 text-left w-12">LOGO</th>
-                <th className="p-4 text-left">TÊN</th>
-                <th className="p-4 text-left">THỂ LOẠI</th>
-                <th className="p-4 text-left">VỊ TRÍ</th>
-                <th className="p-4 text-left">ĐỘ ƯU TIÊN</th>
-                <th className="p-4 text-left">NGÀY TẠO / CẬP NHẬT</th>
-                <th className="p-4 text-left">THAO TÁC</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {currentPOIs.map((poi) => (
-                <tr key={poi.rank} 
-                    className={`border-t transition-all ${
-                      !poi.isActive 
-                        ? "opacity-40 grayscale bg-gray-50" 
-                        : "hover:bg-gray-50"
-                    }`}>
-
-                  {/* THUMBNAIL */}
-                  <td className="p-4">
-                    {poi.thumbnailUrl ? (
-                      <img
-                        src={poi.thumbnailUrl}
-                        alt={poi.name}
-                        className="w-10 h-10 rounded-xl object-cover border border-pink-100 shadow-sm"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-xl bg-pink-100 flex items-center justify-center text-pink-300 font-bold text-sm border border-pink-200">
-                        {poi.name?.charAt(0)?.toUpperCase() || "?"}
-                      </div>
-                    )}
-                  </td>
-
-                  <td className="p-4">
-                    <p className="font-semibold">{poi.name}</p>
-                  </td>
-
-                  <td className="p-4">
-                    <div className="flex flex-wrap gap-1.5 max-w-[220px]">
-                      {(poi.categories && poi.categories.length > 0 ? poi.categories : [poi.category || "Chưa phân loại"]).map((cat, idx) => (
-                        <span
-                          key={idx}
-                          className={`px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${getCategoryColor(cat)}`}
-                        >
-                          {cat}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-
-                  <td className="p-4">
-                    <p className="text-s text-gray-400">
-                      {poi.lat}, {poi.lng}
-                    </p>
-                  </td>
-
-                  <td className="p-4">
-                    {role === "Admin" ? (
-                      <select
-                        value={poi.priority}
-                        onChange={(e) => handleSetPriority(poi.rank, Number(e.target.value))}
-                        className={`px-2 py-1 rounded text-xs font-semibold ${getPriorityColor(poi.priority)}`}
-                      >
-                        <option value={1}>LOW</option>
-                        <option value={2}>MEDIUM</option>
-                        <option value={3}>HIGH</option>
-                        <option value={4}>CRITICAL</option>
-                      </select>
-                    ) : (
-                      <PriorityBadge value={poi.priority} />
-                    )}
-                  </td>
-
-                  <td className="p-4">
-                    <div className="flex flex-col text-xs text-gray-500 gap-1">
-                      <span>
-                        <strong className="text-gray-700">Tạo:</strong>{" "}
-                        {formatDateVN(poi.createdAt, false)}
-                      </span>
-                      <span>
-                        <strong className="text-gray-700">Cập nhật:</strong>{" "}
-                        {formatDateVN(poi.updatedAt, false)}
-                      </span>
-                    </div>
-                  </td>
-
-                  <td className="p-4">  
-                    <div className="flex items-center gap-1">
-                      {role === "Admin" && (
-                        <>
-                          <button
-                              onClick={() => openHideConfirm(poi.rank)}
-                              className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors text-pink-500 hover:bg-pink-50`}
-                              title={!poi.isActive ? "Hiện POI" : "Ẩn POI"}
-                          >
-                              {!poi.isActive ? <EyeOff size={18} /> : <Eye size={18} />}
-                          </button>
-                          <button
-                              onClick={() => openDeleteConfirm(poi.rank)}
-                              className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors text-red-500 hover:text-red-600 hover:bg-red-50`}
-                              title="Xóa POI"
-                          >
-                              <Trash size={18} />
-                          </button>
-                        </>
-                      )}
-
-                        {role === "Owner" && (
-                          <button
-                              onClick={() => openDeleteConfirm(poi.rank)}
-                              className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors text-red-500 hover:text-red-600 hover:bg-red-50`}
-                              title="Xóa POI"
-                          >
-                              <Trash size={18}/>
-                          </button>
-                      )}
-
-                      <NavLink
-                                                to={`/admin/pois/${poi.rank}`}
-                        className="w-8 h-8 flex items-center justify-center rounded-full transition-colors text-pink-500 hover:text-pink-600 hover:bg-pink-50"
-                        title="Xem chi tiết POI"
-                        >
-                        <List size={18} />
-                      </NavLink>
-
-                    </div>
-
-                  </td>
-
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[750px]">
+              <thead className="bg-pink-50/20 text-[11px] font-bold text-pink-500 tracking-wider uppercase">
+                <tr>
+                  <th className="p-4 text-left w-12">LOGO</th>
+                  <th className="p-4 text-left">TÊN</th>
+                  <th className="p-4 text-left">THỂ LOẠI</th>
+                  <th className="p-4 text-left">VỊ TRÍ</th>
+                  <th className="p-4 text-left">ĐỘ ƯU TIÊN</th>
+                  <th className="p-4 text-left">NGÀY TẠO / CẬP NHẬT</th>
+                  <th className="p-4 text-left">THAO TÁC</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody>
+                {currentPOIs.map((poi) => (
+                  <tr key={poi.rank} 
+                      className={`border-t transition-all ${
+                        !poi.isActive 
+                          ? "opacity-40 grayscale bg-gray-50" 
+                          : "hover:bg-gray-50"
+                      }`}>
+
+                    {/* THUMBNAIL */}
+                    <td className="p-4">
+                      {poi.thumbnailUrl ? (
+                        <img
+                          src={poi.thumbnailUrl}
+                          alt={poi.name}
+                          className="w-10 h-10 rounded-xl object-cover border border-pink-100 shadow-sm"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-xl bg-pink-100 flex items-center justify-center text-pink-300 font-bold text-sm border border-pink-200">
+                          {poi.name?.charAt(0)?.toUpperCase() || "?"}
+                        </div>
+                      )}
+                    </td>
+
+                    <td className="p-4">
+                      <p className="font-semibold">{poi.name}</p>
+                    </td>
+
+                    <td className="p-4">
+                      <div className="flex flex-wrap gap-1.5 max-w-[220px]">
+                        {(poi.categories && poi.categories.length > 0 ? poi.categories : [poi.category || "Chưa phân loại"]).map((cat, idx) => (
+                          <span
+                            key={idx}
+                            className={`px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${getCategoryColor(cat)}`}
+                          >
+                            {cat}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+
+                    <td className="p-4">
+                      <p className="text-s text-gray-400">
+                        {poi.lat}, {poi.lng}
+                      </p>
+                    </td>
+
+                    <td className="p-4">
+                      {role === "Admin" ? (
+                        <select
+                          value={poi.priority}
+                          onChange={(e) => handleSetPriority(poi.rank, Number(e.target.value))}
+                          className={`px-2 py-1 rounded text-xs font-semibold ${getPriorityColor(poi.priority)}`}
+                        >
+                          <option value={1}>LOW</option>
+                          <option value={2}>MEDIUM</option>
+                          <option value={3}>HIGH</option>
+                          <option value={4}>CRITICAL</option>
+                        </select>
+                      ) : (
+                        <PriorityBadge value={poi.priority} />
+                      )}
+                    </td>
+
+                    <td className="p-4">
+                      <div className="flex flex-col text-xs text-gray-500 gap-1">
+                        <span>
+                          <strong className="text-gray-700">Tạo:</strong>{" "}
+                          {formatDateVN(poi.createdAt, false)}
+                        </span>
+                        <span>
+                          <strong className="text-gray-700">Cập nhật:</strong>{" "}
+                          {formatDateVN(poi.updatedAt, false)}
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className="p-4">  
+                      <div className="flex items-center gap-1">
+                        {role === "Admin" && (
+                          <>
+                            <button
+                                onClick={() => openHideConfirm(poi.rank)}
+                                className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors text-pink-500 hover:bg-pink-50`}
+                                title={!poi.isActive ? "Hiện POI" : "Ẩn POI"}
+                            >
+                                {!poi.isActive ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                            <button
+                                onClick={() => openDeleteConfirm(poi.rank)}
+                                className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors text-red-500 hover:text-red-600 hover:bg-red-50`}
+                                title="Xóa POI"
+                            >
+                                <Trash size={18} />
+                            </button>
+                          </>
+                        )}
+
+                          {role === "Owner" && (
+                            <button
+                                onClick={() => openDeleteConfirm(poi.rank)}
+                                className={`w-8 h-8 flex items-center justify-center rounded-full transition-colors text-red-500 hover:text-red-600 hover:bg-red-50`}
+                                title="Xóa POI"
+                            >
+                                <Trash size={18}/>
+                            </button>
+                        )}
+
+                        <NavLink
+                          to={`/admin/pois/${poi.rank}`}
+                          className="w-8 h-8 flex items-center justify-center rounded-full transition-colors text-pink-500 hover:text-pink-600 hover:bg-pink-50"
+                          title="Xem chi tiết POI"
+                          >
+                          <List size={18} />
+                        </NavLink>
+
+                      </div>
+
+                    </td>
+
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           {/* PAGINATION */}
           {totalPages > 0 && (
-            <div className="flex justify-between items-center px-6 py-4 text-sm text-gray-500 bg-gray-50/50">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 px-4 sm:px-6 py-4 text-xs sm:text-sm text-gray-500 bg-gray-50/50 border-t border-pink-100/20">
               <p>
                 Hiển thị trang <span className="font-bold text-gray-800">{currentPage}</span> / <span className="font-bold">{totalPages}</span>
               </p>
 
-              <div className="flex gap-1 items-center">
+              <div className="flex gap-1 items-center flex-wrap justify-center">
                 <button
                   disabled={currentPage === 1}
                   onClick={() => goToPage(currentPage - 1)}
@@ -804,7 +805,7 @@ export default function POIPage() {
                       <button
                         key={p}
                         onClick={() => goToPage(p)}
-                        className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === p ? "bg-pink-500 text-white shadow-sm" : "hover:bg-pink-50 hover:text-pink-600"}`}
+                        className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-xs sm:text-sm font-medium transition-colors ${currentPage === p ? "bg-pink-500 text-white shadow-sm" : "hover:bg-pink-50 hover:text-pink-600"}`}
                       >
                         {p}
                       </button>
