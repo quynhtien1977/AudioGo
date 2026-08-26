@@ -27,7 +27,7 @@ export default function AccessCodePage() {
     const [totalPages, setTotalPages] = useState(1);
     
     // Create new codes
-    const [generateCount, setGenerateCount] = useState(10);
+    const [generateCount, setGenerateCount] = useState(1);
     const [isGenerating, setIsGenerating] = useState(false);
 
     // QR Preview
