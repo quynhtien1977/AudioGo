@@ -61,6 +61,7 @@ public class PaymentQueryServiceTests
 
         Assert.Equal(3, result.Pagination.TotalItems);
         Assert.Equal("tx-003", result.Data[0].TransactionId); // Mới nhất trước
+        Assert.Equal("Gói Cơ Bản", result.Data[0].PlanName);
     }
 
     [Fact]

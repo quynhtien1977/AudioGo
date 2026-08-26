@@ -13,7 +13,7 @@ namespace Shared.DTOs
 
     // ── Summary (Admin list & My list) ────────────────────────────────────────
 
-    /// <summary>Summary giao dịch cho danh sách Admin (có AccountUsername).</summary>
+    /// <summary>Summary giao dịch cho danh sách Admin (có AccountUsername và PlanName).</summary>
     public record PaymentSummaryDto(
         string    TransactionId,
         string    PaymentType,
@@ -21,6 +21,7 @@ namespace Shared.DTOs
         string?   AccountUsername,
         string?   ContactInfo,
         string?   PlanId,
+        string?   PlanName,
         decimal   Amount,
         string    Currency,
         string    Gateway,

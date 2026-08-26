@@ -42,6 +42,7 @@ namespace Server.Services
                     t.Account != null ? t.Account.Username : null,
                     t.ContactInfo,
                     t.PlanId,
+                    t.Plan != null ? t.Plan.Name : null,
                     t.Amount,
                     t.Currency,
                     t.Gateway,
