@@ -153,7 +153,7 @@ export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
                 to="/admin/dashboard"
                 className="px-4 py-2 rounded-lg text-sm font-semibold bg-pink-600 text-white shadow-sm hover:bg-pink-700 hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap"
               >
-                {staticData.navDashboard || "Vào Dashboard"}
+                {staticData.navDashboard || "Dashboard"}
               </Link>
             ) : (
               <Link
@@ -261,7 +261,7 @@ export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
                   className="px-4 py-3 rounded-lg font-semibold text-pink-600 hover:bg-pink-50/20 transition-colors"
                   onClick={() => setMobileOpen(false)}
                 >
-                  {staticData.navDashboard || "Vào Dashboard"}
+                  {staticData.navDashboard || "Dashboard"}
                 </Link>
               ) : (
                 <Link

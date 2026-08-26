@@ -99,6 +99,10 @@ builder.Services.AddScoped<IArticleRepository, ArticleRepository>();
 builder.Services.AddScoped<IArticleTranslationService, ArticleTranslationService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<IAuthManagementService, AuthManagementService>();
+builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+builder.Services.AddScoped<ILandingService, LandingService>();
+builder.Services.AddScoped<IAccessCodeService, AccessCodeService>();
+builder.Services.AddScoped<IPaymentQueryService, PaymentQueryService>();
 
 // ── Background Queues ────────────────────────────────────────────────
 // Location log queue: RabbitMQ external broker (docker-compose up -d)
@@ -187,7 +191,7 @@ builder.Services.AddRateLimiter(opts =>
     opts.OnRejected = async (ctx, _) =>
     {
         ctx.HttpContext.Response.Headers["Retry-After"] = "600";
-        await ctx.HttpContext.Response.WriteAsync("Quá nhiều yêu cầu. Vui lòng thử lại sau 1 phút.");
+        await ctx.HttpContext.Response.WriteAsync("Quá nhiều yêu cầu. Vui lòng thử lại sau 10 phút.");
     };
 });
 

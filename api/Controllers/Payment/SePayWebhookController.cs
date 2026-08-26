@@ -51,14 +51,14 @@ namespace Server.Controllers.Payment
             var rawPayload = body.GetRawText();
             _logger.LogInformation("SePay webhook received: {Payload}", rawPayload[..Math.Min(500, rawPayload.Length)]);
 
-            // Parse fields từ SePay payload
+            // Parse fields từ SePay payload (SePay gửi id dạng int/number, referenceCode dạng string)
             // Tham khảo: https://docs.sepay.vn/webhook
             var dto = new PaymentWebhookService.SePayCallbackDto(
-                ReferenceCode:         TryGet(body, "referenceCode"),
-                TransferContent:       TryGet(body, "transferContent") ?? TryGet(body, "content"),
-                AccountNumber:         TryGet(body, "toAccountNumber"),
+                ReferenceCode:         TryGet(body, "referenceCode") ?? TryGet(body, "code"),
+                TransferContent:       TryGet(body, "transferContent") ?? TryGet(body, "content") ?? TryGet(body, "description"),
+                AccountNumber:         TryGet(body, "toAccountNumber") ?? TryGet(body, "accountNumber") ?? TryGet(body, "subAccount"),
                 Amount:                TryGetDecimal(body, "transferAmount") ?? TryGetDecimal(body, "amount") ?? 0,
-                GatewayTransactionId:  TryGet(body, "id") ?? TryGet(body, "transactionId")
+                GatewayTransactionId:  TryGet(body, "id") ?? TryGet(body, "referenceCode") ?? TryGet(body, "transactionId")
             );
 
             var result = await _webhook.HandleSePayAsync(dto, rawPayload);
@@ -75,13 +75,31 @@ namespace Server.Controllers.Payment
 
         private static string? TryGet(JsonElement el, string key)
         {
-            try { return el.GetProperty(key).GetString(); }
+            try
+            {
+                if (!el.TryGetProperty(key, out var prop)) return null;
+                return prop.ValueKind switch
+                {
+                    JsonValueKind.String => prop.GetString(),
+                    JsonValueKind.Number => prop.GetRawText(),
+                    JsonValueKind.True   => "true",
+                    JsonValueKind.False  => "false",
+                    JsonValueKind.Null   => null,
+                    _ => prop.ToString()
+                };
+            }
             catch { return null; }
         }
 
         private static decimal? TryGetDecimal(JsonElement el, string key)
         {
-            try { return el.GetProperty(key).GetDecimal(); }
+            try
+            {
+                if (!el.TryGetProperty(key, out var prop)) return null;
+                if (prop.ValueKind == JsonValueKind.Number) return prop.GetDecimal();
+                if (prop.ValueKind == JsonValueKind.String && decimal.TryParse(prop.GetString(), out var val)) return val;
+                return null;
+            }
             catch { return null; }
         }
     }
