@@ -100,6 +100,7 @@ builder.Services.AddScoped<IArticleTranslationService, ArticleTranslationService
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<IAuthManagementService, AuthManagementService>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+builder.Services.AddScoped<ILandingService, LandingService>();
 
 // ── Background Queues ────────────────────────────────────────────────
 // Location log queue: RabbitMQ external broker (docker-compose up -d)
