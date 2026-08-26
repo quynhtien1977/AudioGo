@@ -1,5 +1,5 @@
 import { useEffect, useState, useContext } from 'react'
-import { DollarSign, CheckCircle, AlertCircle, RotateCw, Loader2, CreditCard, Search, Calendar, ChevronDown, XCircle, Clock, Download, Filter, RefreshCw, TrendingUp } from 'lucide-react'
+import { DollarSign, CheckCircle, AlertCircle, RotateCw, Loader2, CreditCard, Search, Calendar, ChevronDown, XCircle, Clock, Download, Filter, RefreshCw, TrendingUp, Copy, Check, User, ShieldCheck } from 'lucide-react'
 import PageLoader from "@/components/PageLoader"
 import * as subscriptionApi from '../api/subscriptionApi'
 import { formatDateVN } from '../utils/formatDate'
@@ -16,20 +16,56 @@ import { SearchContext } from '../context/SearchContext'
 export const AdminTransactionDashboard = () => {
   const { searchFilter } = useContext(SearchContext)
   const [transactions, setTransactions] = useState([])
-  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, total: 0, totalPages: 1 })
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 20, totalItems: 0, totalPages: 1 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [filterStatus, setFilterStatus] = useState(null)
   const [selectedTx, setSelectedTx] = useState(null)
+  const [detailData, setDetailData] = useState(null)
+  const [loadingDetail, setLoadingDetail] = useState(false)
+
+  // ── Server-side global stats (không bị ảnh hưởng bởi phân trang) ──────────
+  const [globalStats, setGlobalStats] = useState({
+    total: 0,
+    success: 0,
+    failed: 0,
+    pending: 0,
+    totalRevenue: 0,
+  })
+
+  // Fetch global counts 1 lần duy nhất khi mount (pageSize=1 để nhanh, chỉ cần metadata)
+  useEffect(() => {
+    const fetchGlobalStats = async () => {
+      try {
+        const [all, success, failed, pending] = await Promise.all([
+          subscriptionApi.getAllTransactionsApi(1, 1, null),
+          subscriptionApi.getAllTransactionsApi(1, 1, 'SUCCESS'),
+          subscriptionApi.getAllTransactionsApi(1, 1, 'FAILED'),
+          subscriptionApi.getAllTransactionsApi(1, 1, 'PENDING'),
+        ])
+        setGlobalStats({
+          total:   all?.pagination?.totalItems     ?? all?.pagination?.total     ?? 0,
+          success: success?.pagination?.totalItems ?? success?.pagination?.total ?? 0,
+          failed:  failed?.pagination?.totalItems  ?? failed?.pagination?.total  ?? 0,
+          pending: pending?.pagination?.totalItems ?? pending?.pagination?.total ?? 0,
+          // Doanh thu tổng thực sự cần endpoint riêng; hiện tại giữ 0 để không mislead
+          totalRevenue: 0,
+        })
+      } catch (e) {
+        console.error('Failed to fetch global stats:', e)
+      }
+    }
+    fetchGlobalStats()
+  }, [])
 
   const fetchTransactions = async () => {
     try {
       setLoading(true)
       const data = await subscriptionApi.getAllTransactionsApi(page, pageSize, filterStatus)
-      setTransactions(data.data || [])
-      setPagination(data.pagination || { page, pageSize, total: 0, totalPages: 1 })
+      setTransactions(data?.data || [])
+      setPagination(data?.pagination || { page, pageSize, totalItems: 0, totalPages: 1 })
       setError(null)
     } catch (err) {
       console.error('Error fetching transactions:', err)
@@ -44,7 +80,29 @@ export const AdminTransactionDashboard = () => {
     fetchTransactions()
   }, [page, pageSize, filterStatus])
 
-  const handleViewDetail = (tx) => setSelectedTx(tx)
+  const [copiedId, setCopiedId] = useState(false)
+
+  const handleViewDetail = async (tx) => {
+    setSelectedTx(tx)
+    setDetailData(null)
+    setLoadingDetail(true)
+    try {
+      const res = await subscriptionApi.getTransactionDetailsApi(tx.transactionId)
+      setDetailData(res)
+    } catch (e) {
+      console.error("Failed to load transaction detail:", e)
+      setDetailData(tx)
+    } finally {
+      setLoadingDetail(false)
+    }
+  }
+
+  const handleCopyTxId = (id) => {
+    navigator.clipboard.writeText(id)
+    setCopiedId(true)
+    toast.success("Đã sao chép mã giao dịch!")
+    setTimeout(() => setCopiedId(false), 2000)
+  }
 
   /** Du khách: contactInfo. Owner (gói POI): username, fallback accountId. */
   const getPayerDisplay = (tx) => {
@@ -54,60 +112,67 @@ export const AdminTransactionDashboard = () => {
     return tx.contactInfo || '-'
   }
 
-  const searchQuery = (searchFilter?.pageType === "transaction" && searchFilter?.query) ? searchFilter.query.toLowerCase() : ""
+  // ── Tìm kiếm client-side trong trang hiện tại ──────────────────────────────
+  const searchQuery = (searchFilter?.pageType === "transaction" && searchFilter?.query)
+    ? searchFilter.query.toLowerCase()
+    : ""
 
   const filteredTransactions = transactions.filter(tx => {
     if (!searchQuery) return true
-    const payer = getPayerDisplay(tx).toLowerCase()
-    const txId = (tx.transactionId || "").toLowerCase()
-    const plan = (tx.planId || "").toLowerCase()
-    return payer.includes(searchQuery) || txId.includes(searchQuery) || plan.includes(searchQuery)
+    const payer   = getPayerDisplay(tx).toLowerCase()
+    const txId    = (tx.transactionId || "").toLowerCase()
+    const plan    = (tx.planId || "").toLowerCase()
+    const uname   = (tx.accountUsername || "").toLowerCase()
+    return payer.includes(searchQuery) || txId.includes(searchQuery)
+        || plan.includes(searchQuery)  || uname.includes(searchQuery)
   })
 
-  const stats = [
-    {
-      label: 'Tổng giao dịch',
-      value: filteredTransactions.length,
-      icon: DollarSign,
-      color: 'blue'
-    },
-    {
-      label: 'Thành công',
-      value: filteredTransactions.filter(t => t.status === 'SUCCESS').length,
-      icon: CheckCircle,
-      color: 'green'
-    },
-    {
-      label: 'Thất bại',
-      value: filteredTransactions.filter(t => t.status === 'FAILED').length,
-      icon: AlertCircle,
-      color: 'red'
-    },
-    {
-      label: 'Đang xử lý',
-      value: filteredTransactions.filter(t => t.status === 'PENDING').length,
-      icon: RotateCw,
-      color: 'yellow'
-    }
-  ]
-
-  const totalRevenue = filteredTransactions
+  // Revenue của trang hiện tại (chỉ dùng cho hiển thị phụ, banner dùng globalStats)
+  const pageRevenue = filteredTransactions
     .filter(t => t.status === 'SUCCESS')
     .reduce((sum, t) => sum + (t.amount || 0), 0)
 
   const getStatusBadge = (status) => {
     const configs = {
-      'SUCCESS': { bg: 'bg-green-50', text: 'text-green-800', label: 'Thành công' },
-      'PENDING': { bg: 'bg-yellow-50', text: 'text-yellow-800', label: 'Đang xử lý' },
-      'FAILED': { bg: 'bg-red-50', text: 'text-red-800', label: 'Thất bại' }
+      'SUCCESS': {
+        bg: 'bg-emerald-50 text-emerald-700 border-emerald-200/80',
+        icon: <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0" />,
+        label: 'Thành công'
+      },
+      'PENDING': {
+        bg: 'bg-amber-50 text-amber-700 border-amber-200/80',
+        icon: <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />,
+        label: 'Đang xử lý'
+      },
+      'FAILED': {
+        bg: 'bg-rose-50 text-rose-700 border-rose-200/80',
+        icon: <XCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />,
+        label: 'Thất bại'
+      },
+      'EXPIRED': {
+        bg: 'bg-gray-100 text-gray-700 border-gray-200',
+        icon: <Clock className="w-3.5 h-3.5 text-gray-400 shrink-0" />,
+        label: 'Hết hạn'
+      },
+      'REFUNDED': {
+        bg: 'bg-purple-50 text-purple-700 border-purple-200/80',
+        icon: <RotateCw className="w-3.5 h-3.5 text-purple-500 shrink-0" />,
+        label: 'Đã hoàn tiền'
+      },
     }
-    const config = configs[status] || configs.PENDING
+    const config = configs[status] || {
+      bg: 'bg-gray-50 text-gray-600 border-gray-200',
+      icon: <Clock className="w-3.5 h-3.5 text-gray-400 shrink-0" />,
+      label: status || 'Chưa xác định'
+    }
     return (
-      <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
-        {config.label}
+      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shadow-xs ${config.bg}`}>
+        {config.icon}
+        <span>{config.label}</span>
       </span>
     )
   }
+
 
   return (
     <div className="space-y-6">
@@ -118,49 +183,50 @@ export const AdminTransactionDashboard = () => {
         icon={<DollarSign size={24} />}
       />
 
-      {/* Stats */}
+      {/* Stats — dùng globalStats từ server, không bị giới hạn bởi phân trang */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
           title="TỔNG GIAO DỊCH"
-          value={filteredTransactions.length}
-          sub="Tất cả các giao dịch"
+          value={globalStats.total}
+          sub="Toàn bộ giao dịch"
           icon={<DollarSign size={20} />}
         />
         <StatsCard
           title="GIAO DỊCH THÀNH CÔNG"
-          value={filteredTransactions.filter(t => t.status === 'SUCCESS').length}
-          sub="Giao dịch thành công"
+          value={globalStats.success}
+          sub="Tổng thành công"
           color="text-green-600"
           icon={<CheckCircle size={20} />}
         />
         <StatsCard
           title="GIAO DỊCH THẤT BẠI"
-          value={filteredTransactions.filter(t => t.status === 'FAILED').length}
-          sub="Giao dịch thất bại"
+          value={globalStats.failed}
+          sub="Tổng thất bại"
           color="text-red-600"
           icon={<AlertCircle size={20} />}
         />
         <StatsCard
           title="ĐANG XỬ LÝ"
-          value={filteredTransactions.filter(t => t.status === 'PENDING').length}
-          sub="Giao dịch đang xử lý"
+          value={globalStats.pending}
+          sub="Tổng đang chờ"
           color="text-yellow-600"
           icon={<RotateCw size={20} />}
         />
       </div>
 
-      {/* Revenue Card */}
+      {/* Revenue Card — chú thích rõ "trang hiện tại" để không mislead */}
       <div className="bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-2xl p-8 shadow-md hover:scale-[1.01] transition-all duration-300">
-        <p className="text-pink-100 text-xs uppercase tracking-wider font-bold">Doanh thu hệ thống</p>
+        <p className="text-pink-100 text-xs uppercase tracking-wider font-bold">Doanh thu trang hiện tại</p>
         <p className="text-4xl font-black mt-2">
           {new Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND',
             minimumFractionDigits: 0
-          }).format(totalRevenue)}
+          }).format(pageRevenue)}
         </p>
         <p className="text-pink-100 text-xs mt-2 font-medium">
           Từ {filteredTransactions.filter(t => t.status === 'SUCCESS').length} giao dịch thành công
+          {searchQuery ? ` (đang lọc tìm kiếm)` : ` trên trang ${page}`}
         </p>
       </div>
 
@@ -171,24 +237,24 @@ export const AdminTransactionDashboard = () => {
           {/* TABS FOR STATUS */}
           <div className="flex bg-[#FFF0F5] p-1 rounded-2xl gap-1 self-start flex-wrap md:flex-nowrap">
             {[
-              { value: null, label: `Tất cả (${transactions.length})` },
-              { value: 'SUCCESS', label: `Thành công (${transactions.filter(t => t.status === 'SUCCESS').length})` },
-              { value: 'PENDING', label: `Đang xử lý (${transactions.filter(t => t.status === 'PENDING').length})` },
-              { value: 'FAILED', label: `Thất bại (${transactions.filter(t => t.status === 'FAILED').length})` }
-            ].map(filter => (
+              { value: null,      label: `Tất cả (${globalStats.total})` },
+              { value: 'SUCCESS', label: `Thành công (${globalStats.success})` },
+              { value: 'PENDING', label: `Đang xử lý (${globalStats.pending})` },
+              { value: 'FAILED',  label: `Thất bại (${globalStats.failed})` }
+            ].map(f => (
               <button
-                key={filter.value}
+                key={f.value}
                 onClick={() => {
-                  setFilterStatus(filter.value)
+                  setFilterStatus(f.value)
                   setPage(1)
                 }}
                 className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-                  filterStatus === filter.value
+                  filterStatus === f.value
                     ? "bg-white text-pink-600 shadow-sm"
                     : "text-[#8E707E] hover:text-pink-600"
                 }`}
               >
-                {filter.label}
+                {f.label}
               </button>
             ))}
           </div>
@@ -309,42 +375,181 @@ export const AdminTransactionDashboard = () => {
         </div>
       </div>
 
+      {/* DETAIL MODAL */}
       {selectedTx && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4">
-            <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Chi tiết giao dịch</h2>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-pink-100 flex flex-col max-h-[90vh]">
+            
+            {/* Modal Header */}
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-pink-50/50 to-white">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-pink-100/80 flex items-center justify-center text-pink-600">
+                  <CreditCard size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">Chi tiết giao dịch</h3>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-xs font-mono text-gray-500">{selectedTx.transactionId}</span>
+                    <button
+                      onClick={() => handleCopyTxId(selectedTx.transactionId)}
+                      className="text-gray-400 hover:text-pink-600 transition p-0.5"
+                      title="Sao chép mã"
+                    >
+                      {copiedId ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
+                    </button>
+                  </div>
+                </div>
+              </div>
               <button
                 onClick={() => setSelectedTx(null)}
-                className="text-gray-500 hover:text-gray-700"
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-5 text-sm">
+              {loadingDetail ? (
+                <div className="py-12 flex flex-col items-center justify-center text-gray-400 gap-3">
+                  <Loader2 size={28} className="animate-spin text-pink-500" />
+                  <p className="text-xs font-medium">Đang tải chi tiết giao dịch...</p>
+                </div>
+              ) : (() => {
+                const tx = detailData || selectedTx
+                const isOwner = tx.paymentType === 'OWNER_SUBSCRIPTION'
+
+                return (
+                  <>
+                    {/* Amount Banner */}
+                    <div className="bg-gradient-to-r from-pink-50 to-rose-50 rounded-2xl p-4 border border-pink-100/60 flex items-center justify-between">
+                      <div>
+                        <p className="text-[11px] font-bold text-pink-500 uppercase tracking-wider">Số tiền thanh toán</p>
+                        <p className="text-2xl font-black text-gray-900 mt-0.5">
+                          {new Intl.NumberFormat('vi-VN', {
+                            style: 'currency',
+                            currency: 'VND',
+                            minimumFractionDigits: 0
+                          }).format(tx.amount || 0)}
+                        </p>
+                      </div>
+                      <div>
+                        {getStatusBadge(tx.status)}
+                      </div>
+                    </div>
+
+                    {/* Section 1: Payer Info */}
+                    <div className="bg-gray-50/70 rounded-2xl p-4 space-y-2.5 border border-gray-100">
+                      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <User size={13} />
+                        Thông tin người thanh toán
+                      </p>
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <span className="text-gray-400 block">Loại giao dịch:</span>
+                          <span className="font-semibold text-gray-800">{isOwner ? 'Chủ sở hữu (Nâng cấp gói POI)' : 'Du khách (Mua quyền App)'}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400 block">Chủ tài khoản / Liên hệ:</span>
+                          <span className="font-semibold text-gray-900">{getPayerDisplay(tx)}</span>
+                        </div>
+                        {tx.accountId && (
+                          <div className="col-span-2">
+                            <span className="text-gray-400 block">Mã tài khoản (AccountId):</span>
+                            <span className="font-mono text-gray-600 text-[11px]">{tx.accountId}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Section 2: Plan & Subscription Info */}
+                    <div className="bg-gray-50/70 rounded-2xl p-4 space-y-2.5 border border-gray-100">
+                      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <ShieldCheck size={13} />
+                        Gói dịch vụ
+                      </p>
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <span className="text-gray-400 block">Gói:</span>
+                          <span className="font-bold text-pink-600">{tx.plan?.name || tx.planId || 'Không xác định'}</span>
+                        </div>
+                        {tx.plan?.price && (
+                          <div>
+                            <span className="text-gray-400 block">Giá niêm yết:</span>
+                            <span className="font-semibold text-gray-700">
+                              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(tx.plan.price)}
+                            </span>
+                          </div>
+                        )}
+                        {tx.subscription && (
+                          <>
+                            <div>
+                              <span className="text-gray-400 block">Gói kích hoạt:</span>
+                              <span className="font-semibold text-emerald-600">{tx.subscription.status}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400 block">Thời hạn:</span>
+                              <span className="text-gray-600">
+                                {tx.subscription.startDate ? formatDateVN(tx.subscription.startDate) : '—'} → {tx.subscription.endDate ? formatDateVN(tx.subscription.endDate) : '—'}
+                              </span>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Section 3: Gateway Info */}
+                    <div className="bg-gray-50/70 rounded-2xl p-4 space-y-2.5 border border-gray-100">
+                      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <CreditCard size={13} />
+                        Cổng thanh toán & Đối soát
+                      </p>
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <span className="text-gray-400 block">Cổng thanh toán:</span>
+                          <span className="font-semibold text-gray-800">{tx.gateway || 'Chưa chọn'}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-400 block">Trạng thái cổng:</span>
+                          <span className="font-semibold text-gray-700">{tx.gatewayStatus || '—'}</span>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-gray-400 block">Mã đối soát bên thứ 3 (GatewayTransId):</span>
+                          <span className="font-mono text-gray-800 text-[11px]">
+                            {tx.gatewayTransId || (
+                              <span className="text-gray-400 italic">Chưa có (Giao dịch test / thanh toán nội bộ / chưa nhận webhook)</span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Section 4: Timestamps */}
+                    <div className="grid grid-cols-2 gap-3 text-xs text-gray-500 pt-1">
+                      <div>
+                        <span className="text-gray-400 block text-[11px]">Thời điểm tạo:</span>
+                        <span>{tx.createdAt ? formatDateVN(tx.createdAt, true) : '—'}</span>
+                      </div>
+                      <div>
+                        <span className="text-gray-400 block text-[11px]">Thời điểm hoàn tất:</span>
+                        <span>{tx.completedAt ? formatDateVN(tx.completedAt, true) : '—'}</span>
+                      </div>
+                    </div>
+                  </>
+                )
+              })()}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-gray-100 flex justify-end bg-gray-50/50">
+              <button
+                onClick={() => setSelectedTx(null)}
+                className="px-5 py-2.5 rounded-xl bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold text-xs transition"
               >
                 Đóng
               </button>
             </div>
-            <div className="p-6 space-y-3 text-sm">
-              <p><span className="text-gray-500">Transaction:</span> <span className="font-mono">{selectedTx.transactionId}</span></p>
-              <p><span className="text-gray-500">PaymentType:</span> {selectedTx.paymentType}</p>
-              {selectedTx.paymentType === 'OWNER_SUBSCRIPTION' ? (
-                <>
-                  <p>
-                    <span className="text-gray-500">Chủ sở hữu (username):</span>{' '}
-                    <span className="font-medium text-gray-900">{selectedTx.accountUsername || selectedTx.accountId || '-'}</span>
-                  </p>
-                  {selectedTx.accountUsername && selectedTx.accountId && (
-                    <p>
-                      <span className="text-gray-500">Mã tài khoản:</span>{' '}
-                      <span className="font-mono text-xs text-gray-700">{selectedTx.accountId}</span>
-                    </p>
-                  )}
-                </>
-              ) : (
-                <p><span className="text-gray-500">Liên hệ (du khách):</span> {selectedTx.contactInfo || '-'}</p>
-              )}
-              <p><span className="text-gray-500">Plan:</span> {selectedTx.planId || '-'}</p>
-              <p><span className="text-gray-500">Gateway:</span> {selectedTx.gateway || '-'}</p>
-              <p><span className="text-gray-500">GatewayTransId:</span> {selectedTx.gatewayTransId || '-'}</p>
-              <p><span className="text-gray-500">Status:</span> {selectedTx.status}</p>
-            </div>
+
           </div>
         </div>
       )}

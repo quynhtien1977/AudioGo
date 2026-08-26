@@ -240,7 +240,8 @@ export default function Topbar({ onToggleMobileSidebar }) {
           (tx) =>
             tx.transactionId?.toLowerCase().includes(searchTerm) ||
             tx.accountUsername?.toLowerCase().includes(searchTerm) ||
-            tx.contactInfo?.toLowerCase().includes(searchTerm)
+            tx.contactInfo?.toLowerCase().includes(searchTerm) ||
+            tx.planId?.toLowerCase().includes(searchTerm)
         )
         break
       default:
@@ -261,14 +262,110 @@ export default function Topbar({ onToggleMobileSidebar }) {
     }
   }
 
+  // Value to fill in search input and filter query when an item is selected
+  const getItemSearchValue = (item) => {
+    const pageType = getCurrentPageType()
+    switch (pageType) {
+      case "poi-management": {
+        let name = item.poiName || ""
+        if (!name && item.proposedData) {
+          try {
+            const parsed = typeof item.proposedData === "string" ? JSON.parse(item.proposedData) : item.proposedData
+            name = parsed?.Title || parsed?.title || parsed?.name || ""
+          } catch {}
+        }
+        return name || item.requestId || ""
+      }
+      case "poi":
+        return item.name || item.title || ""
+      case "category":
+        return item.name || ""
+      case "tour":
+        return item.name || ""
+      case "account":
+        return item.username || item.fullName || item.email || ""
+      case "audio":
+        return item.poiName || ""
+      case "article":
+        return item.title || ""
+      case "transaction":
+        return item.accountUsername || item.contactInfo || item.transactionId || ""
+      default:
+        return ""
+    }
+  }
+
+  // Primary title and secondary subtitle for search results dropdown
+  const getItemDisplayInfo = (item) => {
+    const pageType = getCurrentPageType()
+    switch (pageType) {
+      case "poi-management": {
+        let name = item.poiName || ""
+        if (!name && item.proposedData) {
+          try {
+            const parsed = typeof item.proposedData === "string" ? JSON.parse(item.proposedData) : item.proposedData
+            name = parsed?.Title || parsed?.title || parsed?.name || ""
+          } catch {}
+        }
+        return {
+          title: name || "Yêu cầu POI",
+          subtitle: `Loại: ${item.requestType || "Tạo mới"} • Trạng thái: ${item.status || "Chờ duyệt"}`
+        }
+      }
+      case "poi":
+        return {
+          title: item.name || item.title,
+          subtitle: item.description || item.address || ""
+        }
+      case "category":
+        return {
+          title: item.name,
+          subtitle: item.poiCount !== undefined ? `${item.poiCount} địa điểm` : ""
+        }
+      case "tour":
+        return {
+          title: item.name,
+          subtitle: item.description || (item.poiCount ? `${item.poiCount} địa điểm` : "")
+        }
+      case "account":
+        return {
+          title: item.fullName ? `${item.fullName} (@${item.username})` : item.username,
+          subtitle: `${item.email || ""} • Vai trò: ${item.role || "User"}`
+        }
+      case "audio":
+        return {
+          title: item.poiName || "Bản thu âm",
+          subtitle: item.languageCode ? `Ngôn ngữ: ${item.languageCode}` : item.description || ""
+        }
+      case "article":
+        return {
+          title: item.title,
+          subtitle: item.summary || ""
+        }
+      case "transaction": {
+        const payer = item.accountUsername ? `@${item.accountUsername}` : (item.contactInfo || "Khách vãng lai")
+        const amountStr = item.amount
+          ? new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(item.amount)
+          : ""
+        return {
+          title: `${payer} — ${item.planId || "Gói cước"}`,
+          subtitle: `Mã: ${item.transactionId} • ${amountStr} • [${item.status || "N/A"}]`
+        }
+      }
+      default:
+        return { title: "", subtitle: "" }
+    }
+  }
+
   // Handle result click
   const handleResultClick = (item) => {
-    setSearchQuery("")
+    const searchVal = getItemSearchValue(item)
+    setSearchQuery(searchVal)
     setSearchResults([])
     setShowResults(false)
     
     const pageType = getCurrentPageType()
-    updateSearch(getItemDisplayName(item), pageType)
+    updateSearch(searchVal, pageType)
   }
 
   // Close dropdown when clicking outside
@@ -282,39 +379,6 @@ export default function Topbar({ onToggleMobileSidebar }) {
     document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
-
-  // Get display name based on item type
-  const getItemDisplayName = (item) => {
-    const pageType = getCurrentPageType()
-    switch (pageType) {
-      case "poi-management": {
-        let name = item.poiName || ""
-        if (!name && item.proposedData) {
-          try {
-            const parsed = typeof item.proposedData === "string" ? JSON.parse(item.proposedData) : item.proposedData
-            name = parsed?.Title || parsed?.title || parsed?.name || ""
-          } catch {}
-        }
-        return name || "Yêu cầu POI"
-      }
-      case "poi":
-        return item.name
-      case "category":
-        return item.name
-      case "tour":
-        return item.name
-      case "account":
-        return item.username || item.email
-      case "audio":
-        return item.poiName || "Audio"
-      case "article":
-        return item.title
-      case "transaction":
-        return item.transactionId ? (item.transactionId.substring(0, 10) + "...") : "Giao dịch"
-      default:
-        return ""
-    }
-  }
 
   return (
     <>
@@ -356,22 +420,25 @@ export default function Topbar({ onToggleMobileSidebar }) {
                   <div className="px-4 py-3 text-gray-500 text-sm">Đang tải...</div>
                 ) : searchResults.length > 0 ? (
                   <div>
-                    {searchResults.map((item, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handleResultClick(item)}
-                        className="w-full text-left px-4 py-3 hover:bg-gray-100 border-b last:border-b-0 transition"
-                      >
-                        <p className="font-medium text-gray-900">
-                          {getItemDisplayName(item)}
-                        </p>
-                        {item.description && (
-                          <p className="text-xs text-gray-500 truncate">
-                            {item.description}
+                    {searchResults.map((item, index) => {
+                      const { title, subtitle } = getItemDisplayInfo(item)
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => handleResultClick(item)}
+                          className="w-full text-left px-4 py-3 hover:bg-gray-100 border-b last:border-b-0 transition"
+                        >
+                          <p className="font-medium text-gray-900 text-sm truncate">
+                            {title}
                           </p>
-                        )}
-                      </button>
-                    ))}
+                          {subtitle && (
+                            <p className="text-xs text-gray-500 truncate mt-0.5">
+                              {subtitle}
+                            </p>
+                          )}
+                        </button>
+                      )
+                    })}
                   </div>
                 ) : (
                   <div className="px-4 py-3 text-gray-500 text-sm">Không tìm thấy kết quả</div>
@@ -473,22 +540,25 @@ export default function Topbar({ onToggleMobileSidebar }) {
                     <div className="px-4 py-3 text-gray-500 text-xs">Đang tải...</div>
                   ) : searchResults.length > 0 ? (
                     <div>
-                      {searchResults.map((item, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handleResultClick(item)}
-                          className="w-full text-left px-4 py-2.5 hover:bg-gray-50 border-b last:border-b-0 transition"
-                        >
-                          <p className="font-semibold text-xs text-gray-900 truncate">
-                            {getItemDisplayName(item)}
-                          </p>
-                          {item.description && (
-                            <p className="text-[11px] text-gray-500 truncate">
-                              {item.description}
+                      {searchResults.map((item, index) => {
+                        const { title, subtitle } = getItemDisplayInfo(item)
+                        return (
+                          <button
+                            key={index}
+                            onClick={() => handleResultClick(item)}
+                            className="w-full text-left px-4 py-2.5 hover:bg-gray-50 border-b last:border-b-0 transition"
+                          >
+                            <p className="font-semibold text-xs text-gray-900 truncate">
+                              {title}
                             </p>
-                          )}
-                        </button>
-                      ))}
+                            {subtitle && (
+                              <p className="text-[11px] text-gray-500 truncate mt-0.5">
+                                {subtitle}
+                              </p>
+                            )}
+                          </button>
+                        )
+                      })}
                     </div>
                   ) : (
                     <div className="px-4 py-3 text-gray-500 text-xs">Không tìm thấy kết quả</div>

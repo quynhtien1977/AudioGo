@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Server.Repositories.Interfaces;
 using Server.Services.Interfaces;
 using System.Security.Claims;
+using Shared.DTOs;
 
 namespace Server.Controllers.Cms
 {
@@ -38,7 +39,7 @@ namespace Server.Controllers.Cms
         public async Task<IActionResult> GetHeatmap()
         {
             var points = await _location.GetHeatmapAsync();
-            return Ok(points.Select(p => new { p.Lat, p.Lon, p.Count }));
+            return Ok(points.Select(p => new HeatmapPointDto(p.Lat, p.Lon, p.Count)));
         }
 
         /// <summary>Heatmap theo thời gian cụ thể (ngày + giờ).</summary>
@@ -48,7 +49,7 @@ namespace Server.Controllers.Cms
             [FromQuery] int? hour)
         {
             var points = await _location.GetHeatmapByTimeAsync(date, hour);
-            return Ok(points.Select(p => new { p.Lat, p.Lon, p.Count }));
+            return Ok(points.Select(p => new HeatmapPointDto(p.Lat, p.Lon, p.Count)));
         }
 
         /// <summary>Thống kê tổng lượt nghe + biểu đồ theo ngày.</summary>

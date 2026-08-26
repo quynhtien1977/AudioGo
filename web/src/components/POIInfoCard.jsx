@@ -188,7 +188,7 @@ const POIInfoCard = ({ poi, isEditing, form = {}, handleChange, role, getCategor
               {poi.categories && poi.categories.length > 0 ? (
                 poi.categories.map((catId, idx) => {
                   const cat = categories.find(c => c.categoryId === catId || c.name === catId);
-                  const catName = cat ? cat.name : catId;
+                  const catName = cat ? cat.name : (categories.length > 0 ? catId : (idx === 0 && poi.category ? poi.category : "Đang tải..."));
                   return (
                     <span key={idx} className={`px-2.5 py-1 rounded-full text-xs font-semibold ${getCategoryColor ? getCategoryColor(catName) : "bg-pink-50 text-pink-600"}`}>
                       {catName}

@@ -17,7 +17,11 @@ namespace Shared.DTOs
         int TotalItems,
         int TotalPages,
         int CurrentPage,
-        int PageSize);
+        int PageSize)
+    {
+        public int Total => TotalItems;
+        public int Page => CurrentPage;
+    }
 
     /// <summary>Wrapper phân trang chuẩn cho Frontend CMS ({ data: [...], pagination: { ... } }).</summary>
     public record PagedResult<T>(
