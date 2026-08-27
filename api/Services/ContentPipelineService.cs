@@ -80,7 +80,8 @@ public class ContentPipelineService : IContentPipelineService
 
             // 6. Upload to Blob
             var container = _config["Azure:BlobStorage:AudioContainer"] ?? "audio-files";
-            var blobPath = $"{poi.PoiId}/{targetLang}.mp3";
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var blobPath = $"{poi.PoiId}/{targetLang}_{timestamp}.mp3";
             var audioUrl = await _blob.UploadAsync(container, blobPath, audioStream, "audio/mpeg");
 
             // 7. Save to DB
@@ -138,7 +139,8 @@ public class ContentPipelineService : IContentPipelineService
 
             // Upload lên Blob Storage
             var container = _config["Azure:BlobStorage:AudioContainer"] ?? "audio-files";
-            var blobPath = $"{content.PoiId}/{content.LanguageCode}.mp3";
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var blobPath = $"{content.PoiId}/{content.LanguageCode}_{timestamp}.mp3";
             var audioUrl = await _blob.UploadAsync(container, blobPath, audioStream, "audio/mpeg");
 
             // Cập nhật DB

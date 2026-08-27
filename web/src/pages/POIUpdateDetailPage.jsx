@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { ArrowLeft, X, Check, MapPin, Zap, Layers, FileText, Volume2, Globe, Loader2, AlertCircle, Clock, ClipboardList, Sparkles } from "lucide-react"
+import { ArrowLeft, X, Check, MapPin, Zap, Layers, FileText, Volume2, Globe, Loader2, AlertCircle, Clock, ClipboardList, Sparkles, CheckCircle2 } from "lucide-react"
 import PageLoader from "@/components/PageLoader"
 import toast from "react-hot-toast"
 import { getPoiDetail } from "@/api/poiApi"
@@ -37,6 +37,17 @@ const LANGUAGE_LABELS = {
 }
 const formatLanguage = (code) =>
   LANGUAGE_LABELS[code?.toLowerCase()] ?? (code || "—")
+
+// Danh sách các ngôn ngữ hệ thống hỗ trợ sinh tự động trong pipeline
+const TARGET_LANGS = [
+  { code: "vi", label: "Tiếng Việt", flag: "🇻🇳" },
+  { code: "en", label: "English", flag: "🇬🇧" },
+  { code: "ja", label: "日本語", flag: "🇯🇵" },
+  { code: "ko", label: "한국어", flag: "🇰🇷" },
+  { code: "fr", label: "Français", flag: "🇫🇷" },
+  { code: "zh-Hans", label: "中文", flag: "🇨🇳" },
+  { code: "th", label: "ไทย", flag: "🇹🇭" },
+]
 
 // Info Card Component
 const InfoCard = ({ icon: Icon, label, value, isChanged = false }) => (
@@ -120,11 +131,24 @@ export default function POIUpdateDetailPage() {
   const [error, setError] = useState(null)
   const [categoryMap, setCategoryMap] = useState({}) // id → name
   const [changeCount, setChangeCount] = useState(0)
+  const [requestInfo, setRequestInfo] = useState(null)
   
   // Modal states
   const [showApproveModal, setShowApproveModal] = useState(false)
   const [showRejectModal, setShowRejectModal] = useState(false)
   const [rejectReason, setRejectReason] = useState("")
+
+  // Pipeline processing overlay states
+  const [processingApproval, setProcessingApproval] = useState(false)
+  const [pipelineProgress, setPipelineProgress] = useState({})
+  const [isAllCompleted, setIsAllCompleted] = useState(false)
+  const pollTimerRef = useRef(null)
+
+  useEffect(() => {
+    return () => {
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+    }
+  }, [])
 
   useEffect(() => {
     const fetchPoiDetail = async () => {
@@ -137,6 +161,7 @@ export default function POIUpdateDetailPage() {
           getCategoriesApi()
         ])
         console.log("Request:", request)
+        setRequestInfo(request)
 
         // Build categoryMap: id → name
         const catMap = {}
@@ -144,10 +169,6 @@ export default function POIUpdateDetailPage() {
           catMap[c.categoryId] = c.name
         })
         setCategoryMap(catMap)
-
-        // Fetch POI detail (current data)
-        const poiDetail = await getPoiDetail(request.poiId)
-        console.log("POI Detail:", poiDetail)
 
         // Parse proposed data
         let proposedData = {}
@@ -158,11 +179,49 @@ export default function POIUpdateDetailPage() {
         }
         console.log("Proposed Data:", proposedData)
 
-        const { oldPoi: oldPoiFormatted, newPoi: newPoiFormatted, changeCount: count } = getPoiChanges(poiDetail, proposedData, catMap)
+        if (request.status === "APPROVED" || request.status === "REJECTED") {
+          // ── Đơn đã được xử lý ──
+          // Không gọi getPoiDetail vì DB đã bị overwrite (APPROVED) hoặc không liên quan (REJECTED).
+          // Chỉ hiển thị bản đề xuất như một audit log — không cần so sánh before/after.
+          const catIds = [
+            ...(proposedData?.CategoryIds || []),
+            ...(proposedData?.categoryIds || []),
+          ].filter((v, i, a) => v && a.indexOf(v) === i)
 
-        setOldPoi(oldPoiFormatted)
-        setNewPoi(newPoiFormatted)
-        setChangeCount(count)
+          const snapshot = {
+            id: request.poiId || "",
+            name: proposedData?.Title || "Không có tên",
+            categoryIds: catIds,
+            categoryNames: catIds.map(id => catMap[id] || id).filter(Boolean),
+            description: proposedData?.Description || "",
+            latitude: proposedData?.Latitude != null ? String(proposedData.Latitude) : "—",
+            longitude: proposedData?.Longitude != null ? String(proposedData.Longitude) : "—",
+            priority: proposedData?.Priority != null ? Number(proposedData.Priority) : 2,
+            language: (proposedData?.LanguageCode || proposedData?.languageCode || "vi").toLowerCase(),
+            audio: proposedData?.AudioUrl ?? "",
+            images: (() => {
+              const gallery = proposedData?.GalleryImageUrls ?? []
+              const logo = proposedData?.LogoUrl
+              if (logo && !gallery.includes(logo)) return [logo, ...gallery]
+              return gallery
+            })(),
+          }
+
+          // Cả hai cột đều hiển thị snapshot — cột trái dùng làm "context"
+          setOldPoi(snapshot)
+          setNewPoi(snapshot)
+          setChangeCount(0)
+        } else {
+          // ── Đơn PENDING: so sánh live POI với đề xuất như cũ ──
+          const poiDetail = await getPoiDetail(request.poiId)
+          console.log("POI Detail:", poiDetail)
+
+          const { oldPoi: oldPoiFormatted, newPoi: newPoiFormatted, changeCount: count } = getPoiChanges(poiDetail, proposedData, catMap)
+
+          setOldPoi(oldPoiFormatted)
+          setNewPoi(newPoiFormatted)
+          setChangeCount(count)
+        }
       } catch (err) {
         console.error("Load POI detail error:", err)
         setError("Không thể tải dữ liệu. Vui lòng thử lại.")
@@ -176,6 +235,7 @@ export default function POIUpdateDetailPage() {
     }
   }, [requestId])
 
+
   const handleApprove = () => {
     setShowApproveModal(true)
   }
@@ -184,12 +244,86 @@ export default function POIUpdateDetailPage() {
     try {
       await reviewPoiRequest(requestId, { approved: true })
       setShowApproveModal(false)
-      toast.success("Cập nhật đã được phê duyệt")  // Bug #7
-      navigate("/admin/pois/management/updates")
+
+      const targetPoiId = requestInfo?.poiId
+      if (!targetPoiId) {
+        toast.success("Cập nhật đã được phê duyệt thành công!")
+        navigate("/admin/pois/management/updates")
+        return
+      }
+
+      setProcessingApproval(true)
+      setIsAllCompleted(false)
+      setPipelineProgress({})
+
+      let attempts = 0
+      const maxAttempts = 25 // tối đa 25 lần * 1.2s = ~30s
+
+      const checkProgress = async () => {
+        try {
+          attempts += 1
+          const poiDetail = await getPoiDetail(targetPoiId)
+          const contents = poiDetail?.contents || []
+
+          const progressMap = {}
+          let completedCount = 0
+
+          TARGET_LANGS.forEach(lang => {
+            const found = contents.find(c => c.languageCode?.toLowerCase() === lang.code.toLowerCase())
+            const hasAudio = !!(found && found.audioUrl && String(found.audioUrl).trim().length > 0)
+            const isReady = !!found && hasAudio
+
+            progressMap[lang.code] = {
+              exists: !!found,
+              hasAudio,
+              isReady
+            }
+
+            if (isReady) completedCount++
+          })
+
+          setPipelineProgress(progressMap)
+
+          if (completedCount === TARGET_LANGS.length) {
+            if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+            setIsAllCompleted(true)
+            setTimeout(() => {
+              setProcessingApproval(false)
+              toast.success("Cập nhật đã được phê duyệt và hoàn tất xử lý tất cả ngôn ngữ & âm thanh!")
+              navigate("/admin/pois/management/updates")
+            }, 1000)
+          } else if (attempts >= maxAttempts) {
+            if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+            setProcessingApproval(false)
+            toast.success("Cập nhật đã được phê duyệt! (Các ngôn ngữ còn lại đang tiếp tục xử lý ngầm)")
+            navigate("/admin/pois/management/updates")
+          }
+        } catch (pollErr) {
+          console.error("Polling progress error:", pollErr)
+          if (attempts >= maxAttempts) {
+            if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+            setProcessingApproval(false)
+            toast.success("Cập nhật đã được phê duyệt!")
+            navigate("/admin/pois/management/updates")
+          }
+        }
+      }
+
+      // Check ngay lần đầu sau 400ms để đợi worker nhận task
+      setTimeout(checkProgress, 400)
+      pollTimerRef.current = setInterval(checkProgress, 1200)
+
     } catch (err) {
       console.error("Approve error:", err)
-      toast.error("Lỗi khi phê duyệt: " + err.message)  // Bug #7
+      toast.error("Lỗi khi phê duyệt: " + err.message)
     }
+  }
+
+  const handleSkipWaiting = () => {
+    if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+    setProcessingApproval(false)
+    toast.success("Cập nhật đã được phê duyệt! Hệ thống tiếp tục xử lý ngầm.")
+    navigate("/admin/pois/management/updates")
   }
 
   const handleReject = () => {
@@ -268,10 +402,18 @@ export default function POIUpdateDetailPage() {
             </button>
             <div className="flex-1">
               <h1 className="text-3xl font-bold text-gray-900">
-                Xem xét yêu cầu cập nhật POI
+                {requestInfo?.status === "APPROVED"
+                  ? "Chi tiết yêu cầu cập nhật đã duyệt"
+                  : requestInfo?.status === "REJECTED"
+                  ? "Chi tiết yêu cầu cập nhật đã từ chối"
+                  : "Xem xét yêu cầu cập nhật POI"}
               </h1>
               <p className="text-gray-600 text-sm mt-1">
-                Kiểm tra các thay đổi được đề xuất trước khi phê duyệt
+                {requestInfo?.status === "APPROVED"
+                  ? "Lịch sử đề xuất và nội dung cập nhật đã được đồng bộ vào hệ thống"
+                  : requestInfo?.status === "REJECTED"
+                  ? "Thông tin đề xuất đã bị từ chối"
+                  : "Kiểm tra các thay đổi được đề xuất trước khi phê duyệt"}
               </p>
             </div>
           </div>
@@ -282,27 +424,74 @@ export default function POIUpdateDetailPage() {
       <div className="p-6 max-w-7xl mx-auto">
         {/* POI HEADER CARD */}
         <div className="bg-white rounded-2xl shadow-md p-8 mb-6 border-l-4 border-pink-500">
-          <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-3 gap-4 mb-4">
             <div>
               <p className="text-xs uppercase font-bold text-gray-500 mb-1">Tên địa điểm</p>
               <h2 className="text-2xl font-bold text-gray-900">{oldPoi.name}</h2>
             </div>
             <div>
               <p className="text-xs uppercase font-bold text-gray-500 mb-1">Trạng thái</p>
-              <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200/60 px-3 py-1 rounded-full text-xs font-semibold">
-                <Clock size={13} className="text-amber-600 shrink-0" />
-                <span>Chờ xử lý</span>
-              </span>
+              {requestInfo?.status === "APPROVED" ? (
+                <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200/60 px-3 py-1 rounded-full text-xs font-semibold">
+                  <Check size={13} className="text-emerald-600 shrink-0" />
+                  <span>Đã phê duyệt</span>
+                </span>
+              ) : requestInfo?.status === "REJECTED" ? (
+                <span className="inline-flex items-center gap-1.5 bg-rose-50 text-rose-700 border border-rose-200/60 px-3 py-1 rounded-full text-xs font-semibold">
+                  <X size={13} className="text-rose-600 shrink-0" />
+                  <span>Đã từ chối</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 border border-amber-200/60 px-3 py-1 rounded-full text-xs font-semibold">
+                  <Clock size={13} className="text-amber-600 shrink-0" />
+                  <span>Chờ xử lý</span>
+                </span>
+              )}
             </div>
             <div>
-              <p className="text-xs uppercase font-bold text-gray-500 mb-1">Dự kiến thay đổi</p>
-              <span className="text-2xl font-bold text-amber-600">{changedFields} trường</span>
+              <p className="text-xs uppercase font-bold text-gray-500 mb-1">
+                {requestInfo?.status === "APPROVED" || requestInfo?.status === "REJECTED"
+                  ? "Kết quả xử lý"
+                  : "Dự kiến thay đổi"}
+              </p>
+              {requestInfo?.status === "APPROVED" ? (
+                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-emerald-600 mt-1">
+                  <Check size={16} /> Đã áp dụng vào POI
+                </span>
+              ) : requestInfo?.status === "REJECTED" ? (
+                <span className="inline-flex items-center gap-1.5 text-sm font-bold text-rose-600 mt-1">
+                  <X size={16} /> Đã từ chối đơn
+                </span>
+              ) : (
+                <span className="text-2xl font-bold text-amber-600">{changedFields} trường</span>
+              )}
             </div>
           </div>
+
+          {/* Banner thông tin khi đơn đã duyệt hoặc từ chối */}
+          {requestInfo?.status === "APPROVED" && (
+            <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200/60 text-emerald-800 text-xs flex items-center gap-2.5 mt-2">
+              <Check size={16} className="text-emerald-600 shrink-0" />
+              <span>Đơn cập nhật này đã được <strong>phê duyệt</strong> và ghi đè trực tiếp vào cơ sở dữ liệu POI. Cột POI hiện tại và Bản đề xuất hiện đã được đồng bộ.</span>
+            </div>
+          )}
+
+          {requestInfo?.status === "REJECTED" && (
+            <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200/60 text-rose-800 text-xs flex items-start gap-2.5 mt-2">
+              <X size={16} className="text-rose-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">Đơn cập nhật này đã bị từ chối.</p>
+                {requestInfo.rejectReason && (
+                  <p className="mt-1 text-rose-700"><strong>Lý do từ chối:</strong> {requestInfo.rejectReason}</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* TWO COLUMN COMPARISON */}
-        <div className="grid grid-cols-2 gap-6">
+        {/* TWO COLUMN COMPARISON (chỉ khi PENDING) hoặc AUDIT LOG (khi đã xử lý) */}
+        {requestInfo?.status === "PENDING" ? (
+          <div className="grid grid-cols-2 gap-6">
           {/* LEFT COLUMN - POI HIỆN TẠI */}
           <div className="space-y-12">
             <div className="bg-white rounded-2xl shadow-md p-8">
@@ -533,30 +722,122 @@ export default function POIUpdateDetailPage() {
             </div>
           </div>
         </div>
+        ) : (
+          /* AUDIT LOG VIEW — cho đơn đã APPROVED hoặc REJECTED */
+          <div className="max-w-3xl mx-auto">
+            <div className={`bg-white rounded-2xl shadow-md p-8 ring-2 ${
+              requestInfo?.status === "APPROVED" ? "ring-emerald-100" : "ring-rose-100"
+            }`}>
+              <h3 className="text-lg font-bold text-gray-900 mb-6 pb-4 border-b-2 border-gray-200 flex items-center gap-2">
+                <ClipboardList size={20} className={requestInfo?.status === "APPROVED" ? "text-emerald-600" : "text-rose-500"} />
+                <span>Nội dung đề xuất tại thời điểm gửi đơn</span>
+              </h3>
+
+              <div className="space-y-9">
+                <Section title="Thông tin cơ bản">
+                  <InfoCard icon={FileText} label="Tên địa điểm" value={newPoi.name} />
+                  <CategoryCard categories={newPoi.categoryNames} />
+                  <InfoCard icon={MapPin} label="Vị trí (Lat/Lng)" value={`${newPoi.latitude}, ${newPoi.longitude}`} />
+                  <InfoCard icon={Zap} label="Độ ưu tiên" value={formatPriority(newPoi.priority)} />
+                </Section>
+
+                <Section title="Nội dung đa phương tiện">
+                  <InfoCard icon={Globe} label="Ngôn ngữ" value={formatLanguage(newPoi.language)} />
+                  <div className="p-4 rounded-lg border bg-gray-50 border-gray-200">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-gray-100 text-gray-600"><Volume2 size={20} /></div>
+                      <div className="flex-1">
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">File audio đề xuất</label>
+                        {newPoi.audio ? (
+                          <audio controls className="w-full h-10 rounded">
+                            <source src={newPoi.audio} type="audio/mpeg" />
+                          </audio>
+                        ) : (
+                          <p className="text-sm text-gray-500 italic">Không có file audio</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </Section>
+
+                <Section title="Mô tả">
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <p className="text-sm text-gray-700 leading-relaxed">{newPoi.description || "—"}</p>
+                  </div>
+                </Section>
+
+                <Section title={`Hình ảnh (${newPoi.images?.length || 0})`}>
+                  <div className="flex gap-2 flex-wrap">
+                    {newPoi.images?.length > 0 ? newPoi.images.map((img, idx) => (
+                      <div key={idx} className="relative">
+                        <img
+                          src={img}
+                          alt={`Ảnh ${idx + 1}`}
+                          className="w-24 h-24 object-cover rounded-xl border-2 border-gray-200 shadow-sm"
+                          onError={(e) => { e.target.src = "https://placehold.co/96x96?text=Err" }}
+                        />
+                        {idx === 0 && (
+                          <span className="absolute top-1 left-1 bg-gray-500 text-white text-[9px] font-bold px-1 rounded">Logo</span>
+                        )}
+                      </div>
+                    )) : (
+                      <p className="text-sm text-gray-400 italic">Chưa có hình ảnh</p>
+                    )}
+                  </div>
+                </Section>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
 
       {/* STICKY BOTTOM ACTION BAR */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-2xl">
         <div className="p-6 max-w-7xl mx-auto flex justify-between items-center">
           <div className="text-sm text-gray-600">
-            <span className="font-semibold text-gray-800">Thay đổi:</span> {changedFields} trường
+            {requestInfo?.status === "APPROVED" ? (
+              <span className="inline-flex items-center gap-1.5 text-emerald-700 font-semibold">
+                <Check size={16} className="text-emerald-600" /> Đơn cập nhật này đã được phê duyệt thành công
+              </span>
+            ) : requestInfo?.status === "REJECTED" ? (
+              <span className="inline-flex items-center gap-1.5 text-rose-600 font-semibold">
+                <X size={16} className="text-rose-500" /> Đơn cập nhật này đã bị từ chối
+              </span>
+            ) : (
+              <>
+                <span className="font-semibold text-gray-800">Thay đổi:</span> {changedFields} trường
+              </>
+            )}
           </div>
           
           <div className="flex gap-3">
-            <button
-              onClick={handleReject}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition font-semibold shadow-md hover:shadow-lg"
-            >
-              <X size={18} />
-              Từ chối
-            </button>
-            <button
-              onClick={handleApprove}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-xl hover:from-pink-600 hover:to-pink-700 transition font-semibold shadow-md hover:shadow-lg"
-            >
-              <Check size={18} />
-              Chấp nhận
-            </button>
+            {requestInfo?.status === "PENDING" ? (
+              <>
+                <button
+                  onClick={handleReject}
+                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition font-semibold shadow-md hover:shadow-lg"
+                >
+                  <X size={18} />
+                  Từ chối
+                </button>
+                <button
+                  onClick={handleApprove}
+                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-xl hover:from-pink-600 hover:to-pink-700 transition font-semibold shadow-md hover:shadow-lg"
+                >
+                  <Check size={18} />
+                  Chấp nhận
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => navigate("/admin/pois/management/updates")}
+                className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition font-medium text-sm"
+              >
+                <ArrowLeft size={16} />
+                Quay lại danh sách
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -597,6 +878,110 @@ export default function POIUpdateDetailPage() {
           onCancel={() => setShowRejectModal(false)}
         />
       )}
+
+      {/* PROCESSING OVERLAY — Hiển thị tiến độ dịch & TTS thời gian thực */}
+      {processingApproval && (() => {
+        const completedCount = TARGET_LANGS.filter(l => pipelineProgress[l.code]?.isReady).length
+        const total = TARGET_LANGS.length
+        const percent = Math.min(100, Math.round((completedCount / total) * 100))
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-sm animate-fadeIn">
+            <div className="bg-white rounded-3xl shadow-2xl p-7 max-w-md w-full mx-4 border border-gray-100 animate-scaleUp">
+              {/* Header */}
+              <div className="text-center mb-5">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 mb-3 shadow-sm border border-emerald-100/80">
+                  {isAllCompleted ? (
+                    <CheckCircle2 size={28} className="text-emerald-600 animate-bounce" />
+                  ) : (
+                    <Sparkles size={26} className="text-emerald-600 animate-pulse" />
+                  )}
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-1">
+                  {isAllCompleted ? "Đã hoàn tất xử lý tất cả ngôn ngữ!" : "Đang xử lý đa ngôn ngữ & âm thanh AI"}
+                </h3>
+                <p className="text-xs text-gray-500 max-w-sm mx-auto leading-relaxed">
+                  {isAllCompleted
+                    ? "Tất cả các bản dịch và file âm thanh đã sẵn sàng."
+                    : "Hệ thống đang tự động dịch thuật và tổng hợp giọng đọc AI..."}
+                </p>
+              </div>
+
+              {/* Progress bar */}
+              <div className="mb-4 bg-gray-50 p-3.5 rounded-2xl border border-gray-100">
+                <div className="flex items-center justify-between text-xs font-semibold mb-2">
+                  <span className="text-gray-700 flex items-center gap-1.5">
+                    {!isAllCompleted && <Loader2 size={13} className="animate-spin text-emerald-600" />}
+                    Tiến độ
+                  </span>
+                  <span className="text-emerald-600 font-bold">{completedCount}/{total} ngôn ngữ ({percent}%)</span>
+                </div>
+                <div className="w-full bg-gray-200/80 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="h-2 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${percent}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Language List */}
+              <div className="space-y-1.5 mb-5 max-h-52 overflow-y-auto pr-1">
+                {TARGET_LANGS.map(lang => {
+                  const state = pipelineProgress[lang.code]
+                  const isReady = state?.isReady
+                  const exists = state?.exists
+
+                  return (
+                    <div
+                      key={lang.code}
+                      className={`flex items-center justify-between p-2 rounded-xl border text-xs transition-all ${
+                        isReady
+                          ? "bg-emerald-50/60 border-emerald-200 text-emerald-900"
+                          : exists
+                          ? "bg-amber-50/60 border-amber-200 text-amber-900"
+                          : "bg-gray-50/70 border-gray-200/60 text-gray-500"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">{lang.flag}</span>
+                        <span className="font-semibold text-gray-800">{lang.label}</span>
+                        <span className="text-[10px] text-gray-400 uppercase">({lang.code})</span>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        {isReady ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">
+                            <Check size={11} className="stroke-[2.5]" /> Sẵn sàng
+                          </span>
+                        ) : exists ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800">
+                            <Loader2 size={11} className="animate-spin" /> Đang tạo âm thanh...
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-200/70 text-gray-600">
+                            <Clock size={11} /> Trong hàng đợi...
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleSkipWaiting}
+                  className="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900 text-xs font-semibold rounded-xl transition text-center"
+                >
+                  Bỏ qua chờ đợi (tiếp tục xử lý ngầm)
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }

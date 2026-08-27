@@ -1,12 +1,15 @@
 import { useState, useEffect } from "react";
-import { Upload, Trash2, Loader2, CheckCircle2, Star, PackageOpen } from "lucide-react";
+import { Upload, Trash2, Loader2, CheckCircle2, Star, PackageOpen, AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
 import { getAppReleases, uploadApk, deleteRelease } from "@/api/cmsLandingApi";
+import ConfirmModal from "@/components/ConfirmModal";
 
 export default function AppReleasesManager() {
   const [releases, setReleases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  const [deletingRelease, setDeletingRelease] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [form, setForm] = useState({
     version: "",
     releaseNotes: "",
@@ -44,15 +47,19 @@ export default function AppReleasesManager() {
     }
   };
 
-  const handleDelete = async (rel) => {
-    if (!confirm(`Xóa phiên bản ${rel.version}?`)) return;
+  const handleConfirmDelete = async () => {
+    if (!deletingRelease) return;
+    setIsDeleting(true);
     try {
-      await deleteRelease(rel.releaseId);
-      toast.success("Đã xóa.");
+      await deleteRelease(deletingRelease.releaseId);
+      toast.success(`Đã xóa phiên bản ${deletingRelease.version}.`);
+      setDeletingRelease(null);
       refresh();
     } catch (err) {
       const msg = err?.response?.data?.message || "Xóa thất bại.";
       toast.error(msg);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -191,7 +198,7 @@ export default function AppReleasesManager() {
                   </a>
                   {!rel.isLatest && (
                     <button
-                      onClick={() => handleDelete(rel)}
+                      onClick={() => setDeletingRelease(rel)}
                       className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                       title="Xóa"
                     >
@@ -204,6 +211,31 @@ export default function AppReleasesManager() {
           </div>
         )}
       </div>
+
+      {/* MODAL XÁC NHẬN XÓA APK */}
+      {deletingRelease && (
+        <ConfirmModal
+          open={!!deletingRelease}
+          title="Xác nhận xóa phiên bản APK?"
+          message={
+            <div>
+              <p className="text-gray-600">
+                Bạn có chắc chắn muốn xóa bản phát hành <strong className="text-gray-900 font-semibold">{deletingRelease.version}</strong> không?
+              </p>
+              <p className="text-xs text-red-500 mt-2 bg-red-50 p-2.5 rounded-lg border border-red-100 flex items-start gap-1.5">
+                <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                <span>File APK sẽ bị xóa vĩnh viễn và người dùng sẽ không thể tải bản này nữa.</span>
+              </p>
+            </div>
+          }
+          confirmText={isDeleting ? "Đang xóa..." : "Xóa vĩnh viễn"}
+          confirmVariant="danger"
+          cancelText="Hủy bỏ"
+          loading={isDeleting}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => !isDeleting && setDeletingRelease(null)}
+        />
+      )}
     </div>
   );
 }

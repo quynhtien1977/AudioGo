@@ -16,19 +16,24 @@ namespace Server.Services
         private readonly IServiceProvider _serviceProvider;
         private readonly IContentPipelineQueue _pipelineQueue;
         private readonly SubscriptionService _subscription;
+        private readonly IPoiContentService _poiContent;
+
+        private static string Normalize(string? s) => s?.Replace("\r\n", "\n").Trim() ?? "";
 
         public PoiRequestService(
             AppDbContext db,
             IPoiRepository pois,
             IServiceProvider serviceProvider,
             IContentPipelineQueue pipelineQueue,
-            SubscriptionService subscription)
+            SubscriptionService subscription,
+            IPoiContentService poiContent)
         {
-            _db           = db;
-            _pois         = pois;
+            _db              = db;
+            _pois            = pois;
             _serviceProvider = serviceProvider;
             _pipelineQueue   = pipelineQueue;
             _subscription    = subscription;
+            _poiContent      = poiContent;
         }
 
         public async Task<List<PoiRequestListDto>> GetMyPoiRequestsAsync(string accountId, string? status = null)
@@ -354,11 +359,44 @@ namespace Server.Services
                                         .FirstOrDefaultAsync(c => c.PoiId == request.PoiId && c.IsMaster);
                                     if (masterContent != null)
                                     {
-                                        masterContent.Title = draft.Title ?? masterContent.Title;
-                                        masterContent.Description = draft.Description ?? masterContent.Description;
-                                        // AudioUrl: null = giữ nguyên; "" = xóa audio; có URL = cập nhật
-                                        if (draft.AudioUrl is not null)
-                                            masterContent.AudioUrl = string.IsNullOrEmpty(draft.AudioUrl) ? null : draft.AudioUrl;
+                                        bool titleChanged       = draft.Title       != null && Normalize(draft.Title)       != Normalize(masterContent.Title);
+                                        bool descriptionChanged = draft.Description != null && Normalize(draft.Description) != Normalize(masterContent.Description);
+                                        string? oldAudioUrl     = masterContent.AudioUrl;
+
+                                        if (titleChanged)       masterContent.Title       = draft.Title!;
+                                        if (descriptionChanged) masterContent.Description = draft.Description!;
+
+                                        if (descriptionChanged)
+                                        {
+                                            // Description đổi → Audio cũ không còn khớp với nội dung text mới!
+                                            // Nếu draft mang URL audio cũ (chưa upload file mới) hoặc null/rỗng:
+                                            // Gán AudioUrl = null để pipeline tự động TTS giọng đọc mới từ Description mới.
+                                            // Chỉ giữ draft.AudioUrl nếu owner upload một file audio mới hoàn toàn.
+                                            if (string.IsNullOrWhiteSpace(draft.AudioUrl) || draft.AudioUrl == oldAudioUrl)
+                                            {
+                                                masterContent.AudioUrl = null;
+                                            }
+                                            else
+                                            {
+                                                masterContent.AudioUrl = draft.AudioUrl;
+                                            }
+
+                                            // Xóa toàn bộ slave: pipeline sẽ re-translate + re-TTS từng ngôn ngữ
+                                            await _poiContent.InvalidateSlavesAsync(request.PoiId);
+                                        }
+                                        else
+                                        {
+                                            // Description không đổi:
+                                            // Cập nhật AudioUrl nếu draft có thay đổi (null = giữ nguyên, "" = xóa)
+                                            if (draft.AudioUrl is not null)
+                                                masterContent.AudioUrl = string.IsNullOrEmpty(draft.AudioUrl) ? null : draft.AudioUrl;
+
+                                            if (titleChanged)
+                                            {
+                                                // Chỉ title đổi: sync title sang slave, không đụng description/audio
+                                                await _poiContent.UpdateSlaveTitlesAsync(request.PoiId, masterContent.Title);
+                                            }
+                                        }
                                     }
 
                                     var existingCats = _db.CategoryPois.Where(c => c.PoiId == request.PoiId);
