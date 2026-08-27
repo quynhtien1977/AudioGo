@@ -1,7 +1,7 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Server.Data;
+using Server.Services.Interfaces;
+using Shared.DTOs;
 
 namespace Server.Controllers.Cms;
 
@@ -14,76 +14,35 @@ namespace Server.Controllers.Cms;
 [Authorize(Roles = "Admin,Editor")]
 public class CmsConsultationController : ControllerBase
 {
-    private readonly AppDbContext _db;
+    private readonly IConsultationService _service;
 
-    public CmsConsultationController(AppDbContext db) => _db = db;
+    public CmsConsultationController(IConsultationService service) => _service = service;
 
     // ── GET /api/cms/consultations ────────────────────────────────────────
-    /// <summary>Danh sách yêu cầu tư vấn, lọc theo status (tùy chọn), sắp theo mới nhất.</summary>
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] string? status)
-    {
-        var query = _db.ConsultationRequests.AsQueryable();
+        => Ok(await _service.GetAllAsync(status));
 
-        if (!string.IsNullOrWhiteSpace(status))
-            query = query.Where(r => r.Status == status);
-
-        var items = await query
-            .OrderByDescending(r => r.CreatedAt)
-            .Select(r => new
-            {
-                r.RequestId,
-                r.FullName,
-                r.RestaurantName,
-                r.PhoneNumber,
-                r.Area,
-                r.Email,
-                r.Message,
-                r.Status,
-                r.CreatedAt,
-                r.ContactedAt,
-                r.RejectedAt
-            })
-            .ToListAsync();
-
-        return Ok(items);
-    }
-
-    // ── PATCH /api/cms/consultations/{id}/status ──────────────────────────────────────────────────
-    /// <summary>Cập nhật trạng thái: "Contacted" hoặc "Done" — chỉ Admin.</summary>
+    // ── PATCH /api/cms/consultations/{id}/status ──────────────────────────
     [HttpPatch("{id}/status")]
-    [Authorize(Roles = "Admin")]  // Editor chỉ xem, không đổi status
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateStatus(string id, [FromBody] UpdateConsultStatusRequest req)
     {
-        var validStatuses = new[] { "New", "Contacted", "Done", "Rejected" };
-        if (!validStatuses.Contains(req.Status))
-            return BadRequest(new { message = $"Status phải là một trong: {string.Join(", ", validStatuses)}" });
-
-        var request = await _db.ConsultationRequests.FindAsync(id);
-        if (request is null) return NotFound();
-
-        request.Status = req.Status;
-        if (req.Status == "Contacted" && request.ContactedAt is null)
-            request.ContactedAt = DateTime.UtcNow;
-        if (req.Status == "Rejected" && request.RejectedAt is null)
-            request.RejectedAt = DateTime.UtcNow;
-
-        await _db.SaveChangesAsync();
-        return NoContent();
+        try
+        {
+            await _service.UpdateStatusAsync(id, req.Status);
+            return NoContent();
+        }
+        catch (ArgumentException ex)    { return BadRequest(new { message = ex.Message }); }
+        catch (KeyNotFoundException)    { return NotFound(); }
     }
 
-    // ── DELETE /api/cms/consultations/{id} ─────────────────────────────────────────────────
+    // ── DELETE /api/cms/consultations/{id} ────────────────────────────────
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]  // chỉ Admin mới được xóa
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(string id)
     {
-        var request = await _db.ConsultationRequests.FindAsync(id);
-        if (request is null) return NotFound();
-
-        _db.ConsultationRequests.Remove(request);
-        await _db.SaveChangesAsync();
-        return NoContent();
+        try   { await _service.DeleteAsync(id); return NoContent(); }
+        catch (KeyNotFoundException) { return NotFound(); }
     }
 }
-
-public record UpdateConsultStatusRequest(string Status);
