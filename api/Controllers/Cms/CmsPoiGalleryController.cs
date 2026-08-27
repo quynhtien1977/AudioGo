@@ -1,8 +1,6 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Server.Data;
-using Server.Models;
+using Server.Services.Interfaces;
 using Shared.DTOs;
 
 namespace Server.Controllers.Cms
@@ -12,49 +10,28 @@ namespace Server.Controllers.Cms
     [Authorize]
     public class CmsPoiGalleryController : ControllerBase
     {
-        private readonly AppDbContext _db;
-        public CmsPoiGalleryController(AppDbContext db) => _db = db;
+        private readonly IPoiGalleryService _service;
+
+        public CmsPoiGalleryController(IPoiGalleryService service) => _service = service;
 
         [HttpGet]
         public async Task<ActionResult<List<PoiGalleryDto>>> GetAll(string poiId)
-        {
-            var images = await _db.PoiGalleries.AsNoTracking()
-                .Where(g => g.PoiId == poiId)
-                .OrderBy(g => g.SortOrder)
-                .ToListAsync();
-
-            return Ok(images.Select(g =>
-                new PoiGalleryDto(g.ImageId, g.PoiId, g.ImageUrl, g.SortOrder)));
-        }
+            => Ok(await _service.GetAllAsync(poiId));
 
         /// <summary>Thêm ảnh bằng URL (upload file dùng /api/cms/upload/image trước).</summary>
         [HttpPost]
         public async Task<ActionResult<PoiGalleryDto>> Create(
             string poiId, [FromBody] PoiGalleryDto req)
         {
-            var image = new PoiGallery
-            {
-                ImageId   = Guid.NewGuid().ToString(),
-                PoiId     = poiId,
-                ImageUrl  = req.ImageUrl,
-                SortOrder = req.SortOrder
-            };
-            _db.PoiGalleries.Add(image);
-            await _db.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetAll), new { poiId },
-                new PoiGalleryDto(image.ImageId, image.PoiId, image.ImageUrl, image.SortOrder));
+            var dto = await _service.CreateAsync(poiId, req);
+            return CreatedAtAction(nameof(GetAll), new { poiId }, dto);
         }
 
         [HttpDelete("{imageId}")]
         public async Task<IActionResult> Delete(string poiId, string imageId)
         {
-            var image = await _db.PoiGalleries
-                .FirstOrDefaultAsync(g => g.ImageId == imageId && g.PoiId == poiId);
-            if (image is null) return NotFound();
-            _db.PoiGalleries.Remove(image);
-            await _db.SaveChangesAsync();
-            return NoContent();
+            try   { await _service.DeleteAsync(poiId, imageId); return NoContent(); }
+            catch (KeyNotFoundException) { return NotFound(); }
         }
     }
 }

@@ -112,6 +112,14 @@ export const AdminTransactionDashboard = () => {
     return tx.contactInfo || '-'
   }
 
+  /** Hiển thị tên gói cước */
+  const getPlanDisplay = (tx) => {
+    if (tx.plan?.name) return tx.plan.name
+    if (tx.planName) return tx.planName
+    if (tx.paymentType === 'TOURIST_ACCESS') return 'Truy cập App'
+    return tx.planId || '-'
+  }
+
   // ── Tìm kiếm client-side trong trang hiện tại ──────────────────────────────
   const searchQuery = (searchFilter?.pageType === "transaction" && searchFilter?.query)
     ? searchFilter.query.toLowerCase()
@@ -121,7 +129,7 @@ export const AdminTransactionDashboard = () => {
     if (!searchQuery) return true
     const payer   = getPayerDisplay(tx).toLowerCase()
     const txId    = (tx.transactionId || "").toLowerCase()
-    const plan    = (tx.planId || "").toLowerCase()
+    const plan    = (tx.planName || tx.planId || "").toLowerCase()
     const uname   = (tx.accountUsername || "").toLowerCase()
     return payer.includes(searchQuery) || txId.includes(searchQuery)
         || plan.includes(searchQuery)  || uname.includes(searchQuery)
@@ -299,7 +307,7 @@ export const AdminTransactionDashboard = () => {
                     <tr key={idx} className="hover:bg-pink-50/10 transition-colors">
                       <td className="px-6 py-4 text-sm font-mono text-gray-500">{tx.transactionId?.substring(0, 10)}...</td>
                       <td className="px-6 py-4 text-sm font-semibold text-gray-700">{getPayerDisplay(tx)}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">{tx.planId || '-'}</td>
+                      <td className="px-6 py-4 text-sm font-semibold text-gray-700">{getPlanDisplay(tx)}</td>
                       <td className="px-6 py-4 text-sm font-bold text-gray-800">
                         {new Intl.NumberFormat('vi-VN', {
                           style: 'currency',
@@ -471,7 +479,7 @@ export const AdminTransactionDashboard = () => {
                       <div className="grid grid-cols-2 gap-3 text-xs">
                         <div>
                           <span className="text-gray-400 block">Gói:</span>
-                          <span className="font-bold text-pink-600">{tx.plan?.name || tx.planId || 'Không xác định'}</span>
+                          <span className="font-bold text-pink-600">{getPlanDisplay(tx)}</span>
                         </div>
                         {tx.plan?.price && (
                           <div>

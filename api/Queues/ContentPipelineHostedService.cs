@@ -61,7 +61,14 @@ namespace Server.Queues
                 var master = poi.Contents.FirstOrDefault(c => c.IsMaster);
                 if (master != null)
                 {
-                    try { await pipeline.GenerateAudioAsync(master); } catch { }
+                    try 
+                    { 
+                        await pipeline.GenerateAudioAsync(master); 
+                    } 
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, $"[ContentPipeline] Failed to generate master audio for POI: {poiId}");
+                    }
                 }
 
                 var targetLangs = new[] { "en", "fr", "ja", "ko", "vi", "zh-Hans", "th" };

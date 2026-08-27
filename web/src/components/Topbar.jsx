@@ -241,6 +241,7 @@ export default function Topbar({ onToggleMobileSidebar }) {
             tx.transactionId?.toLowerCase().includes(searchTerm) ||
             tx.accountUsername?.toLowerCase().includes(searchTerm) ||
             tx.contactInfo?.toLowerCase().includes(searchTerm) ||
+            tx.planName?.toLowerCase().includes(searchTerm) ||
             tx.planId?.toLowerCase().includes(searchTerm)
         )
         break
@@ -347,8 +348,9 @@ export default function Topbar({ onToggleMobileSidebar }) {
         const amountStr = item.amount
           ? new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(item.amount)
           : ""
+        const planStr = item.planName || (item.paymentType === "TOURIST_ACCESS" ? "Quyền truy cập App" : item.planId) || "Gói cước"
         return {
-          title: `${payer} — ${item.planId || "Gói cước"}`,
+          title: `${payer} — ${planStr}`,
           subtitle: `Mã: ${item.transactionId} • ${amountStr} • [${item.status || "N/A"}]`
         }
       }

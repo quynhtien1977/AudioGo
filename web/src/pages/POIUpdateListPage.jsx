@@ -163,12 +163,30 @@ export default function POIUpdateListPage() {
         loading={loading}
         statsLabel="chờ xử lý"
         emptyMessage="Không có POI nào cần cập nhật"
-        renderExtraInfo={(poi) => (
-          <div className="bg-amber-50 px-3 py-1 inline-flex items-center gap-1.5 rounded-full text-xs font-semibold text-amber-700 border border-amber-200/60">
-            <FileEdit size={13} className="text-amber-600 shrink-0" />
-            <span>{poi.changeCount} thay đổi</span>
-          </div>
-        )}
+        renderExtraInfo={(poi) => {
+          if (poi.status === "approved") {
+            return (
+              <div className="bg-emerald-50 px-3 py-1 inline-flex items-center gap-1.5 rounded-full text-xs font-semibold text-emerald-700 border border-emerald-200/60">
+                <CheckCircle size={13} className="text-emerald-600 shrink-0" />
+                <span>Đã cập nhật</span>
+              </div>
+            )
+          }
+          if (poi.status === "rejected") {
+            return (
+              <div className="bg-rose-50 px-3 py-1 inline-flex items-center gap-1.5 rounded-full text-xs font-semibold text-rose-700 border border-rose-200/60">
+                <XCircle size={13} className="text-rose-600 shrink-0" />
+                <span>Đã từ chối</span>
+              </div>
+            )
+          }
+          return (
+            <div className="bg-amber-50 px-3 py-1 inline-flex items-center gap-1.5 rounded-full text-xs font-semibold text-amber-700 border border-amber-200/60">
+              <FileEdit size={13} className="text-amber-600 shrink-0" />
+              <span>{poi.changeCount} thay đổi</span>
+            </div>
+          )
+        }}
         renderActions={(poi) => (
           <>
             <button

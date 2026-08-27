@@ -1,8 +1,6 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Server.Data;
-using Server.Models;
+using Server.Services.Interfaces;
 using Shared.DTOs;
 
 namespace Server.Controllers.Cms
@@ -12,98 +10,35 @@ namespace Server.Controllers.Cms
     [Authorize]
     public class CmsPoiContentController : ControllerBase
     {
-        private readonly AppDbContext _db;
-        public CmsPoiContentController(AppDbContext db) => _db = db;
+        private readonly IPoiContentService _service;
+
+        public CmsPoiContentController(IPoiContentService service) => _service = service;
 
         [HttpGet]
         public async Task<ActionResult<List<PoiContentDto>>> GetAll(string poiId)
-        {
-            var contents = await _db.PoiContents.AsNoTracking()
-                .Where(c => c.PoiId == poiId)
-                .ToListAsync();
-
-            return Ok(contents.Select(c => new PoiContentDto(
-                c.ContentId, c.PoiId, c.LanguageCode,
-                c.Title, c.Description, c.AudioUrl, c.IsMaster)));
-        }
+            => Ok(await _service.GetAllAsync(poiId));
 
         [HttpPost]
         public async Task<ActionResult<PoiContentDto>> Create(
             string poiId, [FromBody] PoiContentCreateRequest req)
         {
-            var content = new PoiContent
-            {
-                ContentId    = Guid.NewGuid().ToString(),
-                PoiId        = poiId,
-                LanguageCode = req.LanguageCode,
-                Title        = req.Title,
-                Description  = req.Description,
-                AudioUrl     = req.AudioUrl,
-                IsMaster     = req.IsMaster
-            };
-            _db.PoiContents.Add(content);
-            await _db.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetAll), new { poiId },
-                new PoiContentDto(content.ContentId, content.PoiId,
-                    content.LanguageCode, content.Title,
-                    content.Description, content.AudioUrl, content.IsMaster));
+            var dto = await _service.CreateAsync(poiId, req);
+            return CreatedAtAction(nameof(GetAll), new { poiId }, dto);
         }
 
         [HttpPut("{contentId}")]
         public async Task<ActionResult<PoiContentDto>> Update(
             string poiId, string contentId, [FromBody] PoiContentUpdateRequest req)
         {
-            var content = await _db.PoiContents
-                .FirstOrDefaultAsync(c => c.ContentId == contentId && c.PoiId == poiId);
-            if (content is null) return NotFound();
-
-            bool isMasterDataChanged = false;
-
-            if (req.Title is not null && req.Title != content.Title) 
-            {
-                content.Title = req.Title;
-                isMasterDataChanged = true;
-            }
-
-            if (req.Description is not null && req.Description != content.Description) 
-            {
-                content.Description = req.Description;
-                isMasterDataChanged = true;
-            }
-
-            if (req.AudioUrl is not null)    content.AudioUrl    = req.AudioUrl;
-            if (req.IsMaster.HasValue)       content.IsMaster    = req.IsMaster.Value;
-            
-            // LOGIC QUAN TRỌNG: Nếu update bản Master và đổi nội dung, ta phải xóa sạch các bản dịch (Slave) đã gen trước đó!
-            if (content.IsMaster && isMasterDataChanged)
-            {
-                var slaves = await _db.PoiContents
-                    .Where(c => c.PoiId == poiId && c.ContentId != content.ContentId && !c.IsMaster)
-                    .ToListAsync();
-                
-                if (slaves.Any())
-                {
-                    _db.PoiContents.RemoveRange(slaves);
-                }
-            }
-            content.UpdatedAt = DateTime.UtcNow;
-
-            await _db.SaveChangesAsync();
-            return Ok(new PoiContentDto(content.ContentId, content.PoiId,
-                content.LanguageCode, content.Title,
-                content.Description, content.AudioUrl, content.IsMaster));
+            try   { return Ok(await _service.UpdateAsync(poiId, contentId, req)); }
+            catch (KeyNotFoundException) { return NotFound(); }
         }
 
         [HttpDelete("{contentId}")]
         public async Task<IActionResult> Delete(string poiId, string contentId)
         {
-            var content = await _db.PoiContents
-                .FirstOrDefaultAsync(c => c.ContentId == contentId && c.PoiId == poiId);
-            if (content is null) return NotFound();
-            _db.PoiContents.Remove(content);
-            await _db.SaveChangesAsync();
-            return NoContent();
+            try   { await _service.DeleteAsync(poiId, contentId); return NoContent(); }
+            catch (KeyNotFoundException) { return NotFound(); }
         }
     }
 }
