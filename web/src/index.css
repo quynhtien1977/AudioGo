@@ -1,9 +1,6 @@
-@import url("https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap");
-@import "@fontsource-variable/geist";   
-
 @tailwind base;   /* gỡ bỏ giao diện mặc định của trình duyệt */ 
-@tailwind components;  /* thêm các class tự định nghĩa ở đây; shadcn/ui cũng hoạt động dựa trên các class này */
-@tailwind utilities;    /* thêm các class tiện ích nhỏ lẻ; class này có độ ưu tiên cao nhất */
+@tailwind components;  /* thêm các class tự định nghĩa ở đây */
+@tailwind utilities;    /* thêm các class tiện ích nhỏ lẻ */
 
 @layer base {
   :root {
@@ -15,12 +12,10 @@
   }
 
   body {
-    /* @apply cho phép đem CSS của Tailwind vào trong CSS thuần */
     @apply bg-background text-foreground;
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Sora', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
-  /* Nếu muốn border mặc định cho input, button thôi */
   input, button, select, textarea {
     @apply border-border;
   }
@@ -82,16 +77,14 @@
   --lp-section-light: #fdf7f9;
 }
 
-/* ── Smooth transition khi đổi theme ─────────────────────────────── */
-.landing-root,
-.landing-root * {
-  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+/* ── Smooth transition khi đổi theme (chỉ áp dụng container chính, không áp wildcard *) ── */
+.landing-root {
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* ══════════════════════════════════════════════════════════════════
    THIN CUSTOM SCROLLBAR (Desktop & Webkit / Firefox)
    ══════════════════════════════════════════════════════════════════ */
-/* Webkit browsers (Chrome, Edge, Safari, Opera) */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -111,8 +104,7 @@
   background: rgba(238, 75, 142, 0.65);
 }
 
-/* Firefox standard */
 * {
   scrollbar-width: thin;
   scrollbar-color: rgba(156, 163, 175, 0.35) transparent;
-}
+}

@@ -76,7 +76,7 @@ export default function FooterSection({ data, staticData = {} }) {
           <div>
             <div className="flex items-center gap-2.5 mb-4">
               {logoUrl ? (
-                <img src={logoUrl} alt="AudioGo Logo - Ứng dụng thuyết minh ẩm thực Vĩnh Khánh" className="h-8 object-contain" loading="lazy" />
+                <img src={logoUrl || "/asset/logo.webp"} alt="AudioGo Logo - Ứng dụng thuyết minh ẩm thực Vĩnh Khánh" width="120" height="32" className="h-8 w-auto object-contain" loading="lazy" decoding="async" />
               ) : (
                 <div className="w-8 h-8 bg-pink-600 rounded-lg flex items-center justify-center">
                   <MapPin size={16} className="text-white" />

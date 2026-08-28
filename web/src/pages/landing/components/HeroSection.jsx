@@ -23,18 +23,18 @@ export default function HeroSection({ data }) {
     ? backgroundImages.filter((b) => b.url)
     : backgroundImageUrl
       ? [{ url: backgroundImageUrl, alt: "AudioGo Hero Background" }]
-      : [];
+      : [{ url: "/asset/loginImg.webp", alt: "Phố Ẩm Thực Vĩnh Khánh Q4" }];
 
   const [bgIndex, setBgIndex] = useState(0);
 
-  // Auto-slide mỗi 5s
+  // Auto-slide mỗi 6s
   const tick = useCallback(() => {
     if (bgList.length > 1) setBgIndex((i) => (i + 1) % bgList.length);
   }, [bgList.length]);
 
   useEffect(() => {
     if (bgList.length <= 1) return;
-    const t = setInterval(tick, 5000);
+    const t = setInterval(tick, 6000);
     return () => clearInterval(t);
   }, [tick]);
 
@@ -49,7 +49,7 @@ export default function HeroSection({ data }) {
       id="hero"
       className="relative min-h-screen flex items-center justify-center overflow-hidden"
     >
-      {/* Background slideshow with high-priority semantic images */}
+      {/* Background slideshow with high-priority semantic images & explicit dimensions */}
       <AnimatePresence mode="sync">
         {bgList.length > 0 ? (
           <motion.div
@@ -57,12 +57,15 @@ export default function HeroSection({ data }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 1.0, ease: "easeInOut" }}
+            transition={{ duration: 0.8, ease: "easeInOut" }}
+            style={{ willChange: "opacity" }}
             className="absolute inset-0 z-0 pointer-events-none"
           >
             <img
               src={bgList[bgIndex].url}
               alt={bgList[bgIndex].alt || "AudioGo Vĩnh Khánh Q4 Hero"}
+              width="1920"
+              height="1080"
               fetchPriority={bgIndex === 0 ? "high" : "auto"}
               loading={bgIndex === 0 ? "eager" : "lazy"}
               decoding="async"
@@ -90,11 +93,10 @@ export default function HeroSection({ data }) {
         </div>
       )}
 
-      {/* Decorative orbs */}
+      {/* Decorative orbs - lightweight composited */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-[1]">
-        <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-pink-600/20 blur-[100px]" />
-        <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full bg-orange-500/15 blur-[100px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-purple-900/10 blur-[120px]" />
+        <div className="absolute -top-40 -right-40 w-[450px] h-[450px] rounded-full bg-pink-600/15 blur-[80px]" />
+        <div className="absolute -bottom-40 -left-40 w-[350px] h-[350px] rounded-full bg-orange-500/10 blur-[80px]" />
       </div>
 
       {/* Overlay */}
@@ -104,9 +106,10 @@ export default function HeroSection({ data }) {
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 pt-24 sm:pt-32 pb-12 sm:pb-16 text-center">
         {/* Badge */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.4 }}
+          style={{ willChange: "transform, opacity" }}
           className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 text-xs sm:text-sm font-medium mb-4 sm:mb-6"
         >
           {badge}
@@ -114,9 +117,10 @@ export default function HeroSection({ data }) {
 
         {/* Heading */}
         <motion.h1
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
+          transition={{ duration: 0.5, delay: 0.05 }}
+          style={{ willChange: "transform, opacity" }}
           className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight sm:leading-tight tracking-tight break-words"
         >
           <span className="text-white">{heading1}</span>
@@ -128,9 +132,10 @@ export default function HeroSection({ data }) {
 
         {/* Description */}
         <motion.p
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          style={{ willChange: "transform, opacity" }}
           className="mt-4 sm:mt-6 text-sm sm:text-base md:text-lg text-white/80 max-w-2xl mx-auto leading-relaxed px-2"
         >
           {description}
@@ -138,9 +143,10 @@ export default function HeroSection({ data }) {
 
         {/* CTAs */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+          style={{ willChange: "transform, opacity" }}
           className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 max-w-xs sm:max-w-none mx-auto w-full"
         >
           <button
@@ -161,9 +167,10 @@ export default function HeroSection({ data }) {
         {/* Stats pills */}
         {stats.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.45 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            style={{ willChange: "transform, opacity" }}
             className="mt-8 sm:mt-12 flex flex-wrap items-center justify-center gap-2 sm:gap-3"
           >
             {stats.map((stat, i) => (
@@ -179,21 +186,12 @@ export default function HeroSection({ data }) {
           </motion.div>
         )}
 
-        {/* Scroll indicator */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.2 }}
-          className="mt-10 sm:mt-16 flex justify-center"
-        >
-          <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
-            className="text-white/40"
-          >
+        {/* Scroll indicator with CSS composited keyframe */}
+        <div className="mt-10 sm:mt-16 flex justify-center">
+          <div className="text-white/40 animate-bounce">
             <ChevronDown size={28} />
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </div>
     </section>
   );
