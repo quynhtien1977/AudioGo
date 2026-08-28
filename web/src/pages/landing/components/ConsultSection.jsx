@@ -1,14 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Check, Loader2, Phone, Store, User, MessageSquare, MapPin } from "lucide-react";
-import * as LucideIcons from "lucide-react";
+import { Check, Loader2, Phone, Store, User, MessageSquare, MapPin, CheckCircle } from "lucide-react";
+import DynamicIcon from "@/components/DynamicIcon";
 import toast from "react-hot-toast";
 import { submitConsultation } from "@/api/landingApi";
-
-function DynIcon({ name, ...props }) {
-  const Icon = LucideIcons[name] || LucideIcons.CheckCircle;
-  return <Icon {...props} />;
-}
 
 export default function ConsultSection({ data }) {
   const {
@@ -115,7 +110,7 @@ export default function ConsultSection({ data }) {
                   className="flex items-start gap-4 mb-5"
                 >
                   <div className="w-9 h-9 rounded-lg bg-pink-600 flex items-center justify-center flex-shrink-0 shadow-sm shadow-pink-600/20">
-                    <DynIcon name={b.icon} size={18} className="text-white" />
+                    <DynamicIcon name={b.icon} fallback={CheckCircle} size={18} className="text-white" />
                   </div>
                   <p style={{ color: "var(--lp-text)" }} className="font-medium pt-1.5 text-sm">
                     {b.text}

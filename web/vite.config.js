@@ -3,11 +3,49 @@ import react from '@vitejs/plugin-react'    // @vitejs/plugin-react: plugin chí
 import path from 'path'     // path: module tích hợp của Node.js để làm việc với đường dẫn tệp và thư mục. Nó cung cấp các phương thức để xử lý và thao tác với đường dẫn một cách dễ dàng.
 
 export default defineConfig({
-  plugins: [react()],   // dùng để chạy project, cho phép Vite biên dịch các file .jsx thành mã JS thuần túy
-  resolve: {    // resolve: một phần của cấu hình Vite cho phép bạn định nghĩa các alias (bí danh) để dễ dàng nhập các module trong dự án của bạn
+  plugins: [react()],
+  resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),    //path.resolve: tìm đường dẫn tuyệt đối đến folder src, vite sẽ tự động thay thế @ bằng đường dẫn thực tế đến thư mục src
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  build: {
+    target: "es2022",
+    cssCodeSplit: true,
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (id.includes("react/") || id.includes("react-dom/") || id.includes("react-router-dom/")) {
+              return "vendor-react";
+            }
+            if (id.includes("leaflet") || id.includes("@react-google-maps")) {
+              return "vendor-maps";
+            }
+            if (id.includes("recharts")) {
+              return "vendor-charts";
+            }
+            if (id.includes("@dnd-kit")) {
+              return "vendor-dnd";
+            }
+            if (id.includes("@microsoft/signalr")) {
+              return "vendor-signalr";
+            }
+            if (id.includes("framer-motion")) {
+              return "vendor-motion";
+            }
+            if (id.includes("lucide-react")) {
+              return "vendor-lucide";
+            }
+            if (id.includes("@tanstack/react-query") || id.includes("axios")) {
+              return "vendor-query";
+            }
+          }
+        },
+      },
     },
   },
 })
+
 
