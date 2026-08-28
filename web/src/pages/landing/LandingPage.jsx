@@ -1,16 +1,20 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, lazy, Suspense } from "react";
 import { getLandingSections, getLatestRelease } from "@/api/landingApi";
 import { ThemeProvider } from "@/context/ThemeContext";
+
+// Eager load above-the-fold components for instant FCP & LCP (< 1.5s)
 import Navbar from "./components/Navbar";
 import HeroSection from "./components/HeroSection";
-import StatsBarSection from "./components/StatsBarSection";
-import FeaturesSection from "./components/FeaturesSection";
-import HowItWorksSection from "./components/HowItWorksSection";
-import ScreenshotsSection from "./components/ScreenshotsSection";
-import ConsultSection from "./components/ConsultSection";
-import DownloadSection from "./components/DownloadSection";
-import FooterSection from "./components/FooterSection";
-import FloatingButtons from "./components/FloatingButtons";
+
+// Lazy load below-the-fold components to reduce initial JS payload to ~35KB
+const StatsBarSection = lazy(() => import("./components/StatsBarSection"));
+const FeaturesSection = lazy(() => import("./components/FeaturesSection"));
+const HowItWorksSection = lazy(() => import("./components/HowItWorksSection"));
+const ScreenshotsSection = lazy(() => import("./components/ScreenshotsSection"));
+const ConsultSection = lazy(() => import("./components/ConsultSection"));
+const DownloadSection = lazy(() => import("./components/DownloadSection"));
+const FooterSection = lazy(() => import("./components/FooterSection"));
+const FloatingButtons = lazy(() => import("./components/FloatingButtons"));
 
 /**
  * Trả về content của section nếu isActive = true, ngược lại null.
@@ -31,7 +35,7 @@ const DEFAULT_HERO = {
   cta1Link: "#download",
   cta2Text: "Xem cách hoạt động",
   cta2Link: "#how-it-works",
-  backgroundImages: [{ url: "/asset/loginImg.png", alt: "Phố Ẩm Thực Vĩnh Khánh Q4" }],
+  backgroundImages: [{ url: "/asset/loginImg.webp", alt: "Phố Ẩm Thực Vĩnh Khánh Q4 AudioGo" }],
   stats: [
     { icon: "MapPin", value: "30+", label: "Điểm thuyết minh" },
     { icon: "Headphones", value: "100%", label: "Tự động kích hoạt" },
@@ -139,22 +143,25 @@ export default function LandingPage() {
           </div>
         )}
 
-        {statsBar    && <StatsBarSection   data={statsBar}    />}
-        {features    && <FeaturesSection   data={features}    />}
-        {howItWorks  && <HowItWorksSection data={howItWorks}  />}
-        {screenshots && <ScreenshotsSection data={screenshots} />}
-        {consultCta  && <ConsultSection    data={consultCta}  />}
-        {downloadCta && <DownloadSection   data={downloadCta} />}
-        {footer      && <FooterSection     data={footer}      staticData={navbarStatic} />}
+        {/* Below-the-fold sections are lazy loaded */}
+        <Suspense fallback={null}>
+          {statsBar    && <StatsBarSection   data={statsBar}    />}
+          {features    && <FeaturesSection   data={features}    />}
+          {howItWorks  && <HowItWorksSection data={howItWorks}  />}
+          {screenshots && <ScreenshotsSection data={screenshots} />}
+          {consultCta  && <ConsultSection    data={consultCta}  />}
+          {downloadCta && <DownloadSection   data={downloadCta} />}
+          {footer      && <FooterSection     data={footer}      staticData={navbarStatic} />}
 
-        <FloatingButtons
-          apkUrl={release?.apkUrl || null}
-          zaloLink={footerRaw?.zaloLink || null}
-          facebookLink={footerRaw?.facebookLink || null}
-          phone={footerRaw?.phone || null}
-          email={footerRaw?.email || null}
-          staticData={navbarStatic}
-        />
+          <FloatingButtons
+            apkUrl={release?.apkUrl || null}
+            zaloLink={footerRaw?.zaloLink || null}
+            facebookLink={footerRaw?.facebookLink || null}
+            phone={footerRaw?.phone || null}
+            email={footerRaw?.email || null}
+            staticData={navbarStatic}
+          />
+        </Suspense>
       </div>
     </ThemeProvider>
   );

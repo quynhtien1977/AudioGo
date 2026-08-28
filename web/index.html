@@ -1,21 +1,11 @@
 <!doctype html>
 <html lang="vi">
   <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1WQ4304KYV"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-1WQ4304KYV');
-    </script>
-
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
-    <link rel="icon" type="image/png" sizes="512x512" href="/favicon.png" />
+    <link rel="icon" type="image/webp" sizes="512x512" href="/favicon.webp" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#FF4B8B" />
 
@@ -34,7 +24,7 @@
     <meta property="og:site_name" content="AudioGo" />
     <meta property="og:title" content="AudioGo — Khám Phá Phố Ẩm Thực Vĩnh Khánh Q4 Qua Âm Thanh" />
     <meta property="og:description" content="Ứng dụng thuyết minh tự động theo vị trí GPS tại Phố Ẩm Thực Vĩnh Khánh Q4. Hỗ trợ 7 ngôn ngữ, nghe thuyết minh và khám phá món ngon đặc sắc." />
-    <meta property="og:image" content="https://audiogo.tranminhmed.vn/asset/logo.png" />
+    <meta property="og:image" content="https://audiogo.tranminhmed.vn/asset/logo.webp" />
     <meta property="og:image:alt" content="AudioGo Logo & Thuyết Minh Ẩm Thực Vĩnh Khánh Q4" />
 
     <!-- Twitter Card -->
@@ -42,12 +32,36 @@
     <meta name="twitter:url" content="https://audiogo.tranminhmed.vn/" />
     <meta name="twitter:title" content="AudioGo — Khám Phá Phố Ẩm Thực Vĩnh Khánh Q4" />
     <meta name="twitter:description" content="Ứng dụng thuyết minh du lịch tự động qua vị trí GPS cho Phố Ẩm Thực Vĩnh Khánh Quận 4." />
-    <meta name="twitter:image" content="https://audiogo.tranminhmed.vn/asset/logo.png" />
+    <meta name="twitter:image" content="https://audiogo.tranminhmed.vn/asset/logo.webp" />
 
-    <!-- Fonts -->
+    <!-- Preload Critical LCP Asset -->
+    <link rel="preload" as="image" href="/asset/loginImg.webp" type="image/webp" fetchpriority="high" />
+
+    <!-- Fonts & Preconnect -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+    <!-- Google tag (gtag.js) - Deferred to protect Main Thread & FCP -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      function initGTM() {
+        if (window._gtm_loaded) return;
+        window._gtm_loaded = true;
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-1WQ4304KYV';
+        document.head.appendChild(s);
+        gtag('js', new Date());
+        gtag('config', 'G-1WQ4304KYV');
+      }
+      if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(function() { setTimeout(initGTM, 1200); });
+      } else {
+        window.addEventListener('load', function() { setTimeout(initGTM, 1500); });
+      }
+    </script>
 
     <!-- Structured Data (Schema.org JSON-LD) -->
     <script type="application/ld+json">
@@ -81,7 +95,7 @@
           "url": "https://audiogo.tranminhmed.vn/",
           "logo": {
             "@type": "ImageObject",
-            "url": "https://audiogo.tranminhmed.vn/asset/logo.png"
+            "url": "https://audiogo.tranminhmed.vn/asset/logo.webp"
           }
         },
         {

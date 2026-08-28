@@ -45,7 +45,10 @@ function IPhoneMockup({ imageUrl, alt, isCenter }) {
               <img
                 src={imageUrl}
                 alt={alt || "Ảnh chụp màn hình ứng dụng AudioGo thuyết minh ẩm thực Vĩnh Khánh"}
+                width="390"
+                height="844"
                 loading="lazy"
+                decoding="async"
                 draggable={false}
                 className="w-full h-full object-cover select-none pointer-events-none"
               />
