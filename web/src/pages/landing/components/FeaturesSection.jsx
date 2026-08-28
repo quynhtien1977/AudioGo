@@ -1,10 +1,6 @@
 import { motion } from "framer-motion";
-import * as LucideIcons from "lucide-react";
-
-function DynIcon({ name, ...props }) {
-  const Icon = LucideIcons[name] || LucideIcons.Zap;
-  return <Icon {...props} />;
-}
+import DynamicIcon from "@/components/DynamicIcon";
+import { Zap } from "lucide-react";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 24 },
@@ -44,7 +40,7 @@ export default function FeaturesSection({ data }) {
             }}
             className="inline-block px-3 py-1 rounded-full text-xs font-semibold mb-4"
           >
-            {data.badge || "Tính năng"}
+            {data?.badge || "Tính năng"}
           </span>
           <h2
             style={{ color: "var(--lp-text)" }}
@@ -74,7 +70,7 @@ export default function FeaturesSection({ data }) {
               className="group p-6 rounded-2xl border hover:border-pink-400/50 hover:shadow-lg transition-all duration-300 cursor-default"
             >
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500/20 to-orange-500/10 flex items-center justify-center mb-4 group-hover:from-pink-500/30 group-hover:to-orange-500/20 transition-colors">
-                <DynIcon name={item.icon} size={22} className="text-pink-500" />
+                <DynamicIcon name={item.icon} fallback={Zap} size={22} className="text-pink-500" />
               </div>
               <h3
                 style={{ color: "var(--lp-text)" }}

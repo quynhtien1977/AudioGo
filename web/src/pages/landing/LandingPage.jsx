@@ -22,26 +22,76 @@ function getSectionData(sections, key) {
   return sec.content || {};
 }
 
+const DEFAULT_HERO = {
+  badge: "Thuyết minh du lịch bằng âm thanh",
+  heading1: "Khám Phá Phố Ẩm Thực",
+  heading2: "Qua Từng Câu Chuyện",
+  description: "Ứng dụng thuyết minh tự động theo vị trí cho Phố Ẩm Thực Vĩnh Khánh Q4.",
+  cta1Text: "Tải App Android",
+  cta1Link: "#download",
+  cta2Text: "Xem cách hoạt động",
+  cta2Link: "#how-it-works",
+  backgroundImages: [{ url: "/asset/loginImg.png", alt: "Phố Ẩm Thực Vĩnh Khánh Q4" }],
+  stats: [
+    { icon: "MapPin", value: "30+", label: "Điểm thuyết minh" },
+    { icon: "Headphones", value: "100%", label: "Tự động kích hoạt" },
+    { icon: "Globe", value: "7", label: "Ngôn ngữ" },
+  ]
+};
+
 export default function LandingPage() {
-  const [sections, setSections] = useState([]);
-  const [release, setRelease]   = useState(null);
-  const [loading, setLoading]   = useState(true);
-  const [lang, setLang]         = useState(() => {
-    // Lưu lựa chọn ngôn ngữ vào localStorage
+  const [lang, setLang] = useState(() => {
     return localStorage.getItem("lp_lang") || "vi";
   });
 
+  // Khởi tạo sections từ cache nếu có để paint ngay FCP/LCP < 1.0s
+  const [sections, setSections] = useState(() => {
+    try {
+      const cached = localStorage.getItem(`lp_sections_${lang}`);
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [release, setRelease] = useState(() => {
+    try {
+      const cached = localStorage.getItem("lp_release");
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
+
   const fetchSections = useCallback((targetLang) => {
-    setLoading(true);
     getLandingSections(targetLang)
-      .then((secs) => setSections(secs))
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      .then((secs) => {
+        if (Array.isArray(secs) && secs.length > 0) {
+          setSections(secs);
+          try {
+            localStorage.setItem(`lp_sections_${targetLang}`, JSON.stringify(secs));
+          } catch {
+            // Ignore quota errors
+          }
+        }
+      })
+      .catch(console.error);
   }, []);
 
   // Load release chỉ 1 lần
   useEffect(() => {
-    getLatestRelease().then(setRelease).catch(() => {});
+    getLatestRelease()
+      .then((rel) => {
+        if (rel) {
+          setRelease(rel);
+          try {
+            localStorage.setItem("lp_release", JSON.stringify(rel));
+          } catch {
+            // Ignore quota errors
+          }
+        }
+      })
+      .catch(() => {});
   }, []);
 
   // Re-fetch sections khi đổi ngôn ngữ
@@ -52,20 +102,17 @@ export default function LandingPage() {
   const handleLangChange = (newLang) => {
     localStorage.setItem("lp_lang", newLang);
     setLang(newLang);
+    try {
+      const cached = localStorage.getItem(`lp_sections_${newLang}`);
+      if (cached) {
+        setSections(JSON.parse(cached));
+      }
+    } catch {
+      // Fallback
+    }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--lp-bg, #0D0D1A)" }}>
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 rounded-full border-4 border-pink-500/30 border-t-pink-500 animate-spin" />
-          <p className="text-white/40 text-sm">Đang tải...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const hero        = getSectionData(sections, "hero");
+  const hero        = getSectionData(sections, "hero") || (sections.length === 0 ? DEFAULT_HERO : null);
   const statsBar    = getSectionData(sections, "stats_bar");
   const features    = getSectionData(sections, "features");
   const howItWorks  = getSectionData(sections, "how_it_works");
@@ -83,15 +130,14 @@ export default function LandingPage() {
       <div className="landing-root font-sans antialiased" style={{ fontFamily: "'Sora', system-ui, sans-serif", background: "var(--lp-bg)" }}>
         <Navbar lang={lang} onLangChange={handleLangChange} staticData={navbarStatic} />
 
-        {/* Hero luôn hiển thị nếu active */}
-        {hero !== null
-          ? <HeroSection data={hero} />
-          : (
-            <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--lp-bg)" }}>
-              <p style={{ color: "var(--lp-text-faint)" }} className="text-sm">Hero section đang ẩn</p>
-            </div>
-          )
-        }
+        {/* Hero luôn hiển thị tức thì */}
+        {hero !== null ? (
+          <HeroSection data={hero} />
+        ) : (
+          <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--lp-bg)" }}>
+            <p style={{ color: "var(--lp-text-faint)" }} className="text-sm">Hero section đang ẩn</p>
+          </div>
+        )}
 
         {statsBar    && <StatsBarSection   data={statsBar}    />}
         {features    && <FeaturesSection   data={features}    />}

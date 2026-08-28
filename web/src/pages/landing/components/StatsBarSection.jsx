@@ -1,10 +1,6 @@
 import { motion } from "framer-motion";
-import * as LucideIcons from "lucide-react";
-
-function DynIcon({ name, ...props }) {
-  const Icon = LucideIcons[name] || LucideIcons.Sparkles;
-  return <Icon {...props} />;
-}
+import DynamicIcon from "@/components/DynamicIcon";
+import { Sparkles } from "lucide-react";
 
 export default function StatsBarSection({ data }) {
   const items = data?.items || [];
@@ -16,7 +12,7 @@ export default function StatsBarSection({ data }) {
     <div className={`flex items-center gap-x-8 ${shouldMarquee ? "w-max shrink-0 px-4" : "flex-wrap justify-center w-full"}`}>
       {items.map((item, i) => (
         <div key={i} className="flex items-center gap-2 text-white text-sm font-medium whitespace-nowrap">
-          <DynIcon name={item.icon} size={15} className="text-white/80" />
+          <DynamicIcon name={item.icon} fallback={Sparkles} size={15} className="text-white/80" />
           <span>{item.text}</span>
           {(!hideLastDivider || i < items.length - 1) && (
             <span className={`${shouldMarquee ? "inline" : "hidden sm:inline"} text-white/30 ml-6`}>|</span>
