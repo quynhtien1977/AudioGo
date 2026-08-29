@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import { updateCategoryApi } from "@/api/categoryApi"
 
 export default function EditCategoryModal({
@@ -56,8 +57,8 @@ export default function EditCategoryModal({
   const inputStyle =
     "w-full px-5 py-3.5 bg-[#FFF0F5] rounded-2xl outline-none text-[#8E707E] placeholder-[#D1B9C5] focus:ring-2 focus:ring-pink-200 transition-all"
 
-  return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+  return createPortal(
+    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-150">
 
       <div className="bg-white w-full max-w-[500px] rounded-[2.5rem] shadow-2xl p-10 relative">
 
@@ -118,6 +119,7 @@ export default function EditCategoryModal({
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
