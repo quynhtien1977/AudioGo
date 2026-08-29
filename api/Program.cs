@@ -108,6 +108,11 @@ builder.Services.AddScoped<IPoiContentService, PoiContentService>();
 builder.Services.AddScoped<IPoiGalleryService, PoiGalleryService>();
 builder.Services.AddScoped<IConsultationService, ConsultationService>();
 
+// ── CMS Enhancements ──────────────────────────────────────────
+builder.Services.AddMemoryCache(); // Dùng cho AppSettingService (cache 60s)
+builder.Services.AddScoped<IBannerService, BannerService>();
+builder.Services.AddScoped<IAppSettingService, AppSettingService>();
+
 // ── Background Queues ────────────────────────────────────────────────
 // Location log queue: RabbitMQ external broker (docker-compose up -d)
 // Cấu hình: appsettings.json -> "RabbitMQ": { "Host", "Port", "User", "Password" }

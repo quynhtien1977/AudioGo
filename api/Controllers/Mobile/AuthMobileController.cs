@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Server.Data;
+using Server.Services.Interfaces;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -14,11 +15,13 @@ namespace Server.Controllers.Mobile
     {
         private readonly AppDbContext _db;
         private readonly IConfiguration _config;
+        private readonly IAppSettingService _settings;
 
-        public AuthMobileController(AppDbContext db, IConfiguration config)
+        public AuthMobileController(AppDbContext db, IConfiguration config, IAppSettingService settings)
         {
-            _db = db;
-            _config = config;
+            _db       = db;
+            _config   = config;
+            _settings = settings;
         }
 
         public record ScanQrRequest(string Code, string DeviceId);
@@ -52,9 +55,15 @@ namespace Server.Controllers.Mobile
             else
             {
                 // Mã này mới toanh, kích hoạt luôn
+                // Ưu tiên: DurationDay per-code (override) → DB setting → appsettings default
+                var defaultDays = await _settings.GetAsync(
+                    "AppAccessCode.DefaultDurationDays",
+                    _config.GetValue<int>("TouristAccess:DurationDays", 7));
+                var durationDays = codeEntry.DurationDay ?? defaultDays;
+
                 codeEntry.UsedByDeviceId = req.DeviceId;
-                codeEntry.ActivatedAt = DateTime.UtcNow;
-                codeEntry.ExpireAt = DateTime.UtcNow.AddDays(7);
+                codeEntry.ActivatedAt    = DateTime.UtcNow;
+                codeEntry.ExpireAt       = DateTime.UtcNow.AddDays(durationDays);
                 await _db.SaveChangesAsync();
             }
 

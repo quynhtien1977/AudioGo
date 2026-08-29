@@ -27,9 +27,13 @@ namespace Server.Data
         public DbSet<ArticleContent>      ArticleContents   => Set<ArticleContent>();
 
         // ── Landing Page ─────────────────────────────────────────────────
-        public DbSet<LandingSection>      LandingSections   => Set<LandingSection>();
-        public DbSet<AppRelease>          AppReleases       => Set<AppRelease>();
+        public DbSet<LandingSection>      LandingSections      => Set<LandingSection>();
+        public DbSet<AppRelease>          AppReleases          => Set<AppRelease>();
         public DbSet<ConsultationRequest> ConsultationRequests => Set<ConsultationRequest>();
+
+        // ── CMS Enhancements ─────────────────────────────────────────────
+        public DbSet<Banner>     Banners     => Set<Banner>();
+        public DbSet<AppSetting> AppSettings => Set<AppSetting>();
 
         protected override void OnModelCreating(ModelBuilder m)
         {
@@ -56,6 +60,8 @@ namespace Server.Data
             m.Entity<LandingSection>     ().ToTable("LandingSection");
             m.Entity<AppRelease>         ().ToTable("AppRelease");
             m.Entity<ConsultationRequest>().ToTable("ConsultationRequest");
+            m.Entity<Banner>             ().ToTable("Banner");
+            m.Entity<AppSetting>         ().ToTable("AppSetting");
 
             // ── 2. Primary Keys ─────────────────────────────────────────
             m.Entity<PoiContent>          ().HasKey(e => e.ContentId);
@@ -65,6 +71,8 @@ namespace Server.Data
             m.Entity<LandingSection>      ().HasKey(e => e.SectionId);
             m.Entity<AppRelease>          ().HasKey(e => e.ReleaseId);
             m.Entity<ConsultationRequest> ().HasKey(e => e.RequestId);
+            m.Entity<Banner>              ().HasKey(e => e.BannerId);
+            m.Entity<AppSetting>          ().HasKey(e => e.SettingKey);
 
             // LandingSection.ContentJson — nvarchar(max)
             m.Entity<LandingSection>().Property(s => s.ContentJson)
@@ -84,6 +92,11 @@ namespace Server.Data
             m.Entity<ConsultationRequest>()
                 .HasIndex(r => r.Status)
                 .HasDatabaseName("IX_ConsultationRequest_Status");
+
+            // Index: Banner — query active banners theo target nhanh
+            m.Entity<Banner>()
+                .HasIndex(b => new { b.DisplayTarget, b.IsActive })
+                .HasDatabaseName("IX_Banner_DisplayTarget_IsActive");
 
             // Composite PKs — PHẢI khai báo trước relationships
             m.Entity<CategoryPoi>().HasKey(e => new { e.CategoryId, e.PoiId });

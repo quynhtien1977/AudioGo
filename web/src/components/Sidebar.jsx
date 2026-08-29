@@ -15,6 +15,8 @@ import {
   Sparkles,
   Newspaper,
   Globe,
+  Megaphone,
+  Settings,
   X,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
@@ -51,6 +53,9 @@ export default function Sidebar({ onShowPlans, mobileOpen = false, onCloseMobile
               <MenuItem to="/admin/articles" icon={<Newspaper size={18} />}>
                 Bài viết
               </MenuItem>
+              <MenuItem to="/admin/banners" icon={<Megaphone size={18} />}>
+                Banners & Sự kiện
+              </MenuItem>
               <MenuItem to="/admin/landing" icon={<Globe size={18} />}>
                 Trang chủ
               </MenuItem>
@@ -85,6 +90,12 @@ export default function Sidebar({ onShowPlans, mobileOpen = false, onCloseMobile
                 Quản lý giao dịch
               </MenuItem>
             </SidebarGroup>
+
+            <SidebarGroup label="HỆ THỐNG">
+              <MenuItem to="/admin/settings" icon={<Settings size={18} />}>
+                Cài đặt
+              </MenuItem>
+            </SidebarGroup>
           </>
         )}
 
@@ -113,6 +124,9 @@ export default function Sidebar({ onShowPlans, mobileOpen = false, onCloseMobile
               </MenuItem>
               <MenuItem to="/admin/articles" icon={<Newspaper size={18} />}>
                 Bài viết
+              </MenuItem>
+              <MenuItem to="/admin/banners" icon={<Megaphone size={18} />}>
+                Banners & Sự kiện
               </MenuItem>
             </SidebarGroup>
 

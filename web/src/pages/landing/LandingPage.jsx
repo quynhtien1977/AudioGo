@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, lazy, Suspense } from "react";
 import { getLandingSections, getLatestRelease } from "@/api/landingApi";
+import { getPublicBanners } from "@/api/bannerApi";
 import { ThemeProvider } from "@/context/ThemeContext";
 
 // Eager load above-the-fold components for instant FCP & LCP (< 1.5s)
@@ -8,6 +9,7 @@ import HeroSection from "./components/HeroSection";
 
 // Lazy load below-the-fold components to reduce initial JS payload to ~35KB
 const StatsBarSection = lazy(() => import("./components/StatsBarSection"));
+const BannerStripSection = lazy(() => import("./components/BannerStripSection"));
 const FeaturesSection = lazy(() => import("./components/FeaturesSection"));
 const HowItWorksSection = lazy(() => import("./components/HowItWorksSection"));
 const ScreenshotsSection = lazy(() => import("./components/ScreenshotsSection"));
@@ -66,6 +68,20 @@ export default function LandingPage() {
       return null;
     }
   });
+
+  const [banners, setBanners] = useState([]);
+
+  useEffect(() => {
+    getPublicBanners("Landing")
+      .then((res) => {
+        if (Array.isArray(res.data)) {
+          setBanners(res.data);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load public landing banners:", err);
+      });
+  }, []);
 
   const fetchSections = useCallback((targetLang) => {
     getLandingSections(targetLang)
@@ -146,6 +162,7 @@ export default function LandingPage() {
         {/* Below-the-fold sections are lazy loaded */}
         <Suspense fallback={null}>
           {statsBar    && <StatsBarSection   data={statsBar}    />}
+          {banners.length > 0 && <BannerStripSection banners={banners} />}
           {features    && <FeaturesSection   data={features}    />}
           {howItWorks  && <HowItWorksSection data={howItWorks}  />}
           {screenshots && <ScreenshotsSection data={screenshots} />}

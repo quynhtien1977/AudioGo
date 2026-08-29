@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Server.Data;
 using Server.Models;
+using Server.Services.Interfaces;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Diagnostics;
@@ -25,21 +26,30 @@ namespace Server.Controllers.Mobile
     {
         private readonly AppDbContext   _db;
         private readonly IConfiguration _config;
+        private readonly IAppSettingService _settings;
         private readonly ILogger<TouristPaymentController> _logger;
 
-        // ── Đọc từ appsettings — admin có thể thay đổi giá ──────────────────
-        private decimal PriceVnd     => _config.GetValue<decimal>("TouristAccess:PriceVnd",   10000);
-        private int     DurationDays => _config.GetValue<int>    ("TouristAccess:DurationDays", 365);
-        private string  BankAccount  => _config["TouristAccess:BankAccountNo"] ?? "24200502218";
+        // PriceVnd và DurationDays đọc từ DB (có cache 60s), fallback về appsettings
+        private async Task<decimal> GetPriceVndAsync()
+            => await _settings.GetAsync("TouristAccess.PriceVnd",
+                   _config.GetValue<decimal>("TouristAccess:PriceVnd", 10000));
+
+        private async Task<int> GetDurationDaysAsync()
+            => await _settings.GetAsync("TouristAccess.DurationDays",
+                   _config.GetValue<int>("TouristAccess:DurationDays", 7));
+
+        private string BankAccount => _config["TouristAccess:BankAccountNo"] ?? "24200502218";
 
         public TouristPaymentController(
             AppDbContext db,
             IConfiguration config,
+            IAppSettingService settings,
             ILogger<TouristPaymentController> logger)
         {
-            _db     = db;
-            _config = config;
-            _logger = logger;
+            _db       = db;
+            _config   = config;
+            _settings = settings;
+            _logger   = logger;
         }
 
         // ══════════════════════════════════════════════════════════════════════
@@ -83,23 +93,26 @@ namespace Server.Controllers.Mobile
                 .OrderByDescending(t => t.CreatedAt)
                 .FirstOrDefaultAsync();
 
+            var durationDays = await GetDurationDaysAsync();
+
             if (existing != null)
             {
                 sw.Stop();
                 _logger.LogInformation(
                     "Tourist payment init reused pending transaction. Device={DeviceId} Tx={TransactionId} ElapsedMs={ElapsedMs}",
                     maskedDeviceId, existing.TransactionId, sw.ElapsedMilliseconds);
-                return Ok(BuildInitResponse(existing));
+                return Ok(BuildInitResponse(existing, durationDays));
             }
 
             var txId = GenerateTransactionId();
+            var priceVnd = await GetPriceVndAsync();
             var tx = new PaymentTransaction
             {
                 TransactionId = txId,
                 PaymentType   = "TOURIST_ACCESS",
                 AccountId     = null,
-                PlanId        = null,                // Không dùng plan — giá cố định từ config
-                Amount        = PriceVnd,
+                PlanId        = null,
+                Amount        = priceVnd,
                 Currency      = "VND",
                 Gateway       = "SEPAY",
                 Status        = "PENDING",
@@ -115,7 +128,7 @@ namespace Server.Controllers.Mobile
                 "Tourist payment init created transaction. Device={DeviceId} Tx={TransactionId} ElapsedMs={ElapsedMs}",
                 maskedDeviceId, tx.TransactionId, sw.ElapsedMilliseconds);
 
-            return Ok(BuildInitResponse(tx));
+            return Ok(BuildInitResponse(tx, durationDays));
         }
 
         // ══════════════════════════════════════════════════════════════════════
@@ -166,8 +179,8 @@ namespace Server.Controllers.Mobile
                 {
                     status   = "SUCCESS",
                     message  = "Thanh toán thành công. Chào mừng đến với AudioGo!",
-                    token    = GenerateGuestToken(deviceId),
-                    expireAt = DateTime.UtcNow.AddDays(DurationDays)
+                    token    = GenerateGuestToken(deviceId, await GetDurationDaysAsync()),
+                    expireAt = DateTime.UtcNow.AddDays(await GetDurationDaysAsync())
                 }),
                 "PENDING" => Ok(new  { status = "PENDING", message = "Đang chờ xác nhận..." }),
                 "FAILED"  => Ok(new  { status = "FAILED",  message = "Giao dịch thất bại. Vui lòng thử lại." }),
@@ -179,7 +192,7 @@ namespace Server.Controllers.Mobile
         //  HELPERS
         // ══════════════════════════════════════════════════════════════════════
 
-        private object BuildInitResponse(PaymentTransaction tx)
+        private object BuildInitResponse(PaymentTransaction tx, int durationDays)
         {
             var transferContent = $"AudioGo {tx.TransactionId}";
             var encodedContent  = Uri.EscapeDataString(transferContent);
@@ -192,7 +205,7 @@ namespace Server.Controllers.Mobile
             {
                 transactionId   = tx.TransactionId,
                 amount          = tx.Amount,
-                durationDays    = DurationDays,
+                durationDays    = durationDays,
                 gateway         = tx.Gateway,
                 bankAccount     = BankAccount,
                 bankName        = "TP Bank",
@@ -202,7 +215,7 @@ namespace Server.Controllers.Mobile
             };
         }
 
-        private string GenerateGuestToken(string deviceId)
+        private string GenerateGuestToken(string deviceId, int durationDays)
         {
             var keyStr = _config["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key chưa cấu hình");
             var key    = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyStr));
@@ -218,7 +231,7 @@ namespace Server.Controllers.Mobile
                 issuer:             _config["Jwt:Issuer"],
                 audience:           _config["Jwt:Audience"],
                 claims:             claims,
-                expires:            DateTime.UtcNow.AddDays(DurationDays),
+                expires:            DateTime.UtcNow.AddDays(durationDays),
                 signingCredentials: creds
             );
 
