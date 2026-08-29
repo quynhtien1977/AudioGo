@@ -40,7 +40,7 @@ export const appSettingApi = {
     api.put(`/cms/settings/${encodeURIComponent(key)}`, { value }),
 };
 
-// ── Public Banner API (Mobile & Landing) ───────────────────────────────────
+// ── Public Banner API (Landing) ───────────────────────────────────
 
 export const getPublicBanners = (target = "Landing") =>
   api.get("/mobile/banners", { params: { target } });

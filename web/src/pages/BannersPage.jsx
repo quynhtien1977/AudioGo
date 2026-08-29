@@ -30,22 +30,16 @@ import ConfirmModal from "@/components/ConfirmModal";
 import EmptyState from "@/components/EmptyState";
 import PageLoader from "@/components/PageLoader";
 
-const TARGET_OPTIONS = [
-  { value: "Both", label: "Cả hai (Web & App)", icon: Globe },
-  { value: "Landing", label: "Landing Web", icon: Monitor },
-  { value: "MobileHome", label: "App Mobile", icon: Smartphone },
-];
-
 const EMPTY_FORM = {
   title: "",
   subtitle: "",
   imageUrl: "",
   linkUrl: "",
-  displayTarget: "Both",
+  displayTarget: "Landing",
   startDate: "",
   endDate: "",
   isActive: true,
-  sortOrder: 0,
+  sortOrder: 1,
 };
 
 function StatusBadge({ banner }) {
@@ -81,20 +75,9 @@ function StatusBadge({ banner }) {
   );
 }
 
-function TargetBadge({ target }) {
-  const option = TARGET_OPTIONS.find((o) => o.value === target) || TARGET_OPTIONS[0];
-  const Icon = option.icon;
-  return (
-    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-pink-50 text-pink-600 border border-pink-100">
-      <Icon size={12} /> {option.label}
-    </span>
-  );
-}
-
 export default function BannersPage() {
   const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [filterTarget, setFilterTarget] = useState("");
   const [filterStatus, setFilterStatus] = useState("all"); // "all" | "active" | "hidden"
 
   // Form / Modal state
@@ -111,16 +94,15 @@ export default function BannersPage() {
 
   useEffect(() => {
     fetchBanners();
-  }, [filterTarget]);
+  }, []);
 
   const fetchBanners = async () => {
     setLoading(true);
     try {
-      const params = filterTarget ? { displayTarget: filterTarget } : {};
-      const res = await bannerApi.getAll(params);
+      const res = await bannerApi.getAll();
       setBanners(res.data || []);
-    } catch {
-      toast.error("Không tải được danh sách banner.");
+    } catch (err) {
+      toast.error("Không thể tải danh sách banners.");
     } finally {
       setLoading(false);
     }
@@ -129,8 +111,8 @@ export default function BannersPage() {
   // Stats calculation
   const totalCount = banners.length;
   const activeCount = banners.filter((b) => b.isActive).length;
-  const landingCount = banners.filter((b) => b.displayTarget === "Landing" || b.displayTarget === "Both").length;
-  const mobileCount = banners.filter((b) => b.displayTarget === "MobileHome" || b.displayTarget === "Both").length;
+  const hiddenCount = totalCount - activeCount;
+  const linkCount = banners.filter((b) => b.linkUrl).length;
 
   // Filtered list
   const filteredBanners = banners.filter((b) => {
@@ -141,7 +123,12 @@ export default function BannersPage() {
 
   const openCreate = () => {
     setEditId(null);
-    setForm(EMPTY_FORM);
+    // Tự động gợi ý thứ tự tiếp theo = Max(sortOrder) + 1
+    const maxOrder = banners.reduce((max, b) => Math.max(max, Number(b.sortOrder) || 0), 0);
+    setForm({
+      ...EMPTY_FORM,
+      sortOrder: maxOrder + 1,
+    });
     setShowForm(true);
   };
 
@@ -152,11 +139,11 @@ export default function BannersPage() {
       subtitle: banner.subtitle || "",
       imageUrl: banner.imageUrl || "",
       linkUrl: banner.linkUrl || "",
-      displayTarget: banner.displayTarget || "Both",
+      displayTarget: "Landing",
       startDate: banner.startDate ? banner.startDate.slice(0, 10) : "",
       endDate: banner.endDate ? banner.endDate.slice(0, 10) : "",
       isActive: banner.isActive ?? true,
-      sortOrder: banner.sortOrder ?? 0,
+      sortOrder: banner.sortOrder ?? 1,
     });
     setShowForm(true);
   };
@@ -184,7 +171,8 @@ export default function BannersPage() {
     try {
       const payload = {
         ...form,
-        sortOrder: Number(form.sortOrder) || 0,
+        displayTarget: "Landing",
+        sortOrder: Math.max(1, Number(form.sortOrder) || 1),
         startDate: form.startDate ? new Date(`${form.startDate}T00:00:00`).toISOString() : null,
         endDate: form.endDate ? new Date(`${form.endDate}T23:59:59.999`).toISOString() : null,
       };
@@ -239,7 +227,7 @@ export default function BannersPage() {
       {/* HEADER */}
       <PageHeader
         title="QUẢN LÝ BANNERS & SỰ KIỆN"
-        description="Đăng tải và quản lý banner quảng cáo trên Web Landing Page và Ứng dụng Mobile AudioGo."
+        description="Đăng tải và quản lý banner quảng cáo, sự kiện và khuyến mãi nổi bật trên Landing Page AudioGo."
         icon={<Megaphone size={24} />}
         actionButton={
           <button
@@ -257,7 +245,7 @@ export default function BannersPage() {
         <StatsCard
           title="TỔNG BANNERS"
           value={totalCount}
-          sub={`${activeCount} đang hiển thị`}
+          sub="Tất cả banner"
           icon={<Megaphone size={20} />}
         />
         <StatsCard
@@ -268,62 +256,54 @@ export default function BannersPage() {
           icon={<CheckCircle2 size={20} />}
         />
         <StatsCard
-          title="LANDING WEB"
-          value={landingCount}
-          sub="Hiện trên website"
-          color="text-blue-600"
-          icon={<Monitor size={20} />}
+          title="ĐÃ TẮT / ẨN"
+          value={hiddenCount}
+          sub="Chưa kích hoạt"
+          color="text-gray-500"
+          icon={<EyeOff size={20} />}
         />
         <StatsCard
-          title="APP MOBILE"
-          value={mobileCount}
-          sub="Hiện trên app di động"
-          color="text-purple-600"
-          icon={<Smartphone size={20} />}
+          title="CÓ LIÊN KẾT"
+          value={linkCount}
+          sub="Dẫn đến liên kết"
+          color="text-blue-600"
+          icon={<Globe size={20} />}
         />
       </div>
 
-      {/* FILTER & TABS */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-pink-100/30 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        {/* Target filters */}
-        <div className="flex bg-[#FFF0F5] p-1 rounded-xl gap-1 flex-wrap">
+      {/* FILTER TABS */}
+      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-pink-100/30 shadow-sm flex items-center justify-between gap-4">
+        <div className="flex bg-[#FFF0F5] p-1 rounded-xl gap-1">
           <button
-            onClick={() => setFilterTarget("")}
+            onClick={() => setFilterStatus("all")}
             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-              filterTarget === ""
+              filterStatus === "all"
                 ? "bg-white text-pink-600 shadow-sm"
                 : "text-[#8E707E] hover:text-pink-600"
             }`}
           >
-            Tất cả vị trí
+            Tất cả ({totalCount})
           </button>
-          {TARGET_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setFilterTarget(opt.value)}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-                filterTarget === opt.value
-                  ? "bg-white text-pink-600 shadow-sm"
-                  : "text-[#8E707E] hover:text-pink-600"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Status filter pills */}
-        <div className="flex items-center gap-2 self-end sm:self-auto text-xs font-semibold text-gray-500">
-          <span>Trạng thái:</span>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-bold text-gray-700 bg-white focus:outline-none focus:border-pink-500"
+          <button
+            onClick={() => setFilterStatus("active")}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              filterStatus === "active"
+                ? "bg-white text-pink-600 shadow-sm"
+                : "text-[#8E707E] hover:text-pink-600"
+            }`}
           >
-            <option value="all">Tất cả ({totalCount})</option>
-            <option value="active">Đang bật ({activeCount})</option>
-            <option value="hidden">Đã tắt ({totalCount - activeCount})</option>
-          </select>
+            Đang bật ({activeCount})
+          </button>
+          <button
+            onClick={() => setFilterStatus("hidden")}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              filterStatus === "hidden"
+                ? "bg-white text-pink-600 shadow-sm"
+                : "text-[#8E707E] hover:text-pink-600"
+            }`}
+          >
+            Đã tắt ({hiddenCount})
+          </button>
         </div>
       </div>
 
@@ -358,9 +338,6 @@ export default function BannersPage() {
                     <Megaphone size={32} />
                   </div>
                 )}
-                <div className="absolute top-3 left-3">
-                  <TargetBadge target={banner.displayTarget} />
-                </div>
                 <div className="absolute top-3 right-3">
                   <StatusBadge banner={banner} />
                 </div>
@@ -391,7 +368,7 @@ export default function BannersPage() {
                       {banner.endDate ? formatDateVN(banner.endDate) : "Vô thời hạn"}
                     </span>
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-pink-50 text-pink-600 font-bold text-[11px]">
-                      <Sliders size={11} /> Thứ tự: {banner.sortOrder}
+                      <Sliders size={11} /> Vị trí #{banner.sortOrder}
                     </span>
                   </div>
 
@@ -560,36 +537,21 @@ export default function BannersPage() {
                 </div>
               </div>
 
-              {/* TARGET & LINK URL */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                    Hiển thị trên
-                  </label>
-                  <select
-                    value={form.displayTarget}
-                    onChange={(e) => setForm((f) => ({ ...f, displayTarget: e.target.value }))}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-pink-500 font-medium text-gray-700"
-                  >
-                    {TARGET_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                    Link khi bấm vào
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="https://... (tùy chọn)"
-                    value={form.linkUrl}
-                    onChange={(e) => setForm((f) => ({ ...f, linkUrl: e.target.value }))}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-pink-500"
-                  />
-                </div>
+              {/* LINK URL */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                  Link khi bấm vào (Tùy chọn)
+                </label>
+                <input
+                  type="text"
+                  placeholder="https://... hoặc #download, #features"
+                  value={form.linkUrl}
+                  onChange={(e) => setForm((f) => ({ ...f, linkUrl: e.target.value }))}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-pink-500"
+                />
+                <p className="text-[10px] text-gray-400 mt-1 leading-tight">
+                  Hỗ trợ link web ngoài (https://...) hoặc neo trang nội bộ (#download, #features, #how-it-works).
+                </p>
               </div>
 
               {/* DATES & SORT ORDER */}
@@ -618,15 +580,19 @@ export default function BannersPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                    Thứ tự ưu tiên
+                    Thứ tự hiển thị
                   </label>
                   <input
                     type="number"
-                    min="0"
+                    min="1"
                     value={form.sortOrder}
                     onChange={(e) => setForm((f) => ({ ...f, sortOrder: e.target.value }))}
                     className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-pink-500 font-bold"
+                    placeholder="1"
                   />
+                  <p className="text-[10px] text-gray-400 mt-1 leading-tight">
+                    Số 1 hiện đầu tiên. Nếu trùng số, banner mới hơn sẽ đứng trước.
+                  </p>
                 </div>
               </div>
 

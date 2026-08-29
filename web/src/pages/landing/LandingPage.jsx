@@ -72,7 +72,7 @@ export default function LandingPage() {
   const [banners, setBanners] = useState([]);
 
   useEffect(() => {
-    getPublicBanners("Landing")
+    getPublicBanners()
       .then((res) => {
         if (Array.isArray(res.data)) {
           setBanners(res.data);
@@ -134,6 +134,7 @@ export default function LandingPage() {
 
   const hero        = getSectionData(sections, "hero") || (sections.length === 0 ? DEFAULT_HERO : null);
   const statsBar    = getSectionData(sections, "stats_bar");
+  const bannerStrip = getSectionData(sections, "banner_strip") ?? (sections.length === 0 ? {} : null);
   const features    = getSectionData(sections, "features");
   const howItWorks  = getSectionData(sections, "how_it_works");
   const screenshots = getSectionData(sections, "screenshots");
@@ -162,7 +163,9 @@ export default function LandingPage() {
         {/* Below-the-fold sections are lazy loaded */}
         <Suspense fallback={null}>
           {statsBar    && <StatsBarSection   data={statsBar}    />}
-          {banners.length > 0 && <BannerStripSection banners={banners} />}
+          {bannerStrip !== null && banners.length > 0 && (
+            <BannerStripSection banners={banners} config={bannerStrip} />
+          )}
           {features    && <FeaturesSection   data={features}    />}
           {howItWorks  && <HowItWorksSection data={howItWorks}  />}
           {screenshots && <ScreenshotsSection data={screenshots} />}

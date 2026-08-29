@@ -23,18 +23,14 @@ public class MobilePublicController : ControllerBase
     }
 
     /// <summary>
-    /// GET /api/mobile/banners?target=MobileHome
-    /// GET /api/mobile/banners?target=Landing
-    /// Trả về danh sách banner đang active, lọc theo target và date range.
+    /// GET /api/mobile/banners
+    /// Trả về danh sách banner đang active của Landing Page.
     /// Public — không cần JWT.
     /// </summary>
     [HttpGet("banners")]
-    public async Task<IActionResult> GetBanners([FromQuery] string target = "MobileHome")
+    public async Task<IActionResult> GetBanners()
     {
-        if (target is not ("MobileHome" or "Landing" or "Both"))
-            return BadRequest(new { message = "target phải là MobileHome, Landing hoặc Both." });
-
-        var banners = await _banners.GetActiveByTargetAsync(target);
+        var banners = await _banners.GetActiveByTargetAsync("Landing");
         return Ok(banners);
     }
 
