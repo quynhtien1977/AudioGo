@@ -47,6 +47,7 @@ const ArticlesPage = lazy(() => import("@/pages/ArticlesPage"));
 const LandingSettingsPage = lazy(() => import("@/pages/LandingSettingsPage"));
 const BannersPage = lazy(() => import("@/pages/BannersPage"));
 const AppSettingsPage = lazy(() => import("@/pages/AppSettingsPage"));
+const AdminBroadcastPage = lazy(() => import("@/pages/AdminBroadcastPage"));
 
 function PageLoader() {
   return (
@@ -489,6 +490,18 @@ export default function App() {
                     <ProtectedRoute roles={["Admin"]}>
                       <MainLayout>
                         <AppSettingsPage />
+                      </MainLayout>
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Broadcast & Notifications */}
+                <Route
+                  path="/admin/notifications"
+                  element={
+                    <ProtectedRoute roles={["Admin"]}>
+                      <MainLayout>
+                        <AdminBroadcastPage />
                       </MainLayout>
                     </ProtectedRoute>
                   }

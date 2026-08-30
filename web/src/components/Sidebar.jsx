@@ -18,6 +18,7 @@ import {
   Megaphone,
   Settings,
   X,
+  Send,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import useAuth from "@/hooks/useAuth";
@@ -76,6 +77,9 @@ export default function Sidebar({ onShowPlans, mobileOpen = false, onCloseMobile
               </MenuItem>
               <MenuItem to="/admin/device-activity" icon={<RouteIcon size={18} />}>
                 Hoạt động thiết bị
+              </MenuItem>
+              <MenuItem to="/admin/notifications" icon={<Send size={18} />}>
+                Gửi thông báo
               </MenuItem>
             </SidebarGroup>
 

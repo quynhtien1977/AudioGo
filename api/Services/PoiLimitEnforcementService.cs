@@ -92,6 +92,8 @@ namespace Server.Services
                 expiredGrace.Count);
 
             var totalHidden = 0;
+            // Track (accountId → hiddenCount) để gửi notification sau SaveChanges
+            var hiddenByAccount = new Dictionary<string, (int Count, string PlanName, int MaxPoi)>();
 
             foreach (var sub in expiredGrace)
             {
@@ -101,6 +103,9 @@ namespace Server.Services
                 {
                     var hidden = await HideExcessPoisAsync(db, sub.AccountId, sub.Plan?.MaxPoiCount ?? 0, ct);
                     totalHidden += hidden;
+
+                    if (hidden > 0 && sub.Plan != null)
+                        hiddenByAccount[sub.AccountId] = (hidden, sub.Plan.Name, sub.Plan.MaxPoiCount);
 
                     // Clear grace period dù đã xử lý hay không (tránh check lại liên tục)
                     sub.PoiGracePeriodUntil = null;
@@ -114,6 +119,31 @@ namespace Server.Services
             }
 
             await db.SaveChangesAsync(ct);
+
+            // ── Notification cho từng owner bị ẩn POI ────────────────────────
+            if (hiddenByAccount.Count > 0)
+            {
+                try
+                {
+                    var notificationService = scope.ServiceProvider
+                        .GetRequiredService<Interfaces.INotificationService>();
+
+                    foreach (var kvp in hiddenByAccount)
+                    {
+                        await notificationService.CreateAsync(
+                            recipientAccountId: kvp.Key,
+                            type:  "PoiHidden",
+                            title: "Một số POI đã bị ẩn tự động",
+                            body:  $"Hệ thống đã tự động ẩn {kvp.Value.Count} POI do vượt giới hạn gói " +
+                                   $"'{kvp.Value.PlanName}' (tối đa {kvp.Value.MaxPoi} POI). " +
+                                   "Vui lòng nâng cấp gói để kích hoạt lại.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "[Notification] Failed to create PoiHidden notifications");
+                }
+            }
 
             _logger.LogInformation(
                 "PoiLimitEnforcement: completed. Hidden {TotalHidden} POI(s) across {Accounts} account(s).",

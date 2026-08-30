@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Server.Data;
 using Server.Models;
+using Server.Services.Interfaces;
 
 namespace Server.Services
 {
@@ -17,11 +18,16 @@ namespace Server.Services
     {
         private readonly AppDbContext _db;
         private readonly ILogger<SubscriptionService> _logger;
+        private readonly INotificationService _notifications;
 
-        public SubscriptionService(AppDbContext db, ILogger<SubscriptionService> logger)
+        public SubscriptionService(
+            AppDbContext db,
+            ILogger<SubscriptionService> logger,
+            INotificationService notifications)
         {
-            _db     = db;
-            _logger = logger;
+            _db            = db;
+            _logger        = logger;
+            _notifications = notifications;
         }
 
         // ══════════════════════════════════════════════════════════════════════
@@ -160,6 +166,21 @@ namespace Server.Services
             _logger.LogInformation(
                 "Subscription activated: Account={AccountId} Plan={PlanId} SubId={SubId} TxId={TxId} GracePeriod={Grace}",
                 accountId, planId, newSub.SubscriptionId, triggeredByTransactionId, gracePeriodUntil?.ToString("o") ?? "none");
+
+            // ── Notification cho Owner khi gói được kích hoạt (trừ khi gọi bởi AssignPlanAsync — sẽ notify riêng) ──
+            try
+            {
+                await _notifications.CreateAsync(
+                    recipientAccountId: accountId,
+                    type:  "PlanAssigned",
+                    title: "Gói đăng ký đã được kích hoạt",
+                    body:  $"Gói '{plan.Name}' của bạn đã được kích hoạt thành công. Hiệu lực {plan.DurationDay} ngày.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "[Notification] Failed to create PlanAssigned notification for account {AccountId}", accountId);
+            }
+
             return newSub;
         }
 

@@ -12,6 +12,7 @@ import { useSubscription } from "../context/SubscriptionContext"
 import { getAllArticles } from "../api/articleApi"
 import * as subscriptionApi from "../api/subscriptionApi"
 import useAuth from "../hooks/useAuth"
+import NotificationBell from "./NotificationBell"
 
 export default function Topbar({ onToggleMobileSidebar }) {
   const navigate = useNavigate()
@@ -454,6 +455,12 @@ export default function Topbar({ onToggleMobileSidebar }) {
 
         {/* Right */}
         <div className="flex items-center gap-4 ml-auto">
+          {/* NotificationBell — hiển thị cho Owner, Editor, Admin */}
+          {(role === "Owner" || role === "Editor" || role === "Admin") && (
+            <NotificationBell />
+          )}
+
+          
           {/* Logout */}
           <button
             onClick={() => { logout(); navigate("/login"); }}
@@ -577,8 +584,13 @@ export default function Topbar({ onToggleMobileSidebar }) {
           )}
         </div>
 
-        {/* Right: User Profile & Logout */}
+        {/* Right: Notification + User Profile + Logout */}
         <div className="flex items-center gap-2 ml-auto flex-shrink-0">
+          {/* NotificationBell — hiển thị cho Owner & Editor */}
+          {(role === "Owner" || role === "Editor" || role === "Admin") && (
+            <NotificationBell />
+          )}
+
           {(role === "Owner" || role === "Editor") ? (
             <button
               onClick={() => navigate("/admin/profile")}
