@@ -65,7 +65,8 @@ export default function EditCategoryModal({
         {/* CLOSE */}
         <button
           onClick={onClose}
-          className="absolute top-6 right-8 text-[#D1B9C5] hover:text-[#8E707E]"
+          className="absolute top-6 right-8 text-[#D1B9C5] hover:text-[#8E707E] p-1 rounded-lg transition-colors cursor-pointer"
+          title="Đóng cửa sổ"
         >
           ✕
         </button>

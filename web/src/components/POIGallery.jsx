@@ -130,7 +130,7 @@ const POIGallery = ({
           {isEditing && (
             <button
               onClick={() => handleRemoveSub(slotIndex)}
-              className="absolute top-2 right-2 w-6 h-6 bg-white/90 rounded-full flex items-center justify-center shadow hover:bg-red-50 transition opacity-0 group-hover:opacity-100"
+              className="absolute top-2 right-2 w-6 h-6 bg-white/90 rounded-full flex items-center justify-center shadow hover:bg-red-50 transition opacity-0 group-hover:opacity-100 cursor-pointer"
               title="Xóa ảnh"
             >
               <X className="w-3 h-3 text-red-500" />
@@ -148,7 +148,8 @@ const POIGallery = ({
               />
               <button
                 onClick={() => subInputRefs[uiIndex].current?.click()}
-                className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white/90 px-3 py-1 rounded-xl shadow text-[10px] font-bold text-pink-500 uppercase tracking-wider opacity-0 group-hover:opacity-100 transition"
+                className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white/90 px-3 py-1 rounded-xl shadow text-[10px] font-bold text-pink-500 uppercase tracking-wider opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                title="Chọn ảnh khác thay thế"
               >
                 <Camera className="w-3 h-3" /> Đổi
               </button>
@@ -223,7 +224,8 @@ const POIGallery = ({
         {isEditing && (
           <button
             onClick={() => coverInputRef.current?.click()}
-            className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/90 backdrop-blur-sm px-5 py-2.5 rounded-xl shadow-lg hover:bg-white transition-all active:scale-95"
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/90 backdrop-blur-sm px-5 py-2.5 rounded-xl shadow-lg hover:bg-white transition-all active:scale-95 cursor-pointer"
+            title="Tải lên ảnh bìa mới từ thiết bị"
           >
             <Camera className="w-4 h-4 text-pink-500" />
             <span className="text-[10px] font-bold text-pink-500 uppercase tracking-wider">

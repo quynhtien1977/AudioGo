@@ -28,7 +28,11 @@ export default function TopPOIModal({ onClose, pois = [] }) {
         <div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-100">
           <h2 className="text-lg sm:text-xl font-bold text-gray-800">CÁC POIs PHỔ BIẾN</h2>
 
-          <button onClick={onClose} className="p-1 rounded-lg text-gray-400 hover:text-black hover:bg-gray-100 transition-colors">
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-gray-400 hover:text-black hover:bg-gray-100 transition-colors cursor-pointer"
+            title="Đóng cửa sổ"
+          >
             ✕
           </button>
         </div>

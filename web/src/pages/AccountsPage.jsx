@@ -28,6 +28,7 @@ import ConfirmModal from "@/components/ConfirmModal"
 import EmptyState from "@/components/EmptyState"
 import PageHeader from "@/components/PageHeader"
 import StatsCard from "@/components/StatsCard"
+import { SimpleTooltip } from "@/components/ui/tooltip"
 import { SearchContext } from "@/context/SearchContext"
 
 const roleStyle = (role) => {
@@ -450,26 +451,31 @@ export default function AccountsPage() {
                     <span className="text-gray-300">—</span>
                   ) : (
                     <>
-                      <button
-                        onClick={() =>
-                          handleToggleLock(user.accountId, user.isLocked)
-                        }
-                        title={user.isLocked ? "Mở khóa tài khoản" : "Khóa tài khoản"}
-                        className="p-2 rounded-xl text-gray-400 hover:text-pink-500 hover:bg-pink-50 transition-colors"
-                      >
-                        {user.isLocked ? (
-                          <Lock size={16} />
-                        ) : (
-                          <Unlock size={16} />
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(user.accountId)}
-                        title="Xóa tài khoản"
-                        className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      <SimpleTooltip content={user.isLocked ? "Mở khóa tài khoản này" : "Khóa tài khoản này"}>
+                        <button
+                          onClick={() =>
+                            handleToggleLock(user.accountId, user.isLocked)
+                          }
+                          title={user.isLocked ? "Mở khóa tài khoản" : "Khóa tài khoản"}
+                          className="p-2 rounded-xl text-gray-400 hover:text-pink-500 hover:bg-pink-50 transition-colors cursor-pointer"
+                        >
+                          {user.isLocked ? (
+                            <Lock size={16} />
+                          ) : (
+                            <Unlock size={16} />
+                          )}
+                        </button>
+                      </SimpleTooltip>
+
+                      <SimpleTooltip content="Xóa tài khoản này">
+                        <button
+                          onClick={() => handleDeleteClick(user.accountId)}
+                          title="Xóa tài khoản"
+                          className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </SimpleTooltip>
                     </>
                   )}
                 </div>

@@ -326,7 +326,8 @@ export const AdminTransactionDashboard = () => {
                       <td className="px-6 py-4 text-right">
                         <button
                           onClick={() => handleViewDetail(tx)}
-                          className="px-3 py-1.5 rounded-lg text-pink-600 bg-pink-50 hover:bg-pink-100 text-xs font-bold transition-all"
+                          className="px-3 py-1.5 rounded-lg text-pink-600 bg-pink-50 hover:bg-pink-100 text-xs font-bold transition-all cursor-pointer"
+                          title="Xem chi tiết giao dịch này"
                         >
                           Xem chi tiết
                         </button>
@@ -369,14 +370,16 @@ export const AdminTransactionDashboard = () => {
           <button
             onClick={() => setPage(Math.max(1, page - 1))}
             disabled={page === 1}
-            className="px-4 py-2 border border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-pink-50 hover:text-pink-600 text-xs disabled:opacity-50 disabled:pointer-events-none transition-colors"
+            title="Trang trước"
+            className="px-4 py-2 border border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-pink-50 hover:text-pink-600 text-xs disabled:opacity-50 disabled:pointer-events-none transition-colors cursor-pointer"
           >
             Trước
           </button>
           <button
             onClick={() => setPage(page + 1)}
             disabled={page >= (pagination.totalPages || 1)}
-            className="px-4 py-2 border border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-pink-50 hover:text-pink-600 text-xs disabled:opacity-50 disabled:pointer-events-none transition-colors"
+            title="Trang tiếp theo"
+            className="px-4 py-2 border border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-pink-50 hover:text-pink-600 text-xs disabled:opacity-50 disabled:pointer-events-none transition-colors cursor-pointer"
           >
             Sau
           </button>
@@ -410,7 +413,8 @@ export const AdminTransactionDashboard = () => {
               </div>
               <button
                 onClick={() => setSelectedTx(null)}
-                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition"
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition cursor-pointer"
+                title="Đóng cửa sổ"
               >
                 ✕
               </button>

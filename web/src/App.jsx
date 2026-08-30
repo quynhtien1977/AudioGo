@@ -1,11 +1,13 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { Toaster } from "react-hot-toast";
+import toast, { Toaster, ToastBar } from "react-hot-toast";
+import { X } from "lucide-react";
 
 import { AuthProvider } from "@/context/AuthContext";
 import MainLayout from "@/layouts/MainLayout";
 import { SearchProvider } from "@/context/SearchContext";
 import { SubscriptionProvider } from "@/context/SubscriptionContext";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 // Eager load LandingPage for instant first render on public traffic
@@ -63,32 +65,68 @@ export default function App() {
       <AuthProvider>
         <SearchProvider>
           <SubscriptionProvider>
-            <Toaster
-              position="top-right"
-              reverseOrder={false}
-              gutter={8}
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  background: '#fff',
-                  color: '#000',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                },
-                success: {
+            <TooltipProvider delayDuration={200}>
+              <Toaster
+                position="top-right"
+                reverseOrder={false}
+                gutter={8}
+                toastOptions={{
+                  duration: 4000,
                   style: {
-                    background: '#10b981',
-                    color: '#fff',
+                    background: '#fff',
+                    color: '#1f2937',
+                    borderRadius: '12px',
+                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                    padding: '10px 14px',
+                    fontSize: '13px',
+                    fontWeight: '500',
                   },
-                },
-                error: {
-                  style: {
-                    background: '#ef4444',
-                    color: '#fff',
+                  success: {
+                    style: {
+                      background: '#10b981',
+                      color: '#fff',
+                    },
+                    iconTheme: {
+                      primary: '#fff',
+                      secondary: '#10b981',
+                    },
                   },
-                },
-              }}
-            />
+                  error: {
+                    style: {
+                      background: '#ef4444',
+                      color: '#fff',
+                    },
+                    iconTheme: {
+                      primary: '#fff',
+                      secondary: '#ef4444',
+                    },
+                  },
+                }}
+              >
+                {(t) => (
+                  <ToastBar toast={t}>
+                    {({ icon, message }) => (
+                      <div className="flex items-center gap-2.5 w-full">
+                        {icon}
+                        <div className="flex-1 text-xs sm:text-sm font-medium leading-snug">
+                          {message}
+                        </div>
+                        {t.type !== "loading" && (
+                          <button
+                            type="button"
+                            onClick={() => toast.dismiss(t.id)}
+                            className="p-1 -mr-1 rounded-md hover:bg-black/10 transition-colors opacity-70 hover:opacity-100 flex items-center justify-center cursor-pointer text-current flex-shrink-0"
+                            title="Đóng thông báo"
+                            aria-label="Đóng thông báo"
+                          >
+                            <X size={14} />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </ToastBar>
+                )}
+              </Toaster>
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 {/* ── Landing Page (PUBLIC) ── */}
@@ -461,6 +499,7 @@ export default function App() {
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </Suspense>
+            </TooltipProvider>
           </SubscriptionProvider>
         </SearchProvider>
       </AuthProvider>

@@ -15,6 +15,7 @@ import HelpGuide from "@/components/HelpGuide";
 import { getAllToursApi, createTourApi, deleteTourApi, addPoiToTourApi, restoreTourApi } from "@/api/tourApi";
 import { SearchContext } from "@/context/SearchContext";
 import { formatDateVN } from "@/utils/formatDate";
+import { SimpleTooltip } from "@/components/ui/tooltip";
 
 const ToursPage = () => {
   const navigate = useNavigate();
@@ -227,16 +228,18 @@ const ToursPage = () => {
             }`}>
               <div className="relative h-48 w-full overflow-hidden">
                 <img src={tour.thumbnailUrl || "https://via.placeholder.com/400x200?text=No+Image"} alt={tour.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openDeleteConfirm(tour.tourId);
-                  }}
-                  className="absolute top-4 right-4 bg-white/95 hover:bg-red-50 text-red-500 p-2.5 rounded-full border border-red-100 shadow-md hover:scale-110 active:scale-95 transition-all z-10"
-                  title="Xóa Tour"
-                >
-                  <Trash2 size={16} />
-                </button>
+                <SimpleTooltip content="Xóa Tour này">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openDeleteConfirm(tour.tourId);
+                    }}
+                    className="absolute top-4 right-4 bg-white/95 hover:bg-red-50 text-red-500 p-2.5 rounded-full border border-red-100 shadow-md hover:scale-110 active:scale-95 transition-all z-10 cursor-pointer"
+                    title="Xóa Tour"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </SimpleTooltip>
               </div>
 
               <div className="p-5 sm:p-8 pt-5 sm:pt-6 space-y-4">
@@ -267,20 +270,25 @@ const ToursPage = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 pt-2">
-                  <button onClick={() => handleGoToDetail(tour.tourId)} disabled={!tour.isActive} className={`flex items-center justify-center gap-2 py-3 bg-gray-50 rounded-xl text-xs font-bold transition-all ${
-                    tour.isActive
-                      ? 'text-gray-600 hover:bg-pink-50 hover:text-pink-600 cursor-pointer'
-                      : 'text-gray-400 cursor-not-allowed'
-                  }`}>
-                     Vào Tour
-                  </button>
-                  <button onClick={() => setToggleConfirmId(tour.tourId)} className={`flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all border ${
-                    tour.isActive
-                      ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100'
-                      : 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'
-                  }`}>
-                    {tour.isActive ? 'Ẩn' : 'Hiện'}
-                  </button>
+                  <SimpleTooltip content={tour.isActive ? "Vào xem lộ trình và quản lý POI của Tour" : "Tour đang bị ẩn, hãy bật Hiện trước"}>
+                    <button onClick={() => handleGoToDetail(tour.tourId)} disabled={!tour.isActive} className={`w-full flex items-center justify-center gap-2 py-3 bg-gray-50 rounded-xl text-xs font-bold transition-all ${
+                      tour.isActive
+                        ? 'text-gray-600 hover:bg-pink-50 hover:text-pink-600 cursor-pointer'
+                        : 'text-gray-400 cursor-not-allowed'
+                    }`}>
+                       Vào Tour
+                    </button>
+                  </SimpleTooltip>
+
+                  <SimpleTooltip content={tour.isActive ? "Bấm để ẩn Tour khỏi ứng dụng" : "Bấm để hiển thị Tour trên ứng dụng"}>
+                    <button onClick={() => setToggleConfirmId(tour.tourId)} className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                      tour.isActive
+                        ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100'
+                        : 'bg-green-50 text-green-600 border-green-100 hover:bg-green-100'
+                    }`}>
+                      {tour.isActive ? 'Ẩn' : 'Hiện'}
+                    </button>
+                  </SimpleTooltip>
                 </div>
               </div>
             </div>

@@ -449,8 +449,8 @@ export default function LandingSettingsPage() {
                         {dbSec && (
                           <button
                             onClick={(e) => { e.stopPropagation(); toggleActive(dbSec); }}
-                            className="flex-shrink-0 ml-1"
-                            title={dbSec.isActive ? "Ẩn" : "Hiện"}
+                            className="flex-shrink-0 ml-1 cursor-pointer"
+                            title={dbSec.isActive ? "Bấm để ẩn section này" : "Bấm để hiện section này"}
                           >
                             {dbSec.isActive
                               ? <ToggleRight size={18} className="text-pink-500" />
@@ -480,7 +480,8 @@ export default function LandingSettingsPage() {
                   href="/"
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition-colors bg-white border border-gray-200"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition-colors bg-white border border-gray-200 cursor-pointer"
+                  title="Mở xem trang Landing Page ở tab mới"
                 >
                   <Eye size={13} />
                   Xem trang
@@ -532,7 +533,8 @@ export default function LandingSettingsPage() {
                         <button
                           onClick={handleSaveShared}
                           disabled={savingShared || !dirtyShared}
-                          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gray-800 text-white text-xs font-semibold hover:bg-gray-700 disabled:opacity-50 transition-all shadow-sm"
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gray-800 text-white text-xs font-semibold hover:bg-gray-700 disabled:opacity-50 transition-all shadow-sm cursor-pointer disabled:cursor-not-allowed"
+                          title="Lưu các thông tin cấu hình dùng chung của section"
                         >
                           {savingShared ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                           Lưu Cấu hình
@@ -557,7 +559,8 @@ export default function LandingSettingsPage() {
                         <button
                           onClick={handleSaveTranslation}
                           disabled={savingTrans || !dirtyTrans}
-                          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-pink-600 text-white text-xs font-semibold hover:bg-pink-700 disabled:opacity-50 transition-all shadow-sm"
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-pink-600 text-white text-xs font-semibold hover:bg-pink-700 disabled:opacity-50 transition-all shadow-sm cursor-pointer disabled:cursor-not-allowed"
+                          title={`Lưu bản dịch cho ngôn ngữ ${activeLang.toUpperCase()}`}
                         >
                           {savingTrans ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                           Lưu {activeLang.toUpperCase()}

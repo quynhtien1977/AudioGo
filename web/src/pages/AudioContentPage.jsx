@@ -15,6 +15,7 @@ export default function AudioContentPage() {
     const [totalPages, setTotalPages] = useState(1);
     const [playingId, setPlayingId] = useState(null);
     const [audioElement, setAudioElement] = useState(null);
+    const [isPaused, setIsPaused] = useState(false);
     const [expandedRows, setExpandedRows] = useState({});
 
     useEffect(() => {
@@ -62,9 +63,11 @@ export default function AudioContentPage() {
         if (playingId === id) {
             if (audioElement) {
                 if (audioElement.paused) {
-                    audioElement.play();
+                    audioElement.play().catch(console.error);
+                    setIsPaused(false);
                 } else {
                     audioElement.pause();
+                    setIsPaused(true);
                 }
             }
             return;
@@ -77,13 +80,26 @@ export default function AudioContentPage() {
         if (!url) return;
 
         const newAudio = new Audio(url);
-        newAudio.play();
+        newAudio.play().catch((err) => {
+            console.error("Playback error:", err);
+            setPlayingId(null);
+            setAudioElement(null);
+            setIsPaused(false);
+        });
         setAudioElement(newAudio);
         setPlayingId(id);
+        setIsPaused(false);
 
         newAudio.onended = () => {
             setPlayingId(null);
             setAudioElement(null);
+            setIsPaused(false);
+        };
+
+        newAudio.onerror = () => {
+            setPlayingId(null);
+            setAudioElement(null);
+            setIsPaused(false);
         };
     };
 
@@ -94,7 +110,7 @@ export default function AudioContentPage() {
         }));
     };
 
-    const isItemPlaying = (id) => playingId === id && audioElement && !audioElement.paused;
+    const isItemPlaying = (id) => playingId === id && !isPaused;
 
     const renderAudioButton = (id, url) => {
         const isPlaying = isItemPlaying(id);

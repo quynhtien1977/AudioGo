@@ -396,7 +396,8 @@ export default function POIUpdateDetailPage() {
           <div className="flex items-center gap-4 mb-4">
             <button
               onClick={() => navigate("/admin/pois/management/updates")}
-              className="p-2 hover:bg-gray-100 rounded-full transition"
+              className="p-2 hover:bg-gray-100 rounded-full transition cursor-pointer"
+              title="Quay lại danh sách yêu cầu cập nhật"
             >
               <ArrowLeft size={24} className="text-gray-600" />
             </button>
@@ -816,14 +817,16 @@ export default function POIUpdateDetailPage() {
               <>
                 <button
                   onClick={handleReject}
-                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition font-semibold shadow-md hover:shadow-lg"
+                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition font-semibold shadow-md hover:shadow-lg cursor-pointer"
+                  title="Từ chối yêu cầu cập nhật này"
                 >
                   <X size={18} />
                   Từ chối
                 </button>
                 <button
                   onClick={handleApprove}
-                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-xl hover:from-pink-600 hover:to-pink-700 transition font-semibold shadow-md hover:shadow-lg"
+                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-xl hover:from-pink-600 hover:to-pink-700 transition font-semibold shadow-md hover:shadow-lg cursor-pointer"
+                  title="Phê duyệt các thay đổi của POI"
                 >
                   <Check size={18} />
                   Chấp nhận
@@ -832,7 +835,8 @@ export default function POIUpdateDetailPage() {
             ) : (
               <button
                 onClick={() => navigate("/admin/pois/management/updates")}
-                className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition font-medium text-sm"
+                className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition font-medium text-sm cursor-pointer"
+                title="Quay lại danh sách yêu cầu cập nhật"
               >
                 <ArrowLeft size={16} />
                 Quay lại danh sách
@@ -973,7 +977,8 @@ export default function POIUpdateDetailPage() {
                 <button
                   type="button"
                   onClick={handleSkipWaiting}
-                  className="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900 text-xs font-semibold rounded-xl transition text-center"
+                  className="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-900 text-xs font-semibold rounded-xl transition text-center cursor-pointer"
+                  title="Đóng tiến trình chờ đợi để hệ thống tiếp tục xử lý ngầm trong nền"
                 >
                   Bỏ qua chờ đợi (tiếp tục xử lý ngầm)
                 </button>

@@ -8,6 +8,7 @@ import PageHeader from "@/components/PageHeader"
 import { SearchContext } from "@/context/SearchContext"
 import PageLoader from "@/components/PageLoader"
 import { formatDateVN } from "@/utils/formatDate"
+import { SimpleTooltip } from "@/components/ui/tooltip"
 import {
   Newspaper,
   Compass,
@@ -312,48 +313,55 @@ export default function ArticlesPage() {
 
                     {/* ACTIVE TOGGLE */}
                     <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => handleToggleActive(article)}
-                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
-                          article.isActive
-                            ? "bg-pink-500/10 text-pink-600 border-pink-200"
-                            : "bg-gray-100 text-gray-400 border-gray-200"
-                        }`}
-                      >
-                        {article.isActive ? (
-                          <>
-                            <Eye size={12} />
-                            Đang Hiện
-                          </>
-                        ) : (
-                          <>
-                            <EyeOff size={12} />
-                            Đang Ẩn
-                          </>
-                        )}
-                      </button>
+                      <SimpleTooltip content={article.isActive ? "Bấm để ẩn bài viết trên mobile" : "Bấm để hiển thị bài viết trên mobile"}>
+                        <button
+                          onClick={() => handleToggleActive(article)}
+                          className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all border cursor-pointer ${
+                            article.isActive
+                              ? "bg-pink-500/10 text-pink-600 border-pink-200"
+                              : "bg-gray-100 text-gray-400 border-gray-200"
+                          }`}
+                        >
+                          {article.isActive ? (
+                            <>
+                              <Eye size={12} />
+                              Đang Hiện
+                            </>
+                          ) : (
+                            <>
+                              <EyeOff size={12} />
+                              Đang Ẩn
+                            </>
+                          )}
+                        </button>
+                      </SimpleTooltip>
                     </td>
 
                     {/* ACTIONS */}
                     <td className="px-6 py-4 pr-6 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => {
-                            setSelectedArticleId(article.articleId)
-                            setIsModalOpen(true)
-                          }}
-                          className="p-2 rounded-xl text-gray-400 hover:text-pink-600 hover:bg-pink-50 transition-colors"
-                          title="Chỉnh sửa"
-                        >
-                          <Edit size={16} />
-                        </button>
-                        <button
-                          onClick={() => setConfirmDeleteId(article.articleId)}
-                          className="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                          title="Xóa bài viết"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        <SimpleTooltip content="Chỉnh sửa nội dung & bản dịch">
+                          <button
+                            onClick={() => {
+                              setSelectedArticleId(article.articleId)
+                              setIsModalOpen(true)
+                            }}
+                            className="p-2 rounded-xl text-gray-400 hover:text-pink-600 hover:bg-pink-50 transition-colors cursor-pointer"
+                            title="Chỉnh sửa"
+                          >
+                            <Edit size={16} />
+                          </button>
+                        </SimpleTooltip>
+
+                        <SimpleTooltip content="Xóa bài viết này">
+                          <button
+                            onClick={() => setConfirmDeleteId(article.articleId)}
+                            className="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                            title="Xóa bài viết"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </SimpleTooltip>
                       </div>
                     </td>
                   </tr>

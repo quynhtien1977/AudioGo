@@ -167,7 +167,8 @@ const CreateTourModal = ({ open, onClose, onSubmit, isLoading }) => {
               <h2 className="text-xl sm:text-2xl font-black text-gray-800">Tạo Tour Mới</h2>
               <button
                 onClick={handleClose}
-                className="p-2 hover:bg-gray-100 rounded-full transition-all"
+                className="p-2 hover:bg-gray-100 rounded-full transition-all cursor-pointer"
+                title="Đóng cửa sổ"
               >
                 <X size={20} className="text-gray-600" />
               </button>

@@ -133,7 +133,11 @@ export default function ArticleFormModal({ articleId, onClose, onSaved }) {
       <div className="bg-white w-full max-w-[700px] max-h-[90vh] rounded-[2rem] shadow-2xl overflow-hidden flex flex-col relative animate-scaleIn">
 
         {/* CLOSE */}
-        <button onClick={onClose} className="absolute top-5 right-6 p-2 rounded-full text-[#D1B9C5] hover:text-[#8E707E] hover:bg-pink-50 transition-colors z-10">
+        <button
+          onClick={onClose}
+          className="absolute top-5 right-6 p-2 rounded-full text-[#D1B9C5] hover:text-[#8E707E] hover:bg-pink-50 transition-colors z-10 cursor-pointer"
+          title="Đóng cửa sổ"
+        >
           <X size={20} />
         </button>
 

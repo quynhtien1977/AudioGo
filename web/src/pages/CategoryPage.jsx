@@ -3,6 +3,7 @@ import { Edit3, Trash2, ChevronLeft, ChevronRight, Layers } from "lucide-react"
 import PageLoader from "@/components/PageLoader"
 import toast from "react-hot-toast"
 import PageHeader from "@/components/PageHeader"
+import { SimpleTooltip } from "@/components/ui/tooltip"
 
 import {
   getCategoriesApi,
@@ -159,21 +160,25 @@ export default function CategoryPage() {
 
                 {/* ACTIONS */}
                 <div className="flex justify-end gap-2">
-                  <button
-                    onClick={() => setEditingCategory(c)}
-                    className="p-2 rounded-xl text-gray-400 hover:text-pink-500 hover:bg-pink-50 transition-colors"
-                    title="Chỉnh sửa"
-                  >
-                    <Edit3 size={16} />
-                  </button>
+                  <SimpleTooltip content="Chỉnh sửa danh mục">
+                    <button
+                      onClick={() => setEditingCategory(c)}
+                      className="p-2 rounded-xl text-gray-400 hover:text-pink-500 hover:bg-pink-50 transition-colors cursor-pointer"
+                      title="Chỉnh sửa"
+                    >
+                      <Edit3 size={16} />
+                    </button>
+                  </SimpleTooltip>
 
-                  <button
-                    onClick={() => openDeleteConfirm(c.categoryId)}
-                    className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                    title="Xóa danh mục"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <SimpleTooltip content="Xóa danh mục này">
+                    <button
+                      onClick={() => openDeleteConfirm(c.categoryId)}
+                      className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                      title="Xóa danh mục"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </SimpleTooltip>
                 </div>
               </div>
             ))}
@@ -188,7 +193,8 @@ export default function CategoryPage() {
                 <button
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage((p) => p - 1)}
-                  className={`p-2 rounded-full ${currentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
+                  className={`p-2 rounded-full ${currentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition cursor-pointer"}`}
+                  title="Trang trước"
                 >
                   <ChevronLeft size={16} />
                 </button>
@@ -207,7 +213,8 @@ export default function CategoryPage() {
                       <button
                         key={p}
                         onClick={() => setCurrentPage(p)}
-                        className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === p ? "bg-pink-500 text-white shadow-sm" : "hover:bg-pink-50 hover:text-pink-600"}`}
+                        className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors cursor-pointer ${currentPage === p ? "bg-pink-500 text-white shadow-sm" : "hover:bg-pink-50 hover:text-pink-600"}`}
+                        title={`Trang ${p}`}
                       >
                         {p}
                       </button>
@@ -217,7 +224,8 @@ export default function CategoryPage() {
                 <button
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage((p) => p + 1)}
-                  className={`p-2 rounded-full ${currentPage === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
+                  className={`p-2 rounded-full ${currentPage === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition cursor-pointer"}`}
+                  title="Trang tiếp theo"
                 >
                   <ChevronRight size={16} />
                 </button>
