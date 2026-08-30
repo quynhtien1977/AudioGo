@@ -288,15 +288,23 @@ namespace Server.Controllers.Cms
             return Ok(subs);
         }
 
+        public class AssignPlanRequest
+        {
+            public string PlanId { get; set; } = "";
+        }
+
         /// <summary>POST /api/cms/subscriptions/owner/{accountId}/assign — Admin gán gói cho Owner</summary>
         [HttpPost("owner/{accountId}/assign")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AssignPlan(
-            string accountId, [FromBody] InitUpgradeRequest req)
+            string accountId, [FromBody] AssignPlanRequest req)
         {
+            if (string.IsNullOrWhiteSpace(req.PlanId))
+                return BadRequest(new { error = "PlanId là bắt buộc." });
+
             var (result, error) = await _subscription.AssignPlanAsync(accountId, req.PlanId);
             if (error != null)
-                return error.Contains("Không tìm thấy") ? NotFound(error) : BadRequest(error);
+                return error.Contains("Không tìm thấy") ? NotFound(new { error }) : BadRequest(new { error });
 
             return Ok(new
             {
