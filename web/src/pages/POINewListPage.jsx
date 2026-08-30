@@ -148,21 +148,24 @@ export default function POINewListPage() {
           <>
             <button
               onClick={() => handleReview(poi.id)}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition font-semibold text-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition font-semibold text-sm cursor-pointer"
+              title="Xem chi tiết nội dung POI mới"
             >
               <Edit2 size={16} />
               Xem chi tiết
             </button>
             <button
               onClick={() => handleApprove(poi.id)}
-              className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition font-semibold text-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition font-semibold text-sm cursor-pointer"
+              title="Phê duyệt tạo POI mới"
             >
               <CheckCircle size={16} />
               Duyệt
             </button>
             <button
               onClick={() => handleReject(poi.id)}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition font-semibold text-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition font-semibold text-sm cursor-pointer"
+              title="Từ chối yêu cầu tạo POI"
             >
               <XCircle size={16} />
               Từ chối
@@ -172,7 +175,8 @@ export default function POINewListPage() {
         renderReviewAction={(poi) => (
           <button
             onClick={() => handleReview(poi.id)}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition font-semibold text-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition font-semibold text-sm cursor-pointer"
+            title="Xem lại nội dung POI đã xử lý"
           >
             <Eye size={16} />
             Xem lại

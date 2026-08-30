@@ -3,6 +3,7 @@ import { Headphones, Play, Pause, RefreshCw, Search, ChevronDown, ChevronUp, Lan
 import { formatDateVN } from "@/utils/formatDate";
 import PageHeader from "@/components/PageHeader";
 import EmptyState from "@/components/EmptyState";
+import HelpGuide from "@/components/HelpGuide";
 import { audioContentApi } from "../api/audioContentApi";
 import { SearchContext } from "@/context/SearchContext";
 
@@ -15,6 +16,7 @@ export default function AudioContentPage() {
     const [totalPages, setTotalPages] = useState(1);
     const [playingId, setPlayingId] = useState(null);
     const [audioElement, setAudioElement] = useState(null);
+    const [isPaused, setIsPaused] = useState(false);
     const [expandedRows, setExpandedRows] = useState({});
 
     useEffect(() => {
@@ -62,9 +64,11 @@ export default function AudioContentPage() {
         if (playingId === id) {
             if (audioElement) {
                 if (audioElement.paused) {
-                    audioElement.play();
+                    audioElement.play().catch(console.error);
+                    setIsPaused(false);
                 } else {
                     audioElement.pause();
+                    setIsPaused(true);
                 }
             }
             return;
@@ -77,13 +81,26 @@ export default function AudioContentPage() {
         if (!url) return;
 
         const newAudio = new Audio(url);
-        newAudio.play();
+        newAudio.play().catch((err) => {
+            console.error("Playback error:", err);
+            setPlayingId(null);
+            setAudioElement(null);
+            setIsPaused(false);
+        });
         setAudioElement(newAudio);
         setPlayingId(id);
+        setIsPaused(false);
 
         newAudio.onended = () => {
             setPlayingId(null);
             setAudioElement(null);
+            setIsPaused(false);
+        };
+
+        newAudio.onerror = () => {
+            setPlayingId(null);
+            setAudioElement(null);
+            setIsPaused(false);
         };
     };
 
@@ -94,7 +111,7 @@ export default function AudioContentPage() {
         }));
     };
 
-    const isItemPlaying = (id) => playingId === id && audioElement && !audioElement.paused;
+    const isItemPlaying = (id) => playingId === id && !isPaused;
 
     const renderAudioButton = (id, url) => {
         const isPlaying = isItemPlaying(id);
@@ -129,13 +146,28 @@ export default function AudioContentPage() {
                 description="Danh sách các kịch bản và tệp âm thanh đính kèm từng Địa điểm (POI)."
                 icon={<Headphones size={24} />}
                 actionButton={
-                    <button 
-                        onClick={fetchContents} 
-                        className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-xl font-bold transition-all shadow-sm active:scale-95 text-xs"
-                    >
-                        <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> 
-                        <span>Tải lại</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <HelpGuide
+                            title="Hướng dẫn Quản lý Âm thanh & Bản dịch"
+                            steps={[
+                                "<strong>Bản ghi gốc (Master)</strong>: Mỗi POI có một nội dung thuyết minh gốc (tiếng Việt vi-VN) kèm tệp âm thanh tương ứng.",
+                                "<strong>Nghe thử âm thanh</strong>: Nhấp vào nút 'Nghe thử' tại bất kỳ dòng nào để kiểm tra chất lượng giọng đọc AI.",
+                                "<strong>Xem các bản dịch</strong>: Bấm nút '{N} Bản dịch' để mở rộng xem các thứ tiếng khác (en-US, ja-JP, zh-CN, ko-KR, fr-FR...).",
+                                "<strong>Đồng bộ tự động</strong>: Khi POI được tạo hoặc cập nhật, hệ thống AI sẽ tự động sinh văn bản dịch và tổng hợp âm thanh đa ngôn ngữ."
+                            ]}
+                            tips={[
+                                "Nếu một bản dịch hiển thị 'Chưa có File', có thể pipeline AI đang tạo âm thanh ngầm hoặc tệp âm thanh đang chờ xử lý.",
+                                "Bấm nút 'Tải lại' để cập nhật danh sách các tệp âm thanh vừa được tạo mới."
+                            ]}
+                        />
+                        <button 
+                            onClick={fetchContents} 
+                            className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-xl font-bold transition-all shadow-sm active:scale-95 text-xs cursor-pointer"
+                        >
+                            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> 
+                            <span>Tải lại</span>
+                        </button>
+                    </div>
                 }
             />
 

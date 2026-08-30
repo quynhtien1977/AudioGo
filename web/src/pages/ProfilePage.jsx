@@ -6,6 +6,7 @@ import toast from "react-hot-toast"
 
 import ConfirmModal from "@/components/ConfirmModal"
 import EmptyState from "@/components/EmptyState"
+import HelpGuide from "@/components/HelpGuide"
 import { getUserByIdApi, updateMyProfileApi } from "@/api/accountApi"
 import { changePasswordApi } from "@/api/authApi"
 import { isValidEmailFormat, isValidPhone, isEmailDomainValid } from "@/utils/validators"
@@ -218,13 +219,27 @@ const ProfilePage = () => {
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-4xl font-bold text-gray-800">THÔNG TIN CÁ NHÂN</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-4xl font-bold text-gray-800">THÔNG TIN CÁ NHÂN</h1>
+            <HelpGuide
+              title="Hướng dẫn Hồ sơ & Cài đặt Tài khoản"
+              steps={[
+                "<strong>Cập nhật hồ sơ</strong>: Bạn có thể chỉnh sửa Họ và tên, Email, Số điện thoại liên hệ bất kỳ lúc nào.",
+                "<strong>Đổi mật khẩu</strong>: Để bảo mật tài khoản, nên thay đổi mật khẩu định kỳ với tối thiểu 6 ký tự gồm chữ hoa, chữ thường và số.",
+                "<strong>Lịch sử giao dịch (Dành cho Đối tác/Owner)</strong>: Xem lại danh sách các lần nâng cấp hoặc gia hạn gói cước dịch vụ và trạng thái thanh toán."
+              ]}
+              tips={[
+                "Email và số điện thoại cần chính xác để nhận các thông báo duyệt địa điểm hoặc biên lai thanh toán.",
+                "Nếu vừa đổi mật khẩu, bạn vẫn có thể tiếp tục sử dụng phiên làm việc hiện tại mà không bị gián đoạn."
+              ]}
+            />
+          </div>
           <p className="text-gray-500 text-sm mt-2">Quản lý hồ sơ và cài đặt tài khoản của bạn</p>
         </div>
 
         <button
           onClick={() => navigate(-1)}
-          className="px-6 py-3 rounded-2xl font-bold text-gray-400 hover:bg-white transition-all flex items-center gap-2 uppercase text-[10px] tracking-widest"
+          className="px-6 py-3 rounded-2xl font-bold text-gray-400 hover:bg-white transition-all flex items-center gap-2 uppercase text-[10px] tracking-widest cursor-pointer"
         >
           <CornerDownLeft size={16} /> Quay lại
         </button>

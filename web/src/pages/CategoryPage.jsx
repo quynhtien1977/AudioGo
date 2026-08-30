@@ -3,6 +3,8 @@ import { Edit3, Trash2, ChevronLeft, ChevronRight, Layers } from "lucide-react"
 import PageLoader from "@/components/PageLoader"
 import toast from "react-hot-toast"
 import PageHeader from "@/components/PageHeader"
+import HelpGuide from "@/components/HelpGuide"
+import { SimpleTooltip } from "@/components/ui/tooltip"
 
 import {
   getCategoriesApi,
@@ -113,12 +115,26 @@ export default function CategoryPage() {
         description="Tổ chức và quản lý danh mục POI"
         icon={<Layers size={24} />}
         actionButton={
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 active:scale-95 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-pink-100 hover:shadow-lg transition-all text-sm animate-fadeIn"
-          >
-            + Thêm danh mục mới
-          </button>
+          <div className="flex items-center gap-2">
+            <HelpGuide
+              title="Hướng dẫn Quản lý Danh mục"
+              steps={[
+                "<strong>Tạo danh mục</strong>: Nhấp '+ Thêm danh mục mới', nhập tên danh mục tiếng Việt (hệ thống sẽ tự dịch sang các ngôn ngữ khác trong app).",
+                "<strong>Liên kết POI</strong>: Danh mục giúp phân loại các địa điểm (Ẩm thực, Di tích, Cà phê...) để du khách lọc trên ứng dụng.",
+                "<strong>Chỉnh sửa & Xóa</strong>: Có thể sửa tên danh mục hoặc xóa nếu danh mục đó không còn địa điểm nào liên kết."
+              ]}
+              tips={[
+                "Tên danh mục nên ngắn gọn, dễ hiểu và bao quát nhóm địa điểm.",
+                "Mỗi địa điểm (POI) có thể chọn tối đa 2 danh mục phù hợp."
+              ]}
+            />
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 active:scale-95 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-pink-100 hover:shadow-lg transition-all text-sm animate-fadeIn cursor-pointer"
+            >
+              + Thêm danh mục mới
+            </button>
+          </div>
         }
       />
 
@@ -159,21 +175,25 @@ export default function CategoryPage() {
 
                 {/* ACTIONS */}
                 <div className="flex justify-end gap-2">
-                  <button
-                    onClick={() => setEditingCategory(c)}
-                    className="p-2 rounded-xl text-gray-400 hover:text-pink-500 hover:bg-pink-50 transition-colors"
-                    title="Chỉnh sửa"
-                  >
-                    <Edit3 size={16} />
-                  </button>
+                  <SimpleTooltip content="Chỉnh sửa danh mục">
+                    <button
+                      onClick={() => setEditingCategory(c)}
+                      className="p-2 rounded-xl text-gray-400 hover:text-pink-500 hover:bg-pink-50 transition-colors cursor-pointer"
+                      title="Chỉnh sửa"
+                    >
+                      <Edit3 size={16} />
+                    </button>
+                  </SimpleTooltip>
 
-                  <button
-                    onClick={() => openDeleteConfirm(c.categoryId)}
-                    className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                    title="Xóa danh mục"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <SimpleTooltip content="Xóa danh mục này">
+                    <button
+                      onClick={() => openDeleteConfirm(c.categoryId)}
+                      className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                      title="Xóa danh mục"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </SimpleTooltip>
                 </div>
               </div>
             ))}
@@ -188,7 +208,8 @@ export default function CategoryPage() {
                 <button
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage((p) => p - 1)}
-                  className={`p-2 rounded-full ${currentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
+                  className={`p-2 rounded-full ${currentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition cursor-pointer"}`}
+                  title="Trang trước"
                 >
                   <ChevronLeft size={16} />
                 </button>
@@ -207,7 +228,8 @@ export default function CategoryPage() {
                       <button
                         key={p}
                         onClick={() => setCurrentPage(p)}
-                        className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${currentPage === p ? "bg-pink-500 text-white shadow-sm" : "hover:bg-pink-50 hover:text-pink-600"}`}
+                        className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors cursor-pointer ${currentPage === p ? "bg-pink-500 text-white shadow-sm" : "hover:bg-pink-50 hover:text-pink-600"}`}
+                        title={`Trang ${p}`}
                       >
                         {p}
                       </button>
@@ -217,7 +239,8 @@ export default function CategoryPage() {
                 <button
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage((p) => p + 1)}
-                  className={`p-2 rounded-full ${currentPage === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
+                  className={`p-2 rounded-full ${currentPage === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition cursor-pointer"}`}
+                  title="Trang tiếp theo"
                 >
                   <ChevronRight size={16} />
                 </button>

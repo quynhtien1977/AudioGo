@@ -409,7 +409,9 @@ export default function Topbar({ onToggleMobileSidebar }) {
                   setSearchResults([]);
                   setShowResults(false);
                 }}
-                className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600 cursor-pointer"
+                title="Xóa từ khóa tìm kiếm"
+                aria-label="Xóa từ khóa tìm kiếm"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -455,7 +457,8 @@ export default function Topbar({ onToggleMobileSidebar }) {
           {/* Logout */}
           <button
             onClick={() => { logout(); navigate("/login"); }}
-            className="px-3 py-1 rounded-full text-sm bg-gray-200 hover:bg-pink-500 hover:text-white transition duration-200"
+            className="px-3 py-1 rounded-full text-sm bg-gray-200 hover:bg-pink-500 hover:text-white transition duration-200 cursor-pointer"
+            title="Đăng xuất khỏi hệ thống"
           >
             Đăng xuất
           </button>
@@ -500,8 +503,9 @@ export default function Topbar({ onToggleMobileSidebar }) {
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <button
             onClick={onToggleMobileSidebar}
-            className="p-2 rounded-xl text-gray-600 hover:text-pink-500 hover:bg-pink-50 transition-colors flex-shrink-0"
+            className="p-2 rounded-xl text-gray-600 hover:text-pink-500 hover:bg-pink-50 transition-colors flex-shrink-0 cursor-pointer"
             aria-label="Mở menu"
+            title="Mở thanh điều hướng"
           >
             <Menu size={20} />
           </button>
@@ -529,7 +533,9 @@ export default function Topbar({ onToggleMobileSidebar }) {
                     setSearchResults([]);
                     setShowResults(false);
                   }}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                  title="Xóa từ khóa tìm kiếm"
+                  aria-label="Xóa từ khóa tìm kiếm"
                 >
                   <X className="w-4 h-4" />
                 </button>

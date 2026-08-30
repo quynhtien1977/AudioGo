@@ -105,7 +105,13 @@ export default function CreateAccountModal({ onClose, onCreated, prefill = null 
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white w-full max-w-[500px] rounded-[2.5rem] shadow-2xl p-10 relative">
 
-        <button onClick={onClose} className="absolute top-6 right-8 text-[#D1B9C5] hover:text-[#8E707E]">✕</button>
+        <button
+          onClick={onClose}
+          className="absolute top-6 right-8 text-[#D1B9C5] hover:text-[#8E707E] p-1 rounded-lg transition-colors cursor-pointer"
+          title="Đóng cửa sổ"
+        >
+          ✕
+        </button>
 
         <div className="space-y-5">
 

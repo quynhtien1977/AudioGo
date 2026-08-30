@@ -27,7 +27,9 @@ import CreateAccountModal from "@/components/CreateAccountModal"
 import ConfirmModal from "@/components/ConfirmModal"
 import EmptyState from "@/components/EmptyState"
 import PageHeader from "@/components/PageHeader"
+import HelpGuide from "@/components/HelpGuide"
 import StatsCard from "@/components/StatsCard"
+import { SimpleTooltip } from "@/components/ui/tooltip"
 import { SearchContext } from "@/context/SearchContext"
 
 const roleStyle = (role) => {
@@ -315,12 +317,27 @@ export default function AccountsPage() {
         description="Quản lý danh sách người dùng"
         icon={<Users size={24} />}
         actionButton={
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 active:scale-95 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-pink-100 hover:shadow-lg transition-all text-sm animate-fadeIn"
-          >
-            + Tạo tài khoản
-          </button>
+          <div className="flex items-center gap-2">
+            <HelpGuide
+              title="Hướng dẫn Quản lý Tài khoản"
+              steps={[
+                "<strong>Tạo tài khoản mới</strong>: Nhấp '+ Tạo tài khoản' để cấp quyền cho Quản trị viên (Admin), Biên tập viên (Editor) hoặc Đối tác (Owner).",
+                "<strong>Phân quyền vai trò (Role)</strong>: Admin có toàn quyền hệ thống; Editor phụ trách bài viết & cẩm nang; Owner quản lý POIs và tour của địa điểm.",
+                "<strong>Khóa / Mở khóa tài khoản</strong>: Nhấp vào nút ổ khóa để tạm ngưng hoặc mở lại quyền truy cập của tài khoản vi phạm hoặc cần bảo trì.",
+                "<strong>Xóa tài khoản</strong>: Chỉ áp dụng khi tài khoản không còn hoạt động, hành động này sẽ xóa dữ liệu người dùng khỏi hệ thống."
+              ]}
+              tips={[
+                "Khi tạo tài khoản Owner, hệ thống tự động gán gói cước và kích hoạt quyền quản lý POI theo thời hạn hợp đồng.",
+                "Admin không thể tự khóa chính tài khoản của mình để tránh mất quyền quản trị."
+              ]}
+            />
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 active:scale-95 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-pink-100 hover:shadow-lg transition-all text-sm animate-fadeIn cursor-pointer"
+            >
+              + Tạo tài khoản
+            </button>
+          </div>
         }
       />
 
@@ -450,26 +467,31 @@ export default function AccountsPage() {
                     <span className="text-gray-300">—</span>
                   ) : (
                     <>
-                      <button
-                        onClick={() =>
-                          handleToggleLock(user.accountId, user.isLocked)
-                        }
-                        title={user.isLocked ? "Mở khóa tài khoản" : "Khóa tài khoản"}
-                        className="p-2 rounded-xl text-gray-400 hover:text-pink-500 hover:bg-pink-50 transition-colors"
-                      >
-                        {user.isLocked ? (
-                          <Lock size={16} />
-                        ) : (
-                          <Unlock size={16} />
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(user.accountId)}
-                        title="Xóa tài khoản"
-                        className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      <SimpleTooltip content={user.isLocked ? "Mở khóa tài khoản này" : "Khóa tài khoản này"}>
+                        <button
+                          onClick={() =>
+                            handleToggleLock(user.accountId, user.isLocked)
+                          }
+                          title={user.isLocked ? "Mở khóa tài khoản" : "Khóa tài khoản"}
+                          className="p-2 rounded-xl text-gray-400 hover:text-pink-500 hover:bg-pink-50 transition-colors cursor-pointer"
+                        >
+                          {user.isLocked ? (
+                            <Lock size={16} />
+                          ) : (
+                            <Unlock size={16} />
+                          )}
+                        </button>
+                      </SimpleTooltip>
+
+                      <SimpleTooltip content="Xóa tài khoản này">
+                        <button
+                          onClick={() => handleDeleteClick(user.accountId)}
+                          title="Xóa tài khoản"
+                          className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </SimpleTooltip>
                     </>
                   )}
                 </div>

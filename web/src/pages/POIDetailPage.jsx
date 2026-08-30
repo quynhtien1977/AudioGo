@@ -306,7 +306,8 @@ const POIDetailPage = () => {
           {role === "Owner" && !isEditing && !isRequest && (
             <button
               onClick={() => setIsEditing(true)}
-              className="flex items-center gap-2 border px-3 sm:px-4 py-2 rounded-lg text-pink-600 border-pink-600 text-sm font-semibold hover:bg-pink-50 transition"
+              className="flex items-center gap-2 border px-3 sm:px-4 py-2 rounded-lg text-pink-600 border-pink-600 text-sm font-semibold hover:bg-pink-50 transition cursor-pointer"
+              title="Chỉnh sửa thông tin POI này"
             >
               <PencilLine size={16}/> Cập nhật
             </button>
@@ -317,7 +318,8 @@ const POIDetailPage = () => {
               <button
                 onClick={() => setShowConfirm(true)}
                 disabled={isSubmitting}
-                className="px-4 py-2 bg-pink-500 text-white rounded-lg disabled:opacity-60 flex items-center gap-2 text-sm font-semibold hover:bg-pink-600 transition"
+                className="px-4 py-2 bg-pink-500 text-white rounded-lg disabled:opacity-60 flex items-center gap-2 text-sm font-semibold hover:bg-pink-600 transition cursor-pointer"
+                title="Lưu các thay đổi của POI"
               >
                 {isSubmitting ? <span className="animate-spin">&#9696;</span> : null}
                 {isSubmitting ? "Đang gửi..." : "Lưu"}
@@ -325,7 +327,8 @@ const POIDetailPage = () => {
 
               <button
                 onClick={() => setIsEditing(false)}
-                className="px-4 py-2 border rounded-lg text-sm font-semibold hover:bg-gray-50 transition"
+                className="px-4 py-2 border rounded-lg text-sm font-semibold hover:bg-gray-50 transition cursor-pointer"
+                title="Hủy bỏ các thay đổi"
               >
                 Hủy
               </button>
@@ -334,7 +337,8 @@ const POIDetailPage = () => {
 
           <button
             onClick={() => window.history.back()}
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 text-pink-600 text-sm font-semibold hover:bg-pink-50 rounded-lg transition"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 text-pink-600 text-sm font-semibold hover:bg-pink-50 rounded-lg transition cursor-pointer"
+            title="Quay lại trang trước"
           >
             <CornerDownLeft size={16}/> Quay lại
           </button>

@@ -133,14 +133,16 @@ export default function POIDeletionListPage() {
           <>
             <button
               onClick={() => handleApprove(poi.id)}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition font-semibold text-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition font-semibold text-sm cursor-pointer"
+              title="Phê duyệt xóa POI vĩnh viễn"
             >
               <Trash2 size={16} />
-              Xóa
+             Xóa
             </button>
             <button
               onClick={() => handleReject(poi.id)}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition font-semibold text-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition font-semibold text-sm cursor-pointer"
+              title="Từ chối yêu cầu xóa POI"
             >
               <XCircle size={16} />
               Từ chối

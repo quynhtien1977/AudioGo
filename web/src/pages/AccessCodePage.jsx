@@ -18,7 +18,9 @@ import { accessCodeApi } from "@/api/accessCodeApi";
 import ConfirmModal from "@/components/ConfirmModal";
 import EmptyState from "@/components/EmptyState";
 import PageHeader from "@/components/PageHeader";
+import HelpGuide from "@/components/HelpGuide";
 import PageLoader from "@/components/PageLoader";
+import { SimpleTooltip } from "@/components/ui/tooltip";
 
 export default function AccessCodePage() {
     const [codes, setCodes] = useState([]);
@@ -124,6 +126,21 @@ export default function AccessCodePage() {
                 title="QUẢN LÝ MÃ TRUY CẬP"
                 description="Khách du lịch chỉ cần quét mã tĩnh để nhận vé (Token 7 ngày) truy cập tất cả tính năng."
                 icon={<QrCode size={24} />}
+                actionButton={
+                    <HelpGuide
+                        title="Hướng dẫn Quản lý Mã Truy Cập"
+                        steps={[
+                            "<strong>Tạo mã hàng loạt</strong>: Nhập số lượng mã cần cấp (1 - 100 vé) ở khung bên trái và bấm 'TẠO MÃ MỚI'.",
+                            "<strong>Quét QR kích hoạt</strong>: Khách du lịch dùng ứng dụng AudioGo trên điện thoại quét mã QR hoặc nhập chuỗi ký tự để kích hoạt vé.",
+                            "<strong>Thời hạn sử dụng</strong>: Sau khi kích hoạt lần đầu, khách được cấp quyền truy cập trọn gói tất cả các địa điểm và thuyết minh âm thanh trong 7 ngày.",
+                            "<strong>In ấn & Phân phối</strong>: Bấm 'Tải mã QR' để tải ảnh QR về in lên brochure, thẻ card hoặc vé giấy trao cho du khách."
+                        ]}
+                        tips={[
+                            "Mỗi mã vé chỉ có thể kích hoạt trên 1 thiết bị du khách.",
+                            "Bạn có thể xem trước và tải QR độ phân giải cao của bất kỳ mã nào trong danh sách."
+                        ]}
+                    />
+                }
             />
 
             {/* Content box */}
@@ -187,9 +204,11 @@ export default function AccessCodePage() {
                         <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                             <QrCode className="w-5 h-5 text-gray-500" /> Danh sách Vé
                         </h2>
-                        <button onClick={fetchCodes} className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition">
-                            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                        </button>
+                        <SimpleTooltip content="Tải lại danh sách mã vé">
+                            <button onClick={fetchCodes} className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition cursor-pointer">
+                                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                            </button>
+                        </SimpleTooltip>
                     </div>
 
                     {loading && codes.length === 0 ? (
@@ -271,20 +290,24 @@ export default function AccessCodePage() {
 
                                                 {/* ACTION */}
                                                 <div className="flex justify-end items-center gap-2">
-                                                    <button 
-                                                        onClick={() => handleShowQr(c.code)}
-                                                        className="text-xs font-semibold bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-pink-50 hover:text-pink-500 transition-colors whitespace-nowrap"
-                                                    >
-                                                        Xem QR
-                                                    </button>
+                                                    <SimpleTooltip content="Xem chi tiết mã QR và tải về / in vé">
+                                                        <button 
+                                                            onClick={() => handleShowQr(c.code)}
+                                                            className="text-xs font-semibold bg-gray-100 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-pink-50 hover:text-pink-500 transition-colors whitespace-nowrap cursor-pointer"
+                                                        >
+                                                            Xem QR
+                                                        </button>
+                                                    </SimpleTooltip>
                                                     
-                                                    <button 
-                                                        onClick={() => checkDelete(c.codeId)}
-                                                        className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors flex-shrink-0"
-                                                        title="Xóa mã"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
+                                                    <SimpleTooltip content="Xóa mã truy cập này">
+                                                        <button 
+                                                            onClick={() => checkDelete(c.codeId)}
+                                                            className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors flex-shrink-0 cursor-pointer"
+                                                            title="Xóa mã"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </SimpleTooltip>
                                                 </div>
                                             </div>
                                         );

@@ -5,9 +5,11 @@ import ConfirmModal from "@/components/ConfirmModal"
 import EmptyState from "@/components/EmptyState"
 import StatsCard from "@/components/StatsCard"
 import PageHeader from "@/components/PageHeader"
+import HelpGuide from "@/components/HelpGuide"
 import { SearchContext } from "@/context/SearchContext"
 import PageLoader from "@/components/PageLoader"
 import { formatDateVN } from "@/utils/formatDate"
+import { SimpleTooltip } from "@/components/ui/tooltip"
 import {
   Newspaper,
   Compass,
@@ -128,19 +130,34 @@ export default function ArticlesPage() {
       {/* HEADER SECTION */}
       <PageHeader
         title="QUẢN LÝ BÀI VIẾT"
-        description="Đăng tải, sắp xếp và phân loại tin tức & mẹo du lịch cho du khách ứng dụng AudioGo."
+        description="Đăng tải và chỉnh sửa các bài cẩm nang du lịch và tin tức mới nhất."
         icon={<Newspaper size={24} />}
         actionButton={
-          <button
-            onClick={() => {
-              setSelectedArticleId(null)
-              setIsModalOpen(true)
-            }}
-            className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 active:scale-95 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-pink-100 hover:shadow-lg transition-all text-sm self-start md:self-auto"
-          >
-            <Plus size={18} />
-            Tạo bài viết mới
-          </button>
+          <div className="flex items-center gap-2">
+            <HelpGuide
+              title="Hướng dẫn Quản lý Bài viết & Tin tức"
+              steps={[
+                "<strong>Tạo bài viết mới</strong>: Bấm 'Tạo bài viết mới', nhập tiêu đề, chọn thể loại (Mẹo du lịch hoặc Tin tức), tải ảnh bìa và soạn thảo nội dung.",
+                "<strong>Phân loại thể loại</strong>: 'Mẹo du lịch' dành cho các cẩm nang, bí kíp khám phá; 'Tin tức' dành cho sự kiện, thông báo nóng hổi.",
+                "<strong>Trạng thái hiển thị</strong>: Bạn có thể bật/tắt công tắc trên từng bài viết để chọn hiển thị lên ứng dụng mobile hoặc lưu nháp.",
+                "<strong>Chỉnh sửa & Xóa</strong>: Sử dụng các nút hành động ở cột bên phải để sửa nội dung hoặc gỡ bỏ bài viết không còn phù hợp."
+              ]}
+              tips={[
+                "Ảnh bìa bài viết nên dùng tỉ lệ 16:9 với độ phân giải tốt để hiển thị bắt mắt trên ứng dụng du khách.",
+                "Nội dung nên có định dạng đoạn văn rõ ràng, có tiêu đề phụ để du khách dễ theo dõi."
+              ]}
+            />
+            <button
+              onClick={() => {
+                setSelectedArticleId(null)
+                setIsModalOpen(true)
+              }}
+              className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 active:scale-95 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-pink-100 hover:shadow-lg transition-all text-sm self-start md:self-auto cursor-pointer"
+            >
+              <Plus size={18} />
+              Tạo bài viết mới
+            </button>
+          </div>
         }
       />
 
@@ -312,48 +329,55 @@ export default function ArticlesPage() {
 
                     {/* ACTIVE TOGGLE */}
                     <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => handleToggleActive(article)}
-                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
-                          article.isActive
-                            ? "bg-pink-500/10 text-pink-600 border-pink-200"
-                            : "bg-gray-100 text-gray-400 border-gray-200"
-                        }`}
-                      >
-                        {article.isActive ? (
-                          <>
-                            <Eye size={12} />
-                            Đang Hiện
-                          </>
-                        ) : (
-                          <>
-                            <EyeOff size={12} />
-                            Đang Ẩn
-                          </>
-                        )}
-                      </button>
+                      <SimpleTooltip content={article.isActive ? "Bấm để ẩn bài viết trên mobile" : "Bấm để hiển thị bài viết trên mobile"}>
+                        <button
+                          onClick={() => handleToggleActive(article)}
+                          className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all border cursor-pointer ${
+                            article.isActive
+                              ? "bg-pink-500/10 text-pink-600 border-pink-200"
+                              : "bg-gray-100 text-gray-400 border-gray-200"
+                          }`}
+                        >
+                          {article.isActive ? (
+                            <>
+                              <Eye size={12} />
+                              Đang Hiện
+                            </>
+                          ) : (
+                            <>
+                              <EyeOff size={12} />
+                              Đang Ẩn
+                            </>
+                          )}
+                        </button>
+                      </SimpleTooltip>
                     </td>
 
                     {/* ACTIONS */}
                     <td className="px-6 py-4 pr-6 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => {
-                            setSelectedArticleId(article.articleId)
-                            setIsModalOpen(true)
-                          }}
-                          className="p-2 rounded-xl text-gray-400 hover:text-pink-600 hover:bg-pink-50 transition-colors"
-                          title="Chỉnh sửa"
-                        >
-                          <Edit size={16} />
-                        </button>
-                        <button
-                          onClick={() => setConfirmDeleteId(article.articleId)}
-                          className="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                          title="Xóa bài viết"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        <SimpleTooltip content="Chỉnh sửa nội dung & bản dịch">
+                          <button
+                            onClick={() => {
+                              setSelectedArticleId(article.articleId)
+                              setIsModalOpen(true)
+                            }}
+                            className="p-2 rounded-xl text-gray-400 hover:text-pink-600 hover:bg-pink-50 transition-colors cursor-pointer"
+                            title="Chỉnh sửa"
+                          >
+                            <Edit size={16} />
+                          </button>
+                        </SimpleTooltip>
+
+                        <SimpleTooltip content="Xóa bài viết này">
+                          <button
+                            onClick={() => setConfirmDeleteId(article.articleId)}
+                            className="p-2 rounded-xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                            title="Xóa bài viết"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </SimpleTooltip>
                       </div>
                     </td>
                   </tr>

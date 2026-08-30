@@ -7,6 +7,7 @@ import {
 import toast from "react-hot-toast";
 import { useSubscription } from "@/context/SubscriptionContext";
 import api from "@/api/apiClient";
+import HelpGuide from "@/components/HelpGuide";
 
 // Thời gian poll mỗi lần (ms)
 const POLL_INTERVAL_MS = 5_000;
@@ -249,7 +250,22 @@ export default function SubscriptionCheckoutPage() {
           {/* Gói thông tin */}
           <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-6 space-y-6">
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold mb-2">Xác nhận gói nâng cấp</h2>
+              <div className="flex items-center gap-2 mb-2">
+                <h2 className="text-xl sm:text-2xl font-bold">Xác nhận gói nâng cấp</h2>
+                <HelpGuide
+                  title="Hướng dẫn Thanh toán & Nâng cấp Gói VIP"
+                  steps={[
+                    "<strong>Kiểm tra thông tin gói</strong>: Xem lại tên gói, thời hạn sử dụng, hạn mức POI tối đa và mức ưu tiên hiển thị.",
+                    "<strong>Quét VietQR SePay</strong>: Mở ứng dụng ngân hàng và quét mã VietQR tự động. Hệ thống sẽ điền sẵn số tiền và cú pháp chuyển khoản.",
+                    "<strong>Xác nhận tự động</strong>: Khi chuyển khoản thành công, hệ thống SePay Webhook sẽ tự động kích hoạt gói VIP cho tài khoản của bạn ngay lập tức.",
+                    "<strong>Thời gian giữ mã QR</strong>: Mỗi mã QR thanh toán có hiệu lực trong vòng 10 phút. Nếu hết giờ, bạn có thể bấm 'Tạo mã mới'."
+                  ]}
+                  tips={[
+                    "Vui lòng không chỉnh sửa số tiền hoặc nội dung chuyển khoản để hệ thống tự động nhận diện giao dịch.",
+                    "Nếu hạ gói cước thấp hơn, bạn có 3 ngày ân hạn để sắp xếp các POI của mình trước khi hệ thống ẩn bớt."
+                  ]}
+                />
+              </div>
               <p className="text-sm text-gray-500">
                 Thanh toán qua SePay (VietQR). Hệ thống đang bật chế độ test amount.
               </p>

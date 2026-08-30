@@ -146,7 +146,8 @@ export default function Sidebar({ onShowPlans, mobileOpen = false, onCloseMobile
               if (onCloseMobile) onCloseMobile();
               if (onShowPlans) onShowPlans();
             }}
-            className="w-full flex items-center gap-3 rounded-lg p-3 bg-pink-50 text-pink-600 hover:bg-pink-100 transition-all font-medium"
+            className="w-full flex items-center gap-3 rounded-lg p-3 bg-pink-50 text-pink-600 hover:bg-pink-100 transition-all font-medium cursor-pointer"
+            title="Khám phá các gói tài khoản VIP"
           >
             <Sparkles size={18} />
             <span>Xem gói nâng cấp</span>
@@ -235,7 +236,8 @@ export default function Sidebar({ onShowPlans, mobileOpen = false, onCloseMobile
             </h1>
             <button
               onClick={onCloseMobile}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+              title="Đóng menu điều hướng"
               aria-label="Đóng menu"
             >
               <X size={20} />

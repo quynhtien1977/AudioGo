@@ -5,6 +5,7 @@ import * as subscriptionApi from '../api/subscriptionApi'
 import { formatDateVN } from '../utils/formatDate'
 import toast from 'react-hot-toast'
 import PageHeader from "@/components/PageHeader"
+import HelpGuide from "@/components/HelpGuide"
 import StatsCard from "@/components/StatsCard"
 import EmptyState from "@/components/EmptyState"
 import { SearchContext } from '../context/SearchContext'
@@ -189,6 +190,21 @@ export const AdminTransactionDashboard = () => {
         title="QUẢN LÝ GIAO DỊCH"
         description="Theo dõi và quản lý tất cả các giao dịch thanh toán trong hệ thống."
         icon={<DollarSign size={24} />}
+        actionButton={
+          <HelpGuide
+            title="Hướng dẫn Quản lý Giao dịch"
+            steps={[
+              "<strong>Theo dõi trạng thái</strong>: Giao dịch có 3 trạng thái: Thành công (Success), Đang xử lý (Pending), và Thất bại (Failed).",
+              "<strong>Xem chi tiết giao dịch</strong>: Bấm 'Xem chi tiết' tại từng dòng để tra cứu mã tham chiếu cổng thanh toán (PayOS, VNPAY), người nạp tiền và gói đăng ký tương ứng.",
+              "<strong>Lọc dữ liệu</strong>: Sử dụng các tab trạng thái để lọc nhanh danh sách hoặc dùng thanh tìm kiếm để tìm theo mã giao dịch.",
+              "<strong>Doanh thu thực thu</strong>: Thẻ doanh thu tổng hợp giá trị các đơn hàng thanh toán thành công để đối soát kế toán."
+            ]}
+            tips={[
+              "Bạn có thể sao chép nhanh Transaction ID để gửi đối soát với bên cổng thanh toán khi có khiếu nại.",
+              "Dữ liệu bảng hiển thị theo phân trang, doanh thu tổng hiển thị chính xác theo dữ liệu đã lọc."
+            ]}
+          />
+        }
       />
 
       {/* Stats — dùng globalStats từ server, không bị giới hạn bởi phân trang */}
@@ -326,7 +342,8 @@ export const AdminTransactionDashboard = () => {
                       <td className="px-6 py-4 text-right">
                         <button
                           onClick={() => handleViewDetail(tx)}
-                          className="px-3 py-1.5 rounded-lg text-pink-600 bg-pink-50 hover:bg-pink-100 text-xs font-bold transition-all"
+                          className="px-3 py-1.5 rounded-lg text-pink-600 bg-pink-50 hover:bg-pink-100 text-xs font-bold transition-all cursor-pointer"
+                          title="Xem chi tiết giao dịch này"
                         >
                           Xem chi tiết
                         </button>
@@ -369,14 +386,16 @@ export const AdminTransactionDashboard = () => {
           <button
             onClick={() => setPage(Math.max(1, page - 1))}
             disabled={page === 1}
-            className="px-4 py-2 border border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-pink-50 hover:text-pink-600 text-xs disabled:opacity-50 disabled:pointer-events-none transition-colors"
+            title="Trang trước"
+            className="px-4 py-2 border border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-pink-50 hover:text-pink-600 text-xs disabled:opacity-50 disabled:pointer-events-none transition-colors cursor-pointer"
           >
             Trước
           </button>
           <button
             onClick={() => setPage(page + 1)}
             disabled={page >= (pagination.totalPages || 1)}
-            className="px-4 py-2 border border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-pink-50 hover:text-pink-600 text-xs disabled:opacity-50 disabled:pointer-events-none transition-colors"
+            title="Trang tiếp theo"
+            className="px-4 py-2 border border-gray-200 text-gray-600 font-bold rounded-xl hover:bg-pink-50 hover:text-pink-600 text-xs disabled:opacity-50 disabled:pointer-events-none transition-colors cursor-pointer"
           >
             Sau
           </button>
@@ -410,7 +429,8 @@ export const AdminTransactionDashboard = () => {
               </div>
               <button
                 onClick={() => setSelectedTx(null)}
-                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition"
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 flex items-center justify-center transition cursor-pointer"
+                title="Đóng cửa sổ"
               >
                 ✕
               </button>

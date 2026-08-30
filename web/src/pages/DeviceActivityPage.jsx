@@ -4,6 +4,7 @@ import { MapPin, Headphones, Clock, ArrowLeft, AlertCircle, Activity, Navigation
 import { getDeviceActivity } from '@/api/analyticsApi'
 import { getAllPOIs } from '@/api/poiApi'
 import PageHeader from "@/components/PageHeader"
+import HelpGuide from "@/components/HelpGuide"
 import StatsCard from "@/components/StatsCard"
 
 // ───────────────────────────── LEAFLET IMPORT ─────────────────────────────
@@ -104,6 +105,20 @@ export default function DeviceActivityPage() {
         title="TIMELINE HOẠT ĐỘNG THIẾT BỊ"
         description="Xem lịch sử di chuyển GPS và lịch sử nghe POI của từng thiết bị theo dòng thời gian."
         icon={<Navigation size={24} />}
+        actionButton={
+          <HelpGuide
+            title="Hướng dẫn Tra cứu Hoạt động Thiết bị"
+            steps={[
+              "<strong>Nhập Device ID</strong>: Dán mã định danh thiết bị của khách du lịch (có thể lấy từ trang 'Quản lý thiết bị').",
+              "<strong>Chọn mốc thời gian</strong>: Lựa chọn xem dữ liệu lịch sử trong 1, 3, 7 hoặc 30 ngày gần nhất.",
+              "<strong>Tra cứu hành trình</strong>: Hệ thống sẽ hiển thị lộ trình di chuyển GPS vẽ trên bản đồ cùng danh sách các POI mà du khách đã kích hoạt nghe thuyết minh tự động."
+            ]}
+            tips={[
+              "Mỗi điểm dừng trên bản đồ tương ứng với một lần thiết bị nhận diện tọa độ POI và phát audio.",
+              "Bấm phím Enter ngay trong ô Device ID để tra cứu nhanh."
+            ]}
+          />
+        }
       />
 
       {/* SEARCH CONTROLS */}

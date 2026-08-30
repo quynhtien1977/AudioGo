@@ -13,6 +13,7 @@ import { getHeatmap, getListenStats, getHeatmapByTime, getTopPOIs } from '@/api/
 import { getAllPOIs } from '@/api/poiApi'
 import PageLoader from "@/components/PageLoader"
 import PageHeader from "@/components/PageHeader"
+import HelpGuide from "@/components/HelpGuide"
 import StatsCard from "@/components/StatsCard"
 
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
@@ -209,15 +210,31 @@ export default function AnalyticsPage() {
         title="ANALYTICS & HEATMAP"
         description="Phân tích xu hướng người dùng và mật độ di chuyển trên bản đồ."
         icon={<BarChart3 size={24} />}
-        actions={
-          <button
-            onClick={exportCSV}
-            disabled={topPoisData.length === 0}
-            className="flex items-center gap-2 px-4 py-2 bg-pink-50 hover:bg-pink-100 text-pink-600 rounded-xl text-xs font-bold transition-all border border-pink-100 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <Download size={14} />
-            Xuất CSV
-          </button>
+        actionButton={
+          <div className="flex items-center gap-2">
+            <HelpGuide
+              title="Hướng dẫn Phân tích & Bản đồ nhiệt (Heatmap)"
+              steps={[
+                "<strong>Bản đồ nhiệt (Heatmap)</strong>: Thể hiện mật độ và cường độ tập trung của khách du lịch; vùng càng đỏ đậm thể hiện số lượt nghe và ghé thăm càng cao.",
+                "<strong>Lọc theo khung giờ</strong>: Chuyển sang chế độ xem theo khung giờ (Sáng, Trưa, Chiều, Tối) để phân tích thói quen di chuyển của du khách trong ngày.",
+                "<strong>Thống kê lượt nghe</strong>: Biểu đồ cột thể hiện biến động số lần phát audio theo các ngày gần nhất.",
+                "<strong>Top POI & Danh mục</strong>: Thống kê các địa điểm được nghe nhiều nhất và tỷ trọng các danh mục thu hút khách.",
+                "<strong>Xuất báo cáo CSV</strong>: Bấm nút 'Xuất CSV' để tải về dữ liệu phân tích chi tiết phục vụ báo cáo."
+              ]}
+              tips={[
+                "Phóng to/thu nhỏ bản đồ để xem chi tiết điểm tập trung du khách theo từng con phố hoặc khu vực tham quan.",
+                "Dữ liệu Heatmap được làm mới liên tục dựa trên các lượt quét GPS và phát âm thanh thực tế."
+              ]}
+            />
+            <button
+              onClick={exportCSV}
+              disabled={topPoisData.length === 0}
+              className="flex items-center gap-2 px-4 py-2 bg-pink-50 hover:bg-pink-100 text-pink-600 rounded-xl text-xs font-bold transition-all border border-pink-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <Download size={14} />
+              Xuất CSV
+            </button>
+          </div>
         }
       />
 

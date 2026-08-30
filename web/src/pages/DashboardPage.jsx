@@ -12,6 +12,7 @@ import TrendingChart from "@/components/TrendingChart"
 import TopPOIModal from "@/components/TopPOIModal"
 import PageHeader from "@/components/PageHeader"
 import PageLoader from "@/components/PageLoader"
+import HelpGuide from "@/components/HelpGuide"
 
 import { getTopPOIs, getListenStats } from "@/api/analyticsApi"
 import { getAllPOIs } from "@/api/poiApi"
@@ -210,6 +211,21 @@ export default function DashboardPage() {
         title="TỔNG QUAN"
         description="Chào mừng đến với hệ thống quản lý AudioGo!"
         icon={<LayoutDashboard size={24} />}
+        actionButton={
+          <HelpGuide
+            title="Hướng dẫn Tổng quan Hệ thống"
+            steps={[
+              "<strong>Chỉ số thống kê</strong>: Theo dõi nhanh số lượng POIs, tổng lượt nghe audio thuyết minh tích lũy, các đơn yêu cầu đang chờ phê duyệt.",
+              "<strong>Biểu đồ xu hướng</strong>: Xem biến động lượt nghe audio theo thời gian để nắm bắt thời điểm du khách hoạt động nhiều nhất.",
+              "<strong>POIs phổ biến</strong>: Bảng xếp hạng các địa điểm được du khách lắng nghe nhiều nhất trên hệ thống.",
+              "<strong>Cảnh báo vận hành</strong>: Nhận thông báo sớm về các đơn chờ quá 3 ngày, gói sắp hết hạn hoặc tài khoản bị khóa."
+            ]}
+            tips={[
+              "Dữ liệu biểu đồ và số liệu được tổng hợp tự động từ hệ thống ứng dụng du lịch AudioGo.",
+              "Nhấp vào các thẻ cảnh báo để điều hướng trực tiếp đến trang xử lý nghiệp vụ tương ứng."
+            ]}
+          />
+        }
       />
 
       {/* STATS CARDS */}

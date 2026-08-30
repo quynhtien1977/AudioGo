@@ -151,7 +151,8 @@ const POIAudioPlayer = ({ src, isEditing, onChange, uploadOnSelect = true, onPen
         ) : src ? (
           <button
             onClick={togglePlayPause}
-            className="w-14 h-14 rounded-2xl flex items-center justify-center bg-white shadow-md hover:scale-105 active:scale-95 transition"
+            className="w-14 h-14 rounded-2xl flex items-center justify-center bg-white shadow-md hover:scale-105 active:scale-95 transition cursor-pointer"
+            title={isPlaying ? "Tạm dừng âm thanh" : "Phát âm thanh"}
           >
             {isPlaying ? (
               <Pause className="w-6 h-6 text-pink-500" />
@@ -164,6 +165,7 @@ const POIAudioPlayer = ({ src, isEditing, onChange, uploadOnSelect = true, onPen
             onClick={() => isEditing && fileInputRef.current?.click()}
             className={`w-20 h-20 rounded-full flex items-center justify-center shadow-inner transition-all
               ${isEditing ? "cursor-pointer hover:scale-105 active:scale-95 bg-white" : "bg-pink-100"}`}
+            title={isEditing ? "Bấm để chọn file âm thanh từ thiết bị" : undefined}
           >
             <div className="w-16 h-16 rounded-full bg-pink-200/30 flex items-center justify-center border-4 border-white">
               <CloudUpload className="w-8 h-8 text-pink-300" />
@@ -212,7 +214,8 @@ const POIAudioPlayer = ({ src, isEditing, onChange, uploadOnSelect = true, onPen
           {isEditing && src && !isUploading && (
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-1 text-[10px] font-bold text-pink-400 hover:text-pink-600 transition-colors"
+              className="flex items-center gap-1 text-[10px] font-bold text-pink-400 hover:text-pink-600 transition-colors cursor-pointer"
+              title="Tải lên file âm thanh khác thay thế"
             >
               <CloudUpload className="w-3 h-3" /> Thay file khác
             </button>
@@ -223,7 +226,8 @@ const POIAudioPlayer = ({ src, isEditing, onChange, uploadOnSelect = true, onPen
         {isEditing && src && !isUploading && (
           <button
             onClick={() => setShowDeleteConfirm(true)}
-            className="ml-2 w-14 h-14 rounded-2xl flex items-center justify-center hover:bg-red-50 group transition shrink-0"
+            className="ml-2 w-14 h-14 rounded-2xl flex items-center justify-center hover:bg-red-50 group transition shrink-0 cursor-pointer"
+            title="Xóa file âm thanh này"
           >
             <Trash2 className="w-6 h-6 text-gray-400 group-hover:text-red-500" />
           </button>

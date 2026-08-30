@@ -398,7 +398,8 @@ export default function POIManagementListComponent({
                   <button
                     disabled={currentPage === 1}
                     onClick={() => goToPage(currentPage - 1)}
-                    className={`p-2 rounded-full ${currentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
+                    className={`p-2 rounded-full ${currentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition cursor-pointer"}`}
+                    title="Trang trước"
                   >
                     <ChevronLeft size={16} />
                   </button>
@@ -417,11 +418,12 @@ export default function POIManagementListComponent({
                         <button
                           key={p}
                           onClick={() => goToPage(p)}
-                          className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                          className={`min-w-[32px] h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors cursor-pointer ${
                             currentPage === p
                               ? "bg-pink-500 text-white shadow-sm"
                               : "hover:bg-pink-50 hover:text-pink-600"
                           }`}
+                          title={`Trang ${p}`}
                         >
                           {p}
                         </button>
@@ -431,7 +433,8 @@ export default function POIManagementListComponent({
                   <button
                     disabled={currentPage === totalPages}
                     onClick={() => goToPage(currentPage + 1)}
-                    className={`p-2 rounded-full ${currentPage === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition"}`}
+                    className={`p-2 rounded-full ${currentPage === totalPages ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-pink-500 hover:bg-pink-50 transition cursor-pointer"}`}
+                    title="Trang tiếp theo"
                   >
                     <ChevronRight size={16} />
                   </button>

@@ -30,6 +30,8 @@ import StatsCard from "@/components/StatsCard";
 import ConfirmModal from "@/components/ConfirmModal";
 import EmptyState from "@/components/EmptyState";
 import PageLoader from "@/components/PageLoader";
+import HelpGuide from "@/components/HelpGuide";
+import { SimpleTooltip } from "@/components/ui/tooltip";
 
 export const BANNER_LANGUAGES = [
   { code: "vi", label: "Tiếng Việt", short: "VI", flag: "https://flagcdn.com/w40/vn.png", isMaster: true },
@@ -333,13 +335,28 @@ export default function BannersPage() {
         description="Đăng tải và quản lý banner quảng cáo, sự kiện và khuyến mãi nổi bật trên Landing Page AudioGo."
         icon={<Megaphone size={24} />}
         actionButton={
-          <button
-            onClick={openCreate}
-            className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 active:scale-95 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-pink-100 hover:shadow-lg transition-all text-sm"
-          >
-            <Plus size={18} />
-            Tạo Banner Mới
-          </button>
+          <div className="flex items-center gap-2">
+            <HelpGuide
+              title="Hướng dẫn Quản lý Banners & Sự kiện"
+              steps={[
+                "<strong>Tạo Banner mới</strong>: Bấm 'Tạo Banner Mới', điền tiêu đề tiếng Việt và tải lên ảnh banner tỉ lệ 16:7.",
+                "<strong>Dịch thuật AI</strong>: Sử dụng nút 'Dịch tự động AI' để hệ thống dịch tiêu đề và phụ đề sang các ngôn ngữ khác.",
+                "<strong>Bật / Tắt hiển thị</strong>: Bạn có thể chuyển đổi nhanh trạng thái Đang Hiện / Đang Ẩn của banner trên thẻ danh sách.",
+                "<strong>Thứ tự sắp xếp</strong>: Banner có số thứ tự (sortOrder) nhỏ hơn sẽ hiển thị trước trên thanh quảng cáo Landing Page."
+              ]}
+              tips={[
+                "Nên sử dụng ảnh banner có độ phân giải tối thiểu 1200x525 px để đảm bảo chất lượng sắc nét trên mọi màn hình.",
+                "Có thể gắn link liên kết ngoài (ví dụ fanpage, bài viết) hoặc liên kết nội bộ để dẫn người dùng khi họ nhấp vào banner."
+              ]}
+            />
+            <button
+              onClick={openCreate}
+              className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 active:scale-95 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-pink-100 hover:shadow-lg transition-all text-sm cursor-pointer"
+            >
+              <Plus size={18} />
+              Tạo Banner Mới
+            </button>
+          </div>
         }
       />
 
@@ -532,42 +549,48 @@ export default function BannersPage() {
 
               {/* CARD ACTIONS */}
               <div className="px-5 py-3 bg-[#FFF0F5]/50 border-t border-pink-100/40 flex items-center justify-between">
-                <button
-                  onClick={() => handleToggle(banner)}
-                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${
-                    banner.isActive
-                      ? "bg-pink-500/10 text-pink-600 border-pink-200 hover:bg-pink-500/20"
-                      : "bg-gray-100 text-gray-400 border-gray-200 hover:bg-gray-200"
-                  }`}
-                >
-                  {banner.isActive ? (
-                    <>
-                      <Eye size={12} />
-                      Đang Hiện
-                    </>
-                  ) : (
-                    <>
-                      <EyeOff size={12} />
-                      Đang Ẩn
-                    </>
-                  )}
-                </button>
+                <SimpleTooltip content={banner.isActive ? "Bấm để ẩn banner trên Landing page" : "Bấm để hiển thị banner trên Landing page"}>
+                  <button
+                    onClick={() => handleToggle(banner)}
+                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all border cursor-pointer ${
+                      banner.isActive
+                        ? "bg-pink-500/10 text-pink-600 border-pink-200 hover:bg-pink-500/20"
+                        : "bg-gray-100 text-gray-400 border-gray-200 hover:bg-gray-200"
+                    }`}
+                  >
+                    {banner.isActive ? (
+                      <>
+                        <Eye size={12} />
+                        Đang Hiện
+                      </>
+                    ) : (
+                      <>
+                        <EyeOff size={12} />
+                        Đang Ẩn
+                      </>
+                    )}
+                  </button>
+                </SimpleTooltip>
 
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => openEdit(banner)}
-                    className="p-2 rounded-xl text-pink-600 hover:bg-pink-100 transition-colors"
-                    title="Chỉnh sửa"
-                  >
-                    <Pencil size={16} />
-                  </button>
-                  <button
-                    onClick={() => setDeleteTarget(banner)}
-                    className="p-2 rounded-xl text-red-500 hover:bg-red-50 transition-colors"
-                    title="Xóa banner"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <SimpleTooltip content="Chỉnh sửa thông tin & bản dịch">
+                    <button
+                      onClick={() => openEdit(banner)}
+                      className="p-2 rounded-xl text-pink-600 hover:bg-pink-100 transition-colors cursor-pointer"
+                      title="Chỉnh sửa"
+                    >
+                      <Pencil size={16} />
+                    </button>
+                  </SimpleTooltip>
+                  <SimpleTooltip content="Xóa vĩnh viễn banner này">
+                    <button
+                      onClick={() => setDeleteTarget(banner)}
+                      className="p-2 rounded-xl text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                      title="Xóa banner"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </SimpleTooltip>
                 </div>
               </div>
             </div>
@@ -590,12 +613,14 @@ export default function BannersPage() {
                   {editId ? "Chỉnh Sửa Banner" : "Tạo Banner Mới"}
                 </h2>
               </div>
-              <button
-                onClick={() => setShowForm(false)}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-              >
-                <X size={18} />
-              </button>
+              <SimpleTooltip content="Đóng cửa sổ">
+                <button
+                  onClick={() => setShowForm(false)}
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </SimpleTooltip>
             </div>
 
             {/* Modal Form */}
@@ -605,21 +630,46 @@ export default function BannersPage() {
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
                   Ảnh Banner *
                 </label>
+
                 {form.imageUrl ? (
-                  <div className="relative rounded-xl overflow-hidden aspect-[16/7] border border-gray-200 group bg-gray-50">
+                  <div className="relative rounded-2xl overflow-hidden aspect-[16/7] border border-gray-200 group bg-gray-50 shadow-xs">
                     <img
                       src={form.imageUrl}
                       alt="Banner preview"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setForm((f) => ({ ...f, imageUrl: "" }))}
-                      className="absolute top-3 right-3 p-1.5 rounded-full bg-red-500 text-white shadow-md hover:bg-red-600 transition-colors"
-                      title="Gỡ ảnh"
+
+                    {/* Hover overlay: click anywhere on preview to pick a new image */}
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                      title="Bấm để đổi ảnh mới"
                     >
-                      <X size={14} />
-                    </button>
+                      <span className="px-3.5 py-2 rounded-xl bg-black/70 text-white text-xs font-semibold backdrop-blur-xs flex items-center gap-2 shadow-lg border border-white/20 hover:scale-105 transition-transform">
+                        <Upload size={14} /> Bấm để đổi ảnh mới
+                      </span>
+                    </div>
+
+                    {/* Action button at top-right: only remove button */}
+                    <div className="absolute top-3 right-3 z-10">
+                      <SimpleTooltip content="Gỡ ảnh">
+                        <button
+                          type="button"
+                          onClick={() => setForm((f) => ({ ...f, imageUrl: "" }))}
+                          className="p-1.5 rounded-full bg-red-500 text-white shadow-md hover:bg-red-600 transition-all cursor-pointer hover:scale-105 active:scale-95"
+                        >
+                          <X size={14} />
+                        </button>
+                      </SimpleTooltip>
+                    </div>
+
+                    {/* Upload spinner overlay */}
+                    {uploading && (
+                      <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex flex-col items-center justify-center gap-2 z-20">
+                        <Loader2 size={30} className="animate-spin text-pink-400" />
+                        <span className="text-xs font-bold text-white tracking-wide">Đang tải ảnh mới lên Cloud...</span>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div
@@ -671,20 +721,21 @@ export default function BannersPage() {
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={handleAutoTranslate}
-                    disabled={translating || !form.title.trim()}
-                    title="Dịch tự động sang các ngôn ngữ khác bằng AI"
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-pink-500 hover:bg-pink-600 active:bg-pink-700 text-white text-xs font-bold shadow-xs transition-colors disabled:opacity-40 disabled:pointer-events-none"
-                  >
-                    {translating ? (
-                      <Loader2 size={14} className="animate-spin" />
-                    ) : (
-                      <Sparkles size={14} />
-                    )}
-                    <span>{translating ? "Đang dịch AI..." : "Dịch tự động AI"}</span>
-                  </button>
+                  <SimpleTooltip content="Tự động dịch sang các ngôn ngữ khác bằng AI">
+                    <button
+                      type="button"
+                      onClick={handleAutoTranslate}
+                      disabled={translating || !form.title.trim()}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-pink-500 hover:bg-pink-600 active:bg-pink-700 text-white text-xs font-bold shadow-xs transition-colors disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+                    >
+                      {translating ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Sparkles size={14} />
+                      )}
+                      <span>{translating ? "Đang dịch AI..." : "Dịch tự động AI"}</span>
+                    </button>
+                  </SimpleTooltip>
                 </div>
 
                 {/* Language Tabs Bar */}
@@ -696,39 +747,43 @@ export default function BannersPage() {
                       : !!form.titleTranslations?.[lang.code]?.trim();
 
                     return (
-                      <button
+                      <SimpleTooltip
                         key={lang.code}
-                        type="button"
-                        onClick={() => setActiveLang(lang.code)}
-                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all flex-shrink-0 border ${
-                          isCurrent
-                            ? "bg-pink-500 text-white border-pink-500 shadow-md shadow-pink-200/60"
-                            : "bg-white text-gray-700 hover:bg-pink-50/70 border-gray-200"
-                        }`}
+                        content={`${lang.label} (${lang.short}) — ${hasText ? "Đã có dữ liệu" : "Chưa có dữ liệu"}`}
                       >
-                        <img
-                          src={lang.flag}
-                          alt={lang.code}
-                          className="w-4 h-3 object-cover rounded-[2px] shadow-xs"
-                        />
-                        <span>{lang.short}</span>
-                        {lang.isMaster && (
-                          <span
-                            className={`text-[9px] px-1 rounded uppercase ${
-                              isCurrent ? "bg-white/30 text-white" : "bg-pink-100 text-pink-600"
-                            }`}
-                          >
-                            Gốc
-                          </span>
-                        )}
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                            hasText
-                              ? isCurrent ? "bg-emerald-200" : "bg-emerald-500"
-                              : isCurrent ? "bg-white/40" : "bg-gray-300"
+                        <button
+                          type="button"
+                          onClick={() => setActiveLang(lang.code)}
+                          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all flex-shrink-0 border cursor-pointer ${
+                            isCurrent
+                              ? "bg-pink-500 text-white border-pink-500 shadow-md shadow-pink-200/60"
+                              : "bg-white text-gray-700 hover:bg-pink-50/70 border-gray-200"
                           }`}
-                        />
-                      </button>
+                        >
+                          <img
+                            src={lang.flag}
+                            alt={lang.code}
+                            className="w-4 h-3 object-cover rounded-[2px] shadow-xs"
+                          />
+                          <span>{lang.short}</span>
+                          {lang.isMaster && (
+                            <span
+                              className={`text-[9px] px-1 rounded uppercase ${
+                                isCurrent ? "bg-white/30 text-white" : "bg-pink-100 text-pink-600"
+                              }`}
+                            >
+                              Gốc
+                            </span>
+                          )}
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
+                              hasText
+                                ? isCurrent ? "bg-emerald-200" : "bg-emerald-500"
+                                : isCurrent ? "bg-white/40" : "bg-gray-300"
+                            }`}
+                          />
+                        </button>
+                      </SimpleTooltip>
                     );
                   })}
                 </div>
@@ -881,18 +936,20 @@ export default function BannersPage() {
                               </div>
 
                               {(currentTitle || currentSubtitle) && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    handleTranslationChange("title", activeLang, "");
-                                    handleTranslationChange("subtitle", activeLang, "");
-                                    toast.success(`Đã xóa bản dịch ${currentLang.label}`);
-                                  }}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100/80 active:bg-rose-200/60 border border-rose-200 transition-colors"
-                                >
-                                  <Trash2 size={13} />
-                                  <span>Xóa bản dịch {currentLang.short}</span>
-                                </button>
+                                <SimpleTooltip content={`Xóa toàn bộ bản dịch tiếng ${currentLang.label}`}>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      handleTranslationChange("title", activeLang, "");
+                                      handleTranslationChange("subtitle", activeLang, "");
+                                      toast.success(`Đã xóa bản dịch ${currentLang.label}`);
+                                    }}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100/80 active:bg-rose-200/60 border border-rose-200 transition-colors cursor-pointer"
+                                  >
+                                    <Trash2 size={13} />
+                                    <span>Xóa bản dịch {currentLang.short}</span>
+                                  </button>
+                                </SimpleTooltip>
                               )}
                             </div>
                           </div>
@@ -970,27 +1027,29 @@ export default function BannersPage() {
                     Banner sẽ hiển thị đúng theo thời gian đã chọn khi được bật
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setForm((f) => ({ ...f, isActive: !f.isActive }))}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border ${
-                    form.isActive
-                      ? "bg-pink-500/10 text-pink-600 border-pink-200"
-                      : "bg-gray-100 text-gray-400 border-gray-200"
-                  }`}
-                >
-                  {form.isActive ? (
-                    <>
-                      <Eye size={13} />
-                      Đang Hiện
-                    </>
-                  ) : (
-                    <>
-                      <EyeOff size={13} />
-                      Đang Ẩn
-                    </>
-                  )}
-                </button>
+                <SimpleTooltip content={form.isActive ? "Bấm để chuyển sang trạng thái Ẩn" : "Bấm để chuyển sang trạng thái Hiện"}>
+                  <button
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, isActive: !f.isActive }))}
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border cursor-pointer ${
+                      form.isActive
+                        ? "bg-pink-500/10 text-pink-600 border-pink-200"
+                        : "bg-gray-100 text-gray-400 border-gray-200"
+                    }`}
+                  >
+                    {form.isActive ? (
+                      <>
+                        <Eye size={13} />
+                        Đang Hiện
+                      </>
+                    ) : (
+                      <>
+                        <EyeOff size={13} />
+                        Đang Ẩn
+                      </>
+                    )}
+                  </button>
+                </SimpleTooltip>
               </div>
             </div>
 
