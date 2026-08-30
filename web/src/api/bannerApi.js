@@ -28,6 +28,11 @@ export const bannerApi = {
       headers: { "Content-Type": "multipart/form-data" },
     });
   },
+
+  autoTranslate: (data) =>
+    typeof data === "string"
+      ? api.post(`/cms/banners/${data}/auto-translate`)
+      : api.post("/cms/banners/auto-translate", data),
 };
 
 // ── AppSetting CMS API ─────────────────────────────────────────────────────

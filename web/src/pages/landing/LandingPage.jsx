@@ -164,7 +164,7 @@ export default function LandingPage() {
         <Suspense fallback={null}>
           {statsBar    && <StatsBarSection   data={statsBar}    />}
           {bannerStrip !== null && banners.length > 0 && (
-            <BannerStripSection banners={banners} config={bannerStrip} />
+            <BannerStripSection banners={banners} config={bannerStrip || {}} lang={lang} />
           )}
           {features    && <FeaturesSection   data={features}    />}
           {howItWorks  && <HowItWorksSection data={howItWorks}  />}

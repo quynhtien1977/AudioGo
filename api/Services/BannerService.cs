@@ -3,20 +3,23 @@ using Server.Data;
 using Server.Models;
 using Server.Services.Interfaces;
 using Shared.DTOs;
+using System.Text.Json;
 
 namespace Server.Services;
 
 public class BannerService : IBannerService
 {
-    private readonly AppDbContext      _db;
-    private readonly IBlobStorageService _blob;
-    private readonly IConfiguration   _config;
+    private readonly AppDbContext         _db;
+    private readonly IBlobStorageService  _blob;
+    private readonly IConfiguration      _config;
+    private readonly ITranslationService  _translation;
 
-    public BannerService(AppDbContext db, IBlobStorageService blob, IConfiguration config)
+    public BannerService(AppDbContext db, IBlobStorageService blob, IConfiguration config, ITranslationService translation)
     {
-        _db     = db;
-        _blob   = blob;
-        _config = config;
+        _db          = db;
+        _blob        = blob;
+        _config      = config;
+        _translation = translation;
     }
 
     // ── CMS ───────────────────────────────────────────────────────────────────
@@ -48,17 +51,19 @@ public class BannerService : IBannerService
     {
         var banner = new Banner
         {
-            Title              = req.Title,
-            Subtitle           = req.Subtitle,
-            ImageUrl           = req.ImageUrl,
-            LinkUrl            = req.LinkUrl,
-            DisplayTarget      = req.DisplayTarget,
-            StartDate          = req.StartDate,
-            EndDate            = req.EndDate,
-            IsActive           = req.IsActive,
-            SortOrder          = req.SortOrder,
-            CreatedByAccountId = createdByAccountId,
-            CreatedAt          = DateTime.UtcNow,
+            Title                = req.Title,
+            Subtitle             = req.Subtitle,
+            ImageUrl             = req.ImageUrl,
+            LinkUrl              = req.LinkUrl,
+            DisplayTarget        = req.DisplayTarget,
+            StartDate            = req.StartDate,
+            EndDate              = req.EndDate,
+            IsActive             = req.IsActive,
+            SortOrder            = req.SortOrder,
+            TitleTranslations    = req.TitleTranslations,
+            SubtitleTranslations = req.SubtitleTranslations,
+            CreatedByAccountId   = createdByAccountId,
+            CreatedAt            = DateTime.UtcNow,
         };
 
         _db.Banners.Add(banner);
@@ -71,16 +76,18 @@ public class BannerService : IBannerService
         var banner = await _db.Banners.FindAsync(bannerId);
         if (banner is null) return (false, "Không tìm thấy banner.");
 
-        banner.Title         = req.Title;
-        banner.Subtitle      = req.Subtitle;
-        banner.ImageUrl      = req.ImageUrl;
-        banner.LinkUrl       = req.LinkUrl;
-        banner.DisplayTarget = req.DisplayTarget;
-        banner.StartDate     = req.StartDate;
-        banner.EndDate       = req.EndDate;
-        banner.IsActive      = req.IsActive;
-        banner.SortOrder     = req.SortOrder;
-        banner.UpdatedAt     = DateTime.UtcNow;
+        banner.Title                = req.Title;
+        banner.Subtitle             = req.Subtitle;
+        banner.ImageUrl             = req.ImageUrl;
+        banner.LinkUrl              = req.LinkUrl;
+        banner.DisplayTarget        = req.DisplayTarget;
+        banner.StartDate            = req.StartDate;
+        banner.EndDate              = req.EndDate;
+        banner.IsActive             = req.IsActive;
+        banner.SortOrder            = req.SortOrder;
+        banner.TitleTranslations    = req.TitleTranslations;
+        banner.SubtitleTranslations = req.SubtitleTranslations;
+        banner.UpdatedAt            = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
         return (true, null);
@@ -131,6 +138,35 @@ public class BannerService : IBannerService
             .ToListAsync();
     }
 
+    // ── AutoTranslate ───────────────────────────────────────────────────────
+
+    public async Task<(bool Success, string? Error)> AutoTranslateAsync(string bannerId)
+    {
+        var banner = await _db.Banners.FindAsync(bannerId);
+        if (banner is null) return (false, "Không tìm thấy banner.");
+
+        try
+        {
+            var titleTrans    = await _translation.TranslateToAllLanguagesAsync(banner.Title, "vi");
+            var subtitleTrans = banner.Subtitle is not null
+                ? await _translation.TranslateToAllLanguagesAsync(banner.Subtitle, "vi")
+                : null;
+
+            banner.TitleTranslations    = JsonSerializer.Serialize(titleTrans);
+            banner.SubtitleTranslations = subtitleTrans is not null
+                ? JsonSerializer.Serialize(subtitleTrans)
+                : null;
+            banner.UpdatedAt = DateTime.UtcNow;
+
+            await _db.SaveChangesAsync();
+            return (true, null);
+        }
+        catch (Exception ex)
+        {
+            return (false, ex.Message);
+        }
+    }
+
     // ── Helper ────────────────────────────────────────────────────────────────
 
     private static BannerDto ToDto(Banner b) => new(
@@ -144,6 +180,8 @@ public class BannerService : IBannerService
         b.EndDate,
         b.IsActive,
         b.SortOrder,
+        b.TitleTranslations,
+        b.SubtitleTranslations,
         b.CreatedByAccountId,
         b.CreatedAt,
         b.UpdatedAt

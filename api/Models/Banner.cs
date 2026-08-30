@@ -39,6 +39,12 @@ public class Banner
     /// <summary>Thứ tự sắp xếp — số nhỏ hơn hiển thị trước.</summary>
     public int SortOrder { get; set; } = 0;
 
+    /// <summary>Bản dịch tiêu đề sang các ngôn ngữ khác (JSON: {{"en":"...","ja":"...",...}}).</summary>
+    public string? TitleTranslations { get; set; }
+
+    /// <summary>Bản dịch phụ đề sang các ngôn ngữ khác (JSON: {{"en":"...","ja":"...",...}}).</summary>
+    public string? SubtitleTranslations { get; set; }
+
     public string? CreatedByAccountId { get; set; }
     public DateTime  CreatedAt         { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt         { get; set; }

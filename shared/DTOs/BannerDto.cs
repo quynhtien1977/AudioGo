@@ -14,6 +14,8 @@ public record BannerDto(
     DateTime? EndDate,
     bool     IsActive,
     int      SortOrder,
+    string?  TitleTranslations,
+    string?  SubtitleTranslations,
     string?  CreatedByAccountId,
     DateTime CreatedAt,
     DateTime? UpdatedAt
@@ -25,12 +27,17 @@ public record UpsertBannerRequest(
     string?  Subtitle,
     string   ImageUrl,
     string?  LinkUrl,
-    string   DisplayTarget,   // "MobileHome" | "Landing" | "Both"
+    string   DisplayTarget,   // "Landing" 
     DateTime? StartDate,
     DateTime? EndDate,
     bool     IsActive,
-    int      SortOrder
+    int      SortOrder,
+    string?  TitleTranslations = null,
+    string?  SubtitleTranslations = null
 );
+
+/// <summary>Request dịch tự động tiêu đề và phụ đề banner sang 6 ngôn ngữ.</summary>
+public record TranslateBannerRequest(string Title, string? Subtitle);
 
 // ── AppSetting DTOs ───────────────────────────────────────────────────────────
 

@@ -9,7 +9,7 @@ import { useTheme } from "@/context/ThemeContext";
  * Hỗ trợ cảm ứng vuốt (Swipe) mượt mà trên điện thoại di động.
  * Tùy biến tiêu đề badge, nhãn nút CTA qua Landing Page Settings.
  */
-export default function BannerStripSection({ banners = [], config = {} }) {
+export default function BannerStripSection({ banners = [], config = {}, lang = "vi" }) {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
@@ -56,6 +56,24 @@ export default function BannerStripSection({ banners = [], config = {} }) {
   if (dismissed || banners.length === 0) return null;
 
   const currentBanner = banners[currentIdx] || banners[0];
+
+  // Helper an toàn: parse chuỗi JSON nếu lưu từ DB dưới dạng NVARCHAR
+  const parseTrans = (raw) => {
+    if (!raw) return {};
+    if (typeof raw === "object") return raw;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return {};
+    }
+  };
+
+  const titleTrans = parseTrans(currentBanner?.titleTranslations);
+  const subtitleTrans = parseTrans(currentBanner?.subtitleTranslations);
+
+  // Đa ngôn ngữ: ưu tiên bản dịch theo lang, fallback về text tiếng Việt gốc
+  const displayTitle    = titleTrans[lang] || currentBanner?.title || "";
+  const displaySubtitle = subtitleTrans[lang] || currentBanner?.subtitle || null;
 
   const handleAction = (e) => {
     if (!currentBanner?.linkUrl) return;
@@ -263,15 +281,15 @@ export default function BannerStripSection({ banners = [], config = {} }) {
                         : "text-gray-900 group-hover:text-pink-600"
                     }`}
                   >
-                    {currentBanner.title}
+                    {displayTitle}
                   </h3>
-                  {currentBanner.subtitle && (
+                  {displaySubtitle && (
                     <p
                       className={`text-xs sm:text-sm mt-1.5 line-clamp-2 leading-relaxed font-normal transition-colors ${
                         isDark ? "text-gray-300" : "text-gray-600"
                       }`}
                     >
-                      {currentBanner.subtitle}
+                      {displaySubtitle}
                     </p>
                   )}
                 </motion.div>

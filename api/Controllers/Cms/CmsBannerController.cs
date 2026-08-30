@@ -15,8 +15,13 @@ namespace Server.Controllers.Cms;
 public class CmsBannerController : ControllerBase
 {
     private readonly IBannerService _banners;
+    private readonly ITranslationService _translation;
 
-    public CmsBannerController(IBannerService banners) => _banners = banners;
+    public CmsBannerController(IBannerService banners, ITranslationService translation)
+    {
+        _banners     = banners;
+        _translation = translation;
+    }
 
     // GET /api/cms/banners?displayTarget=Landing&isActive=true
     [HttpGet]
@@ -46,8 +51,8 @@ public class CmsBannerController : ControllerBase
         if (string.IsNullOrWhiteSpace(req.Title) || string.IsNullOrWhiteSpace(req.ImageUrl))
             return BadRequest(new { message = "Title và ImageUrl là bắt buộc." });
 
-        if (req.DisplayTarget is not ("MobileHome" or "Landing" or "Both"))
-            return BadRequest(new { message = "DisplayTarget phải là MobileHome, Landing hoặc Both." });
+        if (req.DisplayTarget is not ("Landing"))
+            return BadRequest(new { message = "DisplayTarget phải là Landing." });
 
         var created = await _banners.CreateAsync(req, accountId);
         return CreatedAtAction(nameof(GetById), new { id = created.BannerId }, created);
@@ -57,8 +62,8 @@ public class CmsBannerController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(string id, [FromBody] UpsertBannerRequest req)
     {
-        if (req.DisplayTarget is not ("MobileHome" or "Landing" or "Both"))
-            return BadRequest(new { message = "DisplayTarget phải là MobileHome, Landing hoặc Both." });
+        if (req.DisplayTarget is not ("Landing"))
+            return BadRequest(new { message = "DisplayTarget phải là Landing." });
 
         var (success, error) = await _banners.UpdateAsync(id, req);
         return success ? NoContent() : NotFound(new { message = error });
@@ -96,5 +101,45 @@ public class CmsBannerController : ControllerBase
         using var stream = file.OpenReadStream();
         var url = await _banners.UploadImageAsync(stream, file.FileName, file.ContentType);
         return Ok(new { url });
+    }
+
+    // POST /api/cms/banners/auto-translate
+    [HttpPost("auto-translate")]
+    public async Task<IActionResult> AutoTranslatePreview([FromBody] TranslateBannerRequest req)
+    {
+        if (string.IsNullOrWhiteSpace(req.Title))
+            return BadRequest(new { message = "Tiêu đề không được để trống." });
+
+        try
+        {
+            var titleTranslations = await _translation.TranslateToAllLanguagesAsync(req.Title, "vi");
+            Dictionary<string, string>? subtitleTranslations = null;
+            if (!string.IsNullOrWhiteSpace(req.Subtitle))
+            {
+                subtitleTranslations = await _translation.TranslateToAllLanguagesAsync(req.Subtitle, "vi");
+            }
+
+            return Ok(new
+            {
+                titleTranslations,
+                subtitleTranslations
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(502, new { message = $"Lỗi dịch thuật: {ex.Message}" });
+        }
+    }
+
+    // POST /api/cms/banners/{id}/auto-translate
+    [HttpPost("{id}/auto-translate")]
+    public async Task<IActionResult> AutoTranslate(string id)
+    {
+        var (success, error) = await _banners.AutoTranslateAsync(id);
+        if (!success)
+            return error == "Không tìm thấy banner."
+                ? NotFound(new { message = error })
+                : StatusCode(502, new { message = $"Lỗi dịch thuật: {error}" });
+        return NoContent();
     }
 }

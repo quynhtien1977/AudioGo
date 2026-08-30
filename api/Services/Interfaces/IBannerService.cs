@@ -16,4 +16,7 @@ public interface IBannerService
     // ── Public / Mobile ───────────────────────────────────────────────────────
     /// <summary>Chỉ trả banner IsActive và còn trong date range — dùng cho mobile/landing.</summary>
     Task<List<BannerDto>> GetActiveByTargetAsync(string displayTarget);
+
+    /// <summary>Dịch tự động tiêu đề và phụ đề của 1 banner sang 6 ngôn ngữ, lưu vào DB.</summary>
+    Task<(bool Success, string? Error)> AutoTranslateAsync(string bannerId);
 }
