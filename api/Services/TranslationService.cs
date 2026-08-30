@@ -64,7 +64,7 @@ public class TranslationService : ITranslationService
         {
             // Fallback if no Qwen key provided yet, though we will request it
             Console.WriteLine("[DEBUG] Missing CEREBRAS_API_KEY. Fallback to Azure Translator for each language.");
-            var targetLangs = new[] { "en", "ja", "ko", "zh-Hans", "fr", "th" };
+            var targetLangs = new[] { "en", "ja", "ko", "zh-Hans", "fr", "th", "es" };
             foreach (var lang in targetLangs)
             {
                 result[lang] = await TranslateAsync(sourceText, sourceLang, lang);
@@ -76,7 +76,7 @@ public class TranslationService : ITranslationService
         var prompt = $@"
 Translate the following {sourceLang} text into these languages:
 English (en), Japanese (ja), Korean (ko),
-Simplified Chinese (zh-Hans), French (fr), Thai (th).
+Simplified Chinese (zh-Hans), French (fr), Thai (th), Spanish (es).
 
 Return ONLY a valid JSON object with language codes as keys.
 No explanation, no markdown, just the JSON.
@@ -85,7 +85,7 @@ Text to translate:
 {sourceText}
 
 Expected format:
-{{""en"": ""..."", ""ja"": ""..."", ""ko"": ""..."", ""zh-Hans"": ""..."", ""fr"": ""..."", ""th"": ""...""}}";
+{{""en"": ""..."", ""ja"": ""..."", ""ko"": ""..."", ""zh-Hans"": ""..."", ""fr"": ""..."", ""th"": ""..."", ""es"": ""...""}}";
 
         var requestBody = new
         {
@@ -113,7 +113,7 @@ Expected format:
         {
             var error = await response.Content.ReadAsStringAsync();
             Console.WriteLine($"[DEBUG] LLM API Error ({baseUrl}): {error}. Fallback to Azure.");
-            var targetLangs = new[] { "en", "ja", "ko", "zh-Hans", "fr", "th" };
+            var targetLangs = new[] { "en", "ja", "ko", "zh-Hans", "fr", "th", "es" };
             foreach (var lang in targetLangs)
             {
                 result[lang] = await TranslateAsync(sourceText, sourceLang, lang);

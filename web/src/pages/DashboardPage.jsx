@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom"
 import {
   MapPin, Headphones, LayoutDashboard, Clock,
   Users, ArrowRight, ShieldCheck, AlertTriangle, Bell, CheckCircle,
-  Newspaper, Route as RouteIcon, Globe, FileText, Plus, Sparkles
+  Newspaper, Route as RouteIcon, Globe, FileText, Plus, Sparkles,
+  Megaphone, Settings
 } from "lucide-react"
 
 import StatsCard from "@/components/StatsCard"
@@ -275,7 +276,9 @@ export default function DashboardPage() {
             {[
               { label: "Quản lý POI",   path: "/admin/pois",            icon: <MapPin size={16} /> },
               { label: "Xét duyệt đơn", path: "/admin/pois/management",  icon: <ShieldCheck size={16} /> },
+              { label: "Banners",       path: "/admin/banners",         icon: <Megaphone size={16} /> },
               { label: "Tài khoản",     path: "/admin/accounts",        icon: <Users size={16} /> },
+              { label: "Cài đặt",       path: "/admin/settings",        icon: <Settings size={16} /> },
             ].map(({ label, path, icon }) => (
               <button
                 key={path}
@@ -298,6 +301,7 @@ export default function DashboardPage() {
           <div className="flex flex-wrap gap-3">
             {[
               { label: "Quản lý POI",         path: "/admin/pois",     icon: <MapPin size={16} /> },
+              { label: "Banners & Sự kiện",   path: "/admin/banners",  icon: <Megaphone size={16} /> },
               { label: "Quản lý Bài viết",    path: "/admin/articles", icon: <Newspaper size={16} /> },
               { label: "Lộ trình Tour",        path: "/admin/tours",    icon: <RouteIcon size={16} /> },
               { label: "Bản dịch & Audio",    path: "/admin/audio",    icon: <Headphones size={16} /> },

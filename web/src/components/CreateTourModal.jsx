@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   Upload,
   X,
@@ -145,23 +146,22 @@ const CreateTourModal = ({ open, onClose, onSubmit, isLoading }) => {
 
   const selectedPOICount = formData.selectedPOIs.length;
 
-  return (
+  if (!open) return null;
+
+  return createPortal(
     <>
       {/* MODAL BACKDROP */}
-      {open && (
-        <div
-          className="fixed inset-0 bg-black/40 z-40"
-          onClick={handleClose}
-        />
-      )}
+      <div
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 animate-in fade-in duration-150"
+        onClick={handleClose}
+      />
 
       {/* MODAL CONTAINER */}
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+        <div
+          className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col pointer-events-auto animate-in zoom-in-95 duration-200"
+          onClick={(e) => e.stopPropagation()}
+        >
             {/* HEADER */}
             <div className="flex items-center justify-between px-5 sm:px-8 py-4 sm:py-6 border-b border-gray-100">
               <h2 className="text-xl sm:text-2xl font-black text-gray-800">Tạo Tour Mới</h2>
@@ -397,8 +397,8 @@ const CreateTourModal = ({ open, onClose, onSubmit, isLoading }) => {
             </div>
           </div>
         </div>
-      )}
-    </>
+    </>,
+    document.body
   );
 };
 

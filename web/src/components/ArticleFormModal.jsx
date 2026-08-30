@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { createPortal } from "react-dom"
 import { getArticleById, createArticle, updateArticle } from "../api/articleApi"
 import { uploadImage } from "../api/mediaApi"
 import { Upload, X, Loader2, Languages, FileText, Globe } from "lucide-react"
@@ -127,7 +128,7 @@ export default function ArticleFormModal({ articleId, onClose, onSaved }) {
 
   const translatedLangs = Object.keys(translations).filter((l) => l !== "vi")
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
       <div className="bg-white w-full max-w-[700px] max-h-[90vh] rounded-[2rem] shadow-2xl overflow-hidden flex flex-col relative animate-scaleIn">
 
@@ -328,6 +329,7 @@ export default function ArticleFormModal({ articleId, onClose, onSaved }) {
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

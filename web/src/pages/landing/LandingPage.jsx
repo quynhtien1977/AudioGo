@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, lazy, Suspense } from "react";
 import { getLandingSections, getLatestRelease } from "@/api/landingApi";
+import { getPublicBanners } from "@/api/bannerApi";
 import { ThemeProvider } from "@/context/ThemeContext";
 
 // Eager load above-the-fold components for instant FCP & LCP (< 1.5s)
@@ -8,6 +9,7 @@ import HeroSection from "./components/HeroSection";
 
 // Lazy load below-the-fold components to reduce initial JS payload to ~35KB
 const StatsBarSection = lazy(() => import("./components/StatsBarSection"));
+const BannerStripSection = lazy(() => import("./components/BannerStripSection"));
 const FeaturesSection = lazy(() => import("./components/FeaturesSection"));
 const HowItWorksSection = lazy(() => import("./components/HowItWorksSection"));
 const ScreenshotsSection = lazy(() => import("./components/ScreenshotsSection"));
@@ -67,6 +69,20 @@ export default function LandingPage() {
     }
   });
 
+  const [banners, setBanners] = useState([]);
+
+  useEffect(() => {
+    getPublicBanners()
+      .then((res) => {
+        if (Array.isArray(res.data)) {
+          setBanners(res.data);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load public landing banners:", err);
+      });
+  }, []);
+
   const fetchSections = useCallback((targetLang) => {
     getLandingSections(targetLang)
       .then((secs) => {
@@ -118,6 +134,7 @@ export default function LandingPage() {
 
   const hero        = getSectionData(sections, "hero") || (sections.length === 0 ? DEFAULT_HERO : null);
   const statsBar    = getSectionData(sections, "stats_bar");
+  const bannerStrip = getSectionData(sections, "banner_strip") ?? (sections.length === 0 ? {} : null);
   const features    = getSectionData(sections, "features");
   const howItWorks  = getSectionData(sections, "how_it_works");
   const screenshots = getSectionData(sections, "screenshots");
@@ -146,6 +163,9 @@ export default function LandingPage() {
         {/* Below-the-fold sections are lazy loaded */}
         <Suspense fallback={null}>
           {statsBar    && <StatsBarSection   data={statsBar}    />}
+          {bannerStrip !== null && banners.length > 0 && (
+            <BannerStripSection banners={banners} config={bannerStrip || {}} lang={lang} />
+          )}
           {features    && <FeaturesSection   data={features}    />}
           {howItWorks  && <HowItWorksSection data={howItWorks}  />}
           {screenshots && <ScreenshotsSection data={screenshots} />}

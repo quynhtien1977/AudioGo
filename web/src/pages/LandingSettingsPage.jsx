@@ -30,6 +30,7 @@ import ConfirmModal from "@/components/ConfirmModal";
 const SECTIONS = [
   { key: "hero",         label: "Hero Banner" },
   { key: "stats_bar",    label: "Stats Bar" },
+  { key: "banner_strip", label: "Dải Banner Sự Kiện" },
   { key: "features",     label: "Tính năng" },
   { key: "how_it_works", label: "Cách hoạt động" },
   { key: "screenshots",  label: "Ảnh màn hình" },
@@ -44,6 +45,7 @@ const SECTIONS = [
 const SHARED_FIELD_HINTS = {
   hero:         { keys: ["backgroundImages", "stats", "cta1Link", "cta2Link", "backgroundImageUrl"], arrays: true },
   stats_bar:    { keys: ["items"], arrays: true },
+  banner_strip: { keys: [], arrays: false },
   features:     { keys: ["items"], arrays: true },
   how_it_works: { keys: ["steps"], arrays: true },
   screenshots:  { keys: ["images"], arrays: true },

@@ -16,6 +16,11 @@ const SECTION_SCHEMAS = {
     { key: "installGuide",    label: "Hướng dẫn cài đặt",    type: "textarea", placeholder: "Cần bật 'Cài đặt từ nguồn không xác định'..." },
     { key: "googlePlayText",  label: "Text Google Play",      type: "input",    placeholder: "Sắp ra mắt trên Google Play" },
   ],
+  banner_strip: [
+    { key: "badgeText",     label: "Nhãn huy hiệu sự kiện (Badge)", type: "input", placeholder: "Sự Kiện & Khuyến Mãi Nổi Bật" },
+    { key: "ctaText",       label: "Chữ nút hành động (Link web ngoài)", type: "input", placeholder: "Khám phá" },
+    { key: "anchorCtaText", label: "Chữ nút hành động (Neo trang nội bộ #)", type: "input", placeholder: "Xem ngay" },
+  ],
   stats_bar: [], // handled separately with ArrayEditor if needed
 };
 

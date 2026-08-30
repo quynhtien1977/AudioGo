@@ -43,6 +43,8 @@ const AdminSubscriptionDashboard = lazy(() => import("@/pages/AdminSubscriptionD
 const AdminTransactionDashboard = lazy(() => import("@/pages/AdminTransactionDashboard"));
 const ArticlesPage = lazy(() => import("@/pages/ArticlesPage"));
 const LandingSettingsPage = lazy(() => import("@/pages/LandingSettingsPage"));
+const BannersPage = lazy(() => import("@/pages/BannersPage"));
+const AppSettingsPage = lazy(() => import("@/pages/AppSettingsPage"));
 
 function PageLoader() {
   return (
@@ -114,6 +116,8 @@ export default function App() {
                 <Route path="/device-activity" element={<Navigate to="/admin/device-activity" replace />} />
                 <Route path="/analytics" element={<Navigate to="/admin/analytics" replace />} />
                 <Route path="/landing-settings" element={<Navigate to="/admin/landing" replace />} />
+                <Route path="/banners" element={<Navigate to="/admin/banners" replace />} />
+                <Route path="/settings" element={<Navigate to="/admin/settings" replace />} />
                 <Route path="/profile" element={<Navigate to="/admin/profile" replace />} />
                 <Route path="/poi/management" element={<Navigate to="/admin/pois/management" replace />} />
                 <Route path="/poi/management/new" element={<Navigate to="/admin/pois/management/new" replace />} />
@@ -424,6 +428,29 @@ export default function App() {
                     <ProtectedRoute roles={["Admin", "Editor"]}>
                       <MainLayout>
                         <LandingSettingsPage />
+                      </MainLayout>
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Banners & App Settings */}
+                <Route
+                  path="/admin/banners"
+                  element={
+                    <ProtectedRoute roles={["Admin", "Editor"]}>
+                      <MainLayout>
+                        <BannersPage />
+                      </MainLayout>
+                    </ProtectedRoute>
+                  }
+                />
+
+                <Route
+                  path="/admin/settings"
+                  element={
+                    <ProtectedRoute roles={["Admin"]}>
+                      <MainLayout>
+                        <AppSettingsPage />
                       </MainLayout>
                     </ProtectedRoute>
                   }
