@@ -30,6 +30,7 @@ import StatsCard from "@/components/StatsCard";
 import ConfirmModal from "@/components/ConfirmModal";
 import EmptyState from "@/components/EmptyState";
 import PageLoader from "@/components/PageLoader";
+import HelpGuide from "@/components/HelpGuide";
 import { SimpleTooltip } from "@/components/ui/tooltip";
 
 export const BANNER_LANGUAGES = [
@@ -334,13 +335,28 @@ export default function BannersPage() {
         description="Đăng tải và quản lý banner quảng cáo, sự kiện và khuyến mãi nổi bật trên Landing Page AudioGo."
         icon={<Megaphone size={24} />}
         actionButton={
-          <button
-            onClick={openCreate}
-            className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 active:scale-95 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-pink-100 hover:shadow-lg transition-all text-sm"
-          >
-            <Plus size={18} />
-            Tạo Banner Mới
-          </button>
+          <div className="flex items-center gap-2">
+            <HelpGuide
+              title="Hướng dẫn Quản lý Banners & Sự kiện"
+              steps={[
+                "<strong>Tạo Banner mới</strong>: Bấm 'Tạo Banner Mới', điền tiêu đề tiếng Việt và tải lên ảnh banner tỉ lệ 16:7.",
+                "<strong>Dịch thuật AI</strong>: Sử dụng nút 'Dịch tự động AI' để hệ thống dịch tiêu đề và phụ đề sang các ngôn ngữ khác.",
+                "<strong>Bật / Tắt hiển thị</strong>: Bạn có thể chuyển đổi nhanh trạng thái Đang Hiện / Đang Ẩn của banner trên thẻ danh sách.",
+                "<strong>Thứ tự sắp xếp</strong>: Banner có số thứ tự (sortOrder) nhỏ hơn sẽ hiển thị trước trên thanh quảng cáo Landing Page."
+              ]}
+              tips={[
+                "Nên sử dụng ảnh banner có độ phân giải tối thiểu 1200x525 px để đảm bảo chất lượng sắc nét trên mọi màn hình.",
+                "Có thể gắn link liên kết ngoài (ví dụ fanpage, bài viết) hoặc liên kết nội bộ để dẫn người dùng khi họ nhấp vào banner."
+              ]}
+            />
+            <button
+              onClick={openCreate}
+              className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 active:scale-95 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-pink-100 hover:shadow-lg transition-all text-sm cursor-pointer"
+            >
+              <Plus size={18} />
+              Tạo Banner Mới
+            </button>
+          </div>
         }
       />
 

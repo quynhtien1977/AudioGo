@@ -18,6 +18,7 @@ import {
 import { appSettingApi } from "@/api/bannerApi";
 import PageHeader from "@/components/PageHeader";
 import PageLoader from "@/components/PageLoader";
+import HelpGuide from "@/components/HelpGuide";
 
 const SETTING_CONFIGS = {
   "TouristAccess.PriceVnd": {
@@ -160,6 +161,21 @@ export default function AppSettingsPage() {
         title="CÀI ĐẶT HỆ THỐNG"
         description="Quản lý giá vé vào app SePay, thời hạn hiệu lực Token và chính sách mã QR trực tiếp từ giao diện."
         icon={<Settings size={24} />}
+        actionButton={
+          <HelpGuide
+            title="Hướng dẫn Cài đặt Hệ thống"
+            steps={[
+              "<strong>Giá vé SePay (VietQR)</strong>: Thiết lập mức phí cố định du khách cần chuyển khoản khi quét mã VietQR tự động để mở khóa app.",
+              "<strong>Thời hạn Token SePay</strong>: Số ngày hiệu lực của Token JWT sau khi du khách thanh toán thành công (ví dụ 7 ngày, 30 ngày...).",
+              "<strong>Thời hạn mã Access Code</strong>: Số ngày dùng app mặc định khi khách quét mã thẻ cào hoặc mã QR voucher được phát.",
+              "<strong>Chỉnh sửa & Lưu</strong>: Bấm nút biểu tượng cây bút để thay đổi giá trị hoặc chọn nhanh các mốc gợi ý có sẵn, sau đó bấm 'Lưu'."
+            ]}
+            tips={[
+              "Giá vé phải là bội số của 1.000 ₫ và tối thiểu là 1.000 ₫.",
+              "Các thay đổi sẽ áp dụng ngay lập tức cho các lượt thanh toán hoặc quét mã mới, không ảnh hưởng đến các phiên đang còn hạn của khách."
+            ]}
+          />
+        }
       />
 
       {/* ALERT BANNER */}

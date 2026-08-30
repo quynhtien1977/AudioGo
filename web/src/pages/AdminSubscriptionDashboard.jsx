@@ -15,6 +15,7 @@ import {
 import toast from "react-hot-toast";
 import * as subscriptionApi from "@/api/subscriptionApi";
 import PageHeader from "@/components/PageHeader";
+import HelpGuide from "@/components/HelpGuide";
 import StatsCard from "@/components/StatsCard";
 import PageLoader from "@/components/PageLoader";
 import EmptyState from "@/components/EmptyState";
@@ -385,13 +386,28 @@ export const AdminSubscriptionDashboard = () => {
         description="Quản lý các gói đăng ký VIP cho đối tác và người dùng."
         icon={<Package size={24} />}
         actionButton={
-          <button
-            onClick={handleCreateClick}
-            className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-pink-100 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all text-sm cursor-pointer"
-          >
-            <Plus size={18} />
-            <span>Tạo Gói Mới</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <HelpGuide
+              title="Hướng dẫn Quản lý Gói Đăng Ký"
+              steps={[
+                "<strong>Tạo gói VIP mới</strong>: Nhấp 'Tạo Gói Mới' để thiết lập tên gói, đơn giá, thời hạn sử dụng, số lượng POI tối đa và mức ưu tiên.",
+                "<strong>Hạn mức POI (Max POI)</strong>: Xác định số lượng điểm tham quan tối đa mà chủ sở hữu (Owner) có thể tạo và duy trì hoạt động.",
+                "<strong>Độ ưu tiên (Auto Priority)</strong>: Gói cước càng cao (ví dụ Kim Cương > Vàng > Bạc) thì các địa điểm thuộc gói sẽ có bán kính kích hoạt rộng hơn và xếp trên cùng danh sách.",
+                "<strong>Ẩn / Hiện gói</strong>: Các gói đang hoạt động sẽ hiển thị cho khách hàng chọn mua; khi ẩn gói, khách hàng cũ vẫn dùng tiếp cho đến khi hết hạn."
+              ]}
+              tips={[
+                "Bạn chỉ có thể xóa vĩnh viễn các gói cước đang ở trạng thái 'Ẩn' và không còn người dùng hoạt động.",
+                "Nên liệt kê các quyền lợi (Features) rõ ràng theo từng dòng để trang bảng giá hiển thị chuyên nghiệp."
+              ]}
+            />
+            <button
+              onClick={handleCreateClick}
+              className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-pink-100 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all text-sm cursor-pointer"
+            >
+              <Plus size={18} />
+              <span>Tạo Gói Mới</span>
+            </button>
+          </div>
         }
       />
 

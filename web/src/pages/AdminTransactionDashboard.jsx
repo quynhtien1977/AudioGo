@@ -5,6 +5,7 @@ import * as subscriptionApi from '../api/subscriptionApi'
 import { formatDateVN } from '../utils/formatDate'
 import toast from 'react-hot-toast'
 import PageHeader from "@/components/PageHeader"
+import HelpGuide from "@/components/HelpGuide"
 import StatsCard from "@/components/StatsCard"
 import EmptyState from "@/components/EmptyState"
 import { SearchContext } from '../context/SearchContext'
@@ -189,6 +190,21 @@ export const AdminTransactionDashboard = () => {
         title="QUẢN LÝ GIAO DỊCH"
         description="Theo dõi và quản lý tất cả các giao dịch thanh toán trong hệ thống."
         icon={<DollarSign size={24} />}
+        actionButton={
+          <HelpGuide
+            title="Hướng dẫn Quản lý Giao dịch"
+            steps={[
+              "<strong>Theo dõi trạng thái</strong>: Giao dịch có 3 trạng thái: Thành công (Success), Đang xử lý (Pending), và Thất bại (Failed).",
+              "<strong>Xem chi tiết giao dịch</strong>: Bấm 'Xem chi tiết' tại từng dòng để tra cứu mã tham chiếu cổng thanh toán (PayOS, VNPAY), người nạp tiền và gói đăng ký tương ứng.",
+              "<strong>Lọc dữ liệu</strong>: Sử dụng các tab trạng thái để lọc nhanh danh sách hoặc dùng thanh tìm kiếm để tìm theo mã giao dịch.",
+              "<strong>Doanh thu thực thu</strong>: Thẻ doanh thu tổng hợp giá trị các đơn hàng thanh toán thành công để đối soát kế toán."
+            ]}
+            tips={[
+              "Bạn có thể sao chép nhanh Transaction ID để gửi đối soát với bên cổng thanh toán khi có khiếu nại.",
+              "Dữ liệu bảng hiển thị theo phân trang, doanh thu tổng hiển thị chính xác theo dữ liệu đã lọc."
+            ]}
+          />
+        }
       />
 
       {/* Stats — dùng globalStats từ server, không bị giới hạn bởi phân trang */}

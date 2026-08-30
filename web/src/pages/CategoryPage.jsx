@@ -3,6 +3,7 @@ import { Edit3, Trash2, ChevronLeft, ChevronRight, Layers } from "lucide-react"
 import PageLoader from "@/components/PageLoader"
 import toast from "react-hot-toast"
 import PageHeader from "@/components/PageHeader"
+import HelpGuide from "@/components/HelpGuide"
 import { SimpleTooltip } from "@/components/ui/tooltip"
 
 import {
@@ -114,12 +115,26 @@ export default function CategoryPage() {
         description="Tổ chức và quản lý danh mục POI"
         icon={<Layers size={24} />}
         actionButton={
-          <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 active:scale-95 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-pink-100 hover:shadow-lg transition-all text-sm animate-fadeIn"
-          >
-            + Thêm danh mục mới
-          </button>
+          <div className="flex items-center gap-2">
+            <HelpGuide
+              title="Hướng dẫn Quản lý Danh mục"
+              steps={[
+                "<strong>Tạo danh mục</strong>: Nhấp '+ Thêm danh mục mới', nhập tên danh mục tiếng Việt (hệ thống sẽ tự dịch sang các ngôn ngữ khác trong app).",
+                "<strong>Liên kết POI</strong>: Danh mục giúp phân loại các địa điểm (Ẩm thực, Di tích, Cà phê...) để du khách lọc trên ứng dụng.",
+                "<strong>Chỉnh sửa & Xóa</strong>: Có thể sửa tên danh mục hoặc xóa nếu danh mục đó không còn địa điểm nào liên kết."
+              ]}
+              tips={[
+                "Tên danh mục nên ngắn gọn, dễ hiểu và bao quát nhóm địa điểm.",
+                "Mỗi địa điểm (POI) có thể chọn tối đa 2 danh mục phù hợp."
+              ]}
+            />
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 active:scale-95 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-pink-100 hover:shadow-lg transition-all text-sm animate-fadeIn cursor-pointer"
+            >
+              + Thêm danh mục mới
+            </button>
+          </div>
         }
       />
 

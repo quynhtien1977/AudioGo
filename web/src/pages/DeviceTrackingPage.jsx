@@ -3,6 +3,7 @@ import { getLocationLogs, getLocationStats } from "@/api/locationLogApi"
 import DeviceTrackingTable from "@/components/DeviceTrackingTable"
 import StatsCard from "@/components/StatsCard"
 import PageHeader from "@/components/PageHeader"
+import HelpGuide from "@/components/HelpGuide"
 import { Activity, Calendar, BarChart3, Wifi, WifiOff, Smartphone } from "lucide-react"
 import { signalRService } from "@/lib/signalRService"
 
@@ -261,6 +262,21 @@ export default function DeviceTrackingPage() {
         title="QUẢN LÝ THIẾT BỊ"
         description="Theo dõi vị trí và trạng thái hoạt động trực tuyến của các thiết bị thời gian thực."
         icon={<Smartphone size={24} />}
+        actionButton={
+          <HelpGuide
+            title="Hướng dẫn Theo dõi Thiết bị"
+            steps={[
+              "<strong>Kết nối SignalR thời gian thực</strong>: Hệ thống tự động kết nối WebSocket để nhận dữ liệu ping vị trí GPS từ ứng dụng khách du lịch.",
+              "<strong>Chỉ số Online ngay bây giờ</strong>: Đếm số thiết bị đang mở app và gửi tín hiệu định vị trong vòng 30 giây gần nhất.",
+              "<strong>Bản đồ nhiệt & Marker</strong>: Các thiết bị đang online sẽ có chấm xanh nhấp nháy trên bản đồ thể hiện du khách đang di chuyển ở đâu.",
+              "<strong>Trạng thái kết nối</strong>: Kiểm tra biểu tượng Wi-Fi để biết hệ thống socket có đang thông suốt hay không."
+            ]}
+            tips={[
+              "Nếu trạng thái báo 'Mất kết nối SignalR', hãy tải lại trang để thiết lập lại kết nối socket.",
+              "Dữ liệu vị trí GPS được cập nhật tự động khi khách bật định vị vị trí trên điện thoại."
+            ]}
+          />
+        }
       />
 
       {/* DASHBOARD CARDS */}

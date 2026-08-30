@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Save, Loader2, ToggleLeft, ToggleRight, Globe, Eye, Settings2, Languages, AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
 import useAuth from "@/hooks/useAuth";
+import HelpGuide from "@/components/HelpGuide";
 
 import {
   getCmsSections,
@@ -391,9 +392,24 @@ export default function LandingSettingsPage() {
     <div>
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center gap-2 mb-1">
-          <Globe size={20} className="text-pink-500" />
-          <h1 className="text-2xl font-bold text-gray-900">Landing Page</h1>
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <Globe size={20} className="text-pink-500" />
+            <h1 className="text-2xl font-bold text-gray-900">Landing Page</h1>
+            <HelpGuide
+              title="Hướng dẫn Quản trị Landing Page"
+              steps={[
+                "<strong>Chọn Section</strong>: Chọn khối nội dung ở menu trái (Hero, Features, Screenshots, Banner Strip, Footer...).",
+                "<strong>Dịch thuật & Nội dung</strong>: Sửa văn bản hiển thị theo từng ngôn ngữ (VI là ngôn ngữ gốc). Bấm 'Lưu [LANG]' để lưu thay đổi.",
+                "<strong>Cấu hình chung (Shared)</strong>: Chuyển sang tab 'Cấu hình chung' để thay đổi hình ảnh, icon, link liên kết dùng chung.",
+                "<strong>Ẩn / Hiện Section</strong>: Dùng công tắc ở danh sách bên trái để bật hoặc tắt hiển thị khối đó trên Landing Page."
+              ]}
+              tips={[
+                "Mọi thay đổi sau khi bấm Lưu sẽ có hiệu lực ngay lập tức trên trang chủ mà không cần build hay deploy lại.",
+                "Bấm 'Xem trang' ở góc phải để mở trang chủ và kiểm tra giao diện thực tế."
+              ]}
+            />
+          </div>
         </div>
         <p className="text-gray-500 text-sm">Chỉnh sửa nội dung công khai — thay đổi được lưu ngay, không cần deploy lại.</p>
       </div>

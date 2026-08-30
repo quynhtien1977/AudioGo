@@ -18,6 +18,7 @@ import { accessCodeApi } from "@/api/accessCodeApi";
 import ConfirmModal from "@/components/ConfirmModal";
 import EmptyState from "@/components/EmptyState";
 import PageHeader from "@/components/PageHeader";
+import HelpGuide from "@/components/HelpGuide";
 import PageLoader from "@/components/PageLoader";
 import { SimpleTooltip } from "@/components/ui/tooltip";
 
@@ -125,6 +126,21 @@ export default function AccessCodePage() {
                 title="QUẢN LÝ MÃ TRUY CẬP"
                 description="Khách du lịch chỉ cần quét mã tĩnh để nhận vé (Token 7 ngày) truy cập tất cả tính năng."
                 icon={<QrCode size={24} />}
+                actionButton={
+                    <HelpGuide
+                        title="Hướng dẫn Quản lý Mã Truy Cập"
+                        steps={[
+                            "<strong>Tạo mã hàng loạt</strong>: Nhập số lượng mã cần cấp (1 - 100 vé) ở khung bên trái và bấm 'TẠO MÃ MỚI'.",
+                            "<strong>Quét QR kích hoạt</strong>: Khách du lịch dùng ứng dụng AudioGo trên điện thoại quét mã QR hoặc nhập chuỗi ký tự để kích hoạt vé.",
+                            "<strong>Thời hạn sử dụng</strong>: Sau khi kích hoạt lần đầu, khách được cấp quyền truy cập trọn gói tất cả các địa điểm và thuyết minh âm thanh trong 7 ngày.",
+                            "<strong>In ấn & Phân phối</strong>: Bấm 'Tải mã QR' để tải ảnh QR về in lên brochure, thẻ card hoặc vé giấy trao cho du khách."
+                        ]}
+                        tips={[
+                            "Mỗi mã vé chỉ có thể kích hoạt trên 1 thiết bị du khách.",
+                            "Bạn có thể xem trước và tải QR độ phân giải cao của bất kỳ mã nào trong danh sách."
+                        ]}
+                    />
+                }
             />
 
             {/* Content box */}

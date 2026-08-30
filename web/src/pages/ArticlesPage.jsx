@@ -5,6 +5,7 @@ import ConfirmModal from "@/components/ConfirmModal"
 import EmptyState from "@/components/EmptyState"
 import StatsCard from "@/components/StatsCard"
 import PageHeader from "@/components/PageHeader"
+import HelpGuide from "@/components/HelpGuide"
 import { SearchContext } from "@/context/SearchContext"
 import PageLoader from "@/components/PageLoader"
 import { formatDateVN } from "@/utils/formatDate"
@@ -129,19 +130,34 @@ export default function ArticlesPage() {
       {/* HEADER SECTION */}
       <PageHeader
         title="QUẢN LÝ BÀI VIẾT"
-        description="Đăng tải, sắp xếp và phân loại tin tức & mẹo du lịch cho du khách ứng dụng AudioGo."
+        description="Đăng tải và chỉnh sửa các bài cẩm nang du lịch và tin tức mới nhất."
         icon={<Newspaper size={24} />}
         actionButton={
-          <button
-            onClick={() => {
-              setSelectedArticleId(null)
-              setIsModalOpen(true)
-            }}
-            className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 active:scale-95 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-pink-100 hover:shadow-lg transition-all text-sm self-start md:self-auto"
-          >
-            <Plus size={18} />
-            Tạo bài viết mới
-          </button>
+          <div className="flex items-center gap-2">
+            <HelpGuide
+              title="Hướng dẫn Quản lý Bài viết & Tin tức"
+              steps={[
+                "<strong>Tạo bài viết mới</strong>: Bấm 'Tạo bài viết mới', nhập tiêu đề, chọn thể loại (Mẹo du lịch hoặc Tin tức), tải ảnh bìa và soạn thảo nội dung.",
+                "<strong>Phân loại thể loại</strong>: 'Mẹo du lịch' dành cho các cẩm nang, bí kíp khám phá; 'Tin tức' dành cho sự kiện, thông báo nóng hổi.",
+                "<strong>Trạng thái hiển thị</strong>: Bạn có thể bật/tắt công tắc trên từng bài viết để chọn hiển thị lên ứng dụng mobile hoặc lưu nháp.",
+                "<strong>Chỉnh sửa & Xóa</strong>: Sử dụng các nút hành động ở cột bên phải để sửa nội dung hoặc gỡ bỏ bài viết không còn phù hợp."
+              ]}
+              tips={[
+                "Ảnh bìa bài viết nên dùng tỉ lệ 16:9 với độ phân giải tốt để hiển thị bắt mắt trên ứng dụng du khách.",
+                "Nội dung nên có định dạng đoạn văn rõ ràng, có tiêu đề phụ để du khách dễ theo dõi."
+              ]}
+            />
+            <button
+              onClick={() => {
+                setSelectedArticleId(null)
+                setIsModalOpen(true)
+              }}
+              className="flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 active:scale-95 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-pink-100 hover:shadow-lg transition-all text-sm self-start md:self-auto cursor-pointer"
+            >
+              <Plus size={18} />
+              Tạo bài viết mới
+            </button>
+          </div>
         }
       />
 
