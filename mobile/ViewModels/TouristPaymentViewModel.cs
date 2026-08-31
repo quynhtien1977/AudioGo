@@ -1,4 +1,4 @@
-﻿using System.Windows.Input;
+using System.Windows.Input;
 using AudioGo.Helpers;
 using AudioGo.Services.Interfaces;
 using AudioGo.ViewModels;
@@ -121,10 +121,10 @@ public class TouristPaymentViewModel : BaseViewModel
                 StatusMessage = "";
         });
 
-        CancelCommand = new Command(async () =>
+        CancelCommand = new Command(() =>
         {
-            _pollCts?.Cancel();
-            await Shell.Current?.Navigation?.PopAsync();
+            // CancelPolling chỉ hủy CTS — việc PopAsync do View gọi sau đó
+            CancelPolling();
         });
 
         ManualVerifyCommand = new Command(async () =>
@@ -165,6 +165,15 @@ public class TouristPaymentViewModel : BaseViewModel
         });
 
         EnterAppCommand = new Command(async () => await NavigateToApp());
+    }
+
+    /// <summary>
+    /// Hủy CancellationToken của poll loop — gọi từ View trước khi PopAsync.
+    /// An toàn khi gọi nhiều lần.
+    /// </summary>
+    public void CancelPolling()
+    {
+        try { _pollCts?.Cancel(); } catch { /* đã cancel rồi */ }
     }
 
     // ── Init payment ──────────────────────────────────────────────────────────
