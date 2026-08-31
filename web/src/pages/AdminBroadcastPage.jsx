@@ -153,7 +153,7 @@ export default function AdminBroadcastPage() {
                 Gửi thông báo hệ thống (Broadcast)
               </h1>
               <p className="text-sm text-gray-500 mt-0.5">
-                Phát thông báo tức thì tới nhóm người dùng CMS hoặc người dùng ứng dụng di động
+                Phát thông báo tức thì tới nhóm người dùng CMS. Chọn "Cảnh báo hệ thống" để hiện banner trên app mobile khi khởi động.
               </p>
             </div>
           </div>
@@ -376,8 +376,9 @@ export default function AdminBroadcastPage() {
                 <span>Lưu ý quan trọng:</span>
               </p>
               <ul className="list-disc pl-4 space-y-1">
-                <li>Thông báo sẽ được gửi tức thì đến hộp thư của tất cả tài khoản thuộc nhóm đã chọn.</li>
-                <li>Biểu tượng chuông thông báo của các tài khoản đang hoạt động sẽ tự động cập nhật sau mỗi 30 giây.</li>
+                <li>Thông báo CMS sẽ được gửi tức thì đến hộp thư của tất cả tài khoản thuộc nhóm đã chọn.</li>
+                <li>Biểu tượng chuông của các tài khoản đang hoạt động sẽ tự động cập nhật sau mỗi 30 giây.</li>
+                <li>Cảnh báo hệ thống (App Alert) hiện 1 lần trên app mobile khi khởi động — sau khi đóng sẽ không hiện lại cho đến khi có cảnh báo mới.</li>
               </ul>
             </div>
           </div>

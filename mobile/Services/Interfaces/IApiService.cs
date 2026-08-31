@@ -30,6 +30,13 @@ namespace AudioGo.Services.Interfaces
 
         /// <summary>Kiểm tra trạng thái thanh toán (poll mỗi 5s). Trả null nếu lỗi network.</summary>
         Task<TouristPaymentVerifyResult?> VerifyTouristPaymentAsync(string transactionId, string deviceId, CancellationToken ct = default);
+
+        // ── System Alert ──────────────────────────────────────────────────────────
+        /// <summary>
+        /// Lấy cảnh báo hệ thống mới nhất từ server (Public broadcast).
+        /// Gọi khi khởi động app — không cần JWT. Trả null nếu không có cảnh báo hoặc lỗi network.
+        /// </summary>
+        Task<NotificationDto?> GetSystemAlertAsync(CancellationToken ct = default);
     }
 
     // ── DTOs ────────────────────────────────────────────────────────────────

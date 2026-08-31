@@ -1,7 +1,9 @@
-﻿using AudioGo.Helpers;
+using AudioGo.Helpers;
 using AudioGo.Services;
 using AudioGo.Services.Interfaces;
 using AudioGo.ViewModels;
+using AudioGo_Mobile.Views;
+using CommunityToolkit.Maui.Views;
 using Shared;
 using Shared.DTOs;
 using System.Collections.ObjectModel;
@@ -282,6 +284,60 @@ namespace AudioGo.ViewModels
 
             // Sau khi init xong, bắt đầu vòng lặp delta polling 5 phút
             StartDeltaPolling();
+
+            // Kiểm tra cảnh báo hệ thống sau khi MainPage đã render xong
+            // Fire-and-forget để không block UI — popup sẽ hiện sau ~1s
+            _ = CheckSystemAlertAsync();
+        }
+
+        /// <summary>
+        /// Lấy cảnh báo hệ thống mới nhất từ server.
+        /// Nếu NotificationId khác với lần cuối user đã đóng → hiện CustomAlertPopup.
+        /// Sau khi đóng → lưu NotificationId vào Preferences để không hiện lại.
+        /// </summary>
+        private async Task CheckSystemAlertAsync()
+        {
+            try
+            {
+                var alert = await _api.GetSystemAlertAsync();
+                if (alert is null) return;
+
+                // So sánh với lần cuối đã dismiss
+                var lastDismissed = Preferences.Default.Get("LastDismissedAlertId", string.Empty);
+                if (alert.NotificationId == lastDismissed) return;
+
+                // Hiện popup trên main thread
+                await MainThread.InvokeOnMainThreadAsync(async () =>
+                {
+                    try
+                    {
+                        var page = Application.Current?.Windows.FirstOrDefault()?.Page;
+                        if (page is null) return;
+
+                        var popup = new CustomAlertPopup(
+                            alert.Title,
+                            alert.Body,
+                            AppStrings.Get("close"));
+
+                        await page.ShowPopupAsync(popup);
+
+                        // Lưu id sau khi user đóng (dù bấm nút hay tap ngoài)
+                        Preferences.Default.Set("LastDismissedAlertId", alert.NotificationId);
+                    }
+                    catch (Exception ex)
+                    {
+                        #if DEBUG
+                        System.Diagnostics.Debug.WriteLine($"[MainViewModel] ShowSystemAlert error: {ex.Message}");
+                        #endif
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                #if DEBUG
+                System.Diagnostics.Debug.WriteLine($"[MainViewModel] CheckSystemAlert error: {ex.Message}");
+                #endif
+            }
         }
 
         private async Task LoadCategoriesAsync()
