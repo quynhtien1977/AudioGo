@@ -1,4 +1,4 @@
-﻿using AudioGo.Services.Interfaces;
+using AudioGo.Services.Interfaces;
 using Shared;
 using Shared.DTOs;
 using System.Collections.ObjectModel;
@@ -456,6 +456,25 @@ namespace AudioGo.Services
             public string? Status  { get; set; }
             public string? Message { get; set; }
             public string? Token   { get; set; }
+        }
+
+        // ── System Alert ─────────────────────────────────────────────────────────
+
+        /// <inheritdoc/>
+        public async Task<NotificationDto?> GetSystemAlertAsync(CancellationToken ct = default)
+        {
+            try
+            {
+                // Public endpoint — không cần Bearer token
+                return await _http.GetFromJsonAsync<NotificationDto>("api/mobile/system-alert", ct);
+            }
+            catch (Exception ex)
+            {
+                #if DEBUG
+                Debug.WriteLine($"[ApiService] GetSystemAlertAsync error: {ex.Message}");
+                #endif
+                return null; // fail silently — không block app startup
+            }
         }
     }
 }

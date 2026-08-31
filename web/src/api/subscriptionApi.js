@@ -271,6 +271,18 @@ export const expireSubscriptionApi =
     return res.data
   }
 
+/**
+ * Admin gán gói cho Owner
+ * POST /cms/subscriptions/owner/{accountId}/assign
+ */
+export const assignPlanToOwnerApi = async (accountId, planId) => {
+  const res = await client.post(
+    `/cms/subscriptions/owner/${accountId}/assign`,
+    { planId }
+  )
+  return res.data
+}
+
 // ======================
 // ADMIN - TRANSACTIONS
 // ======================
@@ -363,6 +375,7 @@ export default {
   getOwnerSubscriptionDetailsApi,
   updateOwnerSubscriptionApi,
   expireSubscriptionApi,
+  assignPlanToOwnerApi,
 
   // Transactions
   getAllTransactionsApi,

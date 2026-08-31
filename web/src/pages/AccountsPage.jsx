@@ -8,6 +8,7 @@ import {
   Users,
   Shield,
   Briefcase,
+  Crown,
 } from "lucide-react"
 import PageLoader from "@/components/PageLoader"
 import toast from "react-hot-toast"
@@ -20,11 +21,13 @@ import {
 
 import {
   getSubscriptionPlansApi,
+  assignPlanToOwnerApi,
 } from "@/api/subscriptionApi"
 import { formatDateVN } from "@/utils/formatDate"
 
 import CreateAccountModal from "@/components/CreateAccountModal"
 import ConfirmModal from "@/components/ConfirmModal"
+import AssignPlanModal from "@/components/AssignPlanModal"
 import EmptyState from "@/components/EmptyState"
 import PageHeader from "@/components/PageHeader"
 import HelpGuide from "@/components/HelpGuide"
@@ -100,6 +103,9 @@ export default function AccountsPage() {
   const [loading, setLoading] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteUserId, setDeleteUserId] = useState(null)
+
+  const [showAssignPlanModal, setShowAssignPlanModal] = useState(false)
+  const [selectedOwnerForPlan, setSelectedOwnerForPlan] = useState(null)
 
   const currentUser = getCurrentUser()
   const currentUserId = currentUser?.accountId
@@ -289,6 +295,14 @@ export default function AccountsPage() {
   }
 
   // =========================
+  // ASSIGN PLAN TO OWNER
+  // =========================
+  const handleOpenAssignModal = (user) => {
+    setSelectedOwnerForPlan(user)
+    setShowAssignPlanModal(true)
+  }
+
+  // =========================
   // PAGINATION
   // =========================
   const displayData = filteredUsers
@@ -450,8 +464,16 @@ export default function AccountsPage() {
                   </select>
                 </div>
 
-                <div className="text-center text-pink-500 font-semibold text-sm">
-                  {subscriptionPlanName}
+                <div className="text-center">
+                  {isAdmin ? (
+                    <span className="text-gray-300">—</span>
+                  ) : user.role === "Owner" ? (
+                    <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-pink-50 text-pink-600 border border-pink-100/60 shadow-2xs">
+                      {subscriptionPlanName !== "—" ? subscriptionPlanName : "Chưa gán gói"}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-gray-400">—</span>
+                  )}
                 </div>
 
                 <div className="text-center text-xs text-gray-500">
@@ -467,6 +489,18 @@ export default function AccountsPage() {
                     <span className="text-gray-300">—</span>
                   ) : (
                     <>
+                      {user.role === "Owner" && !user.isLocked && (
+                        <SimpleTooltip content="Gán gói cước cho Owner này">
+                          <button
+                            onClick={() => handleOpenAssignModal(user)}
+                            className="p-2 rounded-xl text-gray-400 hover:text-amber-500 hover:bg-amber-50 transition-colors cursor-pointer"
+                            title="Gán gói cước"
+                          >
+                            <Crown size={16} />
+                          </button>
+                        </SimpleTooltip>
+                      )}
+
                       <SimpleTooltip content={user.isLocked ? "Mở khóa tài khoản này" : "Khóa tài khoản này"}>
                         <button
                           onClick={() =>
@@ -593,6 +627,25 @@ export default function AccountsPage() {
           onConfirm={handleConfirmDelete}
           onCancel={() => setShowDeleteModal(false)}
           isLoading={loading}
+        />
+      )}
+
+      {/* ASSIGN PLAN MODAL */}
+      {showAssignPlanModal && (
+        <AssignPlanModal
+          open={showAssignPlanModal}
+          owner={selectedOwnerForPlan}
+          plans={plans}
+          onClose={() => setShowAssignPlanModal(false)}
+          onAssigned={(accountId, newPlanId) => {
+            setUsers((prev) =>
+              prev.map((u) =>
+                u.accountId === accountId
+                  ? { ...u, subscriptionPlanId: newPlanId }
+                  : u
+              )
+            )
+          }}
         />
       )}
     </div>

@@ -32,8 +32,9 @@ namespace Server.Data
         public DbSet<ConsultationRequest> ConsultationRequests => Set<ConsultationRequest>();
 
         // ── CMS Enhancements ─────────────────────────────────────────────
-        public DbSet<Banner>     Banners     => Set<Banner>();
-        public DbSet<AppSetting> AppSettings => Set<AppSetting>();
+        public DbSet<Banner>       Banners       => Set<Banner>();
+        public DbSet<AppSetting>   AppSettings   => Set<AppSetting>();
+        public DbSet<Notification> Notifications => Set<Notification>();
 
         protected override void OnModelCreating(ModelBuilder m)
         {
@@ -62,6 +63,7 @@ namespace Server.Data
             m.Entity<ConsultationRequest>().ToTable("ConsultationRequest");
             m.Entity<Banner>             ().ToTable("Banner");
             m.Entity<AppSetting>         ().ToTable("AppSetting");
+            m.Entity<Notification>       ().ToTable("Notification");
 
             // ── 2. Primary Keys ─────────────────────────────────────────
             m.Entity<PoiContent>          ().HasKey(e => e.ContentId);
@@ -73,6 +75,27 @@ namespace Server.Data
             m.Entity<ConsultationRequest> ().HasKey(e => e.RequestId);
             m.Entity<Banner>              ().HasKey(e => e.BannerId);
             m.Entity<AppSetting>          ().HasKey(e => e.SettingKey);
+            m.Entity<Notification>        ().HasKey(e => e.NotificationId);
+
+            // ── Notification: FK + index ─────────────────────────────────
+            m.Entity<Notification>()
+                .HasOne(n => n.RecipientAccount)
+                .WithMany()
+                .HasForeignKey(n => n.RecipientAccountId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .IsRequired(false);
+
+            m.Entity<Notification>()
+                .HasOne(n => n.CreatedByAccount)
+                .WithMany()
+                .HasForeignKey(n => n.CreatedByAccountId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
+            // Index tối ưu query GET /unread cho từng recipient
+            m.Entity<Notification>()
+                .HasIndex(n => new { n.RecipientAccountId, n.IsRead })
+                .HasDatabaseName("IX_Notification_Recipient_IsRead");
 
             // LandingSection.ContentJson — nvarchar(max)
             m.Entity<LandingSection>().Property(s => s.ContentJson)

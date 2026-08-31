@@ -17,6 +17,7 @@ namespace Server.Services
         private readonly IContentPipelineQueue _pipelineQueue;
         private readonly SubscriptionService _subscription;
         private readonly IPoiContentService _poiContent;
+        private readonly INotificationService _notifications;
 
         private static string Normalize(string? s) => s?.Replace("\r\n", "\n").Trim() ?? "";
 
@@ -26,7 +27,8 @@ namespace Server.Services
             IServiceProvider serviceProvider,
             IContentPipelineQueue pipelineQueue,
             SubscriptionService subscription,
-            IPoiContentService poiContent)
+            IPoiContentService poiContent,
+            INotificationService notifications)
         {
             _db              = db;
             _pois            = pois;
@@ -34,6 +36,7 @@ namespace Server.Services
             _pipelineQueue   = pipelineQueue;
             _subscription    = subscription;
             _poiContent      = poiContent;
+            _notifications   = notifications;
         }
 
         public async Task<List<PoiRequestListDto>> GetMyPoiRequestsAsync(string accountId, string? status = null)
@@ -444,6 +447,36 @@ namespace Server.Services
             request.UpdatedAt = DateTime.UtcNow;
             _db.PoiRequests.Update(request);
             await _db.SaveChangesAsync();
+
+            // ── Gửi thông báo cho Owner ──────────────────────────────────
+            try
+            {
+                if (reviewData.Approved)
+                {
+                    await _notifications.CreateAsync(
+                        recipientAccountId: request.AccountId,
+                        type:  "PoiApproved",
+                        title: "Yêu cầu POI được duyệt",
+                        body:  $"Yêu cầu {request.ActionType} POI của bạn đã được Admin phê duyệt thành công.");
+                }
+                else
+                {
+                    var reason = string.IsNullOrWhiteSpace(reviewData.RejectReason)
+                        ? "Không có lý do"
+                        : reviewData.RejectReason;
+                    await _notifications.CreateAsync(
+                        recipientAccountId: request.AccountId,
+                        type:  "PoiRejected",
+                        title: "Yêu cầu POI bị từ chối",
+                        body:  $"Yêu cầu {request.ActionType} POI của bạn bị từ chối. Lý do: {reason}");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Không để lỗi notification làm fail toàn bộ review flow
+                // Log để debug nhưng vẫn trả về Success
+                System.Diagnostics.Debug.WriteLine($"[Notification] Failed to create POI review notification: {ex.Message}");
+            }
 
             return new ReviewPoiResult
             {

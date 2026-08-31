@@ -112,6 +112,7 @@ builder.Services.AddScoped<IConsultationService, ConsultationService>();
 builder.Services.AddMemoryCache(); // Dùng cho AppSettingService (cache 60s)
 builder.Services.AddScoped<IBannerService, BannerService>();
 builder.Services.AddScoped<IAppSettingService, AppSettingService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 // ── Background Queues ────────────────────────────────────────────────
 // Location log queue: RabbitMQ external broker (docker-compose up -d)

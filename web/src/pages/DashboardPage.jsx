@@ -4,7 +4,7 @@ import {
   MapPin, Headphones, LayoutDashboard, Clock,
   Users, ArrowRight, ShieldCheck, AlertTriangle, Bell, CheckCircle,
   Newspaper, Route as RouteIcon, Globe, FileText, Plus, Sparkles,
-  Megaphone, Settings
+  Megaphone, Settings, Send
 } from "lucide-react"
 
 import StatsCard from "@/components/StatsCard"
@@ -294,6 +294,7 @@ export default function DashboardPage() {
               { label: "Xét duyệt đơn", path: "/admin/pois/management",  icon: <ShieldCheck size={16} /> },
               { label: "Banners",       path: "/admin/banners",         icon: <Megaphone size={16} /> },
               { label: "Tài khoản",     path: "/admin/accounts",        icon: <Users size={16} /> },
+              { label: "Gửi thông báo", path: "/admin/notifications",   icon: <Send size={16} /> },
               { label: "Cài đặt",       path: "/admin/settings",        icon: <Settings size={16} /> },
             ].map(({ label, path, icon }) => (
               <button

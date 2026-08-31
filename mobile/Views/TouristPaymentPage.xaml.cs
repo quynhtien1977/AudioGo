@@ -14,10 +14,22 @@ public partial class TouristPaymentPage : ContentPage
         BindingContext = vm;
     }
 
-    private async void OnBackTapped(object sender, EventArgs e)
+    private void OnBackTapped(object sender, EventArgs e)
     {
-        // Hủy poll nếu đang chờ
-        _vm.CancelCommand.Execute(null);
+        // Cancel polling rồi pop — dùng Navigation của page này (NavigationPage stack),
+        // không dùng Shell.Current vì chưa vào app shell.
+        _vm.CancelPolling();
+        _ = Navigation.PopAsync();
+    }
+
+    /// <summary>
+    /// Override nút back vật lý Android — càng cancel polling trước khi pop.
+    /// </summary>
+    protected override bool OnBackButtonPressed()
+    {
+        _vm.CancelPolling();
+        _ = Navigation.PopAsync();
+        return true; // true = đã xử lý, không dùng default behavior
     }
 
     protected override void OnAppearing()

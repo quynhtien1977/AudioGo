@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom"
-import { Search, X, User, Menu } from "lucide-react"
+import { Search, X, User, Menu, LogOut, ChevronDown } from "lucide-react"
 import { useState, useEffect, useRef, useContext } from "react"
 import { getAllPOIs } from "../api/poiApi"
 import { getAllPoiRequestsAll } from "../api/poiRequestApi"
@@ -12,6 +12,7 @@ import { useSubscription } from "../context/SubscriptionContext"
 import { getAllArticles } from "../api/articleApi"
 import * as subscriptionApi from "../api/subscriptionApi"
 import useAuth from "../hooks/useAuth"
+import NotificationBell from "./NotificationBell"
 
 export default function Topbar({ onToggleMobileSidebar }) {
   const navigate = useNavigate()
@@ -25,11 +26,52 @@ export default function Topbar({ onToggleMobileSidebar }) {
   const [allData, setAllData] = useState([])
   const [showResults, setShowResults] = useState(false)
   const [searchFocused, setSearchFocused] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
   const searchRef = useRef(null)
+  const profileRef = useRef(null)
+  const mobileProfileRef = useRef(null)
   // Cache: track which pageType đã được fetch, tránh re-fetch khi không cần
   const hasFetchedRef = useRef(null)
 
   const role = user?.role
+
+  const getUserBadgeInfo = () => {
+    if (role === "Owner") {
+      const planName = currentSubscription?.planName
+      return {
+        label: planName || "Chưa có gói",
+        fullTag: planName ? `Gói ${planName}` : "Chủ địa điểm",
+        tag: planName ? `Owner • Gói ${planName}` : "Owner",
+        textColor: "text-teal-600 font-semibold",
+        badgeClass: "bg-teal-50 text-teal-700 border-teal-200",
+        avatarBg: "bg-gradient-to-tr from-teal-500 to-emerald-400 text-white",
+        avatarFallback: "bg-teal-100 text-teal-700",
+      }
+    }
+    if (role === "Editor") {
+      return {
+        label: "Biên tập viên",
+        fullTag: "Biên tập viên",
+        tag: "Biên tập viên",
+        textColor: "text-purple-600 font-semibold",
+        badgeClass: "bg-purple-50 text-purple-700 border-purple-200",
+        avatarBg: "bg-gradient-to-tr from-purple-500 to-indigo-500 text-white",
+        avatarFallback: "bg-purple-100 text-purple-700",
+      }
+    }
+    // Admin default
+    return {
+      label: "Quản trị viên",
+      fullTag: "Quản trị viên",
+      tag: "Quản trị viên (Admin)",
+      textColor: "text-pink-600 font-semibold",
+      badgeClass: "bg-pink-50 text-pink-700 border-pink-200",
+      avatarBg: "bg-gradient-to-tr from-pink-500 to-rose-400 text-white",
+      avatarFallback: "bg-pink-100 text-pink-700",
+    }
+  }
+
+  const userBadge = getUserBadgeInfo()
 
   // Determine placeholder text based on the current route
   const getPlaceholder = () => {
@@ -370,11 +412,19 @@ export default function Topbar({ onToggleMobileSidebar }) {
     updateSearch(searchVal, pageType)
   }
 
-  // Close dropdown when clicking outside
+  // Close search and profile dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setShowResults(false)
+      }
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(event.target) &&
+        mobileProfileRef.current &&
+        !mobileProfileRef.current.contains(event.target)
+      ) {
+        setProfileOpen(false)
       }
     }
 
@@ -453,47 +503,89 @@ export default function Topbar({ onToggleMobileSidebar }) {
         )}
 
         {/* Right */}
-        <div className="flex items-center gap-4 ml-auto">
-          {/* Logout */}
-          <button
-            onClick={() => { logout(); navigate("/login"); }}
-            className="px-3 py-1 rounded-full text-sm bg-gray-200 hover:bg-pink-500 hover:text-white transition duration-200 cursor-pointer"
-            title="Đăng xuất khỏi hệ thống"
-          >
-            Đăng xuất
-          </button>
-
-          {/* User Info */}
-          {(role === "Owner" || role === "Editor") ? (
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate("/admin/profile")}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-pink-50 transition"
-              >
-                <User size={16} className="text-pink-500" />
-                <div className="text-right">
-                  <p className="font-semibold text-sm">{user.fullName || user.username}</p>
-                  {role === "Owner" && (
-                    <p className="text-xs text-teal-600">
-                      {currentSubscription?.planName || "Chưa có"}
-                    </p>
-                  )}
-                  {role === "Editor" && (
-                    <p className="text-xs text-purple-600">
-                      Biên tập viên
-                    </p>
-                  )}
-                </div>
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-4">
-              <div className="text-right mr-4">
-                <p className="font-semibold text-sm">{user.fullName || user.username}</p>
-                <p className="text-xs text-gray-400">{role}</p>
-              </div>
-            </div>
+        <div className="flex items-center gap-3 ml-auto">
+          {/* NotificationBell — hiển thị cho Owner, Editor, Admin */}
+          {(role === "Owner" || role === "Editor" || role === "Admin") && (
+            <NotificationBell />
           )}
+
+          {/* User Profile Dropdown Menu */}
+          <div className="relative" ref={profileRef}>
+            <button
+              onClick={() => setProfileOpen((prev) => !prev)}
+              className="flex items-center gap-2.5 p-1.5 pl-2 pr-3 rounded-full hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200 cursor-pointer select-none"
+              title="Tài khoản & Cài đặt"
+            >
+              <div className={`w-8 h-8 rounded-full ${userBadge.avatarBg} flex items-center justify-center font-bold text-xs shadow-xs`}>
+                {user?.fullName ? user.fullName[0].toUpperCase() : (user?.username ? user.username[0].toUpperCase() : "U")}
+              </div>
+              <div className="text-left hidden lg:block">
+                <p className="font-semibold text-xs text-gray-800 leading-tight">
+                  {user?.fullName || user?.username}
+                </p>
+                <p className={`text-[11px] ${userBadge.textColor}`}>
+                  {userBadge.label}
+                </p>
+              </div>
+              <ChevronDown
+                size={14}
+                className={`text-gray-400 transition-transform duration-200 ${
+                  profileOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            {/* Dropdown Box */}
+            {profileOpen && (
+              <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-100 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                {/* User Card Header */}
+                <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/60 flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-full ${userBadge.avatarFallback} flex items-center justify-center font-bold text-sm flex-shrink-0`}>
+                    {user?.fullName ? user.fullName[0].toUpperCase() : "U"}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-xs text-gray-900 truncate">
+                      {user?.fullName || user?.username}
+                    </p>
+                    <p className="text-[11px] text-gray-500 truncate">
+                      {user?.email || `@${user?.username}`}
+                    </p>
+                    <span className={`inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${userBadge.badgeClass}`}>
+                      {userBadge.tag}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Menu Items */}
+                <div className="py-1">
+                  <button
+                    onClick={() => {
+                      setProfileOpen(false);
+                      navigate("/admin/profile");
+                    }}
+                    className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-pink-50 hover:text-pink-600 transition-colors cursor-pointer"
+                  >
+                    <User size={15} className="text-gray-400" />
+                    <span>Hồ sơ cá nhân</span>
+                  </button>
+                </div>
+
+                <div className="border-t border-gray-100 pt-1 mt-1">
+                  <button
+                    onClick={() => {
+                      setProfileOpen(false);
+                      logout();
+                      navigate("/login");
+                    }}
+                    className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                  >
+                    <LogOut size={15} className="text-red-500" />
+                    <span>Đăng xuất</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -577,30 +669,48 @@ export default function Topbar({ onToggleMobileSidebar }) {
           )}
         </div>
 
-        {/* Right: User Profile & Logout */}
+        {/* Right: Notification + User Profile Menu */}
         <div className="flex items-center gap-2 ml-auto flex-shrink-0">
-          {(role === "Owner" || role === "Editor") ? (
-            <button
-              onClick={() => navigate("/admin/profile")}
-              className="p-1 rounded-full hover:bg-pink-50 transition"
-              title={user.fullName || user.username}
-            >
-              <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center text-pink-600">
-                <User size={15} />
-              </div>
-            </button>
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center text-pink-600" title={user.fullName || user.username}>
-              <User size={15} />
-            </div>
+          {/* NotificationBell */}
+          {(role === "Owner" || role === "Editor" || role === "Admin") && (
+            <NotificationBell />
           )}
 
-          <button
-            onClick={() => { logout(); navigate("/login"); }}
-            className="px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 hover:bg-pink-500 hover:text-white text-gray-600 transition duration-150 whitespace-nowrap"
-          >
-            Đăng xuất
-          </button>
+          {/* Mobile User Profile Button */}
+          <div className="relative" ref={mobileProfileRef}>
+            <button
+              onClick={() => setProfileOpen((prev) => !prev)}
+              className={`w-8 h-8 rounded-full ${userBadge.avatarBg} flex items-center justify-center font-bold text-xs shadow-xs cursor-pointer`}
+              title={user?.fullName || user?.username}
+            >
+              {user?.fullName ? user.fullName[0].toUpperCase() : (user?.username ? user.username[0].toUpperCase() : "U")}
+            </button>
+            
+            {/* Mobile Dropdown Box */}
+            {profileOpen && (
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50">
+                <button
+                  onClick={() => {
+                    setProfileOpen(false);
+                    navigate("/admin/profile");
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-xs text-gray-700 hover:bg-pink-50"
+                >
+                  <User size={14} /> Hồ sơ
+                </button>
+                <button
+                  onClick={() => {
+                    setProfileOpen(false);
+                    logout();
+                    navigate("/login");
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-xs text-red-600 hover:bg-red-50 border-t border-gray-50"
+                >
+                  <LogOut size={14} /> Đăng xuất
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </>
