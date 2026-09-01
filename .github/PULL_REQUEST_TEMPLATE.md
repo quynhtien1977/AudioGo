@@ -1,44 +1,44 @@
-## 📋 Mô tả
+## 📋 Description
 
-<!-- Mô tả ngắn gọn những thay đổi trong PR này và lý do tại sao -->
+<!-- Briefly describe the changes introduced in this PR and why they are needed. -->
 
-Fixes # (issue number nếu có)
-
----
-
-## 🔄 Loại thay đổi
-
-- [ ] 🐛 Bug fix (thay đổi không phá vỡ tính năng hiện tại, sửa lỗi)
-- [ ] ✨ New feature (thay đổi không phá vỡ tính năng hiện tại, thêm tính năng mới)
-- [ ] 💥 Breaking change (fix hoặc feature làm thay đổi behavior của tính năng hiện tại)
-- [ ] 📝 Documentation update
-- [ ] ♻️ Refactor (không thay đổi functionality)
-- [ ] 🎨 UI/UX improvement
-- [ ] ⚡ Performance improvement
+Fixes # (issue number if applicable)
 
 ---
 
-## 🧪 Test
+## 🔄 Type of Change
 
-- [ ] `dotnet build` thành công
-- [ ] `dotnet test` pass (không có test fail mới)
-- [ ] `npm run build` thành công (với thay đổi web)
-- [ ] Test thủ công trên emulator/thiết bị thật (với thay đổi mobile)
-
----
-
-## 📸 Screenshots (nếu thay đổi UI)
-
-| Trước | Sau |
-|---|---|
-| screenshot | screenshot |
+- [ ] 🐛 **Bug fix** (non-breaking change which fixes an issue)
+- [ ] ✨ **New feature** (non-breaking change which adds functionality)
+- [ ] 💥 **Breaking change** (fix or feature that would cause existing functionality to not work as expected)
+- [ ] 📝 **Documentation update**
+- [ ] ♻️ **Refactoring** (code structure improvement with no behavior change)
+- [ ] 🎨 **UI/UX improvement**
+- [ ] ⚡ **Performance improvement**
 
 ---
 
-## 📝 Checklist
+## 🧪 Testing & Verification
 
-- [ ] Code tuân theo convention của project
-- [ ] Đã tự review code của mình
-- [ ] Đã thêm comment cho code phức tạp
-- [ ] Không commit file `.env`, secrets, hay credentials
-- [ ] PR nhắm vào branch `develop` (không phải `main`)
+- [ ] `dotnet build` passes with zero errors
+- [ ] `dotnet test` all tests pass
+- [ ] `npm run build` passes with zero errors (for Web CMS changes)
+- [ ] Manually tested on Android Emulator / Physical device (for Mobile changes)
+
+---
+
+## 📸 Screenshots / Demos (if applicable)
+
+| Before | After |
+|:---:|:---:|
+| <!-- Screenshot or GIF --> | <!-- Screenshot or GIF --> |
+
+---
+
+## 📝 Pre-Merge Checklist
+
+- [ ] Code adheres to the established project style conventions
+- [ ] Performed self-review of changes
+- [ ] Added comments for non-trivial/complex business logic
+- [ ] No `.env`, secrets, API keys, or credentials committed
+- [ ] PR targets the **`develop`** branch (not `main`)

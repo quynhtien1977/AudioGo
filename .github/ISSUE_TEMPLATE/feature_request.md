@@ -1,26 +1,26 @@
 ---
 name: 💡 Feature Request
-about: Đề xuất ý tưởng hoặc tính năng mới cho AudioGo
+about: Suggest an idea or new feature for AudioGo
 title: '[FEAT] '
 labels: enhancement
 assignees: ''
 ---
 
-## 🚀 Tính năng đề xuất
-<!-- Mô tả tính năng bạn muốn thêm -->
+## 🚀 Proposed Feature
+<!-- A clear and concise description of the feature you are proposing. -->
 
-## 🎯 Vấn đề / Use case
-<!-- Tính năng này giải quyết vấn đề gì? Ai sẽ được hưởng lợi? -->
-<!-- Ví dụ: "Là một du khách, tôi muốn... để tôi có thể..." -->
+## 🎯 Problem / Use Case
+<!-- What problem does this feature solve? Who will benefit from it? -->
+<!-- e.g., "As a tourist, I want to... so that I can..." -->
 
-## 💭 Giải pháp đề xuất
-<!-- Nếu bạn đã có ý tưởng về cách implement, mô tả ở đây -->
+## 💭 Proposed Solution
+<!-- Describe how you envision this feature being implemented. -->
 
-## 🔄 Giải pháp thay thế đã cân nhắc
-<!-- Có cách nào khác để giải quyết vấn đề này không? -->
+## 🔄 Alternatives Considered
+<!-- A clear and concise description of any alternative solutions or features you've considered. -->
 
-## 📸 Mockup / Tham khảo
-<!-- Hình ảnh, link, hay ví dụ từ app khác (nếu có) -->
+## 📸 Mockups / References
+<!-- Add images, wireframes, or examples from other applications if available. -->
 
-## 📌 Thông tin thêm
-<!-- Context khác về feature request này -->
+## 📌 Additional Context
+<!-- Add any other context or screenshots about the feature request here. -->

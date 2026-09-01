@@ -1,114 +1,115 @@
 # 🤝 Contributing to AudioGo
 
-Cảm ơn bạn đã quan tâm đến dự án AudioGo! Dưới đây là hướng dẫn để đóng góp hiệu quả.
+<p align="center">
+  <a href="./CONTRIBUTING.md"><b>English</b></a> |
+  <a href="./CONTRIBUTING.vi.md"><b>Tiếng Việt</b></a> |
+  <a href="./CONTRIBUTING.zh-CN.md"><b>简体中文</b></a>
+</p>
+
+Thank you for your interest in contributing to AudioGo! Here are the guidelines for an efficient and collaborative workflow.
 
 ---
 
-## 🚦 Trước khi bắt đầu
+## 🚦 Before You Begin
 
-1. **Fork** repo về tài khoản của bạn
-2. **Clone** fork về máy local
-3. Đọc [README.md](README.md) để hiểu kiến trúc tổng quan
-4. Kiểm tra [Issues](../../issues) và [Pull Requests](../../pulls) đang mở để tránh trùng lặp
+1. **Fork** this repository to your GitHub account.
+2. **Clone** your fork locally:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/AudioGo.git
+   cd AudioGo
+   ```
+3. Read the [README.md](README.md) to understand the overall architecture.
+4. Check existing [Issues](../../issues) and [Pull Requests](../../pulls) to avoid duplicate work.
 
 ---
 
 ## 🌿 Branching Strategy
 
 ```
-main        ← Production-ready. KHÔNG push trực tiếp
-develop     ← Integration branch. Base cho mọi feature branch
-feature/*   ← Tính năng mới  (từ develop)
-fix/*       ← Bug fix         (từ develop)
-hotfix/*    ← Khẩn cấp        (từ main, merge về cả main và develop)
+main        ← Production-ready. DIRECT PUSH IS STRICTLY PROHIBITED.
+develop     ← Integration branch. Base branch for all feature branches.
+feature/*   ← New features (branched from develop).
+fix/*       ← Bug fixes (branched from develop).
+hotfix/*    ← Critical production fixes (branched from main, merged to both main & develop).
 ```
 
-**Đặt tên branch:** `feature/add-tour-rating`, `fix/geofence-cooldown`, `hotfix/payment-crash`
+**Branch naming convention:** `feature/add-tour-rating`, `fix/geofence-cooldown`, `hotfix/payment-crash`
 
 ---
 
-## 📝 Quy trình đóng góp
+## 📝 Contribution Workflow
 
-### 1. Tạo branch mới
+### 1. Create a New Branch
 ```bash
 git checkout develop
 git pull origin develop
-git checkout -b feature/ten-tinh-nang-cua-ban
+git checkout -b feature/your-feature-name
 ```
 
-### 2. Viết code
-- Tuân theo convention của từng project (C# / JSX)
-- Thêm comment cho logic phức tạp
-- Không commit file `.env`, secrets, hay build artifacts
+### 2. Write Code & Tests
+- Adhere to the established coding standards (C# / .NET MAUI / React JSX).
+- Add inline XML/JSDoc comments for complex business logic.
+- Never commit `.env` files, production secrets, or build artifacts (`bin/`, `obj/`, `dist/`).
 
-### 3. Commit
-Dùng [Conventional Commits](https://www.conventionalcommits.org/):
+### 3. Commit Changes
+Follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
 
 ```
-feat: thêm tính năng đánh giá tour
-fix: sửa crash khi quay lại từ màn hình thanh toán
-docs: cập nhật README
-refactor: tách TourSessionManager ra service riêng
-chore: nâng cấp CommunityToolkit.Maui lên 9.x
+feat: add tourist tour rating feature
+fix: resolve crash when navigating back from checkout screen
+docs: update English API documentation
+refactor: extract TourSessionManager into standalone service
+chore: upgrade CommunityToolkit.Maui to 9.x
 ```
 
-### 4. Push & tạo Pull Request
+### 4. Push & Open a Pull Request
 ```bash
-git push origin feature/ten-tinh-nang-cua-ban
+git push origin feature/your-feature-name
 ```
 
-→ Tạo PR vào branch **`develop`** (không phải `main`)
+→ Open a PR targeting the **`develop`** branch (not `main`).
 
 ---
 
-## ✅ Checklist trước khi tạo PR
+## ✅ Pre-PR Checklist
 
-- [ ] Code build thành công (`dotnet build` / `npm run build`)
-- [ ] Không có lỗi lint ESLint (web)
+- [ ] Code builds without errors (`dotnet build` / `npm run build`)
+- [ ] No ESLint / TypeScript linting errors
 - [ ] Unit tests pass: `dotnet test`
-- [ ] Không commit file `.env`, keystore, hay credentials
-- [ ] PR mô tả rõ **vấn đề** và **giải pháp**
-- [ ] Screenshot/video nếu thay đổi UI
+- [ ] No `.env`, keystore, certificates, or credentials committed
+- [ ] PR description clearly explains the **problem** and the **solution**
+- [ ] Screenshots or demo GIFs attached for UI/UX modifications
 
 ---
 
-## 🏗️ Thiết lập môi trường dev
+## 🏗️ Development Environment Setup
 
-Xem chi tiết tại [README.md — Chạy dự án](README.md#️-chạy-dự-án).
+Please refer to the [README.md — Getting Started](README.md#-getting-started) section for detailed setup instructions.
 
-Tóm tắt nhanh:
+Quick start:
 ```bash
-# API
+# Backend API
 cd api && dotnet run
 
-# Web CMS  
+# Web CMS
 cd web && npm install && npm run dev
 
-# RabbitMQ (cần Docker)
+# RabbitMQ (requires Docker)
 docker compose up rabbitmq -d
 ```
 
 ---
 
-## 🐛 Báo lỗi (Bug Report)
+## 🐛 Reporting Bugs
 
-Vui lòng tạo [Issue](../../issues/new?template=bug_report.md) với:
-- Môi trường (OS, thiết bị, phiên bản app)
-- Các bước tái hiện
-- Kết quả mong đợi vs thực tế
-- Log / Screenshot nếu có
-
----
-
-## 💡 Đề xuất tính năng
-
-Tạo [Issue](../../issues/new?template=feature_request.md) với:
-- Mô tả tính năng
-- Lý do / use case cụ thể
-- Mockup hoặc ví dụ tham khảo (nếu có)
+Please open an [Issue](../../issues/new?template=bug_report.md) including:
+- Environment (OS, device, app version)
+- Clear step-by-step reproduction steps
+- Expected vs. actual behavior
+- Relevant error logs and screenshots
 
 ---
 
-## 📄 License
+## 💡 Code of Conduct
 
-Khi đóng góp, bạn đồng ý rằng code của mình được phát hành theo [MIT License](LICENSE).
+Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md). By participating in this project, you agree to abide by its terms.

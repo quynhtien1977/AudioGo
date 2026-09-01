@@ -1,39 +1,39 @@
 ---
 name: 🐛 Bug Report
-about: Báo cáo lỗi để giúp chúng tôi cải thiện AudioGo
+about: Create a report to help us improve AudioGo
 title: '[BUG] '
 labels: bug
 assignees: ''
 ---
 
-## 📋 Mô tả lỗi
-<!-- Mô tả ngắn gọn lỗi xảy ra -->
+## 📋 Description
+<!-- A clear and concise description of what the bug is. -->
 
-## 🔁 Các bước tái hiện
-1. Vào '...'
-2. Bấm vào '...'
-3. Kéo xuống '...'
-4. Thấy lỗi
+## 🔁 Steps to Reproduce
+1. Go to '...'
+2. Click on '...'
+3. Scroll down to '...'
+4. See error
 
-## ✅ Kết quả mong đợi
-<!-- Bạn mong đợi điều gì xảy ra? -->
+## ✅ Expected Behavior
+<!-- A clear and concise description of what you expected to happen. -->
 
-## ❌ Kết quả thực tế
-<!-- Thực tế điều gì đã xảy ra? -->
+## ❌ Actual Behavior
+<!-- A clear and concise description of what actually happened. -->
 
 ## 📸 Screenshots / Video
-<!-- Nếu có, đính kèm ảnh chụp màn hình hoặc video -->
+<!-- If applicable, add screenshots or screen recordings to help explain your problem. -->
 
-## 🖥️ Môi trường
-- **Platform:** [ ] Mobile Android  [ ] Web CMS
-- **OS / Device:** (ví dụ: Android 14, Samsung Galaxy S24)
-- **App version:** (ví dụ: v1.0.4)
-- **Browser (Web):** (ví dụ: Chrome 127)
+## 🖥️ Environment
+- **Platform:** [ ] Mobile (Android / iOS)  [ ] Web CMS  [ ] Backend API
+- **OS / Device:** (e.g., Android 14, Samsung Galaxy S24 / Windows 11)
+- **App Version:** (e.g., v1.0.4)
+- **Browser (Web):** (e.g., Chrome 128, Safari 17)
 
 ## 📝 Logs
-```
-Dán log lỗi ở đây (nếu có)
+```text
+<!-- Paste error logs or stack traces here -->
 ```
 
-## 📌 Thông tin thêm
-<!-- Bất kỳ context nào khác về vấn đề này -->
+## 📌 Additional Context
+<!-- Add any other context about the problem here. -->

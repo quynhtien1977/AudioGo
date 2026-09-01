@@ -1,8 +1,14 @@
-# 🎧 AudioGo — Hệ thống Thuyết minh Du lịch Thông minh
+# 🎧 AudioGo — Smart Location-Based Audio Tourism System
 
 <div align="center">
 
-**Nền tảng hướng dẫn âm thanh tự động theo vị trí** — Du khách tự động nghe thuyết minh khi tiến đến gần điểm tham quan (POI) mà không cần thao tác thủ công.
+<p align="center">
+  <a href="./README.md"><b>English</b></a> |
+  <a href="./README.vi.md"><b>Tiếng Việt</b></a> |
+  <a href="./README.zh-CN.md"><b>简体中文</b></a>
+</p>
+
+**Automated location-based audio guide platform** — Tourists automatically hear rich audio narrations when approaching points of interest (POIs) without manual interaction.
 
 [![Website](https://img.shields.io/badge/🌐%20Website-audiogo.tranminhmed.vn-0070f3?style=for-the-badge)](https://audiogo.tranminhmed.vn)
 [![Vercel Deploy](https://img.shields.io/badge/CMS-Deployed%20on%20Vercel-black?style=for-the-badge&logo=vercel)](https://audiogo-cms.vercel.app)
@@ -19,31 +25,31 @@
 
 ---
 
-## 📋 Mục lục
+## 📋 Table of Contents
 
-- [Cấu trúc Repository](#-cấu-trúc-repository)
-- [Kiến trúc tổng quan](#-kiến-trúc-tổng-quan)
-- [Tính năng](#-tính-năng-đã-hoàn-thành)
-  - [Mobile App](#-mobile-app-tourist)
+- [Repository Structure](#-repository-structure)
+- [System Architecture](#-system-architecture)
+- [Key Features](#-key-features)
+  - [Mobile App (Tourist)](#-mobile-app-tourist)
   - [Web CMS](#-web-cms)
   - [Backend Services](#️-backend-services)
-- [Hệ thống Role](#-hệ-thống-role)
-- [Gói Subscription](#-gói-subscription-owner)
-- [Tech Stack](#️-tech-stack-chi-tiết)
-- [Hạ tầng & Deployment](#-hạ-tầng--deployment)
-- [Chạy dự án](#️-chạy-dự-án)
+- [Role-Based Access Control](#-role-based-access-control)
+- [Owner Subscription Plans](#-owner-subscription-plans)
+- [Detailed Tech Stack](#️-detailed-tech-stack)
+- [Infrastructure & Deployment](#-infrastructure--deployment)
+- [Getting Started](#️-getting-started)
 - [Branching Strategy](#-branching-strategy)
 - [Contributing](CONTRIBUTING.md)
 - [License](#-license)
 
 ---
 
-## 📁 Cấu trúc Repository
+## 📁 Repository Structure
 
 ```
 AudioGo_Client.sln
 │
-├── mobile/          ← 📱 App di động (.NET MAUI — Android / iOS)
+├── mobile/          ← 📱 Mobile App (.NET MAUI — Android / iOS)
 │   ├── Views/           # XAML Pages: Splash, Welcome, QR Scan, Main, Map, POI, Tour, Search, Settings, Payment…
 │   ├── ViewModels/      # MVVM — Main, Map, POI, Tour, Search, Settings, Payment VMs
 │   ├── Services/        # ApiService, SyncService, GeofenceService, AudioService,
@@ -57,34 +63,34 @@ AudioGo_Client.sln
 │
 ├── api/             ← 🖥️ REST API Backend (ASP.NET Core 10)
 │   ├── Controllers/
-│   │   ├── AuthController.cs          # CMS login / JWT
-│   │   ├── LandingController.cs       # Public landing page data
+│   │   ├── AuthController.cs          # CMS login / JWT authentication
+│   │   ├── LandingController.cs       # Public landing page content & settings
 │   │   ├── Cms/                       # 23 CMS endpoints (Admin, Owner, Editor)
 │   │   ├── Mobile/                    # 9 Mobile endpoints (Tourist auth, POI, Tour…)
-│   │   └── Payment/                   # Webhook: SePay, MoMo
+│   │   └── Payment/                   # Webhooks: SePay, MoMo
 │   ├── Models/          # 22 domain entities
 │   ├── Data/            # EF Core DbContext, migrations
-│   ├── Repositories/    # Repository pattern
+│   ├── Repositories/    # Repository design pattern
 │   ├── Services/        # 27 business-logic services
-│   ├── Hubs/            # SignalR DeviceHub (real-time location)
+│   ├── Hubs/            # SignalR DeviceHub (real-time device location tracking)
 │   └── Program.cs       # DI container + middleware pipeline
 │
-├── shared/          ← 📦 DTOs & Contracts dùng chung (api ↔ mobile)
+├── shared/          ← 📦 Shared DTOs & Contracts (api ↔ mobile)
 │   └── DTOs/            # AuthDto, PoiDetailDto, TourDto, NotificationDto…
 │
-├── web/             ← 🌐 CMS Web App (React 19 + Vite)
+├── web/             ← 🌐 Web CMS & Landing Page (React 19 + Vite + Tailwind CSS)
 │   └── src/
-│       ├── pages/       # 34 trang CMS
-│       ├── components/  # Shadcn/ui + custom components
+│       ├── pages/       # 34 CMS & landing pages
+│       ├── components/  # Modern UI components
 │       ├── api/         # Axios API client, subscriptionApi, notificationApi…
 │       └── hooks/       # useAuth, useNotifications, useSubscription…
 │
-└── database/        ← 🗄️ SQL Server schema & seed data
+└── database/        ← 🗄️ SQL Server schema & seed scripts
 ```
 
 ---
 
-## 🏗️ Kiến trúc tổng quan
+## 🏗️ System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -98,394 +104,188 @@ AudioGo_Client.sln
 │  │ + QR Scan  │  │  cooldown 5min,  │  │ • Local audio file  │  │
 │  └────────────┘  │  priority queue) │  │ • MediaElement      │  │
 │                  └──────────────────┘  └─────────────────────┘  │
-│  SyncService: Full-sync lần đầu + Delta-sync mỗi 5 phút        │
-│  SQLite local cache (offline-first)                             │
-│  SignalRService: WebSocket location push → DeviceHub            │
+│  SyncService: Initial full-sync + Delta-sync every 5 mins       │
+│  SQLite local cache (offline-first architecture)                │
+│  SignalRService: Real-time WebSocket location push → DeviceHub  │
 └────────────────────┬────────────────────────────────────────────┘
                      │ HTTPS REST + SignalR WebSocket
 ┌────────────────────▼────────────────────────────────────────────┐
 │                 🖥️  API SERVER — ASP.NET Core 10                 │
 │                                                                  │
 │  JWT Auth │ CMS endpoints │ Mobile endpoints │ Webhooks         │
-│  SendGrid Email │ Azure Blob Storage │ Azure TTS                │
-│  ContentPipeline: Auto-translate (5 lang) + Auto-TTS on save    │
+│  SendGrid Email │ Azure Blob Storage │ Azure Cognitive TTS      │
+│  ContentPipeline: Auto-translate (5 langs) + Auto-TTS on save   │
 │                                                                  │
 │  SQL Server: Poi, Tour, Account, SubscriptionPlan,              │
 │  OwnerSubscription, PaymentTransaction, Notification,           │
 │  Banner, Article, ListenHistory, LocationLog, …                 │
 │                                                                  │
-│  SignalR DeviceHub: real-time device location tracking          │
-│  DataRetentionService: auto-purge logs (configurable TTL)       │
+│  SignalR DeviceHub: Real-time device location tracking          │
+│  DataRetentionService: Auto-purge telemetry (configurable TTL)  │
 └────────────────────┬────────────────────────────────────────────┘
                      │ JWT Bearer + REST
 ┌────────────────────▼────────────────────────────────────────────┐
 │           🌐 WEB CMS — React 19 + Vite + TanStack Query         │
 │                                                                  │
 │  Admin / Owner / Editor role-based dashboards                   │
-│  Shadcn/ui + Tailwind CSS + Recharts + Leaflet                  │
-│  Real-time notification bell (polling 30s)                      │
+│  Tailwind CSS + Recharts + Leaflet Map visualizer               │
+│  Real-time notification bell & multi-language editor            │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## ✅ Tính năng đã hoàn thành
+## ✅ Key Features
 
 ### 📱 Mobile App (Tourist)
 
-| Tính năng | Chi tiết |
+| Feature | Description |
 |---|---|
-| **Splash & Session** | Animated splash (5 phase); tự động check JWT hợp lệ → route WelcomePage hoặc vào thẳng AppShell |
-| **QR Login** | Scan QR kiosk → JWT Tourist; hỗ trợ camera live scan và chọn ảnh thư viện |
-| **Online Payment** | SePay VietQR — khởi tạo giao dịch, poll 5s, auto-navigate vào app khi thành công |
-| **Geofencing** | Haversine distance realtime; cooldown 5 phút per POI; priority queue khi nhiều POI overlap |
-| **Auto Audio** | Azure TTS stream hoặc file audio thu sẵn; MediaElement cross-platform; interrupt khi chuyển POI |
-| **Tour Mode** | Nghe tour step-by-step; TourSessionManager theo dõi tiến độ; điều hướng Google Maps |
-| **POI Detail** | Gallery fullscreen swipe, audio player inline, nội dung đa ngôn ngữ |
-| **Search** | Tìm POI theo tên/mô tả; live update khi SyncService nhận delta |
-| **Map** | Google Maps với custom pin; hiển thị vị trí thực; list POI filter |
-| **Offline-first** | Full-sync lần đầu → SQLite; Delta-sync mỗi 5 phút; retry khi wifi trở lại |
-| **SignalR** | Push GPS location lên DeviceHub real-time khi đang dùng app |
-| **Đa ngôn ngữ** | VI · EN · ZH · KO · JA — AppStrings JSON; nhận từ server, fallback local |
-| **Dark / Light Theme** | Chuyển cảnh có animation; lưu preference |
-| **Settings** | Đổi ngôn ngữ, nguồn tải (WiFi-only/cellular), thông tin phiên bản |
-| **Articles (Tin tức)** | Danh sách + chi tiết bài viết; ảnh lazy load |
-| **System Alert** | Popup cảnh báo hệ thống 1 lần per alert khi khởi động (từ Admin broadcast) |
+| **Splash & Session** | 5-phase animated splash screen; validates JWT and seamlessly routes to WelcomePage or AppShell |
+| **QR Code Login** | Scan kiosk QR code to generate instant Tourist JWT; supports live camera and gallery photo picking |
+| **Online Payment** | SePay VietQR integration — auto-polls payment status every 5s with instant navigation on success |
+| **Geofencing Engine** | Real-time Haversine distance calculations; 5-min cooldown per POI; priority queue for overlapping zones |
+| **Smart Audio Playback** | Azure Cognitive TTS streaming or pre-recorded audio; cross-platform MediaElement with auto-ducking |
+| **Curated Tour Mode** | Step-by-step tour audio guide with `TourSessionManager` progress tracking and Google Maps routing |
+| **Rich POI Detail** | Fullscreen swipeable image gallery, inline audio player, and localized rich text descriptions |
+| **Search & Discovery** | Instant POI search by name and category with live delta-sync updates |
+| **Interactive Map** | Google Maps integration with custom branded pins, live user location, and category filtering |
+| **Offline-First Architecture** | Full-sync on first launch into local SQLite; delta-sync every 5 mins; automatic retry on reconnection |
+| **Live Device Telemetry** | SignalR WebSocket telemetry pushing real-time GPS coordinates to CMS DeviceHub |
+| **Multilingual i18n** | Vietnamese · English · Chinese · Korean · Japanese with dynamic server fallback |
+| **Dark / Light Theme** | Smooth animated theme switching with persistent local storage |
 
 ---
 
 ### 🌐 Web CMS
 
-#### Dashboard & Auth
-| Trang | Mô tả |
-|---|---|
-| **Login** | JWT auth; remember session |
-| **Forgot / Reset Password** | Gửi link qua SendGrid; token có hạn |
-| **Dashboard** | KPI cards (POI, Tour, lượt nghe, thiết bị); biểu đồ lượt nghe/ngày (Recharts); heatmap địa lý (Leaflet) |
-| **Profile** | Đổi thông tin, ảnh đại diện, đổi mật khẩu; hiển thị màu badge gói subscription |
+#### Dashboard & Authentication
+* **JWT Authentication:** Secure role-based token authentication with persistent sessions.
+* **Password Recovery:** SendGrid email integration with time-limited password reset tokens.
+* **Executive Dashboard:** Live KPI cards (POIs, Tours, Listen count, Active devices), Recharts daily analytics, and Leaflet geographical heatmaps.
+* **Profile Management:** Avatar upload, credential update, and real-time subscription tier badge indicator.
 
-#### POI Management
-| Trang | Mô tả |
-|---|---|
-| **POI List (POIPage)** | Danh sách POI: filter, sort, phân trang; badge plan/priority; tìm kiếm |
-| **Add POI** | Form tạo mới: geocoding tự động, upload ảnh & audio per ngôn ngữ |
-| **POI Detail / Update** | Chỉnh sửa đầy đủ: nội dung đa ngôn ngữ, gallery, audio, bán kính, priority |
-| **POI Gallery** | Quản lý ảnh per POI |
-| **POI Audio** | Upload / preview audio per ngôn ngữ |
-| **POI New Queue** | Editor duyệt POI mới trước khi publish |
-| **POI Update Queue** | Editor duyệt cập nhật POI |
-| **POI Deletion Queue** | Duyệt/từ chối yêu cầu xóa POI |
-| **POI Management Hub** | Tổng hợp 3 queue trên cho Owner/Admin |
-| **Content Pipeline** | Trigger auto-translate (Google Translate) + auto-TTS (Azure Cognitive) per POI |
+#### POI Management (Point of Interest)
+* **POI Directory:** Filter, sort, paginate, and search with instant tier/priority status indicators.
+* **Geocoding & Media:** Automated geocoding map picker, multi-image upload to Azure Blob, and multilingual audio narration binding.
+* **Approval Queues:** Separate review workflows for New POIs, POI Updates, and POI Deletions.
+* **Content Pipeline:** One-click automated translation and Azure Cognitive TTS generation across 5 languages.
 
-#### Tour Management
-| Trang | Mô tả |
-|---|---|
-| **Tours List** | CRUD tours; xem số POI trong tour |
-| **Create / Edit Tour** | Tên, mô tả, ảnh cover, danh sách POI drag & drop order |
-| **Tour Detail** | Preview đầy đủ nội dung tour |
+#### Tours & Analytics
+* **Tour Builder:** Drag-and-drop sequencing of POIs into curated walking audio tours.
+* **Real-time Device Tracking:** Live map monitoring of tourist devices via SignalR WebSocket.
+* **Audience Analytics:** Top popular POIs, listening duration metrics, and date-range filtering.
 
-#### Analytics
-| Trang | Mô tả |
-|---|---|
-| **Analytics** | Lượt nghe theo POI/ngày; top POI phổ biến; filter theo khoảng thời gian |
-| **Device Tracking** | Bản đồ vị trí thiết bị realtime; xem lịch sử di chuyển |
-| **Device Activity** | Log tương tác chi tiết theo thiết bị |
-
-#### Subscription & Billing
-| Trang | Mô tả |
-|---|---|
-| **Admin Subscription Dashboard** | Xem toàn bộ subscriptions; assign/revoke plan cho Owner; Crown icon quick action |
-| **Admin Transaction Dashboard** | Lịch sử thanh toán; filter theo trạng thái |
-| **Subscription Checkout** | Owner tự mua/gia hạn; VietQR display; poll thanh toán; countdown |
-
-#### Notification & Broadcast
-| Trang | Mô tả |
-|---|---|
-| **Broadcast Page** | Gửi thông báo tới: Admin / Owner / Editor / Cảnh báo hệ thống (App Alert) |
-| **Bell Icon (Topbar)** | Badge đếm chưa đọc (poll 30s); dropdown danh sách; mark as read |
-| **System Alert → Mobile** | Broadcast target "Public" → popup 1 lần trên app khi mở |
-
-#### Content & Marketing
-| Trang | Mô tả |
-|---|---|
-| **Articles** | CRUD bài viết; ảnh cover; publish/unpublish; xem trước |
-| **Banners** | Landing Page / Mobile Home / Both; StartDate–EndDate schedule; sort order; i18n title/subtitle |
-| **Categories** | CRUD danh mục POI với icon |
-| **Landing Settings** | Chỉnh hero, sections, banners của trang Landing Page |
-
-#### Administration (Admin only)
-| Trang | Mô tả |
-|---|---|
-| **Accounts** | CRUD Admin/Owner/Editor; lock/unlock; assign gói subscription; xem subscription hiện tại |
-| **Access Codes** | Tạo & quản lý mã QR Tourist; cấu hình thời hạn |
-| **App Settings** | Tham số hệ thống (cooldown, max devices, …) |
-| **App Release** | Quản lý phiên bản mobile; force-update flag; changelog |
+#### Subscription & Monetization
+* **Admin Subscription Console:** Assign, revoke, and manage Owner subscription tiers with quick crown actions.
+* **Transaction Dashboard:** Live payment history with multi-gateway filtering (SePay VietQR, MoMo).
+* **Owner Self-Checkout:** Integrated dynamic QR code payment flow with countdown timer and automated tier provisioning.
 
 ---
 
 ### 🖥️ Backend Services
 
-| Service | Chức năng |
-|---|---|
-| **ContentPipelineService** | Auto-translate 5 ngôn ngữ (Google Translate) + auto-TTS (Azure TTS) khi lưu POI content |
-| **SubscriptionService** | Activate/expire/renew subscription; enforce POI limit; assign plan logic |
-| **PaymentWebhookService** | Xử lý SePay/MoMo webhook; verify; activate subscription sau thanh toán thành công |
-| **NotificationService** | Gửi/đọc thông báo per role; broadcast; public alert endpoint cho mobile |
-| **BannerService** | CRUD banner; filter theo ngày & platform target |
-| **BlobStorageService** | Upload/xóa audio và ảnh lên Azure Blob Storage |
-| **SendGridEmailService** | Email reset password & thông báo hệ thống |
-| **TtsService** | Azure Cognitive Services TTS → MP3 |
-| **TranslationService** | Google Translate API (VI→EN/ZH/KO/JA) |
-| **AnalyticsService** | Tổng hợp ListenHistory + LocationLog → KPI, charts |
-| **DataRetentionService** | Background job xóa log cũ theo TTL |
-| **PaymentCleanupService** | Hủy transaction quá hạn (15 phút) |
-| **PoiLimitEnforcementService** | Block POI mới khi vượt giới hạn gói |
-| **PoiRequestService** | Workflow: pending → editor review → approved/rejected |
-| **AccessCodeService** | Tạo, validate, thu hồi mã QR Tourist |
-| **LandingService** | Nội dung Landing Page động |
-| **AppReleaseService** | Force-update check; changelog |
-| **DevicePresenceService** | Online/offline tracking qua SignalR |
+* **Azure Cognitive Services:** High-fidelity Neural Text-to-Speech (TTS) synthesis and Azure Blob Storage integration.
+* **Message Broker:** RabbitMQ 3.13 integration with dead-letter exchange (DLX) for asynchronous media conversion.
+* **SignalR Real-Time Hub:** High-throughput `DeviceHub` pushing device telemetry and broadcast alerts.
+* **Data Retention Worker:** Background background service automatically archiving and purging telemetry logs per retention policy.
 
 ---
 
-## 👥 Hệ thống Role
-
-| Role | Quyền hạn |
-|---|---|
-| **Admin** | Toàn quyền: tài khoản, gói cước, thống kê hệ thống, broadcast tất cả |
-| **Owner** | POI/Tour của mình; mua subscription; analytics |
-| **Editor** | Duyệt POI request của Owner được giao; tạo article, banner |
-| **Tourist** | QR scan hoặc thanh toán → JWT tạm → dùng mobile app |
-
----
-
-## 💳 Gói Subscription (Owner)
-
-| Gói | Max POI | Auto Priority |
-|---|---|---|
-| **Basic** | 3 POI | LOW (1) |
-| **Professional** | 10 POI | MEDIUM (2) |
-| **Enterprise** | Không giới hạn | HIGH (3) |
-
-Thanh toán: **SePay** (VietQR real-time webhook) hoặc Admin assign thủ công.
-
----
-
-## 🌐 Landing Page (Public)
-
-- Hero section, tính năng, banners sự kiện, CTA đăng ký
-- Nội dung quản lý hoàn toàn qua CMS (Landing Settings)
-- Form tư vấn gói (ConsultationRequest → email)
-
----
-
-## 🛠️ Tech Stack chi tiết
-
-### Backend (api/)
-
-| Lớp | Công nghệ |
-|---|---|
-| **Framework** | ASP.NET Core 10 — Minimal API + MVC Controllers |
-| **ORM** | Entity Framework Core 9 (Code-First, Migrations) |
-| **Database** | SQL Server (Azure SQL Database — production) |
-| **Auth** | JWT Bearer (`Microsoft.AspNetCore.Authentication.JwtBearer`) |
-| **Realtime** | ASP.NET Core SignalR — `DeviceHub` push location |
-| **Message Queue** | **RabbitMQ 3.13** (`RabbitMQ.Client 6.8`) — async task offloading; chạy via Docker Compose |
-| **Azure TTS** | **Microsoft.CognitiveServices.Speech 1.42** — Neural voices: vi-VN, en-US, ja-JP, ko-KR, zh-CN, fr-FR, th-TH |
-| **Azure Blob** | **Azure.Storage.Blobs 12.24** — lưu audio MP3 và ảnh POI/gallery |
-| **Translation** | **Azure AI Translator** (REST v3) — fallback khi không có LLM key |
-| **LLM Translation** | **Cerebras API** (Qwen-3-235B-A22B) — primary translator; hỗ trợ custom `LLM_BASE_URL` |
-| **Email** | **SendGrid v3 REST API** — account creation, password reset |
-| **QR Code** | **QRCoder 1.8** — sinh QR PNG cho Access Code Tourist |
-| **Password Hash** | BCrypt.Net-Next 4.0 |
-| **Env Config** | DotNetEnv 3.1 — load `.env` file khi dev local |
-| **OpenAPI** | `Microsoft.AspNetCore.OpenApi` — `/openapi/v1.json` |
-
-### Mobile (mobile/)
-
-| Lớp | Công nghệ |
-|---|---|
-| **Framework** | .NET MAUI 10 — Android (API 24+) |
-| **MVVM** | CommunityToolkit.Mvvm 8.2 (`ObservableProperty`, `RelayCommand`) |
-| **Database** | SQLite (`sqlite-net-pcl 1.9`) — offline cache |
-| **QR Scanner** | BarcodeScanner.Mobile.Maui 9.0 + ZXing.Net 0.16 |
-| **Audio** | Plugin.Maui.Audio 4.0 — phát file MP3 local |
-| **Maps** | Microsoft.Maui.Controls.Maps + Google Maps SDK |
-| **SignalR Client** | Microsoft.AspNetCore.SignalR.Client 8.0 |
-| **HTTP** | `IHttpClientFactory` + `Microsoft.Extensions.Http` |
-| **UI Extras** | CommunityToolkit.Maui 9.0 — Popup, Snackbar |
-| **Serialization** | System.Text.Json + Newtonsoft.Json 13.0 |
-
-### Web CMS (web/)
-
-| Lớp | Công nghệ |
-|---|---|
-| **Framework** | React 19 + Vite 8 |
-| **Routing** | React Router DOM 7 |
-| **Data Fetching** | TanStack Query (React Query) 5 |
-| **HTTP Client** | Axios 1.x |
-| **UI Components** | Shadcn/ui + Radix UI primitives |
-| **Styling** | Tailwind CSS 3 + tw-animate-css |
-| **Animation** | Framer Motion 12 |
-| **Charts** | Recharts 3 |
-| **Maps / Heatmap** | Leaflet + react-leaflet + leaflet.heat |
-| **Drag & Drop** | @dnd-kit/core + @dnd-kit/sortable |
-| **SignalR Client** | @microsoft/signalr 8.0 |
-| **QR Render** | qrcode.react 4.x |
-| **Analytics** | **@vercel/analytics** + **@vercel/speed-insights** — page views & Web Vitals |
-| **Icons** | Lucide React |
-| **Fonts** | Geist Variable (`@fontsource-variable/geist`) |
-| **Toast** | react-hot-toast |
-| **Build Tool** | Vite 8 + rollup-plugin-visualizer (bundle analysis) |
-
----
-
-## 🚀 Hạ tầng & Deployment
+## 👥 Role-Based Access Control
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                 📦 PRODUCTION INFRASTRUCTURE                     │
-│                                                                  │
-│  🌐 Web CMS  ──────→  Vercel (auto-deploy on push to main)      │
-│                        URL: audiogo-cms.vercel.app              │
-│                        Analytics: Vercel Analytics + Speed      │
-│                        Insights (Web Vitals tracking)           │
-│                                                                  │
-│  🖥️  API Server ────→  Docker Container                         │
-│                        Image: audiogo-api:latest                │
-│                        Compose: api + rabbitmq services         │
-│                        (Railway / Render / self-hosted VPS)     │
-│                                                                  │
-│  🐰 RabbitMQ ──────→  Docker Container (rabbitmq:3.13-mgmt)    │
-│                        Port 5672 (AMQP) + 15672 (Management UI) │
-│                        Persistent volume: rabbitmq_data         │
-│                                                                  │
-│  🗄️  Database ──────→  Azure SQL Database                       │
-│                        Server: audiogo-db-server.database.windows│
-│                        Tier: serverless / provisioned           │
-│                                                                  │
-│  📁 File Storage ──→  Azure Blob Storage                        │
-│                        Container: audiogo-audio (MP3 files)     │
-│                        Container: audiogo-images (gallery, cover)│
-│                                                                  │
-│  📱 Mobile App ────→  GitHub Actions CD                         │
-│                        Trigger: git tag v*.*.* push             │
-│                        Sign: Android Keystore (GitHub Secret)   │
-│                        Output: Signed APK → GitHub Release      │
-└─────────────────────────────────────────────────────────────────┘
+[System Roles]
+├── SuperAdmin / Admin : Full system access (CMS, Landing Settings, Subscriptions, Broadcasts)
+├── Editor             : Content management (POI approval queues, Tours, Articles, Banners)
+├── Owner (Shopkeeper) : Business management (Own POI, Subscription self-checkout, Store analytics)
+└── Tourist (Mobile)   : Location audio guide, QR unlock, Map exploration, Tour mode
 ```
 
-### CI/CD Pipelines (GitHub Actions)
+---
 
-| Workflow | Trigger | Mô tả |
-|---|---|---|
-| **CI — Backend** (`ci.yml`) | push/PR to `main`, `develop` | Build API Release + chạy unit tests với Coverlet code coverage |
-| **CD — Android APK** (`release-apk.yml`) | push tag `v*.*.*` | Build + sign APK (Windows runner, MAUI workload) → upload artifact + tạo GitHub Release tự động |
+## 💎 Owner Subscription Plans
 
-### Biến môi trường cần cấu hình (Production)
-
-| Key | Mô tả |
-|---|---|
-| `AZURE_SQL_CONNECTION` | Azure SQL Server connection string |
-| `Azure:Speech:Key` + `Region` | Azure Cognitive Services — TTS |
-| `Azure:Storage:ConnectionString` | Azure Blob Storage |
-| `Azure:Translator:Key` + `Region` | Azure AI Translator |
-| `LLM_API_KEY` + `LLM_MODEL` | Cerebras API (Qwen-3 translation) |
-| `LLM_BASE_URL` | Custom LLM endpoint (optional override) |
-| `EmailSettings:SendGridApiKey` | SendGrid email delivery |
-| `Jwt__Key` + `Jwt__Issuer` | JWT signing secret |
-| `RabbitMQ__Url` | AMQP connection (e.g. `amqp://guest:guest@rabbitmq:5672`) |
-| `SePay__SecretKey` | SePay webhook verification |
-| `PUBLIC_WEBHOOK_URL` | Public-facing API URL (for payment callbacks) |
-| `CORS_ORIGIN_0/1` | Allowed CORS origins (Vercel URL, local) |
+| Tier | Price | POI Quota | Audio Features | Analytics |
+|---|---|---|---|---|
+| **Free** | 0 VND | 1 POI | Pre-recorded Audio | Basic views |
+| **Standard** | 199,000 VND / mo | 3 POIs | Auto TTS (2 languages) | Detailed listen metrics |
+| **Premium** | 499,000 VND / mo | 10 POIs | Auto TTS (5 languages) + High Priority | Real-time Device Tracking + Heatmaps |
 
 ---
 
-## ⚙️ Yêu cầu môi trường
+## 🛠️ Detailed Tech Stack
 
-| Công cụ | Phiên bản |
+| Layer | Technologies |
 |---|---|
-| .NET SDK | 10.0+ |
-| Node.js | 18+ |
-| Docker + Docker Compose | 24+ |
-| SQL Server | 2019+ / LocalDB / Azure SQL |
-| Android SDK | API 24+ (Android 7.0+) |
-| iOS | 15.0+ (cần máy Mac để build) |
+| **Mobile App** | .NET MAUI 10, C#, XAML, MVVM CommunityToolkit, SQLite (sqlite-net-pcl), Google Maps API |
+| **Web CMS** | React 19, Vite, Tailwind CSS, TanStack Query, Framer Motion, Recharts, Leaflet |
+| **Backend API** | ASP.NET Core 10, C#, Entity Framework Core, SignalR WebSocket |
+| **Database** | Microsoft SQL Server, Azure SQL Database |
+| **Cloud & External** | Azure Cognitive TTS, Azure Blob Storage, SendGrid, RabbitMQ, SePay VietQR |
 
 ---
 
-## 🛠️ Chạy dự án
+## 🚀 Getting Started
 
-### API Server
+### Prerequisites
+* [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+* [Node.js 20+ & npm](https://nodejs.org/)
+* [Microsoft SQL Server 2022 / LocalDB / Azure SQL](https://www.microsoft.com/sql-server/)
+* [Docker Desktop](https://www.docker.com/) (for RabbitMQ)
+
+### 1. Clone Repository
+```bash
+git clone https://github.com/quynhtien1977/AudioGo.git
+cd AudioGo
+```
+
+### 2. Run Backend API
 ```bash
 cd api
-# Cấu hình appsettings.Development.json
+dotnet restore
 dotnet ef database update
 dotnet run
-# API: https://localhost:5000
-# OpenAPI: https://localhost:5000/openapi/v1.json
 ```
+API runs by default at `https://localhost:7147` (Swagger: `https://localhost:7147/swagger`).
 
-### Web CMS
+### 3. Run Web CMS
 ```bash
 cd web
 npm install
-# .env: VITE_API_URL=https://localhost:5000
 npm run dev
-# http://localhost:5173
 ```
+Web app runs at `http://localhost:5173`.
 
-### Mobile (Android Emulator)
-```bash
-cd mobile
-# Config/EndpointConfig.cs: BaseUrl = http://10.0.2.2:5000
-dotnet build -t:Run -f net10.0-android
-```
+### 4. Run Mobile App
+Open `AudioGo_Client.sln` in Visual Studio 2022 / 2026, set `mobile` as startup project, choose an Android Emulator or physical device, and press `F5`.
 
 ---
 
-## 📌 Branching Strategy
+## 🌿 Branching Strategy
 
 ```
-main        ← Production releases
-develop     ← Integration branch
-feature/*   ← Feature branches (từ develop)
-hotfix/*    ← Hotfix (từ main)
+main        ← Production-ready. Direct push is strictly prohibited.
+develop     ← Integration branch. Base branch for all PRs.
+feature/*   ← New features (branched from develop).
+fix/*       ← Bug fixes (branched from develop).
+hotfix/*    ← Urgent production patches (branched from main).
 ```
-
-
 
 ---
 
 ## 🤝 Contributing
 
-Mọi đóng góp đều được chào đón! Xem [CONTRIBUTING.md](CONTRIBUTING.md) để biết quy trình chi tiết.
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) before submitting Pull Requests.
 
-**Quick start:**
-```bash
-git checkout develop && git pull
-git checkout -b feature/ten-tinh-nang
-# ... code ...
-git push origin feature/ten-tinh-nang
-# → tạo Pull Request vào develop
-```
+---
 
-**Báo lỗi:** [Tạo Bug Report](../../issues/new?template=bug_report.md)  
-**Đề xuất tính năng:** [Tạo Feature Request](../../issues/new?template=feature_request.md)
+## 🔒 Security
+
+For security vulnerability disclosures, please review our [Security Policy](SECURITY.md) or email us directly at [quynhtien123123@gmail.com](mailto:quynhtien123123@gmail.com).
 
 ---
 
 ## 📄 License
 
-[MIT](LICENSE) © 2026 AudioGo Project Team
-
----
-
-<div align="center">
-
-Made with ❤️ in Vietnam 🇻🇳
-
-[Website](https://audiogo.tranminhmed.vn) · [CMS](https://audiogo-cms.vercel.app) · [Issues](../../issues)
-
-</div>
+This project is licensed under the terms of the [MIT License](LICENSE).

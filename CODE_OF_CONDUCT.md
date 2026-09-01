@@ -1,79 +1,61 @@
-# 📜 Code of Conduct — AudioGo
+# 📜 Contributor Covenant Code of Conduct — AudioGo
 
-## Cam kết của chúng tôi
+<p align="center">
+  <a href="./CODE_OF_CONDUCT.md"><b>English</b></a> |
+  <a href="./CODE_OF_CONDUCT.vi.md"><b>Tiếng Việt</b></a> |
+  <a href="./CODE_OF_CONDUCT.zh-CN.md"><b>简体中文</b></a>
+</p>
 
-Chúng tôi, với tư cách là thành viên, cộng tác viên và người quản lý, cam kết tạo ra một môi trường tham gia không có quấy rối cho tất cả mọi người, bất kể tuổi tác, vóc dáng, khuyết tật, dân tộc, đặc điểm giới tính, bản sắc và biểu hiện giới, trình độ kinh nghiệm, trình độ học vấn, tình trạng kinh tế xã hội, quốc tịch, ngoại hình, chủng tộc, tôn giáo hoặc bản sắc và định hướng tình dục.
+## Our Pledge
 
-Chúng tôi cam kết hành động và tương tác theo những cách góp phần vào một cộng đồng cởi mở, chào đón, đa dạng, hòa nhập và lành mạnh.
+We as members, contributors, and leaders pledge to make participation in our community a harassment-free experience for everyone, regardless of age, body size, visible or invisible disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, caste, color, religion, or sexual identity and orientation.
 
----
-
-## Tiêu chuẩn của chúng tôi
-
-**Những hành vi góp phần tạo ra môi trường tích cực:**
-
-- Sử dụng ngôn ngữ chào đón và hòa nhập
-- Tôn trọng các quan điểm và kinh nghiệm khác nhau
-- Chấp nhận phê bình mang tính xây dựng một cách lịch sự
-- Tập trung vào những gì tốt nhất cho cộng đồng
-- Thể hiện sự đồng cảm với các thành viên khác
-
-**Những hành vi không được chấp nhận:**
-
-- Sử dụng ngôn ngữ hoặc hình ảnh có tính chất tình dục, và sự chú ý hoặc tiếp cận tình dục không được chào đón
-- Hành vi khiêu khích, xúc phạm hoặc bình luận mang tính cá nhân/chính trị, và tấn công cá nhân
-- Quấy rối công khai hoặc riêng tư
-- Công bố thông tin cá nhân của người khác, chẳng hạn như địa chỉ vật lý hoặc email, mà không có sự cho phép rõ ràng
-- Hành vi khác có thể được coi là không phù hợp trong môi trường chuyên nghiệp
+We pledge to act and interact in ways that contribute to an open, welcoming, diverse, inclusive, and healthy community.
 
 ---
 
-## Trách nhiệm thực thi
+## Our Standards
 
-Người quản lý dự án chịu trách nhiệm làm rõ và thực thi các tiêu chuẩn về hành vi được chấp nhận và sẽ thực hiện hành động khắc phục phù hợp và công bằng để phản hồi bất kỳ hành vi nào mà họ cho là không phù hợp, đe dọa, xúc phạm hoặc có hại.
+**Examples of behavior that contributes to a positive environment for our community include:**
 
-Người quản lý dự án có quyền và trách nhiệm xóa, chỉnh sửa hoặc từ chối các bình luận, commit, code, chỉnh sửa wiki, issues và các đóng góp khác không phù hợp với Quy tắc Ứng xử này, và sẽ thông báo lý do cho các quyết định điều hành khi thích hợp.
+- Demonstrating empathy and kindness toward other people
+- Being respectful of differing opinions, viewpoints, and experiences
+- Giving and gracefully accepting constructive feedback
+- Accepting responsibility and apologizing to those affected by our mistakes, and learning from the experience
+- Focusing on what is best not just for us as individuals, but for the overall community
 
----
+**Examples of unacceptable behavior include:**
 
-## Phạm vi áp dụng
-
-Quy tắc Ứng xử này áp dụng trong tất cả các không gian cộng đồng, và cũng áp dụng khi một cá nhân đang đại diện chính thức cho cộng đồng trong các không gian công cộng. Ví dụ về đại diện cho cộng đồng bao gồm sử dụng địa chỉ email chính thức, đăng qua tài khoản mạng xã hội chính thức hoặc đóng vai trò là đại diện được chỉ định tại một sự kiện trực tuyến hoặc ngoại tuyến.
-
----
-
-## Thực thi
-
-Các trường hợp hành vi lạm dụng, quấy rối hoặc không thể chấp nhận khác có thể được báo cáo cho người quản lý dự án chịu trách nhiệm thực thi tại:
-
-📧 **[quynhtien123123@gmail.com](mailto:quynhtien123123@gmail.com)**
-
-Tất cả khiếu nại sẽ được xem xét và điều tra kịp thời và công bằng. Tất cả người quản lý dự án có nghĩa vụ tôn trọng sự riêng tư và bảo mật của người báo cáo bất kỳ sự cố nào.
+- The use of sexualized language or imagery, and sexual attention or advances of any kind
+- Trolling, insulting or derogatory comments, and personal or political attacks
+- Public or private harassment
+- Publishing others' private information, such as a physical or email address, without their explicit permission
+- Other conduct which could reasonably be considered inappropriate in a professional setting
 
 ---
 
-## Hướng dẫn thực thi
+## Enforcement Responsibilities
 
-Người quản lý dự án sẽ tuân theo các Hướng dẫn Tác động Cộng đồng này để xác định hậu quả cho bất kỳ hành động nào mà họ cho là vi phạm Quy tắc Ứng xử này:
+Community leaders are responsible for clarifying and enforcing our standards of acceptable behavior and will take appropriate and fair corrective action in response to any behavior that they deem inappropriate, threatening, offensive, or harmful.
 
-### 1. Sửa chữa
-**Tác động cộng đồng:** Sử dụng ngôn ngữ không phù hợp hoặc hành vi khác được coi là không chuyên nghiệp hoặc không được chào đón trong cộng đồng.  
-**Hậu quả:** Cảnh báo riêng tư bằng văn bản từ người quản lý dự án.
-
-### 2. Cảnh cáo
-**Tác động cộng đồng:** Vi phạm thông qua một sự cố đơn lẻ hoặc một loạt hành động.  
-**Hậu quả:** Cảnh báo với hậu quả cho hành vi tiếp tục. Không có tương tác với những người liên quan trong một khoảng thời gian nhất định.
-
-### 3. Tạm cấm
-**Tác động cộng đồng:** Vi phạm nghiêm trọng các tiêu chuẩn cộng đồng, bao gồm hành vi không phù hợp kéo dài.  
-**Hậu quả:** Tạm thời bị cấm khỏi mọi loại tương tác hoặc giao tiếp công khai với cộng đồng.
-
-### 4. Cấm vĩnh viễn
-**Tác động cộng đồng:** Thể hiện một mẫu vi phạm các tiêu chuẩn cộng đồng, bao gồm hành vi không phù hợp kéo dài, quấy rối một cá nhân, hoặc xâm phạm hoặc coi thường các nhóm cá nhân.  
-**Hậu quả:** Cấm vĩnh viễn khỏi mọi loại tương tác công khai trong cộng đồng dự án.
+Community leaders have the right and responsibility to remove, edit, or reject comments, commits, code, wiki edits, issues, and other contributions that are not aligned to this Code of Conduct, and will communicate reasons for moderation decisions when appropriate.
 
 ---
 
-## Quy kết
+## Scope
 
-Quy tắc Ứng xử này được điều chỉnh từ [Contributor Covenant](https://www.contributor-covenant.org), phiên bản 2.1.
+This Code of Conduct applies within all community spaces, and also applies when an individual is officially representing the community in public spaces. Examples of representing our community include using an official e-mail address, posting via an official social media account, or acting as an appointed representative at an online or offline event.
+
+---
+
+## Enforcement
+
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the project team at 📧 **[quynhtien123123@gmail.com](mailto:quynhtien123123@gmail.com)**. All complaints will be reviewed and investigated promptly and fairly.
+
+All community leaders are obligated to respect the privacy and security of the reporter of any incident.
+
+---
+
+## Attribution
+
+This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org), version 2.1, available at [https://www.contributor-covenant.org/version/2/1/code_of_conduct.html](https://www.contributor-covenant.org/version/2/1/code_of_conduct.html).
