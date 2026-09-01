@@ -38,7 +38,7 @@ export default function HowItWorksSection({ data }) {
         {/* Steps */}
         <div className="relative">
           {/* Connector line */}
-          <div className="hidden md:block absolute left-1/2 -translate-x-px top-8 bottom-8 w-0.5 bg-gradient-to-b from-pink-500/40 via-orange-400/30 to-transparent" />
+          <div className="hidden md:block absolute left-1/2 -translate-x-px top-8 bottom-8 w-0.5 bg-gradient-to-b from-rose-500/40 via-coral-400/30 to-transparent" />
 
           <div className="space-y-10 md:space-y-0 md:grid md:grid-cols-2 md:gap-x-16 md:gap-y-12">
             {steps.map((step, i) => (
@@ -51,7 +51,7 @@ export default function HowItWorksSection({ data }) {
                 className="flex flex-col items-center sm:items-start text-center sm:text-left"
               >
                 {/* Number bubble */}
-                <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-pink-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-pink-600/30">
+                <div className="flex-shrink-0 w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-600 to-red-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-rose-600/30">
                   {i + 1}
                 </div>
                 <div className="pt-1.5">

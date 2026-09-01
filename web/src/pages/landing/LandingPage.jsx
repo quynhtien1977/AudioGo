@@ -9,7 +9,6 @@ import HeroSection from "./components/HeroSection";
 
 // Lazy load below-the-fold components to reduce initial JS payload to ~35KB
 const StatsBarSection = lazy(() => import("./components/StatsBarSection"));
-const BannerStripSection = lazy(() => import("./components/BannerStripSection"));
 const FeaturesSection = lazy(() => import("./components/FeaturesSection"));
 const HowItWorksSection = lazy(() => import("./components/HowItWorksSection"));
 const ScreenshotsSection = lazy(() => import("./components/ScreenshotsSection"));
@@ -153,7 +152,13 @@ export default function LandingPage() {
 
         {/* Hero luôn hiển thị tức thì */}
         {hero !== null ? (
-          <HeroSection data={hero} />
+          <HeroSection
+            data={hero}
+            banners={banners}
+            bannerConfig={bannerStrip || {}}
+            lang={lang}
+            showSpotlight={bannerStrip !== null}
+          />
         ) : (
           <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--lp-bg)" }}>
             <p style={{ color: "var(--lp-text-faint)" }} className="text-sm">Hero section đang ẩn</p>
@@ -163,9 +168,6 @@ export default function LandingPage() {
         {/* Below-the-fold sections are lazy loaded */}
         <Suspense fallback={null}>
           {statsBar    && <StatsBarSection   data={statsBar}    />}
-          {bannerStrip !== null && banners.length > 0 && (
-            <BannerStripSection banners={banners} config={bannerStrip || {}} lang={lang} />
-          )}
           {features    && <FeaturesSection   data={features}    />}
           {howItWorks  && <HowItWorksSection data={howItWorks}  />}
           {screenshots && <ScreenshotsSection data={screenshots} />}
