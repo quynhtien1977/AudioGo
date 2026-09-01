@@ -15,7 +15,7 @@ export default function StatsBarSection({ data }) {
           <DynamicIcon name={item.icon} fallback={Sparkles} size={15} className="text-white/80" />
           <span>{item.text}</span>
           {(!hideLastDivider || i < items.length - 1) && (
-            <span className={`${shouldMarquee ? "inline" : "hidden sm:inline"} text-white/30 ml-6`}>|</span>
+            <span className={`${shouldMarquee ? "inline" : "hidden sm:inline"} text-white/50 ml-6`}>|</span>
           )}
         </div>
       ))}
@@ -23,7 +23,7 @@ export default function StatsBarSection({ data }) {
   );
 
   return (
-    <section className="bg-gradient-to-r from-orange-500 to-pink-500 py-4 overflow-hidden">
+    <section className="bg-gradient-to-r from-rose-600 via-coral-500 to-amber-500 py-4 overflow-hidden shadow-inner">
       <div className="max-w-6xl mx-auto px-4">
         {shouldMarquee ? (
           <div className="flex w-full">

@@ -54,10 +54,10 @@ function IPhoneMockup({ imageUrl, alt, isCenter }) {
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-[#1a0a14] to-[#0d0d1a] flex flex-col items-center justify-center gap-3">
-                <div className="w-14 h-14 rounded-full bg-pink-500/20 flex items-center justify-center">
-                  <div className="w-6 h-6 rounded bg-pink-400/60" />
+                <div className="w-14 h-14 rounded-full bg-rose-500/20 flex items-center justify-center">
+                  <div className="w-6 h-6 rounded bg-rose-400/60" />
                 </div>
-                <p className="text-white/30 text-xs text-center px-6 leading-relaxed">{alt || "App screen"}</p>
+                <p className="text-gray-400 text-xs text-center px-6 leading-relaxed">{alt || "App screen"}</p>
               </div>
             )}
           </div>
@@ -155,7 +155,7 @@ export default function ScreenshotsSection({ data }) {
           <button
             onClick={prev}
             style={{ background: "var(--lp-bg-card)", borderColor: "var(--lp-border)", color: "var(--lp-text-muted)" }}
-            className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 rounded-full border backdrop-blur flex items-center justify-center hover:border-pink-400 hover:text-pink-500 hover:scale-105 active:scale-95 transition-all shadow-sm z-20"
+            className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 rounded-full border backdrop-blur flex items-center justify-center hover:border-rose-400 hover:text-rose-400 hover:scale-105 active:scale-95 transition-all shadow-sm z-20 cursor-pointer"
             aria-label="Ảnh trước"
           >
             <ChevronLeft size={18} />
@@ -202,7 +202,7 @@ export default function ScreenshotsSection({ data }) {
           <button
             onClick={next}
             style={{ background: "var(--lp-bg-card)", borderColor: "var(--lp-border)", color: "var(--lp-text-muted)" }}
-            className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 rounded-full border backdrop-blur flex items-center justify-center hover:border-pink-400 hover:text-pink-500 hover:scale-105 active:scale-95 transition-all shadow-sm z-20"
+            className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0 rounded-full border backdrop-blur flex items-center justify-center hover:border-rose-400 hover:text-rose-400 hover:scale-105 active:scale-95 transition-all shadow-sm z-20 cursor-pointer"
             aria-label="Ảnh kế tiếp"
           >
             <ChevronRight size={18} />
@@ -217,14 +217,14 @@ export default function ScreenshotsSection({ data }) {
                 <button
                   key={i}
                   onClick={() => setActive(i)}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${
-                    i === active ? "w-6 bg-pink-500" : "w-1.5 bg-pink-200 hover:bg-pink-300"
+                  className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                    i === active ? "w-6 bg-rose-500" : "w-1.5 bg-rose-200/50 hover:bg-rose-300/80"
                   }`}
                   aria-label={`Màn hình ${i + 1}`}
                 />
               ))}
             </div>
-            <span className="sm:hidden text-[11px] font-medium text-pink-500/80">
+            <span className="sm:hidden text-[11px] font-medium text-rose-400">
               {active + 1} / {images.length}
             </span>
           </div>
@@ -240,7 +240,7 @@ export default function ScreenshotsSection({ data }) {
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.2 }}
               className="text-center text-sm mt-5"
-              style={{ color: "var(--lp-text-faint)" }}
+              style={{ color: "var(--lp-text-muted)" }}
             >
               {images[active].alt}
             </motion.p>

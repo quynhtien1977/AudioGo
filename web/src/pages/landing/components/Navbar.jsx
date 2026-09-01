@@ -59,7 +59,7 @@ export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
           {/* Logo */}
           <a href="#" className="flex items-center gap-2 select-none">
-            <div className="w-8 h-8 bg-pink-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-rose-500 to-red-600 rounded-lg flex items-center justify-center shadow-md shadow-rose-600/30">
               <Map size={16} className="text-white" />
             </div>
             <span
@@ -77,7 +77,7 @@ export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
                 key={l.href}
                 onClick={() => scrollTo(l.href)}
                 style={{ color: scrolled ? "var(--lp-text-muted)" : "rgba(255,255,255,0.8)" }}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:text-pink-400 whitespace-nowrap"
+                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:text-rose-400 whitespace-nowrap"
               >
                 {l.label}
               </button>
@@ -95,7 +95,7 @@ export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
                   border: `1px solid ${scrolled ? "var(--lp-border)" : "rgba(255,255,255,0.2)"}`,
                   color: scrolled ? "var(--lp-text-muted)" : "rgba(255,255,255,0.9)",
                 }}
-                className="h-9 px-2.5 rounded-lg flex items-center gap-1.5 text-sm font-medium transition-all hover:text-pink-400"
+                className="h-9 px-2.5 rounded-lg flex items-center gap-1.5 text-sm font-medium transition-all hover:text-rose-400"
                 aria-label="Chọn ngôn ngữ"
               >
                 <img src={currentLang.flag} alt={currentLang.code} className="w-5 h-3.5 object-cover rounded-[2px] shadow-sm" />
@@ -118,14 +118,14 @@ export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
                         onClick={() => handleLangSelect(l.code)}
                         className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
                           l.code === lang
-                            ? "bg-pink-50 text-pink-600 font-semibold"
+                            ? "bg-rose-50 text-rose-600 font-semibold"
                             : "text-gray-700 hover:bg-gray-50"
                         }`}
                       >
                         <img src={l.flag} alt={l.code} className="w-5 h-3.5 object-cover rounded-[2px] shadow-sm" />
                         <span>{l.label}</span>
                         {l.code === lang && (
-                          <span className="ml-auto text-[10px] font-bold text-pink-400 bg-pink-50 px-1.5 py-0.5 rounded">✓</span>
+                          <span className="ml-auto text-[10px] font-bold text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded">✓</span>
                         )}
                       </button>
                     ))}
@@ -143,7 +143,7 @@ export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
                 border: `1px solid ${scrolled ? "var(--lp-border)" : "rgba(255,255,255,0.2)"}`,
                 color: scrolled ? "var(--lp-text-muted)" : "rgba(255,255,255,0.8)",
               }}
-              className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:scale-105 hover:text-pink-400"
+              className="w-9 h-9 rounded-lg flex items-center justify-center transition-all hover:scale-105 hover:text-rose-400 cursor-pointer"
             >
               {isLight ? <Moon size={16} /> : <Sun size={16} />}
             </button>
@@ -151,7 +151,7 @@ export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
             {isAuthenticated ? (
               <Link
                 to="/admin/dashboard"
-                className="px-4 py-2 rounded-lg text-sm font-semibold bg-pink-600 text-white shadow-sm hover:bg-pink-700 hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap"
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap"
               >
                 {staticData.navDashboard || "Dashboard"}
               </Link>
@@ -162,14 +162,14 @@ export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
                   border: `1px solid ${scrolled ? "var(--lp-border)" : "rgba(255,255,255,0.3)"}`,
                   color: scrolled ? "var(--lp-text-muted)" : "rgba(255,255,255,0.9)",
                 }}
-                className="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:border-pink-400 hover:text-pink-400 whitespace-nowrap"
+                className="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:border-rose-400 hover:text-rose-400 whitespace-nowrap"
               >
                 {staticData.navLogin || "Đăng nhập"}
               </Link>
             )}
             <button
               onClick={() => scrollTo("#consult")}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-pink-600 text-white shadow-sm hover:shadow-md hover:bg-pink-700 hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap"
+              className="px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-sm hover:shadow-md hover:shadow-rose-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap cursor-pointer"
             >
               {staticData.navPartner || "Đăng ký làm đối tác"}
             </button>
@@ -180,7 +180,7 @@ export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
             <button
               onClick={() => setLangOpen((v) => !v)}
               style={{ color: scrolled ? "var(--lp-text)" : "white" }}
-              className="px-3 py-1.5 rounded-lg transition-colors text-sm font-bold flex items-center gap-2"
+              className="px-3 py-1.5 rounded-lg transition-colors text-sm font-bold flex items-center gap-2 cursor-pointer"
             >
               <img src={currentLang.flag} alt={currentLang.code} className="w-5 h-3.5 object-cover rounded-[2px] shadow-sm" />
               <span className="uppercase">{currentLang.code}</span>
@@ -188,7 +188,7 @@ export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
             <button
               onClick={toggle}
               style={{ color: scrolled ? "var(--lp-text)" : "white" }}
-              className="p-2 rounded-lg transition-colors"
+              className="p-2 rounded-lg transition-colors cursor-pointer"
               aria-label="Chuyển đổi giao diện"
             >
               {isLight ? <Moon size={20} /> : <Sun size={20} />}
@@ -196,7 +196,7 @@ export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
             <button
               onClick={() => setMobileOpen((v) => !v)}
               style={{ color: scrolled ? "var(--lp-text)" : "white" }}
-              className="p-2 rounded-lg transition-colors"
+              className="p-2 rounded-lg transition-colors cursor-pointer"
             >
               {mobileOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
@@ -220,12 +220,15 @@ export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
                 onClick={() => handleLangSelect(l.code)}
                 className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
                   l.code === lang
-                    ? "bg-pink-50 text-pink-600 font-semibold"
+                    ? "bg-rose-50 text-rose-600 font-semibold"
                     : "text-gray-700 hover:bg-gray-50"
                 }`}
               >
                 <img src={l.flag} alt={l.code} className="w-5 h-3.5 object-cover rounded-[2px] shadow-sm" />
                 <span>{l.label}</span>
+                {l.code === lang && (
+                  <span className="ml-auto text-[10px] font-bold text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded">✓</span>
+                )}
               </button>
             ))}
           </motion.div>
@@ -249,7 +252,7 @@ export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
                   key={l.href}
                   onClick={() => scrollTo(l.href)}
                   style={{ color: "var(--lp-text-muted)" }}
-                  className="text-left px-4 py-3 rounded-lg font-medium hover:bg-pink-50/10 hover:text-pink-400 transition-colors"
+                  className="text-left px-4 py-3 rounded-lg font-medium hover:bg-rose-500/10 hover:text-rose-400 transition-colors"
                 >
                   {l.label}
                 </button>
@@ -258,7 +261,7 @@ export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
               {isAuthenticated ? (
                 <Link
                   to="/admin/dashboard"
-                  className="px-4 py-3 rounded-lg font-semibold text-pink-600 hover:bg-pink-50/20 transition-colors"
+                  className="px-4 py-3 rounded-lg font-semibold text-rose-500 hover:bg-rose-50/20 transition-colors"
                   onClick={() => setMobileOpen(false)}
                 >
                   {staticData.navDashboard || "Dashboard"}
@@ -267,7 +270,7 @@ export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
                 <Link
                   to="/login"
                   style={{ color: "var(--lp-text-muted)" }}
-                  className="px-4 py-3 rounded-lg font-medium hover:text-pink-400 transition-colors"
+                  className="px-4 py-3 rounded-lg font-medium hover:text-rose-400 transition-colors"
                   onClick={() => setMobileOpen(false)}
                 >
                   {staticData.navLoginMobile || "Đăng nhập quản lý"}
@@ -275,7 +278,7 @@ export default function Navbar({ lang = "vi", onLangChange, staticData = {} }) {
               )}
               <button
                 onClick={() => scrollTo("#consult")}
-                className="px-4 py-3 rounded-lg font-semibold bg-pink-600 text-white text-center hover:bg-pink-700 transition-colors"
+                className="px-4 py-3 rounded-lg font-semibold bg-gradient-to-r from-rose-600 to-red-600 text-white text-center hover:from-rose-500 hover:to-red-500 transition-all cursor-pointer shadow-md shadow-rose-600/30"
               >
                 {staticData.navPartner || "Đăng ký làm đối tác"}
               </button>

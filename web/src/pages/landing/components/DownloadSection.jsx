@@ -46,7 +46,7 @@ export default function DownloadSection({ data }) {
     >
       {/* Background orbs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-pink-600/10 rounded-full blur-[80px]" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-rose-600/15 rounded-full blur-[80px]" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-orange-500/10 rounded-full blur-[80px]" />
       </div>
 
@@ -96,7 +96,7 @@ export default function DownloadSection({ data }) {
                 className="w-16 h-16 rounded-2xl object-cover shadow-lg"
               />
             ) : (
-              <div className="w-16 h-16 rounded-2xl bg-pink-600 flex items-center justify-center shadow-lg shadow-pink-600/30">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-rose-600 to-red-600 flex items-center justify-center shadow-lg shadow-rose-600/30">
                 <Smartphone size={32} className="text-white" />
               </div>
             )}
@@ -128,7 +128,7 @@ export default function DownloadSection({ data }) {
               <a
                 href={apkUrl}
                 download
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-white bg-pink-600 hover:bg-pink-700 hover:shadow-lg hover:shadow-pink-600/30 hover:scale-[1.02] active:scale-[0.97] transition-all"
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-white bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 hover:shadow-lg hover:shadow-rose-600/30 hover:scale-[1.02] active:scale-[0.97] transition-all cursor-pointer"
               >
                 <Download size={18} />
                 {downloadApkText}

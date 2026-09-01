@@ -67,10 +67,10 @@ export default function FeaturesSection({ data }) {
                 background: "var(--lp-bg-card)",
                 borderColor: "var(--lp-border)",
               }}
-              className="group p-6 rounded-2xl border hover:border-pink-400/50 hover:shadow-lg transition-all duration-300 cursor-default"
+              className="group p-6 rounded-2xl border hover:border-rose-500/50 hover:shadow-xl hover:shadow-rose-500/10 transition-all duration-300 cursor-default"
             >
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500/20 to-orange-500/10 flex items-center justify-center mb-4 group-hover:from-pink-500/30 group-hover:to-orange-500/20 transition-colors">
-                <DynamicIcon name={item.icon} fallback={Zap} size={22} className="text-pink-500" />
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-500/20 to-amber-500/15 flex items-center justify-center mb-4 group-hover:from-rose-500/30 group-hover:to-amber-500/25 transition-colors">
+                <DynamicIcon name={item.icon} fallback={Zap} size={22} className="text-rose-500" />
               </div>
               <h3
                 style={{ color: "var(--lp-text)" }}

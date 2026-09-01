@@ -78,17 +78,15 @@ function SortableItem({ id, idx, item, isOpen, toggle, onRemove, hideControls, c
 
 export default function ArrayEditor({ label, items = [], onAdd, onRemove, onReorder, onMove, onAddGlobal, onRemoveGlobal, addLabel = "Thêm mới", hideControls = false, children }) {
   const [openItems, setOpenItems] = useState(new Set());
-  const idMap = useRef(new WeakMap());
+  const idsRef = useRef([]);
 
-  const getId = (item, idx) => {
-    if (item && typeof item === "object") {
-      if (!idMap.current.has(item)) {
-        idMap.current.set(item, crypto.randomUUID());
-      }
-      return idMap.current.get(item);
-    }
-    return idx.toString();
-  };
+  // Giữ danh sách ID ổn định tuyệt đối theo index, không đổi UUID khi user gõ phím vào input
+  while (idsRef.current.length < items.length) {
+    idsRef.current.push(`item-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`);
+  }
+  if (idsRef.current.length > items.length) {
+    idsRef.current = idsRef.current.slice(0, items.length);
+  }
 
   const toggle = (idx) => {
     setOpenItems((prev) => {
@@ -100,12 +98,14 @@ export default function ArrayEditor({ label, items = [], onAdd, onRemove, onReor
   };
 
   const handleAdd = () => {
+    idsRef.current.push(`item-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`);
     if (onAddGlobal) onAddGlobal();
     else onAdd();
     setOpenItems((prev) => new Set([...prev, items.length]));
   };
   
   const handleRemove = (idx) => {
+    idsRef.current.splice(idx, 1);
     if (onRemoveGlobal) onRemoveGlobal(idx);
     else onRemove(idx);
   };
@@ -125,22 +125,24 @@ export default function ArrayEditor({ label, items = [], onAdd, onRemove, onReor
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const itemIds = items.map((itm, i) => getId(itm, i));
-      const oldIndex = itemIds.indexOf(active.id);
-      const newIndex = itemIds.indexOf(over.id);
+      const oldIndex = idsRef.current.indexOf(active.id);
+      const newIndex = idsRef.current.indexOf(over.id);
 
-      if (onMove) {
-        onMove(oldIndex, newIndex);
-      } else if (onReorder) {
-        const newItems = arrayMove(items, oldIndex, newIndex);
-        onReorder(newItems);
+      if (oldIndex !== -1 && newIndex !== -1) {
+        idsRef.current = arrayMove(idsRef.current, oldIndex, newIndex);
+        if (onMove) {
+          onMove(oldIndex, newIndex);
+        } else if (onReorder) {
+          const newItems = arrayMove(items, oldIndex, newIndex);
+          onReorder(newItems);
+        }
       }
       
       setOpenItems(new Set()); 
     }
   };
 
-  const itemIds = items.map((itm, i) => getId(itm, i));
+  const itemIds = idsRef.current;
 
   return (
     <div className="mb-4">

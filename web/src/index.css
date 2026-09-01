@@ -26,7 +26,7 @@
    Controlled by data-landing-theme="dark|light" on <html>
    ══════════════════════════════════════════════════════════════════ */
 
-/* ── Default: DARK (ký hiệu brand AudioGo) ─────────────────────── */
+/* ── Default: DARK (Culinary Sunset & Midnight) ─────────────────── */
 :root,
 [data-landing-theme="dark"] {
   --lp-bg:            #0D0D1A;
@@ -34,19 +34,19 @@
   --lp-bg-card:       #1a1128;
   --lp-bg-card-hover: #211436;
   --lp-text:          #F9FAFB;
-  --lp-text-muted:    rgba(249,250,251,0.55);
-  --lp-text-faint:    rgba(249,250,251,0.28);
+  --lp-text-muted:    #D1D5DB; /* Contrast ratio > 10.5:1 on #0D0D1A (Passes WCAG AAA) */
+  --lp-text-faint:    #9CA3AF; /* Contrast ratio > 6.5:1 on #0D0D1A (Passes WCAG AA) */
   --lp-border:        rgba(255,255,255,0.08);
   --lp-border-hover:  rgba(255,255,255,0.15);
   --lp-nav-bg:        rgba(13,13,26,0.92);
   --lp-mobile-menu:   #120d1e;
-  --lp-badge-bg:      rgba(238,75,142,0.12);
-  --lp-badge-text:    #f472b6;
-  --lp-badge-border:  rgba(238,75,142,0.25);
+  --lp-badge-bg:      rgba(244,63,94,0.14);
+  --lp-badge-text:    #FB7185;
+  --lp-badge-border:  rgba(244,63,94,0.28);
   --lp-input-bg:      #1e1530;
   --lp-input-border:  rgba(255,255,255,0.12);
   --lp-input-text:    #F9FAFB;
-  --lp-input-placeholder: rgba(249,250,251,0.35);
+  --lp-input-placeholder: #9CA3AF;
   --lp-footer-bg:     #080810;
   --lp-divider:       rgba(255,255,255,0.06);
   --lp-section-light: #110a1a;
@@ -55,26 +55,26 @@
 /* ── Light mode ─────────────────────────────────────────────────── */
 [data-landing-theme="light"] {
   --lp-bg:            #FFFFFF;
-  --lp-bg-alt:        #fdf7f9;
+  --lp-bg-alt:        #FFF8F6;
   --lp-bg-card:       #FFFFFF;
-  --lp-bg-card-hover: #fff0f5;
+  --lp-bg-card-hover: #FFF1F2;
   --lp-text:          #111827;
-  --lp-text-muted:    #6B7280;
-  --lp-text-faint:    #9CA3AF;
-  --lp-border:        #F3E8EE;
-  --lp-border-hover:  #fbc6d8;
+  --lp-text-muted:    #4B5563; /* Contrast ratio > 7.0:1 on #FFFFFF (Passes WCAG AAA) */
+  --lp-text-faint:    #6B7280; /* Contrast ratio > 4.6:1 on #FFFFFF (Passes WCAG AA) */
+  --lp-border:        #F1F5F9;
+  --lp-border-hover:  #FECDD3;
   --lp-nav-bg:        rgba(255,255,255,0.94);
   --lp-mobile-menu:   #FFFFFF;
-  --lp-badge-bg:      #fff0f5;
-  --lp-badge-text:    #db2777;
-  --lp-badge-border:  #fbc6d8;
+  --lp-badge-bg:      #FFF1F2;
+  --lp-badge-text:    #E11D48;
+  --lp-badge-border:  #FECDD3;
   --lp-input-bg:      #FFFFFF;
-  --lp-input-border:  #E5E7EB;
-  --lp-input-text:    #111827;
-  --lp-input-placeholder: #9CA3AF;
-  --lp-footer-bg:     #111827;
-  --lp-divider:       #F3E8EE;
-  --lp-section-light: #fdf7f9;
+  --lp-input-border:  #E2E8F0;
+  --lp-input-text:    #0F172A;
+  --lp-input-placeholder: #94A3B8;
+  --lp-footer-bg:     #0F172A;
+  --lp-divider:       #F1F5F9;
+  --lp-section-light: #FFF8F6;
 }
 
 /* ── Smooth transition khi đổi theme (chỉ áp dụng container chính, không áp wildcard *) ── */

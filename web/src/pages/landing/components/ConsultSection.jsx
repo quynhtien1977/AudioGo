@@ -109,7 +109,7 @@ export default function ConsultSection({ data }) {
                   transition={{ delay: 0.1 + i * 0.08 }}
                   className="flex items-start gap-4 mb-5"
                 >
-                  <div className="w-9 h-9 rounded-lg bg-pink-600 flex items-center justify-center flex-shrink-0 shadow-sm shadow-pink-600/20">
+                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-rose-600 to-red-600 flex items-center justify-center flex-shrink-0 shadow-sm shadow-rose-600/25">
                     <DynamicIcon name={b.icon} fallback={CheckCircle} size={18} className="text-white" />
                   </div>
                   <p style={{ color: "var(--lp-text)" }} className="font-medium pt-1.5 text-sm">
@@ -176,14 +176,14 @@ export default function ConsultSection({ data }) {
                       borderColor: "var(--lp-input-border)",
                       color: "var(--lp-input-text)",
                     }}
-                    className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 resize-none"
+                    className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-rose-400 resize-none"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl font-semibold text-white bg-pink-600 hover:bg-pink-700 hover:shadow-lg hover:shadow-pink-600/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                  className="w-full py-3.5 rounded-xl font-semibold text-white bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 hover:shadow-lg hover:shadow-rose-600/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer"
                 >
                   {loading ? <Loader2 size={18} className="animate-spin" /> : null}
                   {loading ? formSubmittingBtn : formSubmitBtn}
@@ -204,7 +204,7 @@ function FormField({ icon, label, value, onChange, placeholder, type = "text" })
         {label}
       </label>
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-pink-400/60">{icon}</span>
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-rose-400/80">{icon}</span>
         <input
           type={type}
           value={value}
@@ -215,7 +215,7 @@ function FormField({ icon, label, value, onChange, placeholder, type = "text" })
             borderColor: "var(--lp-input-border)",
             color: "var(--lp-input-text)",
           }}
-          className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-pink-400 focus:border-transparent"
+          className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-rose-400 focus:border-transparent"
         />
       </div>
     </div>

@@ -31,7 +31,7 @@ import ConfirmModal from "@/components/ConfirmModal";
 const SECTIONS = [
   { key: "hero",         label: "Hero Banner" },
   { key: "stats_bar",    label: "Stats Bar" },
-  { key: "banner_strip", label: "Dải Banner Sự Kiện" },
+  { key: "banner_strip", label: "Thẻ Banner nổi bật (Hero)" },
   { key: "features",     label: "Tính năng" },
   { key: "how_it_works", label: "Cách hoạt động" },
   { key: "screenshots",  label: "Ảnh màn hình" },

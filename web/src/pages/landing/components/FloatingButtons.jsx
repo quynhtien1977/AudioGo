@@ -68,7 +68,7 @@ export default function FloatingButtons({ apkUrl, zaloLink, facebookLink, phone,
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="w-64 max-w-[calc(100vw-32px)] bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden mb-1"
           >
-            <div className="px-4 py-3.5 bg-pink-600">
+            <div className="px-4 py-3.5 bg-gradient-to-r from-rose-600 to-red-600">
               <p className="text-white font-bold text-sm leading-tight">{staticData.floatTitle || "Liên hệ AudioGo"}</p>
               <p className="text-white/80 text-xs mt-0.5">{staticData.floatSubtitle || "Chúng tôi sẵn sàng hỗ trợ bạn"}</p>
             </div>
@@ -128,7 +128,7 @@ export default function FloatingButtons({ apkUrl, zaloLink, facebookLink, phone,
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.7 }}
             onClick={backToTop}
-            className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow flex items-center justify-center text-gray-400 hover:text-pink-500 hover:border-pink-300 hover:scale-110 transition-all"
+            className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow flex items-center justify-center text-gray-400 hover:text-rose-500 hover:border-rose-300 hover:scale-110 transition-all cursor-pointer"
             title="Về đầu trang"
           >
             <ArrowUp size={17} />
@@ -142,15 +142,15 @@ export default function FloatingButtons({ apkUrl, zaloLink, facebookLink, phone,
           whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.93 }}
           onClick={() => setOpen((v) => !v)}
-          className={`relative flex items-center gap-2 px-4 py-2.5 rounded-full text-white text-sm font-semibold shadow-xl transition-all ${
+          className={`relative flex items-center gap-2 px-4 py-2.5 rounded-full text-white text-sm font-semibold shadow-xl transition-all cursor-pointer ${
             open
-              ? "bg-gray-700 shadow-gray-500/20"
-              : "bg-pink-600 shadow-pink-600/30 hover:bg-pink-700"
+              ? "bg-gray-800 shadow-gray-900/30"
+              : "bg-gradient-to-r from-rose-600 to-red-600 shadow-rose-600/30 hover:from-rose-500 hover:to-red-500"
           }`}
           title={open ? "Đóng" : "Liên hệ"}
         >
           {/* Pulse khi đóng */}
-          {!open && <span className="absolute inset-0 rounded-full bg-pink-400/20 animate-ping" />}
+          {!open && <span className="absolute inset-0 rounded-full bg-rose-400/30 animate-ping pointer-events-none" />}
 
           {open
             ? <><X size={15} /><span>{staticData.floatClose || "Đóng"}</span></>

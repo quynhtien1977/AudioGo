@@ -78,13 +78,13 @@ export default function FooterSection({ data, staticData = {} }) {
               {logoUrl ? (
                 <img src={logoUrl || "/asset/logo.webp"} alt="AudioGo Logo - Ứng dụng thuyết minh ẩm thực Vĩnh Khánh" width="120" height="32" className="h-8 w-auto object-contain" loading="lazy" decoding="async" />
               ) : (
-                <div className="w-8 h-8 bg-pink-600 rounded-lg flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-br from-rose-600 to-red-600 rounded-lg flex items-center justify-center shadow-sm">
                   <MapPin size={16} className="text-white" />
                 </div>
               )}
               <span className="font-bold text-lg tracking-tight text-white">AudioGo</span>
             </div>
-            <p className="text-white/50 text-sm leading-relaxed mb-5">{description}</p>
+            <p className="text-gray-300 text-sm leading-relaxed mb-5">{description}</p>
 
             {/* Social links */}
             {socialLinks.length > 0 && (
@@ -107,23 +107,23 @@ export default function FooterSection({ data, staticData = {} }) {
 
           {/* Contact */}
           <div>
-            <h4 className="font-semibold text-sm text-white/70 uppercase tracking-wider mb-5">{staticData.footContactTitle || "Liên hệ"}</h4>
-            <div className="space-y-3 text-sm text-white/50">
+            <h4 className="font-semibold text-sm text-white/90 uppercase tracking-wider mb-5">{staticData.footContactTitle || "Liên hệ"}</h4>
+            <div className="space-y-3 text-sm text-gray-300">
               {address && (
                 <div className="flex gap-2.5">
-                  <MapPin size={14} className="flex-shrink-0 mt-0.5 text-pink-400" />
+                  <MapPin size={14} className="flex-shrink-0 mt-0.5 text-rose-400" />
                   <span>{address}</span>
                 </div>
               )}
               {email && (
                 <div className="flex gap-2.5 items-center">
-                  <Mail size={14} className="text-pink-400 flex-shrink-0" />
+                  <Mail size={14} className="text-rose-400 flex-shrink-0" />
                   <a href={`mailto:${email}`} className="hover:text-white transition-colors truncate">{email}</a>
                 </div>
               )}
               {phone && (
                 <div className="flex gap-2.5 items-center">
-                  <Phone size={14} className="text-pink-400 flex-shrink-0" />
+                  <Phone size={14} className="text-rose-400 flex-shrink-0" />
                   <a href={`tel:${phone.replace(/\s/g,"")}`} className="hover:text-white transition-colors">{phone}</a>
                 </div>
               )}
@@ -142,8 +142,8 @@ export default function FooterSection({ data, staticData = {} }) {
 
           {/* Quick links */}
           <div>
-            <h4 className="font-semibold text-sm text-white/70 uppercase tracking-wider mb-5">{staticData.footQuickTitle || "Nhanh"}</h4>
-            <div className="space-y-3 text-sm text-white/50">
+            <h4 className="font-semibold text-sm text-white/90 uppercase tracking-wider mb-5">{staticData.footQuickTitle || "Nhanh"}</h4>
+            <div className="space-y-3 text-sm text-gray-300">
               {[
                 { label: staticData.navHow || "Tính năng",        href: "#features" },
                 { label: staticData.navHow || "Cách hoạt động",   href: "#how-it-works" },
@@ -166,7 +166,7 @@ export default function FooterSection({ data, staticData = {} }) {
               <div className="pt-2">
                 <Link
                   to="/login"
-                  className="inline-flex items-center gap-1.5 text-pink-400 hover:text-pink-300 transition-colors font-medium"
+                  className="inline-flex items-center gap-1.5 text-rose-400 hover:text-rose-300 transition-colors font-medium"
                 >
                   {staticData.navLoginMobile || "Đăng nhập quản lý"} →
                 </Link>
@@ -178,7 +178,7 @@ export default function FooterSection({ data, staticData = {} }) {
         {/* Bottom bar */}
         <div
           style={{ borderColor: "rgba(255,255,255,0.08)" }}
-          className="mt-12 pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/30"
+          className="mt-12 pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-400"
         >
           <span>{staticData.footCopyright || `© ${new Date().getFullYear()} AudioGo. All rights reserved.`}</span>
           <span>{staticData.footMadeWith || "Made with ❤️ in Hồ Chí Minh"}</span>
