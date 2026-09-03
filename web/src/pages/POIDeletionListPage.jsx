@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { XCircle, Trash2, Eye } from "lucide-react"
+import { CheckCircle, XCircle, Trash2 } from "lucide-react"
 import toast from "react-hot-toast"
 
 import POIManagementListComponent from "@/components/POIManagementListComponent"
