@@ -32,9 +32,10 @@ namespace Server.Data
         public DbSet<ConsultationRequest> ConsultationRequests => Set<ConsultationRequest>();
 
         // ── CMS Enhancements ─────────────────────────────────────────────
-        public DbSet<Banner>       Banners       => Set<Banner>();
-        public DbSet<AppSetting>   AppSettings   => Set<AppSetting>();
-        public DbSet<Notification> Notifications => Set<Notification>();
+        public DbSet<Banner>             Banners             => Set<Banner>();
+        public DbSet<AppSetting>         AppSettings         => Set<AppSetting>();
+        public DbSet<Notification>       Notifications       => Set<Notification>();
+        public DbSet<BroadcastCampaign>  BroadcastCampaigns  => Set<BroadcastCampaign>();
 
         protected override void OnModelCreating(ModelBuilder m)
         {
@@ -64,6 +65,7 @@ namespace Server.Data
             m.Entity<Banner>             ().ToTable("Banner");
             m.Entity<AppSetting>         ().ToTable("AppSetting");
             m.Entity<Notification>       ().ToTable("Notification");
+            m.Entity<BroadcastCampaign>  ().ToTable("BroadcastCampaign");
 
             // ── 2. Primary Keys ─────────────────────────────────────────
             m.Entity<PoiContent>          ().HasKey(e => e.ContentId);
@@ -76,8 +78,12 @@ namespace Server.Data
             m.Entity<Banner>              ().HasKey(e => e.BannerId);
             m.Entity<AppSetting>          ().HasKey(e => e.SettingKey);
             m.Entity<Notification>        ().HasKey(e => e.NotificationId);
+            m.Entity<BroadcastCampaign>   ().HasKey(e => e.CampaignId);
 
             // ── Notification: FK + index ─────────────────────────────────
+            m.Entity<Notification>().Property(n => n.RecipientAccountId).HasMaxLength(255);
+            m.Entity<Notification>().Property(n => n.CreatedByAccountId).HasMaxLength(255);
+
             m.Entity<Notification>()
                 .HasOne(n => n.RecipientAccount)
                 .WithMany()
@@ -96,6 +102,20 @@ namespace Server.Data
             m.Entity<Notification>()
                 .HasIndex(n => new { n.RecipientAccountId, n.IsRead })
                 .HasDatabaseName("IX_Notification_Recipient_IsRead");
+
+            // ── BroadcastCampaign: FK + index ──────────────────────────────────
+            m.Entity<BroadcastCampaign>().Property(c => c.CreatedByAccountId).HasMaxLength(255);
+
+            m.Entity<BroadcastCampaign>()
+                .HasOne(c => c.CreatedByAccount)
+                .WithMany()
+                .HasForeignKey(c => c.CreatedByAccountId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
+
+            m.Entity<BroadcastCampaign>()
+                .HasIndex(c => c.CreatedAt)
+                .HasDatabaseName("IX_BroadcastCampaign_CreatedAt");
 
             // LandingSection.ContentJson — nvarchar(max)
             m.Entity<LandingSection>().Property(s => s.ContentJson)

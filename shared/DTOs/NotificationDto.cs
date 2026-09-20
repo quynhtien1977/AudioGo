@@ -27,3 +27,18 @@ public record MarkReadRequest(
     /// <summary>null = đánh dấu TẤT CẢ đã đọc.</summary>
     string? NotificationId = null
 );
+
+// ── Broadcast Campaign DTOs ────────────────────────────────────────────────────
+
+/// <summary>Lịch sử 1 đợt phát thông báo broadcast (1 row/chiến dịch).</summary>
+public record BroadcastCampaignDto(
+    string       CampaignId,
+    string       Title,
+    string       Body,
+    List<string> TargetRoles,
+    int          RecipientCount,
+    DateTime     CreatedAt,
+    string?      CreatedByAccountId,
+    string?      CreatedByName
+);
+

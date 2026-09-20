@@ -42,4 +42,7 @@ public interface INotificationService
 
     /// <summary>Xóa TẤT CẢ notification của recipient.</summary>
     Task DeleteAllAsync(string recipientAccountId);
+
+    /// <summary>Lấy danh sách lịch sử các đợt phát broadcast (dành cho Admin). Phân trang.</summary>
+    Task<List<BroadcastCampaignDto>> GetBroadcastHistoryAsync(int page = 1, int pageSize = 20);
 }
