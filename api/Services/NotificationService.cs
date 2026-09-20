@@ -3,6 +3,7 @@ using Server.Data;
 using Server.Models;
 using Server.Services.Interfaces;
 using Shared.DTOs;
+using System.Text.Json;
 
 namespace Server.Services
 {
@@ -69,46 +70,67 @@ namespace Server.Services
             string? createdByAccountId = null)
         {
             var roleList = roles.ToList();
+            if (!roleList.Any()) return;
 
-            // "Public" = broadcast không cần account (mobile tourists)
+            var effectiveRoles = roleList.ToList();
+            int notificationCount = 0;
+
+            // 1. "Public" = broadcast không cần account (mobile tourists)
             if (roleList.Contains("Public"))
             {
                 await CreateAsync(null, "Broadcast", title, body, createdByAccountId);
+                notificationCount++;
                 roleList = roleList.Where(r => r != "Public").ToList();
             }
 
-            if (!roleList.Any()) return;
-
-            // Fan-out: lấy tất cả AccountId có role trong danh sách
-            var recipientIds = await _db.Accounts
-                .Where(a => roleList.Contains(a.Role) && a.DeletedAt == null)
-                .Select(a => a.AccountId)
-                .ToListAsync();
-
-            if (!recipientIds.Any())
+            // 2. Fan-out: lấy tất cả AccountId có role trong danh sách còn lại
+            if (roleList.Any())
             {
-                _logger.LogWarning("BroadcastToRoles: no accounts found for roles [{Roles}]", string.Join(",", roleList));
-                return;
+                var recipientIds = await _db.Accounts
+                    .Where(a => roleList.Contains(a.Role) && a.DeletedAt == null)
+                    .Select(a => a.AccountId)
+                    .ToListAsync();
+
+                if (recipientIds.Any())
+                {
+                    var notifications = recipientIds.Select(id => new Notification
+                    {
+                        NotificationId     = Guid.NewGuid().ToString(),
+                        RecipientAccountId = id,
+                        Title              = title,
+                        Body               = body,
+                        Type               = "Broadcast",
+                        IsRead             = false,
+                        CreatedAt          = DateTime.UtcNow,
+                        CreatedByAccountId = createdByAccountId
+                    }).ToList();
+
+                    _db.Notifications.AddRange(notifications);
+                    await _db.SaveChangesAsync();
+                    notificationCount += notifications.Count;
+                }
+                else
+                {
+                    _logger.LogWarning("BroadcastToRoles: no accounts found for roles [{Roles}]", string.Join(",", roleList));
+                }
             }
 
-            var notifications = recipientIds.Select(id => new Notification
+            // 3. ── Lưu lịch sử campaign (1 row/đợt phát) ───────────────────────────────
+            _db.BroadcastCampaigns.Add(new BroadcastCampaign
             {
-                NotificationId     = Guid.NewGuid().ToString(),
-                RecipientAccountId = id,
+                CampaignId         = Guid.NewGuid().ToString(),
                 Title              = title,
                 Body               = body,
-                Type               = "Broadcast",
-                IsRead             = false,
+                TargetRolesJson    = JsonSerializer.Serialize(effectiveRoles),
+                RecipientCount     = notificationCount,
                 CreatedAt          = DateTime.UtcNow,
                 CreatedByAccountId = createdByAccountId
-            }).ToList();
-
-            _db.Notifications.AddRange(notifications);
+            });
             await _db.SaveChangesAsync();
 
             _logger.LogInformation(
-                "📢 Broadcast [{Title}] → {Count} recipients (roles: {Roles})",
-                title, notifications.Count, string.Join(",", roleList));
+                "📢 Broadcast [{Title}] → {Count} notifications created (roles: {Roles})",
+                title, notificationCount, string.Join(",", effectiveRoles));
         }
 
         // ── READ ─────────────────────────────────────────────────────────────
@@ -212,6 +234,37 @@ namespace Server.Services
             await _db.Notifications
                 .Where(n => n.RecipientAccountId == recipientAccountId)
                 .ExecuteDeleteAsync();
+        }
+
+        // ── BROADCAST HISTORY ─────────────────────────────────────────────────
+
+        /// <inheritdoc/>
+        public async Task<List<BroadcastCampaignDto>> GetBroadcastHistoryAsync(int page = 1, int pageSize = 20)
+        {
+            var list = await _db.BroadcastCampaigns
+                .Include(c => c.CreatedByAccount)
+                .OrderByDescending(c => c.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .AsNoTracking()
+                .ToListAsync();
+
+            return list.Select(c =>
+            {
+                var roles = new List<string>();
+                try { roles = JsonSerializer.Deserialize<List<string>>(c.TargetRolesJson) ?? []; } catch { }
+
+                return new BroadcastCampaignDto(
+                    c.CampaignId,
+                    c.Title,
+                    c.Body,
+                    roles,
+                    c.RecipientCount,
+                    c.CreatedAt,
+                    c.CreatedByAccountId,
+                    c.CreatedByAccount?.FullName
+                );
+            }).ToList();
         }
     }
 }

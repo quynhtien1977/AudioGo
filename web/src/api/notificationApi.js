@@ -34,4 +34,8 @@ export const notificationApi = {
   /** Xóa toàn bộ notification của user */
   deleteAllNotifications: () =>
     api.delete("/cms/notifications"),
+
+  /** Admin xem lịch sử các đợt phát thông báo broadcast */
+  getBroadcastHistory: (page = 1, pageSize = 20) =>
+    api.get("/cms/notifications/broadcasts", { params: { page, pageSize } }),
 };

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Send,
   Megaphone,
@@ -11,9 +11,14 @@ import {
   Layers,
   Clock,
   Info,
+  History,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { notificationApi } from "../api/notificationApi";
+import EmptyState from "@/components/EmptyState";
+import PageLoader from "@/components/PageLoader";
 
 const ROLE_OPTIONS = [
   {
@@ -75,6 +80,29 @@ export default function AdminBroadcastPage() {
   const [body, setBody] = useState("");
   const [isSending, setIsSending] = useState(false);
 
+  // Broadcast history
+  const [history, setHistory] = useState([]);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const PAGE_SIZE = 10;
+
+  const fetchHistory = async (page = 1) => {
+    try {
+      setHistoryLoading(true);
+      const res = await notificationApi.getBroadcastHistory(page, PAGE_SIZE);
+      const data = res.data ?? [];
+      setHistory(data);
+      setHasMore(data.length === PAGE_SIZE);
+    } catch (err) {
+      console.error("Tải lịch sử broadcast thất bại:", err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchHistory(1); }, []);
+
   const toggleRole = (roleId) => {
     setSelectedRoles((prev) =>
       prev.includes(roleId)
@@ -127,6 +155,9 @@ export default function AdminBroadcastPage() {
       toast.success("Thông báo đã được phát đi thành công!");
       setTitle("");
       setBody("");
+      // Reload lịch sử về trang đầu
+      setHistoryPage(1);
+      fetchHistory(1);
     } catch (err) {
       console.error("Gửi broadcast thất bại:", err);
       toast.error(
@@ -383,6 +414,112 @@ export default function AdminBroadcastPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ── BROADCAST HISTORY ─────────────────────────────────────── */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <History size={18} className="text-pink-500" />
+            <h2 className="text-base font-bold text-gray-800">Lịch sử phát thông báo</h2>
+          </div>
+          <span className="text-xs text-gray-400">Trang {historyPage}</span>
+        </div>
+
+        {historyLoading ? (
+          <PageLoader text="Đang tải lịch sử thông báo..." />
+        ) : history.length === 0 ? (
+          <EmptyState
+            variant="muted"
+            icon={<Megaphone size={32} />}
+            title="Chưa có thông báo nào được phát"
+            description="Các thông báo broadcast sẽ xuất hiện ở đây sau khi bạn gửi."
+          />
+        ) : (
+          <div className="divide-y divide-gray-50">
+            {history.map((item) => {
+              const roleLabels = {
+                Owner: { label: "Owner", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+                Editor: { label: "Editor", color: "bg-purple-50 text-purple-700 border-purple-200" },
+                Admin: { label: "Admin", color: "bg-blue-50 text-blue-700 border-blue-200" },
+                Public: { label: "Mobile", color: "bg-amber-50 text-amber-700 border-amber-200" },
+              };
+              return (
+                <div key={item.campaignId} className="px-6 py-4 hover:bg-gray-50/60 transition-colors">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{item.title}</p>
+                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-2 leading-relaxed">{item.body}</p>
+
+                      <div className="flex flex-wrap items-center gap-2 mt-2">
+                        {/* Role badges */}
+                        {item.targetRoles?.map((r) => (
+                          <span
+                            key={r}
+                            className={`text-[10px] px-2 py-0.5 rounded-md font-semibold border ${
+                              roleLabels[r]?.color ?? "bg-gray-100 text-gray-600 border-gray-200"
+                            }`}
+                          >
+                            {roleLabels[r]?.label ?? r}
+                          </span>
+                        ))}
+
+                        {/* Recipient count */}
+                        <span className="text-[10px] text-gray-500 flex items-center gap-1">
+                          <Users size={10} />
+                          {item.recipientCount} người nhận
+                        </span>
+
+                        {/* Time */}
+                        <span className="text-[10px] text-gray-400 flex items-center gap-1">
+                          <Clock size={10} />
+                          {new Date(item.createdAt).toLocaleString("vi-VN")}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Sender */}
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-[11px] text-gray-500">Gửi bởi</p>
+                      <p className="text-xs font-medium text-gray-700 mt-0.5">
+                        {item.createdByName ?? "Hệ thống"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {(historyPage > 1 || hasMore) && (
+          <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100 bg-gray-50/50">
+            <button
+              disabled={historyPage <= 1}
+              onClick={() => {
+                const p = historyPage - 1;
+                setHistoryPage(p);
+                fetchHistory(p);
+              }}
+              className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <ChevronLeft size={14} /> Trước
+            </button>
+            <span className="text-xs text-gray-400">Trang {historyPage}</span>
+            <button
+              disabled={!hasMore}
+              onClick={() => {
+                const p = historyPage + 1;
+                setHistoryPage(p);
+                fetchHistory(p);
+              }}
+              className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+            >
+              Sau <ChevronRight size={14} />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

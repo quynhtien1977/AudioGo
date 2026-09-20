@@ -89,6 +89,18 @@ public class CmsNotificationController : ControllerBase
         return Ok(new { message = "Thông báo đã được gửi thành công" });
     }
 
+    // ── GET: Lịch sử phát broadcast (Admin only) ─────────────────────────
+    // GET /api/cms/notifications/broadcasts?page=1&pageSize=20
+    [HttpGet("broadcasts")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetBroadcastHistory(
+        [FromQuery] int page     = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        var list = await _notifications.GetBroadcastHistoryAsync(page, pageSize);
+        return Ok(list);
+    }
+
     // ── PATCH: Đánh dấu đã đọc (1 hoặc tất cả) ──────────────────────────
     // PATCH /api/cms/notifications/read
     [HttpPatch("read")]
